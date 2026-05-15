@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeployerApp</title>
+
+  <style id="style-splashscreen">
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dim: rgba(99, 102, 241, 0.15);
+      --bg: #ffffff;
+      --bg-card: #ffffff;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --blue-dim: rgba(59, 130, 246, 0.10);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #09090b;
+        --bg-card: #18181b;
+        --border: #27272a;
+        --text: #fafafa;
+        --text-muted: #52525b;
+      }
+    }
+
+    html,
+    body,
+    #app {
+      height: 100%;
+      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      transition: opacity 0.4s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    /* ── Fondo decorativo ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .blob-tl {
+      top: -10%;
+      left: -10%;
+      width: 50%;
+      height: 50%;
+      background: var(--primary-dim);
+    }
+
+    .blob-br {
+      bottom: -10%;
+      right: -10%;
+      width: 50%;
+      height: 50%;
+      background: var(--blue-dim);
+      animation-delay: 2s;
+    }
+
+    /* ── Layout central ── */
+    .center {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 1.5rem;
+    }
+
+    /* ── Icono ── */
+    .icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-ping {
+      position: absolute;
+      inset: 0;
+      transform: scale(1.5);
+      border-radius: 50%;
+      background: var(--primary-dim);
+      animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+      opacity: 0.25;
+    }
+
+    .icon-card {
+      position: relative;
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+      border: 1px solid var(--border);
+    }
+
+    .icon-svg {
+      width: 4rem;
+      height: 4rem;
+      color: var(--primary);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── Textos ── */
+    .text-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 24rem;
+      text-align: center;
+    }
+
+    .app-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .app-subtitle {
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-top: .25rem;
+    }
+
+    /* ── Barra de progreso ── */
+    .progress-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      background: var(--border);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 9999px;
+      background: var(--primary);
+      animation: carousel 1.8s ease-in-out infinite;
+      transform-origin: left;
+    }
+
+    .loading-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid var(--border);
+      border-top-color: var(--text-muted);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    /* ── Animaciones ── */
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .5;
+      }
+    }
+
+    @keyframes ping {
+
+      75%,
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes carousel {
+      0% {
+        transform: translateX(-100%) scaleX(.4);
+      }
+
+      50% {
+        transform: translateX(60%) scaleX(.6);
+      }
+
+      100% {
+        transform: translateX(200%) scaleX(.4);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="isolate">
+    <!-- Fondos decorativos -->
+    <div class="blob blob-tl"></div>
+    <div class="blob blob-br"></div>
+
+    <div class="center">
+      <!-- Icono central con efecto ping -->
+      <div class="icon-wrap">
+        <div class="icon-ping"></div>
+        <div class="icon-card">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3" />
+            <path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3" />
+            <circle cx="15" cy="9" r="1" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Textos + progreso -->
+      <div class="text-block">
+        <div>
+          <h2 class="app-title" id="title">DeployerApp</h2>
+          <p class="app-subtitle" id="subtitle"></p>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-bar"></div>
+          </div>
+          <div class="loading-label">
+            <div class="spinner"></div>
+            <span class="loading-text" id="loading-text"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const messages = {
+        es: {
+          subtitle: 'Preparando el entorno de despliegue',
+          loading_text: 'Cargando recursos…'
+        },
+        en: {
+          subtitle: 'Preparing the deployment environment',
+          loading_text: 'Loading resources…'
+        },
+      }
+
+      function getUserLanguage() {
+        return navigator.language.split('-')[0]; // "es-ES" → "es"
+      }
+
+      function updateMessage() {
+        const lang = getUserLanguage();
+        const texts = (messages[lang] || messages['es']);
+
+        document.documentElement.setAttribute('lang', lang)
+
+        document.getElementById('subtitle').textContent = texts.subtitle;
+        document.getElementById('loading-text').textContent = texts.loading_text;
+      }
+
+      let currentLang = navigator.language;
+      window.addEventListener('focus', () => {
+        const newLang = navigator.language;
+        if (newLang !== currentLang) {
+          currentLang = newLang;
+          updateMessage();
+        }
+      });
+
+      updateMessage();
+    </script>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
