@@ -9,6 +9,8 @@
     "main"
   ],
   "permissions": [
+    "core:window:allow-set-size",
+    "core:window:allow-center",
     "window-state:default",
     "positioner:default"
   ]
