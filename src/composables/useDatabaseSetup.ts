@@ -1,4 +1,4 @@
-import type { DatabaseResult, MigrationResult } from '../types/tauri-types'
+import type { CommandResponse } from '../types/tauri-types'
 
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -54,7 +54,7 @@ export function useDatabaseSetup() {
     value.description = t(`pages.setup.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`)
   }
 
-  async function executeSetupSteps(all_steps_completed: boolean, path: string) {
+  async function executeSetupSteps(path: string): Promise<boolean> {
     for (const step of steps.value) {
       setStepStatus(step.id, 'loading')
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -62,7 +62,7 @@ export function useDatabaseSetup() {
       let success = false
 
       if (typeof step.invoke === 'string') {
-        const result = await invoke<DatabaseResult | MigrationResult>(step.invoke, { path })
+        const result = await invoke<CommandResponse>(step.invoke, { path })
         success = result.success
 
         if (!success) {
@@ -89,10 +89,11 @@ export function useDatabaseSetup() {
         setStepStatus(step.id, 'success')
       } else {
         setStepStatus(step.id, 'error')
-        all_steps_completed = false
-        break
+        return false
       }
     }
+
+    return true
   }
 
   async function databaseCreate(path: string | null) {
@@ -123,7 +124,7 @@ export function useDatabaseSetup() {
         status: 'idle',
         async invoke() {
           try {
-            await invoke<DatabaseResult>('set_database_path', { path })
+            await invoke<CommandResponse>('set_database_path', { path })
 
             return {
               success: true,
@@ -163,7 +164,7 @@ export function useDatabaseSetup() {
         title: t('pages.setup.steps.title.seed'),
         description: t('pages.setup.steps.description.idle.seed'),
         status: 'idle',
-        async invoke(): Promise<DatabaseResult> {
+        async invoke(): Promise<CommandResponse> {
           await load()
 
           await beginTransaction()
@@ -177,7 +178,7 @@ export function useDatabaseSetup() {
             await rollback()
             return {
               success: false,
-              path: null,
+              data: null,
               message_key: 'pages.setup.toast.error.seed',
               message_params: {}
             }
@@ -185,7 +186,7 @@ export function useDatabaseSetup() {
 
           return {
             success: true,
-            path: null,
+            data: null,
             message_key: 'pages.setup.toast.success.seed',
             message_params: {}
           }
@@ -213,9 +214,7 @@ export function useDatabaseSetup() {
       return
     }
 
-    let all_steps_completed = true
-
-    await executeSetupSteps(all_steps_completed, path)
+    const all_steps_completed = await executeSetupSteps(path)
 
     completeSetup(all_steps_completed)
   }
@@ -290,7 +289,7 @@ export function useDatabaseSetup() {
         status: 'idle',
         async invoke() {
           try {
-            await invoke<DatabaseResult>('set_database_path', { path })
+            await invoke<CommandResponse>('set_database_path', { path })
 
             return {
               success: true,
@@ -327,9 +326,7 @@ export function useDatabaseSetup() {
       }
     ]
 
-    let all_steps_completed = true
-
-    await executeSetupSteps(all_steps_completed, path)
+    const all_steps_completed = await executeSetupSteps(path)
 
     completeSetup(all_steps_completed)
   }
