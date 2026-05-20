@@ -43,59 +43,7 @@ export function useDatabaseSetup() {
     }
   })
 
-  function setStepStatus(step: string, status: StepStatus) {
-    currentStep.value = step
-
-    const value = steps.value.find(v => v.id === step)
-
-    if (!value) return
-
-    value.status = status
-    value.description = t(`pages.setup.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`)
-  }
-
-  async function executeSetupSteps(path: string): Promise<boolean> {
-    for (const step of steps.value) {
-      setStepStatus(step.id, 'loading')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      let success = false
-
-      if (typeof step.invoke === 'string') {
-        const result = await invoke<CommandResponse>(step.invoke, { path })
-        success = result.success
-
-        if (!success) {
-          toast.add({
-            title: t('components.toast.title.error'),
-            description: t(result?.message_key, result?.message_params),
-            color: 'error'
-          })
-        }
-      } else {
-        const result = await step.invoke()
-        success = result?.success ?? false
-
-        if (!success) {
-          toast.add({
-            title: t('components.toast.title.error'),
-            description: t(result?.message_key, result?.message_params),
-            color: 'error'
-          })
-        }
-      }
-
-      if (success) {
-        setStepStatus(step.id, 'success')
-      } else {
-        setStepStatus(step.id, 'error')
-        return false
-      }
-    }
-
-    return true
-  }
-
+  // Crear el archivo .sqlite.
   async function databaseCreate(path: string | null) {
     buttons.value = {
       select: {
@@ -219,54 +167,25 @@ export function useDatabaseSetup() {
     completeSetup(all_steps_completed)
   }
 
-  function completeSetup(all_steps_completed: boolean) {
-
-    if (all_steps_completed) {
-      toast.add({
-        title: t('components.toast.title.success'),
-        description: t('components.toast.description.success'),
-        color: 'success'
-      })
-
-      buttons.value = {
-        select: {
-          disabled: true,
-          loading: false,
-        },
-        create: {
-          disabled: true,
-          loading: false,
-        },
-        restart: {
-          disabled: true,
-          loading: false,
-          show: false,
-        }
-      }
-
-      router.push('/')
-    } else {
-      buttons.value = {
-        select: {
-          disabled: true,
-          loading: false,
-        },
-        create: {
-          disabled: true,
-          loading: false,
-        },
-        restart: {
-          disabled: false,
-          loading: false,
-          show: true,
-        }
-      }
-    }
-
-  }
-
   // Cargar una archivo .sqlite ya existente.
   async function databaseLoad(path: string | null) {
+    buttons.value = {
+      select: {
+        disabled: true,
+        loading: true,
+      },
+      create: {
+        disabled: true,
+        loading: false,
+      },
+      restart: {
+        disabled: true,
+        loading: false,
+        show: false,
+      }
+    }
+    currentStep.value = undefined
+
     if (!path) {
       toast.add({
         title: t('pages.setup.toast.title.canceled'),
@@ -329,6 +248,105 @@ export function useDatabaseSetup() {
     const all_steps_completed = await executeSetupSteps(path)
 
     completeSetup(all_steps_completed)
+  }
+
+  function setStepStatus(step: string, status: StepStatus) {
+    currentStep.value = step
+
+    const value = steps.value.find(v => v.id === step)
+
+    if (!value) return
+
+    value.status = status
+    value.description = t(`pages.setup.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`)
+  }
+
+  async function executeSetupSteps(path: string): Promise<boolean> {
+    for (const step of steps.value) {
+      setStepStatus(step.id, 'loading')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      let success = false
+
+      if (typeof step.invoke === 'string') {
+        const result = await invoke<CommandResponse>(step.invoke, { path })
+        success = result.success
+
+        if (!success) {
+          toast.add({
+            title: t('components.toast.title.error'),
+            description: t(result?.message_key, result?.message_params),
+            color: 'error'
+          })
+        }
+      } else {
+        const result = await step.invoke()
+        success = result?.success ?? false
+
+        if (!success) {
+          toast.add({
+            title: t('components.toast.title.error'),
+            description: t(result?.message_key, result?.message_params),
+            color: 'error'
+          })
+        }
+      }
+
+      if (success) {
+        setStepStatus(step.id, 'success')
+      } else {
+        setStepStatus(step.id, 'error')
+        return false
+      }
+    }
+
+    return true
+  }
+
+  function completeSetup(all_steps_completed: boolean) {
+
+    if (all_steps_completed) {
+      toast.add({
+        title: t('components.toast.title.success'),
+        description: t('components.toast.description.success'),
+        color: 'success'
+      })
+
+      buttons.value = {
+        select: {
+          disabled: true,
+          loading: false,
+        },
+        create: {
+          disabled: true,
+          loading: false,
+        },
+        restart: {
+          disabled: true,
+          loading: false,
+          show: false,
+        }
+      }
+
+      router.push('/')
+    } else {
+      buttons.value = {
+        select: {
+          disabled: true,
+          loading: false,
+        },
+        create: {
+          disabled: true,
+          loading: false,
+        },
+        restart: {
+          disabled: false,
+          loading: false,
+          show: true,
+        }
+      }
+    }
+
   }
 
   // Resetear el estado de la configuración
