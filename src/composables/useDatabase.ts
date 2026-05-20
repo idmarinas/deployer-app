@@ -1,6 +1,7 @@
 import Database from '@tauri-apps/plugin-sql'
 import { invoke } from '@tauri-apps/api/core'
 import { ref } from 'vue'
+import { CommandResponse } from '../types/tauri-types'
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 
@@ -38,14 +39,14 @@ async function ensureConnection(): Promise<string | null> {
 
   if (!loadPromise) {
     loadPromise = (async () => {
-      const url = await invoke<string | null>('get_database_url')
+      const response = await invoke<CommandResponse>('get_database_url')
 
-      if (!url) {
+      if (!response.success || !response.data) {
         loadPromise = null
         return
       }
 
-      db.value = await Database.load(url)
+      db.value = await Database.load(response.data)
     })()
   }
 
