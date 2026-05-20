@@ -1,38 +1,11 @@
-use crate::commands::store::get_database_path;
-use serde::Serialize;
+use crate::commands::store::get_database_path_internal;
+use crate::commands::CommandResponse;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
-use ts_rs::TS;
-
-#[derive(Serialize, TS)]
-#[ts(export, export_to = "tauri-types.ts")]
-pub struct MigrationResult {
-    pub success: bool,
-    pub message_key: String,
-    pub message_params: HashMap<String, String>,
-}
-
-impl MigrationResult {
-    fn ok(key: &str) -> Self {
-        Self {
-            success: true,
-            message_key: key.to_string(),
-            message_params: HashMap::new(),
-        }
-    }
-
-    fn err(key: &str, params: HashMap<String, String>) -> Self {
-        Self {
-            success: false,
-            message_key: key.to_string(),
-            message_params: params,
-        }
-    }
-}
 
 /// Helper para construir un HashMap de parámetros de forma concisa.
 macro_rules! params {
@@ -48,19 +21,19 @@ macro_rules! params {
 /// Los archivos .sql se embeben en el binario en tiempo de compilación.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn run_migrations(app: AppHandle) -> MigrationResult {
+pub async fn run_migrations(app: AppHandle) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     // Obtener la ruta del store
-    let path = match get_database_path(app) {
+    let path = match get_database_path_internal(app) {
         Ok(Some(p)) => p,
         Ok(None) => {
             sleep_until(deadline).await;
-            return MigrationResult::err("migrations.errors.no_database_path", HashMap::new());
+            return CommandResponse::err("migrations.errors.no_database_path", HashMap::new());
         }
         Err(e) => {
             sleep_until(deadline).await;
-            return MigrationResult::err("migrations.errors.store_error", params!("reason" => e));
+            return CommandResponse::err("migrations.errors.store_error", params!("reason" => e));
         }
     };
 
@@ -70,7 +43,7 @@ pub async fn run_migrations(app: AppHandle) -> MigrationResult {
         Ok(o) => o,
         Err(e) => {
             sleep_until(deadline).await;
-            return MigrationResult::err(
+            return CommandResponse::err(
                 "migrations.errors.invalid_url",
                 params!("path" => path, "reason" => e.to_string()),
             );
@@ -81,7 +54,7 @@ pub async fn run_migrations(app: AppHandle) -> MigrationResult {
         Ok(p) => p,
         Err(e) => {
             sleep_until(deadline).await;
-            return MigrationResult::err(
+            return CommandResponse::err(
                 "migrations.errors.connection_failed",
                 params!("path" => path, "reason" => e.to_string()),
             );
@@ -95,8 +68,8 @@ pub async fn run_migrations(app: AppHandle) -> MigrationResult {
     sleep_until(deadline).await;
 
     match result {
-        Ok(_) => MigrationResult::ok("migrations.success.completed"),
-        Err(e) => MigrationResult::err(
+        Ok(_) => CommandResponse::ok_empty("migrations.success.completed"),
+        Err(e) => CommandResponse::err(
             "migrations.errors.migration_failed",
             params!("reason" => e.to_string()),
         ),
