@@ -41,7 +41,7 @@ onMounted(() => {
 
 <template>
   <Suspense>
-    <UApp :locale="locales[locale as keyof typeof locales]">
+    <UApp :locale="locales[locale as keyof typeof locales]" :toaster="{position: 'top-center'}">
       <RouterView />
     </UApp>
   </Suspense>
