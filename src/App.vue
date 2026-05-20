@@ -8,6 +8,7 @@ import * as locales from '@nuxt/ui/locale'
 
 // Tauri related
 import { invoke } from '@tauri-apps/api/core'
+import { CommandResponse } from './types/tauri-types'
 
 const colorMode = useColorMode()
 const router = useRouter()
@@ -25,10 +26,10 @@ useHead({
 })
 
 onBeforeMount(async () => {
-  const exists = await invoke<boolean>('check_database_exists')
+  const exists = await invoke<CommandResponse<boolean>>('check_database_exists')
 
-  if (exists) {
-    router.push('/home')
+  if (exists.success && exists.data) {
+    router.push('/')
   } else {
     router.push('/setup')
   }
