@@ -69,7 +69,7 @@ pub async fn validate_sqlite_database(app: AppHandle) -> CommandResponse<()> {
     }
 
     // 3. Validar tablas requeridas
-    let required_tables = ["settings"];
+    let required_tables = ["deployer_app_settings"];
 
     for table in required_tables {
         let exists: Result<Option<String>, _> =
