@@ -1,5 +1,7 @@
 import './assets/css/main.css'
 
+
+import type { CommandResponse } from './types/tauri-types'
 import type { RouteRecordRaw } from 'vue-router'
 
 import { createApp } from 'vue'
@@ -9,6 +11,9 @@ import { setupLayouts } from 'virtual:generated-layouts'
 import { createHead } from '@unhead/vue/client'
 import { createI18n } from 'vue-i18n'
 import ui from '@nuxt/ui/vue-plugin'
+
+// Tauri related
+import { invoke } from '@tauri-apps/api/core'
 
 import { loadLocaleMessages, loadDatetimeFormat, loadNumberFormat, availableLocales } from './locales/_loader'
 
@@ -44,12 +49,35 @@ const i18n = createI18n({
     },
 })
 
-createApp(App)
+async function bootstrap() {
+  // 1. Comprobaciones ANTES de montar Vue
+  const exists = await invoke<CommandResponse<boolean>>('check_database_exists')
+
+  if (exists.success && exists.data) {
+    const hasPending = await invoke<CommandResponse<boolean>>('has_pending_migrations')
+
+    if (hasPending.success && hasPending.data) {
+      await router.push('/migrations')
+    } else {
+      await router.push('/')
+    }
+  } else {
+    await router.push('/setup')
+  }
+
+  // 2. Esperar a que el router esté listo
+  await router.isReady()
+
+  // 3. Ahora sí montas Vue
+  createApp(App)
     .use(createHead())
     .use(i18n)
     .use(router)
     .use(ui)
     .mount("#app")
+}
+
+bootstrap()
 
 // This will update routes at runtime without reloading the page
 if (import.meta.hot) {
