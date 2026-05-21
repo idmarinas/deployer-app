@@ -107,6 +107,7 @@ pub async fn has_pending_migrations(app: AppHandle) -> CommandResponse<bool> {
             .any(|applied| applied.version == local_migration.version)
     });
 
+    let _ = conn.close().await;
     pool.close().await;
     sleep_until(deadline).await;
 
