@@ -4,8 +4,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import ui from '@nuxt/ui/vite'
 import vueLayouts from 'vite-plugin-vue-layouts'
 import vueRouter from 'vue-router/vite'
+import { resolve } from 'path'
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
@@ -68,6 +68,12 @@ export default defineConfig(async () => ({
     }),
     vueDevTools(),
   ],
+
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
