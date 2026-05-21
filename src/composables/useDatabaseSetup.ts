@@ -6,9 +6,13 @@ import { useI18n } from 'vue-i18n'
 import { StepperItem } from '@nuxt/ui'
 import { useColorMode } from '@vueuse/core'
 
+// Composables
+import { useDatabase } from './useDatabase'
+import { useQuery } from './useQuery'
+
+
 // Tauri related imports
 import { invoke } from '@tauri-apps/api/core'
-import { useDatabase } from './useDatabase'
 
 type StepStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -23,7 +27,7 @@ export function useDatabaseSetup() {
   const router = useRouter()
   const { locale, t } = useI18n()
   const colorMode = useColorMode()
-  const { load, execute, beginTransaction, commit, rollback } = useDatabase()
+  const { load, beginTransaction, commit, rollback } = useDatabase()
 
   const currentStep = ref<string | undefined>(undefined)
   const steps = ref<StepItem[]>([])
@@ -113,12 +117,13 @@ export function useDatabaseSetup() {
         description: t('pages.setup.steps.description.idle.seed'),
         status: 'idle',
         async invoke(): Promise<CommandResponse> {
+          const { addAppSetting } = useQuery()
           await load()
 
           await beginTransaction()
 
-          await execute('INSERT INTO settings (key, value) VALUES (?, ?)', ['app_locale', locale.value])
-          await execute('INSERT INTO settings (key, value) VALUES (?, ?)', ['app_theme', colorMode.value])
+          await addAppSetting('app_locale', locale.value)
+          await addAppSetting('app_theme', colorMode.value)
 
           const commitResult = await commit()
 
