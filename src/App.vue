@@ -5,6 +5,7 @@ import { useColorMode } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import * as locales from '@nuxt/ui/locale'
 
+import { registerExternalLinks } from '@/utils/externalLinks'
 
 const colorMode = useColorMode()
 const { locale } = useI18n()
@@ -21,6 +22,7 @@ useHead({
 })
 
 onMounted(() => {
+  registerExternalLinks()
   document.getElementById('style-splashscreen')?.remove()
 })
 </script>
