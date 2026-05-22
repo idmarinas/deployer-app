@@ -27,7 +27,7 @@ export function useDatabaseSetup() {
   const router = useRouter()
   const { locale, t } = useI18n()
   const colorMode = useColorMode()
-  const { load, beginTransaction, commit, rollback } = useDatabase()
+  const { load, transaction } = useDatabase()
 
   const currentStep = ref<string | undefined>(undefined)
   const steps = ref<StepItem[]>([])
@@ -117,30 +117,17 @@ export function useDatabaseSetup() {
         description: t('pages.setup.steps.description.idle.seed'),
         status: 'idle',
         async invoke(): Promise<CommandResponse> {
-          const { saveAppSettings } = useQuery()
+          const { saveAppSettingsOrThrow } = useQuery()
           await load()
 
-          await beginTransaction()
-
-          const saveResult = await saveAppSettings({
-            locale: locale.value,
-            theme_color: colorMode.value
-          })
-
-          if (saveResult.error) {
-            await rollback()
-            return {
-              success: false,
-              data: null,
-              message_key: 'pages.setup.toast.error.seed',
-              message_params: {}
-            }
-          }
-
-          const commitResult = await commit()
-
-          if (commitResult.error) {
-            await rollback()
+          try {
+            await transaction(async () => {
+              await saveAppSettingsOrThrow({
+                locale: locale.value,
+                theme_color: colorMode.value
+              })
+            })
+          } catch {
             return {
               success: false,
               data: null,

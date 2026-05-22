@@ -125,6 +125,32 @@ export function useDatabase() {
   }
 
   /**
+   * Ejecuta un callback dentro de una transacción.
+   * Si el callback lanza una excepción, hace ROLLBACK automático.
+   * Si todo va bien, hace COMMIT.
+   * Similar al patrón Unit of Work de Doctrine ORM.
+   *
+   * IMPORTANTE: Dentro del callback, usar siempre las variantes OrThrow
+   * de los métodos de useQuery (ej. saveAppSettingsOrThrow) para que los
+   * errores se propaguen correctamente y el ROLLBACK se ejecute.
+   */
+  async function transaction<T>(callback: () => Promise<T>): Promise<T> {
+    const connError = await ensureConnection()
+    if (connError) throw new Error(connError)
+
+    await db.value!.execute('BEGIN')
+
+    try {
+      const result = await callback()
+      await db.value!.execute('COMMIT')
+      return result
+    } catch (e) {
+      await db.value!.execute('ROLLBACK')
+      throw e
+    }
+  }
+
+  /**
    * Inicia una transacción explícita.
    */
   async function beginTransaction(): Promise<TransactionResult> {
@@ -178,6 +204,7 @@ export function useDatabase() {
     select,
     first,
     execute,
+    transaction,
     beginTransaction,
     commit,
     rollback
