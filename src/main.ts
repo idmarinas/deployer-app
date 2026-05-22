@@ -81,5 +81,5 @@ bootstrap()
 
 // This will update routes at runtime without reloading the page
 if (import.meta.hot) {
-    handleHotUpdate(router)
+  handleHotUpdate(router)
 }
