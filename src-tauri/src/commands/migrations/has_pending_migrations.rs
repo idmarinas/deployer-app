@@ -75,7 +75,7 @@ pub async fn has_pending_migrations(app: AppHandle) -> CommandResponse<bool> {
     };
 
     // Asegurarse de que la tabla de control '_sqlx_migrations' existe en la DB
-    if let Err(e) = conn.ensure_migrations_table().await {
+    if let Err(e) = conn.ensure_migrations_table("_sqlx_migrations").await {
         pool.close().await;
         sleep_until(deadline).await;
         return CommandResponse::err(
@@ -85,7 +85,7 @@ pub async fn has_pending_migrations(app: AppHandle) -> CommandResponse<bool> {
     }
 
     // Obtener la lista de las migraciones ya aplicadas en la base de datos
-    let applied_migrations = match conn.list_applied_migrations().await {
+    let applied_migrations = match conn.list_applied_migrations("_sqlx_migrations").await {
         Ok(am) => am,
         Err(e) => {
             pool.close().await;
