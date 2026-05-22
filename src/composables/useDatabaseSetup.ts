@@ -122,8 +122,8 @@ export function useDatabaseSetup() {
 
           await beginTransaction()
 
-          await addAppSetting('app_locale', locale.value)
-          await addAppSetting('app_theme', colorMode.value)
+          await addAppSetting('locale', locale.value)
+          await addAppSetting('theme_color', colorMode.value)
 
           const commitResult = await commit()
 
