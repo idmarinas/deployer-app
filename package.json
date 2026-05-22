@@ -1,0 +1,37 @@
+{
+  "name": "deployer-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.8.0",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "~2.7.1",
+    "@tauri-apps/plugin-opener": "^2.5.4",
+    "@tauri-apps/plugin-positioner": "~2.3.1",
+    "@tauri-apps/plugin-sql": "~2.4.0",
+    "@tauri-apps/plugin-store": "~2.4.3",
+    "@tauri-apps/plugin-window-state": "~2.4.1",
+    "@unhead/vue": "^3.1.0",
+    "vite-plugin-vue-layouts": "^0.11.0",
+    "vue": "^3.5.34",
+    "vue-i18n": "^11.4.4",
+    "vue-router": "^5.0.7"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/node": "^25.9.1",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.14",
+    "vite-plugin-vue-devtools": "^8.1.2",
+    "vue-tsc": "^3.3.1"
+  }
+}
