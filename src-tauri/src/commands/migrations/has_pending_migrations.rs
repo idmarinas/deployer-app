@@ -98,7 +98,7 @@ pub async fn has_pending_migrations(app: AppHandle) -> CommandResponse<bool> {
     };
 
     // Obtener las migraciones definidas en el código (las locales en tu carpeta)
-    let migrator = sqlx::migrate!("src/migrations");
+    let migrator = sqlx::migrate!("./migrations");
 
     // Comparar: si alguna migración local no está en la lista de aplicadas, hay pendientes
     let has_pending = migrator.migrations.iter().any(|local_migration| {
