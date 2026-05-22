@@ -30,7 +30,9 @@ onMounted(() => {
 <template>
   <Suspense>
     <UApp :locale="locales[locale as keyof typeof locales]" :toaster="{ position: 'top-center' }">
-      <RouterView />
+      <UTheme :props="{ navigationMenu: { orientation: 'vertical', tooltip: true, popover: true } }">
+        <RouterView />
+      </UTheme>
     </UApp>
   </Suspense>
 </template>
