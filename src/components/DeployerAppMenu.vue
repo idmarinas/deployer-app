@@ -28,16 +28,16 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: t('components.deployerAppMenu.appearance.label'),
   icon: 'i-tabler-sun-moon',
   children: [{
-    label: t('components.deployerAppMenu.appearance.system'),
-    icon: appConfig.ui.icons.system,
-    type: 'checkbox',
-    checked: colorMode.value === 'system' as 'auto',
-    onSelect(e: Event) {
-      e.preventDefault()
+    //   label: t('components.deployerAppMenu.appearance.system'),
+    //   icon: appConfig.ui.icons.system,
+    //   type: 'checkbox',
+    //   checked: colorMode.value === 'system' as 'auto',
+    //   onSelect(e: Event) {
+    //     e.preventDefault()
 
-      changeThemeColor('system');
-    }
-  }, {
+    //     changeThemeColor('system');
+    //   }
+    // }, {
     label: t('components.deployerAppMenu.appearance.light'),
     icon: appConfig.ui.icons.light,
     type: 'checkbox',
