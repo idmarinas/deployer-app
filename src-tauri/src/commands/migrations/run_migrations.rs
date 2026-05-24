@@ -62,7 +62,7 @@ pub async fn run_migrations(app: AppHandle) -> CommandResponse<()> {
     };
 
     // Los archivos .sql se embeben en el binario en tiempo de compilación
-    let result = sqlx::migrate!("./migrations").run(&pool).await;
+    let result = sqlx::migrate!().run(&pool).await;
 
     pool.close().await;
     sleep_until(deadline).await;
