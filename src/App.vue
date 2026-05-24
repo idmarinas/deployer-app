@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted } from 'vue'
+import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useColorMode } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
@@ -7,10 +7,12 @@ import * as locales from '@nuxt/ui/locale'
 
 import { registerExternalLinks } from '@/utils/externalLinks'
 import { useDatabase } from '@/composables/useDatabase'
+import { useQuery } from '@/composables/useQuery'
 
 const colorMode = useColorMode()
 const { locale } = useI18n()
 const { load } = useDatabase()
+const { saveAppSetting } = useQuery()
 
 const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
 
@@ -30,6 +32,10 @@ onBeforeMount(async () => {
 onMounted(() => {
   registerExternalLinks()
   document.getElementById('style-splashscreen')?.remove()
+})
+
+watch(colorMode, async (newColor) => {
+  await saveAppSetting('theme_color', newColor)
 })
 </script>
 
