@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 import { useI18n } from 'vue-i18n'
-import { useThemeColor } from '@/composables/useThemeColor'
+import { useColorMode } from '@vueuse/core'
 
 defineProps<{
   collapsed?: boolean
@@ -11,7 +11,7 @@ defineProps<{
 
 const { t } = useI18n()
 const appConfig = useAppConfig()
-const { colorMode, changeThemeColor } = useThemeColor()
+const colorMode = useColorMode()
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
@@ -28,16 +28,6 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: t('components.deployerAppMenu.appearance.label'),
   icon: 'i-tabler-sun-moon',
   children: [{
-    //   label: t('components.deployerAppMenu.appearance.system'),
-    //   icon: appConfig.ui.icons.system,
-    //   type: 'checkbox',
-    //   checked: colorMode.value === 'system' as 'auto',
-    //   onSelect(e: Event) {
-    //     e.preventDefault()
-
-    //     changeThemeColor('system');
-    //   }
-    // }, {
     label: t('components.deployerAppMenu.appearance.light'),
     icon: appConfig.ui.icons.light,
     type: 'checkbox',
@@ -45,7 +35,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     onSelect(e: Event) {
       e.preventDefault()
 
-      changeThemeColor('light')
+      colorMode.value = 'light'
     }
   }, {
     label: t('components.deployerAppMenu.appearance.dark'),
@@ -55,7 +45,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     onSelect(e: Event) {
       e.preventDefault()
 
-      changeThemeColor('dark')
+      colorMode.value = 'dark'
     }
   }]
 }]
