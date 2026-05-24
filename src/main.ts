@@ -62,6 +62,7 @@ async function bootstrap() {
       await router.push('/')
     }
   } else {
+    await invoke<CommandResponse>('set_database_path', { path: '' })
     await router.push('/setup')
   }
 
