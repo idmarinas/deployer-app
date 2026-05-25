@@ -332,7 +332,7 @@ export function useDatabaseSetup() {
         }
       }
 
-      router.push('/')
+      router.push('/dashboard')
     } else {
       buttons.value = {
         select: {
