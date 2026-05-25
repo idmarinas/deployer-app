@@ -23,14 +23,15 @@
     "noFallthroughCasesInSwitch": true,
     /* Paths */
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": [
+        "./src/*"
+      ],
       "#build/ui/*": [
         "./node_modules/.nuxt-ui/ui/*"
       ]
     },
     "types": [
-      "node",
-      "vite-plugin-vue-layouts/client"
+      "node"
     ]
   },
   "vueCompilerOptions": {
