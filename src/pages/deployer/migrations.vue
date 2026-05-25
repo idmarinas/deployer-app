@@ -7,16 +7,10 @@ import { computed } from 'vue'
 
 // Composables
 import { useI18n } from 'vue-i18n'
-import { useMigrations } from '../composables/useMigrations'
+import { useMigrations } from '../../composables/useMigrations'
 
 const { t } = useI18n()
 const { buttons, steps, currentStep, runMigrations, resetMigration } = useMigrations()
-
-definePage({
-  meta: {
-    layout: 'center-center'
-  }
-})
 
 const links = computed<ButtonProps[]>(() => {
   const items: ButtonProps[] = [
@@ -51,9 +45,6 @@ const links = computed<ButtonProps[]>(() => {
 </script>
 
 <template>
-  <UColorModeSelect class="absolute top-8 left-8 z-10" />
-  <LocaleChange class="absolute top-8 right-8 z-10" />
-
   <UPageHero :links="links" :headline="t('pages.migrations.headline')" :title="t('pages.migrations.title')"
     :description="t('pages.migrations.description')">
     <UStepper :items="steps" value-key="id" :default-value="currentStep" disabled />

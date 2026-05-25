@@ -3,26 +3,20 @@ import { useI18n } from 'vue-i18n'
 import { useDashboardToolbar } from '@/composables/useNavigationMenu'
 
 const { t } = useI18n()
-const { tasksToolbar } = useDashboardToolbar()
-
-definePage({
-  meta: {
-    layout: 'default'
-  }
-})
+const { deploymentsToolbar } = useDashboardToolbar()
 </script>
 
 <template>
-  <UDashboardPanel id="tasks">
+  <UDashboardPanel id="deployments">
     <template #header>
-      <UDashboardNavbar icon="i-tabler-list-check" :title="t('pages.tasks.title')">
+      <UDashboardNavbar icon="i-tabler-send" :title="t('pages.deployments.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
       </UDashboardNavbar>
 
       <UDashboardToolbar>
-        <UNavigationMenu :items="tasksToolbar" highlight orientation="horizontal" class="-mx-1 flex-1" />
+        <UNavigationMenu :items="deploymentsToolbar" highlight orientation="horizontal" class="-mx-1 flex-1" />
       </UDashboardToolbar>
     </template>
 

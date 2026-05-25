@@ -4,12 +4,6 @@ import { useDashboardToolbar } from '@/composables/useNavigationMenu'
 
 const { t } = useI18n()
 const { hostsToolbar } = useDashboardToolbar()
-
-definePage({
-  meta: {
-    layout: 'default'
-  }
-})
 </script>
 
 <template>

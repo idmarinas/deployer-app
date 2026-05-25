@@ -5,19 +5,13 @@ import type { ButtonProps } from '@nuxt/ui'
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useDatabaseSetup } from '../composables/useDatabaseSetup'
+import { useDatabaseSetup } from '../../composables/useDatabaseSetup'
 
 // Tauri related
 import { open, save } from '@tauri-apps/plugin-dialog'
 
 const { t } = useI18n()
 const { steps, currentStep, buttons, databaseCreate, databaseLoad, resetSetup } = useDatabaseSetup()
-
-definePage({
-  meta: {
-    layout: 'center-center'
-  }
-})
 
 const links = computed<ButtonProps[]>(() => {
   const items: ButtonProps[] = [
@@ -75,7 +69,7 @@ const links = computed<ButtonProps[]>(() => {
       icon: 'i-tabler-refresh',
       disabled: buttons.value.restart.disabled,
       loading: buttons.value.restart.loading,
-      onClick: () => resetSetup() 
+      onClick: () => resetSetup()
     })
   }
 
@@ -86,9 +80,6 @@ const links = computed<ButtonProps[]>(() => {
 </script>
 
 <template>
-  <UColorModeSelect class="absolute top-8 left-8 z-10" />
-  <LocaleChange class="absolute top-8 right-8 z-10" />
-
   <UPageHero :links="links" :headline="t('pages.setup.headline')" :title="t('pages.setup.title')" :description="t('pages.setup.description')">
     <UStepper :items="steps" value-key="id" :default-value="currentStep" disabled />
   </UPageHero>
