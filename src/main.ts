@@ -55,13 +55,13 @@ async function bootstrap() {
     const hasPending = await invoke<CommandResponse<boolean>>('has_pending_migrations')
 
     if (hasPending.success && hasPending.data) {
-      await router.push('/migrations')
+      await router.push('/deployer/migrations')
     } else {
-      await router.push('/')
+      await router.push('/dashboard')
     }
   } else {
     await invoke<CommandResponse>('set_database_path', { path: '' })
-    await router.push('/setup')
+    await router.push('/deployer')
   }
 
   // 2. Esperar a que el router esté listo
