@@ -8,11 +8,13 @@ import * as locales from '@nuxt/ui/locale'
 import { registerExternalLinks } from '@/utils/externalLinks'
 import { useDatabase } from '@/composables/useDatabase'
 import { useQuery } from '@/composables/useQuery'
+import { useDeployerShortcuts } from '@/composables/useDeployer'
 
 const colorMode = useColorMode()
 const { locale } = useI18n()
 const { load } = useDatabase()
 const { saveAppSetting } = useQuery()
+const { shortcuts } = useDeployerShortcuts()
 
 const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
 
@@ -37,6 +39,9 @@ onMounted(() => {
 watch(colorMode, async (newColor) => {
   await saveAppSetting('theme_color', newColor)
 })
+
+// Definir shortcuts globales
+defineShortcuts(shortcuts)
 </script>
 
 <template>
