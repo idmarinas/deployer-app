@@ -5,11 +5,9 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <UDashboardPanel id="error">
-    <UError icon="i-tabler-file-x" :clear="{to: '/dashboard'}" :error="{
-      statusCode: 404,
-      statusMessage: t('components.error.statusMessage'),
-      message: t('components.error.message')
-    }" />
-  </UDashboardPanel>
+  <UError icon="i-tabler-file-x" :clear="{to: '/dashboard'}" :error="{
+    statusCode: 404,
+    statusMessage: t('components.error.statusMessage'),
+    message: t('components.error.message')
+  }" />
 </template>
