@@ -13,7 +13,7 @@ import { useDeployerShortcuts } from '@/composables/useDeployer'
 const colorMode = useColorMode()
 const { locale } = useI18n()
 const { load } = useDatabase()
-const { saveAppSetting } = useQuery()
+const { saveDeployerSetting } = useQuery()
 const { shortcuts } = useDeployerShortcuts()
 
 const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
@@ -37,7 +37,7 @@ onMounted(() => {
 })
 
 watch(colorMode, async (newColor) => {
-  await saveAppSetting('theme_color', newColor)
+  await saveDeployerSetting('theme_color', newColor)
 })
 
 // Definir shortcuts globales
