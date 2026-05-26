@@ -11,6 +11,7 @@ export function useSideberMenu() {
       label: t('components.sidebar.home'),
       icon: 'i-tabler-home',
       to: '/dashboard',
+      exact: true
     },
     // Proyectos
     {
