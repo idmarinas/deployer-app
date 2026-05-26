@@ -4,9 +4,9 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
 
+use super::path_to_sqlite_url;
 use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
-use super::path_to_sqlite_url;
 
 /// Valida la integridad y estructura de la base de datos SQLite en la ruta indicada.
 /// Comprueba la integridad física, las tablas requeridas y los datos iniciales.
@@ -69,7 +69,7 @@ pub async fn validate_sqlite_database(app: AppHandle) -> CommandResponse<()> {
     }
 
     // 3. Validar tablas requeridas
-    let required_tables = ["app_settings"];
+    let required_tables = ["deployer_settings"];
 
     for table in required_tables {
         let exists: Result<Option<String>, _> =

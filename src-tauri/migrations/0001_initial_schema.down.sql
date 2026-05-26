@@ -28,4 +28,4 @@ DROP TABLE IF EXISTS hosts;
 
 DROP TABLE IF EXISTS passkeys;
 
-DROP TABLE IF EXISTS app_settings;
+DROP TABLE IF EXISTS deployer_settings;

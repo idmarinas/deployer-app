@@ -97,13 +97,13 @@ Cada método de escritura debe tener **dos variantes**:
 La lógica real vive en `OrThrow`. La variante segura es un wrapper:
 
 ```ts
-async function saveAppSettingsOrThrow(settings: Record<string, string>): Promise<ExecuteResult> {
+async function saveDeployerSettingsOrThrow(settings: Record<string, string>): Promise<ExecuteResult> {
   // lógica real — lanza si falla
 }
 
-async function saveAppSettings(settings: Record<string, string>): Promise<ExecuteResult> {
+async function saveDeployerSettings(settings: Record<string, string>): Promise<ExecuteResult> {
   try {
-    return await saveAppSettingsOrThrow(settings)
+    return await saveDeployerSettingsOrThrow(settings)
   } catch (e) {
     console.error('Error saving app settings:', e)
     return { rowsAffected: 0, lastInsertId: 0, error: String(e) }

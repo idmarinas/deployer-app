@@ -3,11 +3,11 @@
 -- ============================================================================
 
 -- ============================================================================
--- APP SETTINGS
+-- DEPLOYER SETTINGS
 -- ============================================================================
 
-CREATE TABLE app_settings (
-    key TEXT CONSTRAINT app_settings_pk PRIMARY KEY,
+CREATE TABLE deployer_settings (
+    key TEXT CONSTRAINT deployer_settings_pk PRIMARY KEY,
     value TEXT NOT NULL
 );
 

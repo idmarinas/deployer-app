@@ -117,12 +117,12 @@ export function useDatabaseSetup() {
         description: t('pages.setup.steps.description.idle.seed'),
         status: 'idle',
         async invoke(): Promise<CommandResponse> {
-          const { saveAppSettingsOrThrow } = useQuery()
+          const { saveDeployerSettingsOrThrow } = useQuery()
           await load()
 
           try {
             await transaction(async () => {
-              await saveAppSettingsOrThrow({
+              await saveDeployerSettingsOrThrow({
                 locale: locale.value,
                 theme_color: colorMode.value
               })

@@ -131,7 +131,7 @@ export function useDatabase() {
    * Similar al patrón Unit of Work de Doctrine ORM.
    *
    * IMPORTANTE: Dentro del callback, usar siempre las variantes OrThrow
-   * de los métodos de useQuery (ej. saveAppSettingsOrThrow) para que los
+   * de los métodos de useQuery (ej. saveDeployerSettingsOrThrow) para que los
    * errores se propaguen correctamente y el ROLLBACK se ejecute.
    */
   async function transaction<T>(callback: () => Promise<T>): Promise<T> {

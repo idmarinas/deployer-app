@@ -1,6 +1,6 @@
 export const DB_TABLES = {
-  // App
-  APP_SETTINGS: 'app_settings',
+  // Deployer
+  DEPLOYER_SETTINGS: 'deployer_settings',
 
   // Hosts & Credentials
   PASSKEYS: 'passkeys',
