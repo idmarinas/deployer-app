@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ts_rs::TS;
 
 #[derive(Serialize, TS)]
-#[ts(export, export_to = "tauri-types.ts")]
+#[ts(export, export_to = "tauri-types.d.ts")]
 pub struct CommandResponse<T = ()> {
     pub success: bool,
     pub data: Option<T>,
