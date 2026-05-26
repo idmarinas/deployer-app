@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { useDashboardToolbar } from '@/composables/useNavigationMenu'
+import { useRoute } from 'vue-router';
 
 const { t } = useI18n()
-const { hostsToolbar } = useDashboardToolbar()
+const route = useRoute()
 </script>
 
 <template>
@@ -13,11 +13,17 @@ const { hostsToolbar } = useDashboardToolbar()
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-      </UDashboardNavbar>
 
-      <UDashboardToolbar>
-        <UNavigationMenu :items="hostsToolbar" highlight orientation="horizontal" class="-mx-1 flex-1" />
-      </UDashboardToolbar>
+      <template #right>
+        <UButton
+          to="/dashboard/hosts/create"
+          icon="i-tabler-plus"
+          variant="outline"
+          :disabled="route.path.endsWith('/create')"
+          :label="t('components.navigation.create.host.label')"
+        />
+      </template>
+      </UDashboardNavbar>
     </template>
 
     <template #body>
