@@ -42,9 +42,26 @@ function mapSQLiteTypeToTS(sqlType: string): string {
     return "any";
 }
 
+// Lee todas las migraciones UP en orden
+function getAllMigrationsSQL(migrationsDir: string): string {
+    const files = fs.readdirSync(migrationsDir)
+        .filter(f => f.endsWith(".up.sql"))
+        .sort(); // Orden alfabético garantiza orden de versión
+
+    let allSQL = "";
+
+    for (const file of files) {
+        const filePath = path.join(migrationsDir, file);
+        const content = fs.readFileSync(filePath, "utf-8");
+        console.log(`📄 Leyendo migración: ${file}`);
+        allSQL += "\n" + content;
+    }
+
+    return allSQL;
+}
+
 // Parsea el SQL para obtener información más precisa de NOT NULL
-function parseSQLSchema(sqlFile: string): Map<string, Map<string, { type: string; notNull: boolean }>> {
-    const sqlContent = fs.readFileSync(sqlFile, "utf-8");
+function parseSQLSchema(sqlContent: string): Map<string, Map<string, { type: string; notNull: boolean }>> {
     const schema = new Map();
 
     // Expresión regular para encontrar CREATE TABLE
@@ -56,7 +73,7 @@ function parseSQLSchema(sqlFile: string): Map<string, Map<string, { type: string
         const tableBody = tableMatch[2];
         const columns = new Map();
 
-        // Dividir por comas, pero cuidado con las que están dentro de paréntesis
+        // Dividir por líneas
         const lines = tableBody.split("\n");
 
         for (const line of lines) {
@@ -86,11 +103,15 @@ function parseSQLSchema(sqlFile: string): Map<string, Map<string, { type: string
     return schema;
 }
 
-function generateTypes(dbPath: string, sqlFile: string, outputFile: string) {
+function generateTypes(dbPath: string, migrationsDir: string, outputFile: string) {
     const db = new Database(dbPath, { readonly: true });
 
-    // Parsear el SQL para obtener información precisa
-    const sqlSchema = parseSQLSchema(sqlFile);
+    // Leer todas las migraciones en orden
+    console.log(`📂 Leyendo migraciones desde: ${migrationsDir}`);
+    const allSQL = getAllMigrationsSQL(migrationsDir);
+
+    // Parsear el SQL combinado para obtener información precisa
+    const sqlSchema = parseSQLSchema(allSQL);
 
     const tables = db
         .query<{ name: string }>(
@@ -99,7 +120,8 @@ function generateTypes(dbPath: string, sqlFile: string, outputFile: string) {
         .all();
 
     let output = "// Auto-generado desde la BD SQLite\n";
-    output += "// ⚠️ NO EDITAR MANUALMENTE - Regenerar con: bun run generate-types.ts\n\n";
+    output += "// ⚠️ NO EDITAR MANUALMENTE - Regenerar con: bun run generate-types.ts\n";
+    output += `// Generado desde migraciones en: ${migrationsDir}\n\n`;
 
     for (const { name: tableName } of tables) {
         const columns = db
@@ -148,11 +170,17 @@ function generateTypes(dbPath: string, sqlFile: string, outputFile: string) {
 
     fs.writeFileSync(outputFile, output, "utf-8");
     console.log(`✅ Tipos generados en ${outputFile}`);
+    console.log(`📊 Total de tablas: ${tables.length}`);
 }
 
 // Ejecutar
-const sqlFile = "./src-tauri/migrations/0001_initial_schema.up.sql";
+const migrationsDir = "./src-tauri/migrations";
 const dbPath = "./deployer-app.sqlite";
 const outputFile = "./src/types/db-types.d.ts";
 
-generateTypes(dbPath, sqlFile, outputFile);
+if (!fs.existsSync(migrationsDir)) {
+    console.error(`❌ Directorio de migraciones no encontrado: ${migrationsDir}`);
+    process.exit(1);
+}
+
+generateTypes(dbPath, migrationsDir, outputFile);
