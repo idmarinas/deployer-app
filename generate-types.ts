@@ -17,13 +17,27 @@ function toCamelCase(str: string) {
 
 // Mapeo SQLite → TypeScript
 function mapSQLiteTypeToTS(sqlType: string): string {
-    const type = sqlType.toUpperCase();
+    const type = sqlType.toUpperCase().trim();
+
+    // BOOLEAN → boolean (no Date | string)
+    if (type.includes("BOOLEAN")) return "boolean";
+
+    // INTEGERS
     if (type.includes("INT")) return "number";
+
+    // TIMESTAMPS → Date (no Date | string)
+    if (type.includes("TIMESTAMP") || type.includes("DATE")) return "Date";
+
+    // TEXTO
     if (type.includes("CHAR") || type.includes("CLOB") || type.includes("TEXT")) return "string";
+
+    // BLOB
     if (type.includes("BLOB")) return "Buffer";
+
+    // NÚMEROS DECIMALES
     if (type.includes("REAL") || type.includes("FLOA") || type.includes("DOUB")) return "number";
     if (type.includes("NUMERIC") || type.includes("DECIMAL")) return "number";
-    if (type.includes("TIMESTAMP") || type.includes("DATE")) return "Date | string";
+
     return "any";
 }
 
@@ -32,11 +46,12 @@ function generateTypes(dbPath: string, outputFile: string) {
 
     const tables = db
         .query<{ name: string }>(
-            `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';`
+            `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name;`
         )
         .all();
 
-    let output = "// Auto-generado desde la BD SQLite\n\n";
+    let output = "// Auto-generado desde la BD SQLite\n";
+    output += "// ⚠️ NO EDITAR MANUALMENTE - Regenerar con: bun run generate-types.ts\n\n";
 
     for (const { name: tableName } of tables) {
         const columns = db
@@ -56,6 +71,7 @@ function generateTypes(dbPath: string, outputFile: string) {
         // Campos normales
         for (const col of columns) {
             const tsType = mapSQLiteTypeToTS(col.type);
+            // col.notnull === 1 significa NOT NULL, 0 significa nullable
             const optional = col.notnull === 0 ? "?" : "";
             output += `  ${col.name}${optional}: ${tsType};\n`;
         }
