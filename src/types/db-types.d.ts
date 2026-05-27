@@ -30,9 +30,9 @@ export interface DeploymentExecutions {
   duration_seconds?: number;
   retry_attempt: number;
   created_at: Date;
-  task?: ProjectTasks; // FK → project_tasks.id
-  host?: Hosts; // FK → hosts.id
-  deployment?: Deployments; // FK → deployments.id
+  task?: ProjectTasks; // RELATION: FK task_id → project_tasks.id
+  host?: Hosts; // RELATION: FK host_id → hosts.id
+  deployment?: Deployments; // RELATION: FK deployment_id → deployments.id
 }
 
 export interface DeploymentRollbacks {
@@ -45,8 +45,8 @@ export interface DeploymentRollbacks {
   started_at?: Date;
   finished_at?: Date;
   created_at: Date;
-  rolledBackToDeployment?: Deployments; // FK → deployments.id
-  deployment?: Deployments; // FK → deployments.id
+  rolledBackToDeployment?: Deployments; // RELATION: FK rolled_back_to_deployment_id → deployments.id
+  deployment?: Deployments; // RELATION: FK deployment_id → deployments.id
 }
 
 export interface Deployments {
@@ -62,7 +62,7 @@ export interface Deployments {
   triggered_by?: string;
   notes?: string;
   created_at: Date;
-  project?: Projects; // FK → projects.id
+  project?: Projects; // RELATION: FK project_id → projects.id
 }
 
 export interface FrameworkConfigs {
@@ -76,7 +76,7 @@ export interface FrameworkConfigs {
   description?: string;
   created_at: Date;
   updated_at: Date;
-  project?: Projects; // FK → projects.id
+  project?: Projects; // RELATION: FK project_id → projects.id
 }
 
 export interface GlobalVariables {
@@ -102,7 +102,7 @@ export interface Hosts {
   enabled: boolean;
   created_at: Date;
   updated_at: Date;
-  key?: Passkeys; // FK → passkeys.id
+  key?: Passkeys; // RELATION: FK key_id → passkeys.id
 }
 
 export interface Passkeys {
@@ -124,8 +124,8 @@ export interface ProjectHosts {
   deploy_order?: number;
   enabled: boolean;
   created_at: Date;
-  host?: Hosts; // FK → hosts.id
-  project?: Projects; // FK → projects.id
+  host?: Hosts; // RELATION: FK host_id → hosts.id
+  project?: Projects; // RELATION: FK project_id → projects.id
 }
 
 export interface ProjectTasks {
@@ -138,8 +138,8 @@ export interface ProjectTasks {
   on_failure: string;
   created_at: Date;
   updated_at: Date;
-  task?: Tasks; // FK → tasks.id
-  project?: Projects; // FK → projects.id
+  task?: Tasks; // RELATION: FK task_id → tasks.id
+  project?: Projects; // RELATION: FK project_id → projects.id
 }
 
 export interface ProjectVariables {
@@ -151,7 +151,7 @@ export interface ProjectVariables {
   description?: string;
   created_at: Date;
   updated_at: Date;
-  project?: Projects; // FK → projects.id
+  project?: Projects; // RELATION: FK project_id → projects.id
 }
 
 export interface Projects {
@@ -171,8 +171,8 @@ export interface TaskDependencies {
   depends_on_task_id: number;
   dependency_type?: string;
   created_at: Date;
-  dependsOnTask?: ProjectTasks; // FK → project_tasks.id
-  task?: ProjectTasks; // FK → project_tasks.id
+  dependsOnTask?: ProjectTasks; // RELATION: FK depends_on_task_id → project_tasks.id
+  task?: ProjectTasks; // RELATION: FK task_id → project_tasks.id
 }
 
 export interface Tasks {

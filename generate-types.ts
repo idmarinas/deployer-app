@@ -162,7 +162,7 @@ function generateTypes(dbPath: string, migrationsDir: string, outputFile: string
             }
             usedNames.add(relationName);
 
-            output += `  ${relationName}?: ${toPascalCase(fk.table)}; // FK → ${fk.table}.${fk.to}\n`;
+            output += `  ${relationName}?: ${toPascalCase(fk.table)}; // RELATION: FK ${fk.from} → ${fk.table}.${fk.to}\n`;
         }
 
         output += "}\n\n";
