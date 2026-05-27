@@ -12,7 +12,7 @@ export interface SqlxMigrations {
 
 export interface DeployerSettings {
   key?: string;
-  value: string;
+  value?: string;
 }
 
 export interface DeploymentExecutions {
@@ -27,8 +27,8 @@ export interface DeploymentExecutions {
   started_at?: Date;
   finished_at?: Date;
   duration_seconds?: number;
-  retry_attempt?: number;
-  created_at?: Date;
+  retry_attempt: number;
+  created_at: Date;
   task?: ProjectTasks; // FK → project_tasks.id
   host?: Hosts; // FK → hosts.id
   deployment?: Deployments; // FK → deployments.id
@@ -43,7 +43,7 @@ export interface DeploymentRollbacks {
   triggered_by?: string;
   started_at?: Date;
   finished_at?: Date;
-  created_at?: Date;
+  created_at: Date;
   rolledBackToDeployment?: Deployments; // FK → deployments.id
   deployment?: Deployments; // FK → deployments.id
 }
@@ -60,7 +60,7 @@ export interface Deployments {
   duration_seconds?: number;
   triggered_by?: string;
   notes?: string;
-  created_at?: Date;
+  created_at: Date;
   project?: Projects; // FK → projects.id
 }
 
@@ -70,11 +70,11 @@ export interface FrameworkConfigs {
   framework: string;
   key: string;
   value: string;
-  is_secret?: boolean;
+  is_secret: boolean;
   data_type?: string;
   description?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
   project?: Projects; // FK → projects.id
 }
 
@@ -82,25 +82,25 @@ export interface GlobalVariables {
   id?: number;
   name: string;
   value: string;
-  is_secret?: boolean;
+  is_secret: boolean;
   description?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Hosts {
   id?: number;
   name: string;
   host: string;
-  port?: number;
+  port: number;
   username: string;
   auth_type: string;
   password?: string;
   key_id?: number;
   description?: string;
-  enabled?: boolean;
-  created_at?: Date;
-  updated_at?: Date;
+  enabled: boolean;
+  created_at: Date;
+  updated_at: Date;
   key?: Passkeys; // FK → passkeys.id
 }
 
@@ -112,8 +112,8 @@ export interface Passkeys {
   key_type?: string;
   fingerprint?: string;
   description?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ProjectHosts {
@@ -121,8 +121,8 @@ export interface ProjectHosts {
   project_id: number;
   host_id: number;
   deploy_order?: number;
-  enabled?: boolean;
-  created_at?: Date;
+  enabled: boolean;
+  created_at: Date;
   host?: Hosts; // FK → hosts.id
   project?: Projects; // FK → projects.id
 }
@@ -132,11 +132,11 @@ export interface ProjectTasks {
   project_id: number;
   task_id: number;
   order_execution: number;
-  enabled?: boolean;
+  enabled: boolean;
   condition?: string;
-  on_failure?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  on_failure: string;
+  created_at: Date;
+  updated_at: Date;
   task?: Tasks; // FK → tasks.id
   project?: Projects; // FK → projects.id
 }
@@ -146,10 +146,10 @@ export interface ProjectVariables {
   project_id: number;
   name: string;
   value: string;
-  is_secret?: boolean;
+  is_secret: boolean;
   description?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
   project?: Projects; // FK → projects.id
 }
 
@@ -159,9 +159,9 @@ export interface Projects {
   description?: string;
   repository_url?: string;
   framework?: string;
-  enabled?: boolean;
-  created_at?: Date;
-  updated_at?: Date;
+  enabled: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface TaskDependencies {
@@ -169,7 +169,7 @@ export interface TaskDependencies {
   task_id: number;
   depends_on_task_id: number;
   dependency_type?: string;
-  created_at?: Date;
+  created_at: Date;
   dependsOnTask?: ProjectTasks; // FK → project_tasks.id
   task?: ProjectTasks; // FK → project_tasks.id
 }
@@ -178,14 +178,14 @@ export interface Tasks {
   id?: number;
   name: string;
   description?: string;
-  type: string;
+  type?: string;
   command?: string;
   working_dir?: string;
-  timeout?: number;
-  retry_count?: number;
-  enabled?: boolean;
-  is_global?: boolean;
-  created_at?: Date;
-  updated_at?: Date;
+  timeout: number;
+  retry_count: number;
+  enabled: boolean;
+  is_global: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
