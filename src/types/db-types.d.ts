@@ -94,7 +94,7 @@ export interface Hosts {
   name: string;
   host: string;
   port: number;
-  username: string;
+  username?: string;
   auth_type: string;
   password?: string;
   key_id?: number;

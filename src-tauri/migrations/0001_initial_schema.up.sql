@@ -38,7 +38,7 @@ CREATE TABLE hosts (
     name TEXT NOT NULL CONSTRAINT hosts_uq_name UNIQUE,
     host TEXT NOT NULL,
     port INTEGER NOT NULL DEFAULT 22,
-    username TEXT NOT NULL,
+    username TEXT,
     auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (
         auth_type IN ('password', 'key')
     ),
