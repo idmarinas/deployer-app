@@ -25,8 +25,8 @@ CREATE TABLE passkeys (
     ),
     fingerprint TEXT,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================================
@@ -37,7 +37,7 @@ CREATE TABLE hosts (
     id INTEGER CONSTRAINT hosts_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT hosts_uq_name UNIQUE,
     host TEXT NOT NULL,
-    port INTEGER DEFAULT 22,
+    port INTEGER NOT NULL DEFAULT 22,
     username TEXT NOT NULL,
     auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (
         auth_type IN ('password', 'key')
@@ -46,8 +46,8 @@ CREATE TABLE hosts (
     key_id INTEGER CONSTRAINT hosts_fk_key_id REFERENCES passkeys (id) ON DELETE SET NULL,
     description TEXT,
     enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX hosts_idx_enabled ON hosts (enabled);
@@ -62,10 +62,10 @@ CREATE TABLE global_variables (
     id INTEGER CONSTRAINT global_variables_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT global_variables_uq_name UNIQUE,
     value TEXT NOT NULL,
-    is_secret BOOLEAN DEFAULT 0,
+    is_secret BOOLEAN NOT NULL DEFAULT 0,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX global_variables_idx_name ON global_variables (name);
@@ -88,8 +88,8 @@ CREATE TABLE projects (
         )
     ),
     enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX projects_idx_name ON projects (name);
@@ -106,7 +106,7 @@ CREATE TABLE project_hosts (
     host_id INTEGER NOT NULL CONSTRAINT project_hosts_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
     deploy_order INTEGER,
     enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT project_hosts_uq_project_id_host_id UNIQUE (project_id, host_id)
 );
 
@@ -125,10 +125,10 @@ CREATE TABLE project_variables (
     project_id INTEGER NOT NULL CONSTRAINT project_variables_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     value TEXT NOT NULL,
-    is_secret BOOLEAN DEFAULT 0,
+    is_secret BOOLEAN NOT NULL DEFAULT 0,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT project_variables_uq_project_id_name UNIQUE (project_id, name)
 );
 
@@ -146,8 +146,8 @@ CREATE TABLE framework_configs (
     framework TEXT NOT NULL,
     key TEXT NOT NULL,
     value TEXT NOT NULL,
-    is_secret BOOLEAN DEFAULT 0,
-    data_type TEXT DEFAULT 'string' CONSTRAINT framework_configs_chk_data_type CHECK (
+    is_secret BOOLEAN NOT NULL DEFAULT 0,
+    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT framework_configs_chk_data_type CHECK (
         data_type IN (
             'string',
             'integer',
@@ -156,8 +156,8 @@ CREATE TABLE framework_configs (
         )
     ),
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT framework_configs_uq_project_id_framework_key UNIQUE (project_id, framework, key)
 );
 
@@ -185,12 +185,12 @@ CREATE TABLE tasks (
     ),
     command TEXT,
     working_dir TEXT,
-    timeout INTEGER DEFAULT 300,
-    retry_count INTEGER DEFAULT 0,
+    timeout INTEGER NOT NULL DEFAULT 300,
+    retry_count INTEGER NOT NULL DEFAULT 0,
     enabled BOOLEAN NOT NULL DEFAULT 1,
     is_global BOOLEAN NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX tasks_idx_name ON tasks (name);
@@ -213,8 +213,8 @@ CREATE TABLE project_tasks (
     on_failure TEXT NOT NULL DEFAULT 'stop' CONSTRAINT project_tasks_chk_on_failure CHECK (
         on_failure IN ('stop', 'continue', 'retry')
     ),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (
         project_id,
         task_id,
@@ -236,14 +236,14 @@ CREATE TABLE task_dependencies (
     id INTEGER CONSTRAINT task_dependencies_pk PRIMARY KEY AUTOINCREMENT,
     task_id INTEGER NOT NULL CONSTRAINT task_dependencies_fk_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
     depends_on_task_id INTEGER NOT NULL CONSTRAINT task_dependencies_fk_depends_on_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
-    dependency_type TEXT DEFAULT 'success' CONSTRAINT task_dependencies_chk_dependency_type CHECK (
+    dependency_type TEXT NOT NULL DEFAULT 'success' CONSTRAINT task_dependencies_chk_dependency_type CHECK (
         dependency_type IN (
             'success',
             'failure',
             'always'
         )
     ),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT task_dependencies_uq_task_id_depends_on_task_id UNIQUE (task_id, depends_on_task_id)
 );
 
@@ -261,7 +261,7 @@ CREATE TABLE deployments (
     version TEXT NOT NULL,
     tag TEXT NOT NULL,
     build INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' CONSTRAINT deployments_chk_status CHECK (
+    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployments_chk_status CHECK (
         status IN (
             'pending',
             'running',
@@ -274,7 +274,7 @@ CREATE TABLE deployments (
     duration_seconds INTEGER,
     triggered_by TEXT,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX deployments_idx_project_id ON deployments (project_id);
@@ -294,7 +294,7 @@ CREATE TABLE deployment_executions (
     deployment_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
     host_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
     task_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
-    status TEXT DEFAULT 'pending' CONSTRAINT deployment_executions_chk_status CHECK (
+    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployment_executions_chk_status CHECK (
         status IN (
             'pending',
             'running',
@@ -309,8 +309,8 @@ CREATE TABLE deployment_executions (
     started_at TIMESTAMP,
     finished_at TIMESTAMP,
     duration_seconds INTEGER,
-    retry_attempt INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    retry_attempt INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX deployment_executions_idx_deployment_id ON deployment_executions (deployment_id);
@@ -329,7 +329,7 @@ CREATE TABLE deployment_rollbacks (
     id INTEGER CONSTRAINT deployment_rollbacks_pk PRIMARY KEY AUTOINCREMENT,
     deployment_id INTEGER NOT NULL CONSTRAINT deployment_rollbacks_fk_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
     rolled_back_to_deployment_id INTEGER NOT NULL CONSTRAINT deployment_rollbacks_fk_rolled_back_to_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
-    status TEXT DEFAULT 'pending' CONSTRAINT deployment_rollbacks_chk_status CHECK (
+    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployment_rollbacks_chk_status CHECK (
         status IN (
             'pending',
             'running',
@@ -341,7 +341,7 @@ CREATE TABLE deployment_rollbacks (
     triggered_by TEXT,
     started_at TIMESTAMP,
     finished_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX deployment_rollbacks_idx_deployment_id ON deployment_rollbacks (deployment_id);
