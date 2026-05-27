@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useDashboardToolbarProvider } from '@/composables/useDashboardToolbar'
 
 const { t } = useI18n()
+
+const { toolbarContent } = useDashboardToolbarProvider('deployments')
 </script>
 
 <template>
@@ -12,6 +15,11 @@ const { t } = useI18n()
           <UDashboardSidebarCollapse />
         </template>
       </UDashboardNavbar>
+
+      <!-- Solo muestra el toolbar si tiene contenido -->
+      <UDashboardToolbar v-if="toolbarContent" class=" flex gap-2 justify-between">
+        <component v-for="(content, index) in toolbarContent" :key="index" :is="content" />
+      </UDashboardToolbar>
     </template>
 
     <template #body>
