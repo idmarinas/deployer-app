@@ -1,5 +1,6 @@
 // Auto-generado desde la BD SQLite
 // ⚠️ NO EDITAR MANUALMENTE - Regenerar con: bun run generate-types.ts
+// Generado desde migraciones en: ./src-tauri/migrations
 
 export interface SqlxMigrations {
   version?: number;
