@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
+import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
+
 import { useI18n } from 'vue-i18n'
 import { useColorMode } from '@vueuse/core'
 
@@ -24,7 +26,17 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: t('components.deployerAppMenu.settings'),
   icon: 'i-tabler-settings',
   to: '/app/settings'
-}], [{
+},{
+    label: 'Restablecer ventana',
+    color: 'warning',
+    icon: 'i-tabler-window',
+    onClick: async () => {
+      const win = getCurrentWindow()
+      await win.setSize(new LogicalSize(1400, 900))
+      await win.center()
+    }
+  }
+], [{
   label: t('components.deployerAppMenu.appearance.label'),
   icon: 'i-tabler-sun-moon',
   children: [{
