@@ -8,7 +8,7 @@
 
 CREATE TABLE deployer_settings (
     key TEXT CONSTRAINT deployer_settings_pk PRIMARY KEY,
-    value TEXT NOT NULL
+    value TEXT
 );
 
 -- ============================================================================
@@ -25,8 +25,8 @@ CREATE TABLE passkeys (
     ),
     fingerprint TEXT,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- ============================================================================
@@ -45,9 +45,9 @@ CREATE TABLE hosts (
     password TEXT,
     key_id INTEGER CONSTRAINT hosts_fk_key_id REFERENCES passkeys (id) ON DELETE SET NULL,
     description TEXT,
-    enabled BOOLEAN DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    enabled BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX hosts_idx_enabled ON hosts (enabled);
@@ -64,8 +64,8 @@ CREATE TABLE global_variables (
     value TEXT NOT NULL,
     is_secret BOOLEAN DEFAULT 0,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX global_variables_idx_name ON global_variables (name);
@@ -87,9 +87,9 @@ CREATE TABLE projects (
             'generic'
         )
     ),
-    enabled BOOLEAN DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    enabled BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX projects_idx_name ON projects (name);
@@ -105,8 +105,8 @@ CREATE TABLE project_hosts (
     project_id INTEGER NOT NULL CONSTRAINT project_hosts_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
     host_id INTEGER NOT NULL CONSTRAINT project_hosts_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
     deploy_order INTEGER,
-    enabled BOOLEAN DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    enabled BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT project_hosts_uq_project_id_host_id UNIQUE (project_id, host_id)
 );
 
@@ -127,8 +127,8 @@ CREATE TABLE project_variables (
     value TEXT NOT NULL,
     is_secret BOOLEAN DEFAULT 0,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT project_variables_uq_project_id_name UNIQUE (project_id, name)
 );
 
@@ -156,8 +156,8 @@ CREATE TABLE framework_configs (
         )
     ),
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT framework_configs_uq_project_id_framework_key UNIQUE (project_id, framework, key)
 );
 
@@ -187,10 +187,10 @@ CREATE TABLE tasks (
     working_dir TEXT,
     timeout INTEGER DEFAULT 300,
     retry_count INTEGER DEFAULT 0,
-    enabled BOOLEAN DEFAULT 1,
-    is_global BOOLEAN DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    enabled BOOLEAN NOT NULL DEFAULT 1,
+    is_global BOOLEAN NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX tasks_idx_name ON tasks (name);
@@ -208,13 +208,13 @@ CREATE TABLE project_tasks (
     project_id INTEGER NOT NULL CONSTRAINT project_tasks_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
     task_id INTEGER NOT NULL CONSTRAINT project_tasks_fk_task_id REFERENCES tasks (id) ON DELETE CASCADE,
     order_execution INTEGER NOT NULL,
-    enabled BOOLEAN DEFAULT 1,
+    enabled BOOLEAN NOT NULL DEFAULT 1,
     condition TEXT,
-    on_failure TEXT DEFAULT 'stop' CONSTRAINT project_tasks_chk_on_failure CHECK (
+    on_failure TEXT NOT NULL DEFAULT 'stop' CONSTRAINT project_tasks_chk_on_failure CHECK (
         on_failure IN ('stop', 'continue', 'retry')
     ),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (
         project_id,
         task_id,
@@ -243,7 +243,7 @@ CREATE TABLE task_dependencies (
             'always'
         )
     ),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT task_dependencies_uq_task_id_depends_on_task_id UNIQUE (task_id, depends_on_task_id)
 );
 
@@ -274,7 +274,7 @@ CREATE TABLE deployments (
     duration_seconds INTEGER,
     triggered_by TEXT,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX deployments_idx_project_id ON deployments (project_id);
@@ -310,7 +310,7 @@ CREATE TABLE deployment_executions (
     finished_at TIMESTAMP,
     duration_seconds INTEGER,
     retry_attempt INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX deployment_executions_idx_deployment_id ON deployment_executions (deployment_id);
@@ -341,7 +341,7 @@ CREATE TABLE deployment_rollbacks (
     triggered_by TEXT,
     started_at TIMESTAMP,
     finished_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE INDEX deployment_rollbacks_idx_deployment_id ON deployment_rollbacks (deployment_id);
