@@ -16,10 +16,10 @@ const route = useRoute()
 
         <template #right>
           <UButton
+            v-if="!route.path.endsWith('/create')"
             to="/dashboard/variables/create"
             icon="i-tabler-plus"
             variant="outline"
-            :disabled="route.path.endsWith('/create')"
             :label="t('components.navigation.create.variable.label')"
           />
         </template>
