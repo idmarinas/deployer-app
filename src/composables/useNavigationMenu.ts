@@ -1,4 +1,4 @@
-import type { CommandPaletteGroup, NavigationMenuItem } from '@nuxt/ui'
+import type { CommandPaletteGroup, DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 
 import { useI18n } from 'vue-i18n'
 
@@ -56,10 +56,96 @@ export function useSideberMenu() {
   ]
 
   const searchGroups: CommandPaletteGroup[] = [
+    {
+      id: 'actions',
+      label: t('components.sidebar.search.actions'),
+      items: [
+        {
+          label: t('components.navigation.create.project.label'),
+          suffix: t('components.navigation.create.project.description'),
+          icon: 'i-tabler-package',
+          to: '/dashboard/projects/create',
+          kbds: ['shift', 'P']
+        },
+        {
+          label: t('components.navigation.create.task.label'),
+          suffix: t('components.navigation.create.task.description'),
+          icon: 'i-tabler-list-check',
+          to: '/dashboard/tasks/create',
+          kbds: ['shift', 'T']
+        },
+        {
+          label: t('components.navigation.create.passkey.label'),
+          suffix: t('components.navigation.create.passkey.description'),
+          icon: 'i-tabler-key',
+          to: '/dashboard/passkeys/create',
+          kbds: ['shift', 'K']
+        },
+        {
+          label: t('components.navigation.create.host.label'),
+          suffix: t('components.navigation.create.host.description'),
+          icon: 'i-tabler-server',
+          to: '/dashboard/hosts/create',
+          kbds: ['shift', 'H']
+        },
+        {
+          label: t('components.navigation.create.variable.label'),
+          suffix: t('components.navigation.create.variable.description'),
+          icon: 'i-tabler-variable',
+          to: '/dashboard/variables/create',
+          kbds: ['shift', 'V']
+        },
+      ]
+    }
   ]
 
   return {
     navigationMenu,
     searchGroups,
   }
+}
+
+
+export function useDashboardButton() {
+  const { t } = useI18n()
+
+  const items: DropdownMenuItem[] = [
+    {
+      label: t('components.navigation.create.project.label'),
+      description: t('components.navigation.create.project.description'),
+      icon: 'i-tabler-package',
+      to: '/dashboard/projects/create',
+      kbds: ['shift', 'P']
+    },
+    {
+      label: t('components.navigation.create.task.label'),
+      description: t('components.navigation.create.task.description'),
+      icon: 'i-tabler-list-check',
+      to: '/dashboard/tasks/create',
+      kbds: ['shift', 'T']
+    },
+    {
+      label: t('components.navigation.create.passkey.label'),
+      description: t('components.navigation.create.passkey.description'),
+      icon: 'i-tabler-key',
+      to: '/dashboard/passkeys/create',
+      kbds: ['shift', 'K']
+    },
+    {
+      label: t('components.navigation.create.host.label'),
+      description: t('components.navigation.create.host.description'),
+      icon: 'i-tabler-server',
+      to: '/dashboard/hosts/create',
+      kbds: ['shift', 'H']
+    },
+    {
+      label: t('components.navigation.create.variable.label'),
+      description: t('components.navigation.create.variable.description'),
+      icon: 'i-tabler-variable',
+      to: '/dashboard/variables/create',
+      kbds: ['shift', 'V']
+    }
+  ]
+
+  return items
 }
