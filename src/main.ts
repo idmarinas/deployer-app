@@ -9,6 +9,7 @@ import { routes, handleHotUpdate } from 'vue-router/auto-routes'
 import { createHead } from '@unhead/vue/client'
 import { createI18n } from 'vue-i18n'
 import ui from '@nuxt/ui/vue-plugin'
+import { vMaska } from 'maska/vue'
 
 // Tauri related
 import { invoke } from '@tauri-apps/api/core'
@@ -73,6 +74,7 @@ async function bootstrap() {
     .use(i18n)
     .use(router)
     .use(ui)
+    .directive('maska', vMaska)
     .mount("#app")
 }
 
