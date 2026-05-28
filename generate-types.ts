@@ -61,24 +61,70 @@ function getAllMigrationsSQL(migrationsDir: string): string {
 }
 
 // Parsea el SQL para obtener información más precisa de NOT NULL
-function parseSQLSchema(sqlContent: string): Map<string, Map<string, { type: string; notNull: boolean }>> {
+function parseSQLSchema(sqlContent: string): Map<string, Map<string, { type: string; notNull: boolean; allowedValues?: string[] }>> {
     const schema = new Map();
 
     // Expresión regular para encontrar CREATE TABLE
     const tableRegex = /CREATE\s+TABLE\s+(\w+)\s*\(([\s\S]*?)\);/gi;
     let tableMatch;
 
+    // Función para dividir por comas respetando los paréntesis (nivel 0)
+    function splitSqlColumns(body: string): string[] {
+        const parts: string[] = [];
+        let current = "";
+        let depth = 0;
+        let inSingleQuote = false;
+        let inDoubleQuote = false;
+
+        for (let i = 0; i < body.length; i++) {
+            const char = body[i];
+            
+            // Controlar comillas
+            if (char === "'" && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+            } else if (char === '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote) {
+                if (char === "(") depth++;
+                else if (char === ")") depth--;
+            }
+
+            if (char === "," && depth === 0 && !inSingleQuote && !inDoubleQuote) {
+                parts.push(current.trim());
+                current = "";
+            } else {
+                current += char;
+            }
+        }
+        if (current.trim()) {
+            parts.push(current.trim());
+        }
+        return parts;
+    }
+
     while ((tableMatch = tableRegex.exec(sqlContent)) !== null) {
         const tableName = tableMatch[1];
         const tableBody = tableMatch[2];
         const columns = new Map();
 
-        // Dividir por líneas
-        const lines = tableBody.split("\n");
+        // Dividir respetando anidamiento de paréntesis
+        const lines = splitSqlColumns(tableBody);
 
-        for (const line of lines) {
-            // Saltar líneas vacías y comentarios
-            if (!line.trim() || line.trim().startsWith("--")) continue;
+        for (const rawLine of lines) {
+            // Eliminar comentarios de la línea y normalizar espacios/saltos de línea
+            const line = rawLine
+                .split("\n")
+                .map(l => {
+                    const idx = l.indexOf("--");
+                    return idx !== -1 ? l.substring(0, idx) : l;
+                })
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (!line) continue;
 
             // Detectar si es una línea de columna (no de constraint)
             const columnMatch = /^\s*(\w+)\s+([A-Z\s()]+?)(?:\s+CONSTRAINT|\s+NOT\s+NULL|\s+DEFAULT|\s+CHECK|\s+UNIQUE|,|$)/i.exec(line);
@@ -90,7 +136,15 @@ function parseSQLSchema(sqlContent: string): Map<string, Map<string, { type: str
 
                 // Saltarse constraints que no son columnas
                 if (!["CONSTRAINT", "PRIMARY", "UNIQUE", "FOREIGN", "CHECK"].includes(colName.toUpperCase())) {
-                    columns.set(colName, { type: colType, notNull });
+                    // Buscar CHECK con IN
+                    const checkInMatch = /CHECK\s*\(\s*\w+\s+IN\s*\(([^)]+)\)\s*\)/i.exec(line);
+                    let allowedValues: string[] | undefined;
+                    if (checkInMatch) {
+                        allowedValues = checkInMatch[1]
+                            .split(",")
+                            .map(v => v.trim().replace(/^['"]|['"]$/g, ""));
+                    }
+                    columns.set(colName, { type: colType, notNull, allowedValues });
                 }
             }
         }
@@ -140,13 +194,20 @@ function generateTypes(dbPath: string, migrationsDir: string, outputFile: string
 
         // Campos normales
         for (const col of columns) {
-            const tsType = mapSQLiteTypeToTS(col.type);
+            let tsType = mapSQLiteTypeToTS(col.type);
 
             // Usar información del SQL parseado si está disponible
             let notNull = col.notnull === 1;
+            let allowedValues: string[] | undefined;
             const sqlTableSchema = sqlSchema.get(tableName);
             if (sqlTableSchema && sqlTableSchema.has(col.name)) {
-                notNull = sqlTableSchema.get(col.name)!.notNull;
+                const info = sqlTableSchema.get(col.name)!;
+                notNull = info.notNull;
+                allowedValues = info.allowedValues;
+            }
+
+            if (allowedValues && allowedValues.length > 0) {
+                tsType = allowedValues.map(val => `"${val}"`).join(" | ");
             }
 
             const optional = notNull ? "" : "?";

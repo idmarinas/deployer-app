@@ -21,7 +21,7 @@ export interface DeploymentExecutions {
   deployment_id: number;
   host_id: number;
   task_id: number;
-  status?: string;
+  status: "pending" | "running" | "success" | "failed" | "skipped";
   exit_code?: number;
   output?: string;
   error_message?: string;
@@ -39,7 +39,7 @@ export interface DeploymentRollbacks {
   id?: number;
   deployment_id: number;
   rolled_back_to_deployment_id: number;
-  status?: string;
+  status: "pending" | "running" | "success" | "failed";
   reason?: string;
   triggered_by?: string;
   started_at?: Date;
@@ -55,7 +55,7 @@ export interface Deployments {
   version: string;
   tag: string;
   build: number;
-  status?: string;
+  status: "pending" | "running" | "success" | "failed";
   started_at?: Date;
   finished_at?: Date;
   duration_seconds?: number;
@@ -72,7 +72,7 @@ export interface FrameworkConfigs {
   key: string;
   value: string;
   is_secret: boolean;
-  data_type?: string;
+  data_type: "string" | "integer" | "boolean" | "json";
   description?: string;
   created_at: Date;
   updated_at: Date;
@@ -95,7 +95,7 @@ export interface Hosts {
   host: string;
   port: number;
   username?: string;
-  auth_type: string;
+  auth_type: "password" | "key";
   password?: string;
   key_id?: number;
   description?: string;
@@ -110,7 +110,7 @@ export interface Passkeys {
   name: string;
   key_content: string;
   passphrase?: string;
-  key_type?: string;
+  key_type?: "rsa" | "ed25519" | "ecdsa";
   fingerprint?: string;
   description?: string;
   created_at: Date;
@@ -135,7 +135,7 @@ export interface ProjectTasks {
   order_execution: number;
   enabled: boolean;
   condition?: string;
-  on_failure: string;
+  on_failure: "stop" | "continue" | "retry";
   created_at: Date;
   updated_at: Date;
   task?: Tasks; // RELATION: FK task_id → tasks.id
@@ -159,7 +159,7 @@ export interface Projects {
   name: string;
   description?: string;
   repository_url?: string;
-  framework?: string;
+  framework?: "symfony" | "laravel" | "nextjs" | "generic";
   enabled: boolean;
   created_at: Date;
   updated_at: Date;
@@ -169,7 +169,7 @@ export interface TaskDependencies {
   id?: number;
   task_id: number;
   depends_on_task_id: number;
-  dependency_type?: string;
+  dependency_type: "success" | "failure" | "always";
   created_at: Date;
   dependsOnTask?: ProjectTasks; // RELATION: FK depends_on_task_id → project_tasks.id
   task?: ProjectTasks; // RELATION: FK task_id → project_tasks.id
@@ -179,7 +179,7 @@ export interface Tasks {
   id?: number;
   name: string;
   description?: string;
-  type?: string;
+  type: "command" | "upload_file" | "download_file" | "script";
   command?: string;
   working_dir?: string;
   timeout: number;
