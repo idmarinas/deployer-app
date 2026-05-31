@@ -1,5 +1,6 @@
 mod commands;
 
+use commands::hosts::test_connection;
 use commands::database::{
     create_database_file, get_database_url, initialize_database, validate_sqlite_database,
 };
@@ -28,6 +29,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Hosts
+            test_connection,
             // Store
             get_database_path,
             set_database_path,
