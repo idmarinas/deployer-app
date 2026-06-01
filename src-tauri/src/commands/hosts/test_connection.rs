@@ -11,6 +11,7 @@ use tokio::time::timeout;
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
+use crate::params;
 
 /// Timeout por defecto para la conexión SSH (en segundos)
 const CONNECTION_TIMEOUT_SECS: u64 = 10;

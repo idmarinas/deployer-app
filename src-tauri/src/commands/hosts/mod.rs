@@ -1,13 +1,12 @@
-// Macro params! - Disponible en todos los submódulos de hosts
-macro_rules! params {
-    ($($k:expr => $v:expr),*) => {{
-        let mut m = std::collections::HashMap::new();
-        $(m.insert($k.to_string(), $v.to_string());)*
-        m
-    }};
-}
-
+pub mod crud;
+pub mod helpers;
 pub mod test_connection;
+pub mod types;
 
-// Re-exportar comandos
+// Re-exportar comandos CRUD
+pub use crud::{
+    crud_create_host, crud_delete_host, crud_get_host, crud_list_hosts, crud_update_host,
+};
+
+// Re-exportar otros comandos
 pub use test_connection::test_connection;
