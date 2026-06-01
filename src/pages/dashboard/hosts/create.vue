@@ -66,11 +66,11 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>){
   const result = await invoke<CommandResponse<number>>('crud_create_host', {input: host})
 
   if (result.success) {
-    toast.add({title: t('toast.title.success'), description: t('schemas.hosts.created', { name: host.name }), color: 'success'})
+    toast.add({title: t('overlays.toast.title.success'), description: t('schemas.hosts.created', { name: host.name }), color: 'success'})
     isLoading.value = false
     router.push({ name: 'dashboard-hosts' })
   } else {
-    toast.add({title: t('toast.title.error'), description: result.message_key, color: 'error'})
+    toast.add({title: t('overlays.toast.title.error'), description: result.message_key, color: 'error'})
     isLoading.value = false
   }
 }
