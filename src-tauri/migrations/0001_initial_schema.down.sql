@@ -2,6 +2,8 @@
 -- Migration 1: Drop All Tables (Rollback)
 -- ============================================================================
 
+DROP TABLE IF EXISTS encryption_config;
+
 DROP TABLE IF EXISTS deployment_rollbacks;
 
 DROP TABLE IF EXISTS deployment_executions;

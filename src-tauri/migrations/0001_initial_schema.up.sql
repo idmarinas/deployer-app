@@ -12,6 +12,30 @@ CREATE TABLE deployer_settings (
 );
 
 -- ============================================================================
+-- ENCRYPTION CONFIG
+-- Configura qué campos de cada tabla se cifran y si se exponen al frontend.
+-- encrypt = 1 → el valor se cifra al guardar en SQLite
+-- expose  = 1 → el valor se descifra antes de enviarse al frontend
+-- ============================================================================
+
+CREATE TABLE encryption_config (
+    id         INTEGER CONSTRAINT encryption_config_pk PRIMARY KEY AUTOINCREMENT,
+    table_name TEXT NOT NULL,
+    field_name TEXT NOT NULL,
+    encrypt    BOOLEAN NOT NULL DEFAULT 0,
+    expose     BOOLEAN NOT NULL DEFAULT 0,
+    CONSTRAINT encryption_config_uq UNIQUE (table_name, field_name)
+);
+
+CREATE INDEX encryption_config_idx_table_name ON encryption_config (table_name);
+
+-- Configuración inicial de campos sensibles
+INSERT INTO encryption_config (table_name, field_name, encrypt, expose) VALUES
+    ('hosts',    'password',    1, 0),
+    ('passkeys', 'key_content', 1, 0),
+    ('passkeys', 'passphrase',  1, 0);
+
+-- ============================================================================
 -- PASSKEYS (SSH Keys)
 -- ============================================================================
 
