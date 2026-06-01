@@ -199,7 +199,7 @@ pub async fn fetch_one<E: DbEntity>(
         None => Ok(None),
         Some(r) => {
             let mut entity = E::from_row(&r)?;
-            let mut fields = entity.to_fields();
+            let mut fields = entity.to_fields_all();
             apply_decryption::<E>(&mut fields, cache, pool, key).await?;
             entity = E::from_fields(fields)?;
             Ok(Some(entity))
@@ -223,7 +223,7 @@ pub async fn fetch_all<E: DbEntity>(
     let mut results = Vec::new();
     for row in rows {
         let mut entity = E::from_row(&row)?;
-        let mut fields = entity.to_fields();
+        let mut fields = entity.to_fields_all();
         apply_decryption::<E>(&mut fields, cache, pool, key).await?;
         entity = E::from_fields(fields)?;
         results.push(entity);

@@ -60,6 +60,12 @@ pub trait DbEntity: Sized + Serialize + Send + Unpin {
     /// No debe incluir el campo `id`.
     fn to_fields(&self) -> Vec<(String, serde_json::Value)>;
 
+    /// Serializa TODOS los campos de la entidad (incluyendo id, created_at, updated_at).
+    /// Se usa tras el descifrado para reconstruir la entidad completa en memoria.
+    fn to_fields_all(&self) -> Vec<(String, serde_json::Value)> {
+        self.to_fields()
+    }
+
     /// Reconstruye la entidad desde un mapa de pares `(nombre_campo, valor)`.
     /// Se usa tras aplicar descifrado para actualizar los campos en memoria.
     fn from_fields(fields: Vec<(String, serde_json::Value)>) -> Result<Self, String>;

@@ -68,6 +68,23 @@ impl DbEntity for Host {
         ]
     }
 
+    fn to_fields_all(&self) -> Vec<(String, Value)> {
+        vec![
+            ("id".into(), Value::Number(self.id.into())),
+            ("name".into(), Value::String(self.name.clone())),
+            ("host".into(), Value::String(self.host.clone())),
+            ("port".into(), Value::Number(self.port.into())),
+            ("username".into(), self.username.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
+            ("auth_type".into(), Value::String(self.auth_type.clone())),
+            ("password".into(), self.password.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
+            ("key_id".into(), self.key_id.map(Value::from).unwrap_or(Value::Null)),
+            ("description".into(), self.description.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
+            ("enabled".into(), Value::Bool(self.enabled)),
+            ("created_at".into(), Value::String(self.created_at.clone())),
+            ("updated_at".into(), Value::String(self.updated_at.clone())),
+        ]
+    }
+
     fn from_fields(fields: Vec<(String, Value)>) -> Result<Self, String> {
         let map: std::collections::HashMap<String, Value> = fields.into_iter().collect();
 
