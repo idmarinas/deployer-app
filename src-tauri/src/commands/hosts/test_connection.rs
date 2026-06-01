@@ -13,6 +13,11 @@ use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::params;
 
+use tauri::State;
+use crate::db::EncryptionConfigCache;
+use crate::commands::hosts::helpers::open_crypto_context;
+use crate::crypto;
+
 /// Timeout por defecto para la conexión SSH (en segundos)
 const CONNECTION_TIMEOUT_SECS: u64 = 10;
 
@@ -59,39 +64,97 @@ impl client::Handler for SshClientHandler {
 /// Devuelve `success: true` si la autenticación fue exitosa, o
 /// `success: false` con un mensaje descriptivo en caso de error.
 #[tauri::command]
-pub async fn test_connection(app: AppHandle, host_id: i64) -> CommandResponse<()> {
-    // 1. Obtener la ruta de la base de datos desde el store de Tauri
+pub async fn test_connection(
+    app: AppHandle,
+    cache: State<'_, EncryptionConfigCache>,
+    host_id: i64,
+) -> Result<CommandResponse<()>, String> {
+    // 1. Abrir contexto de cifrado (obtiene la clave maestra)
+    let (_pool, _cache, key) = match open_crypto_context(&app, &cache).await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            return Ok(CommandResponse::err(
+                "hosts.errors.context_failed",
+                params!("reason" => e),
+            ))
+        }
+    };
+
+    // 2. Obtener la ruta de la base de datos desde el store de Tauri
     let db_path = match get_database_path_internal(app) {
         Ok(Some(p)) => p,
         Ok(None) => {
-            return CommandResponse::err("hosts.errors.no_database_path", HashMap::new());
+            return Ok(CommandResponse::err("hosts.errors.no_database_path", HashMap::new()));
         }
         Err(e) => {
-            return CommandResponse::err(
+            return Ok(CommandResponse::err(
                 "hosts.errors.store_error",
                 params!("reason" => e),
-            );
+            ));
         }
     };
 
-    // 2. Obtener datos del host desde SQLite (con JOIN a passkeys si aplica)
-    let host_data = match fetch_host_data(&db_path, host_id).await {
+    // 3. Obtener datos del host desde SQLite (con JOIN a passkeys si aplica)
+    let mut host_data = match fetch_host_data(&db_path, host_id).await {
         Ok(Some(h)) => h,
         Ok(None) => {
-            return CommandResponse::err(
+            return Ok(CommandResponse::err(
                 "hosts.errors.not_found",
                 params!("id" => host_id.to_string()),
-            );
+            ));
         }
         Err(e) => {
-            return CommandResponse::err(
+            return Ok(CommandResponse::err(
                 "hosts.errors.database_error",
                 params!("reason" => e),
-            );
+            ));
         }
     };
 
-    // 3. Intentar la conexión SSH con timeout global
+    // 4. Descifrar credenciales
+    if let Some(ref pwd) = host_data.password {
+        if crypto::is_encrypted(pwd) {
+            match crypto::decrypt(pwd, &key) {
+                Ok(dec) => host_data.password = Some(dec),
+                Err(e) => {
+                    return Ok(CommandResponse::err(
+                        "hosts.errors.decryption_failed",
+                        params!("reason" => format!("Password decryption failed: {}", e)),
+                    ));
+                }
+            }
+        }
+    }
+
+    if let Some(ref kc) = host_data.key_content {
+        if crypto::is_encrypted(kc) {
+            match crypto::decrypt(kc, &key) {
+                Ok(dec) => host_data.key_content = Some(dec),
+                Err(e) => {
+                    return Ok(CommandResponse::err(
+                        "hosts.errors.decryption_failed",
+                        params!("reason" => format!("Key content decryption failed: {}", e)),
+                    ));
+                }
+            }
+        }
+    }
+
+    if let Some(ref pp) = host_data.passphrase {
+        if crypto::is_encrypted(pp) {
+            match crypto::decrypt(pp, &key) {
+                Ok(dec) => host_data.passphrase = Some(dec),
+                Err(e) => {
+                    return Ok(CommandResponse::err(
+                        "hosts.errors.decryption_failed",
+                        params!("reason" => format!("Passphrase decryption failed: {}", e)),
+                    ));
+                }
+            }
+        }
+    }
+
+    // 5. Intentar la conexión SSH con timeout global
     let addr = format!("{}:{}", host_data.host, host_data.port);
 
     let connection_result = timeout(
@@ -101,15 +164,15 @@ pub async fn test_connection(app: AppHandle, host_id: i64) -> CommandResponse<()
     .await;
 
     match connection_result {
-        Ok(Ok(())) => CommandResponse::ok_empty("hosts.success.connection"),
-        Ok(Err(e)) => CommandResponse::err(
+        Ok(Ok(())) => Ok(CommandResponse::ok_empty("hosts.success.connection")),
+        Ok(Err(e)) => Ok(CommandResponse::err(
             "hosts.errors.connection_failed",
             params!("reason" => e),
-        ),
-        Err(_) => CommandResponse::err(
+        )),
+        Err(_) => Ok(CommandResponse::err(
             "hosts.errors.connection_timeout",
             params!("timeout" => CONNECTION_TIMEOUT_SECS.to_string()),
-        ),
+        )),
     }
 }
 
