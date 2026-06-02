@@ -5,6 +5,9 @@ import type { CommandResponse } from './types/tauri-types'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { DataLoaderPlugin } from 'vue-router/experimental'
+import { createPinia } from 'pinia'
+import { PiniaColada } from '@pinia/colada'
 import { routes, handleHotUpdate } from 'vue-router/auto-routes'
 import { createHead } from '@unhead/vue/client'
 import { createI18n } from 'vue-i18n'
@@ -72,6 +75,9 @@ async function bootstrap() {
   createApp(App)
     .use(createHead())
     .use(i18n)
+    .use(createPinia())
+    .use(PiniaColada)
+    .use(DataLoaderPlugin, { router })
     .use(router)
     .use(ui)
     .directive('maska', vMaska)
