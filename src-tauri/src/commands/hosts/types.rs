@@ -6,6 +6,42 @@ use ts_rs::TS;
 use crate::db::DbEntity;
 
 // ============================================================================
+// Enum AuthType
+// ============================================================================
+
+/// Tipo de autenticación SSH soportado por la aplicación.
+/// Solo puede ser `password` (contraseña) o `key` (clave privada).
+#[derive(Debug, Clone, Serialize, Deserialize, TS, sqlx::Type)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub enum AuthType {
+    Password,
+    Key,
+}
+
+impl std::fmt::Display for AuthType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthType::Password => write!(f, "password"),
+            AuthType::Key => write!(f, "key"),
+        }
+    }
+}
+
+impl std::str::FromStr for AuthType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "password" => Ok(AuthType::Password),
+            "key" => Ok(AuthType::Key),
+            other => Err(format!("Tipo de autenticación no válido: '{}'", other)),
+        }
+    }
+}
+
+// ============================================================================
 // Entidad Host
 // ============================================================================
 
@@ -17,7 +53,7 @@ pub struct Host {
     pub host: String,
     pub port: i64,
     pub username: Option<String>,
-    pub auth_type: String,
+    pub auth_type: AuthType,
     pub password: Option<String>,
     pub key_id: Option<i64>,
     pub description: Option<String>,
@@ -60,7 +96,7 @@ impl DbEntity for Host {
             ("host".into(), Value::String(self.host.clone())),
             ("port".into(), Value::Number(self.port.into())),
             ("username".into(), self.username.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
-            ("auth_type".into(), Value::String(self.auth_type.clone())),
+            ("auth_type".into(), Value::String(self.auth_type.to_string())),
             ("password".into(), self.password.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
             ("key_id".into(), self.key_id.map(Value::from).unwrap_or(Value::Null)),
             ("description".into(), self.description.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
@@ -75,7 +111,7 @@ impl DbEntity for Host {
             ("host".into(), Value::String(self.host.clone())),
             ("port".into(), Value::Number(self.port.into())),
             ("username".into(), self.username.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
-            ("auth_type".into(), Value::String(self.auth_type.clone())),
+            ("auth_type".into(), Value::String(self.auth_type.to_string())),
             ("password".into(), self.password.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
             ("key_id".into(), self.key_id.map(Value::from).unwrap_or(Value::Null)),
             ("description".into(), self.description.as_ref().map(|v| Value::String(v.clone())).unwrap_or(Value::Null)),
@@ -97,7 +133,10 @@ impl DbEntity for Host {
             host: map.get("host").and_then(|v| v.as_str()).unwrap_or("").to_string(),
             port: map.get("port").and_then(|v| v.as_i64()).unwrap_or(22),
             username: map.get("username").and_then(|v| v.as_str()).map(str::to_string),
-            auth_type: map.get("auth_type").and_then(|v| v.as_str()).unwrap_or("password").to_string(),
+            auth_type: map.get("auth_type")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(AuthType::Password),
             password: map.get("password").and_then(|v| v.as_str()).map(str::to_string),
             key_id: map.get("key_id").and_then(|v| v.as_i64()),
             description: map.get("description").and_then(|v| v.as_str()).map(str::to_string),
@@ -119,7 +158,7 @@ pub struct CreateHostInput {
     pub host: String,
     pub port: Option<i64>,
     pub username: Option<String>,
-    pub auth_type: String,
+    pub auth_type: AuthType,
     pub password: Option<String>,
     pub key_id: Option<i64>,
     pub description: Option<String>,
@@ -158,7 +197,7 @@ pub struct UpdateHostInput {
     pub host: Option<String>,
     pub port: Option<i64>,
     pub username: Option<String>,
-    pub auth_type: Option<String>,
+    pub auth_type: Option<AuthType>,
     /// Si es `None`, no se modifica la contraseña actual.
     /// Si es `Some("")`, se elimina la contraseña.
     /// Si es `Some("valor")`, se cifra y se guarda.

@@ -16,6 +16,7 @@ use crate::params;
 use tauri::State;
 use crate::db::EncryptionConfigCache;
 use crate::commands::hosts::helpers::open_crypto_context;
+use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 
 /// Timeout por defecto para la conexión SSH (en segundos)
@@ -30,7 +31,7 @@ struct HostData {
     host: String,
     port: i64,
     username: String,
-    auth_type: String,
+    auth_type: AuthType,
     password: Option<String>,
     key_content: Option<String>,
     passphrase: Option<String>,
@@ -240,15 +241,15 @@ async fn attempt_ssh_connection(addr: String, host: HostData) -> Result<(), Stri
         .map_err(|e| e.to_string())?;
 
     // Autenticar según el tipo configurado en el host
-    let auth_result = match host.auth_type.as_str() {
-        "password" => {
+    let auth_result = match host.auth_type {
+        AuthType::Password => {
             let password = host.password.unwrap_or_default();
             session
                 .authenticate_password(&host.username, password)
                 .await
                 .map_err(|e| e.to_string())?
         }
-        "key" => {
+        AuthType::Key => {
             let key_content = host
                 .key_content
                 .ok_or_else(|| "No se encontró el contenido de la clave privada".to_string())?;
@@ -272,9 +273,6 @@ async fn attempt_ssh_connection(addr: String, host: HostData) -> Result<(), Stri
                 .authenticate_publickey(&host.username, key_with_hash)
                 .await
                 .map_err(|e| e.to_string())?
-        }
-        other => {
-            return Err(format!("Tipo de autenticación no soportado: '{}'", other));
         }
     };
 
