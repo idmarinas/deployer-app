@@ -2,12 +2,12 @@
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { CommandResponse, CreateHostInput } from '@/types/tauri-types'
 
-import { ref, reactive, useTemplateRef, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, useTemplateRef, onMounted, onBeforeUnmount, watch } from 'vue'
 
 import { useI18n } from 'vue-i18n'
 import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { useHostSchema, type HostSchema, type AuthKeySchema, type AuthPasswordSchema } from '@/composables/schemas/hosts'
-import { useToolbarContent } from '@/composables/useToolbarContent'
+import { useToolbarContentCreate } from '@/composables/useToolbarContent'
 import { useToast } from '@nuxt/ui/composables/useToast'
 import { useRouter } from 'vue-router'
 
@@ -20,6 +20,7 @@ definePage({
 const { t } = useI18n()
 const router = useRouter()
 const toolbar = useDashboardToolbar('hosts')
+
 const toast = useToast()
 const { hostSchema, authPasswordSchema, authKeySchema } = useHostSchema()
 
@@ -33,31 +34,22 @@ const initialState: HostFullSchema = {
   auth_type: 'password',
   username: '',
   password: '',
-  key_id: undefined,
+  key_id: null,
   enabled: false
 }
-const state = reactive<HostFullSchema>({...initialState})
+const state = ref<any>({...initialState})
 const form = useTemplateRef('form')
 const showPassword = ref(false)
 const isLoading = ref(false)
-
-// Callbacks para el toolbar
-const handleStateEnabledChange = (value: boolean) => {
-  state.enabled = value
-  updateToolbar()
-}
 
 const handleReset = () => {
   Object.assign(state, initialState)
   form.value?.clear()
 }
 
+const updateToolbar = () => toolbar?.setToolbarContent(generateToolbarContent())
 // Generar contenido del toolbar
-const generateToolbarContent = useToolbarContent('hosts', state, isLoading, handleStateEnabledChange, () => form.value?.submit(), handleReset)
-
-const updateToolbar = () => {
-  toolbar?.setToolbarContent(generateToolbarContent())
-}
+const generateToolbarContent = useToolbarContentCreate('hosts', state, isLoading, updateToolbar, () => form.value?.submit(), handleReset)
 
 async function onSubmit(event: FormSubmitEvent<HostSchema>){
   isLoading.value = true
