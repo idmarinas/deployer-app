@@ -153,7 +153,7 @@ watch(isLoading, updateToolbar)
           :help="t('schemas.hosts.form.password.help')"
           :required="state.auth_type === 'password'"
         >
-          <UInput :type="showPassword ? 'text' : 'password'"  v-model="state.password" autocomplete="on" class="w-full" :ui="{ trailing: 'pe-1' }">
+          <UInput :type="showPassword ? 'text' : 'password'"  v-model="state.password" autocomplete="off" class="w-full" :ui="{ trailing: 'pe-1' }">
             <template #trailing>
             <UButton
               color="neutral"
