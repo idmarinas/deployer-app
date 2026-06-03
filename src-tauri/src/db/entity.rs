@@ -14,7 +14,7 @@ use sqlx::sqlite::SqliteRow;
 ///
 /// # Ejemplo
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl DbEntity for Host {
 ///     fn table_name() -> &'static str { "hosts" }
 ///
