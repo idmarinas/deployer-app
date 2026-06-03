@@ -29,7 +29,7 @@ const route = useRoute('dashboard-hosts-id-edit')
 const router = useRouter()
 const toolbar = useDashboardToolbar('hosts')
 const toast = useToast()
-const { data: host, isLoading, error, reload } = useHostById()
+const { data: host, isLoading, reload } = useHostById()
 const { hostSchema, authPasswordSchema, authKeySchema } = useHostSchema(Number.parseInt(route.params.id))
 
 const state = ref<any>({})
@@ -75,12 +75,6 @@ onBeforeUnmount(() => {
 watch(host, (newHost) => {
   if (newHost) {
     state.value = sanitizeNulls(newHost)
-  }
-}, { immediate: true })
-
-watch(error, (err) => {
-  if (err?.message === 'not-found') {
-    router.push('/dashboard/hosts/:path(.*)')
   }
 }, { immediate: true })
 
