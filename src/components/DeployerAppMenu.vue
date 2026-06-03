@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts">
 import { computed } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
@@ -6,10 +6,17 @@ import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 
 import { useI18n } from 'vue-i18n'
 import { useColorMode } from '@vueuse/core'
+import * as uiLocales from '@nuxt/ui/locale'
 
+import { useLocale } from '@/composables/useLocale'
+</script>
+
+<script setup lang="ts">
 defineProps<{
   collapsed?: boolean
 }>()
+
+const { locale, setLocale, availableLocales, isLoading: isLocaleLoading } = useLocale()
 
 const { t } = useI18n()
 const appConfig = useAppConfig()
@@ -28,7 +35,6 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   to: '/app/settings'
 },{
     label: 'Restablecer ventana',
-    color: 'warning',
     icon: 'i-tabler-window',
     onClick: async () => {
       const win = getCurrentWindow()
@@ -60,6 +66,22 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       colorMode.value = 'dark'
     }
   }]
+}, {
+  label: t('components.deployerAppMenu.locale'),
+  icon: 'i-tabler-language',
+  children: Object.values(uiLocales).filter(lang => availableLocales.includes(lang.code)).map(lang => ({
+    label: lang.name,
+    icon: `circle-flags:lang-${lang.code}`,
+    type: 'checkbox',
+    name: 'locale',
+    loading: isLocaleLoading.value,
+    disabled: isLocaleLoading.value,
+    checked: locale.value === lang.code,
+    onSelect(e: Event) {
+      e.preventDefault()
+      setLocale(lang.code)
+    }
+  }))
 }]
 ]))
 </script>
