@@ -10,6 +10,10 @@ use commands::hosts::{
     test_connection,
 };
 use commands::migrations::{has_pending_migrations, run_migrations};
+use commands::passkeys::{
+    crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
+    crud_update_passkey,
+};
 use commands::store::{check_database_exists, get_database_path, set_database_path};
 use db::EncryptionConfigCache;
 
@@ -45,6 +49,12 @@ pub fn run() {
             crud_delete_host,
             // Hosts - otros
             test_connection,
+            // Passkeys - CRUD
+            crud_create_passkey,
+            crud_update_passkey,
+            crud_get_passkey,
+            crud_list_passkeys,
+            crud_delete_passkey,
             // Store
             get_database_path,
             set_database_path,
