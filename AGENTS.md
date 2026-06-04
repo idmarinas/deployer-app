@@ -43,7 +43,7 @@ Estas reglas deben seguirse sin excepción:
   - `/utils`: Funciones puras sin reactividad de Vue.
 - `/src-tauri`: Lógica del Backend (Rust).
   - `src/commands/`: Comandos Tauri, **un archivo por comando**.
-    - `src/commands/hosts/crud/`: Comandos CRUD de hosts, prefijados con `crud_`.
+    - `src/commands/helpers.rs`: Helper compartido con `open_pool()`, `get_master_key()` y `open_crypto_context()`. Usado por todos los módulos con cifrado.
   - `src/crypto/`: Módulo de cifrado (keychain + AES-256-GCM).
   - `src/db/`: Módulo de base de datos genérico (trait, caché, CRUD).
   - `migrations/`: Archivos SQL de migración de la base de datos.
@@ -112,7 +112,10 @@ Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD 
    - `to_fields()` — serializar a pares `(campo, valor)` para INSERT/UPDATE. **No debe incluir `id`, `created_at` ni `updated_at`**.
    - `to_fields_all()` — igual que `to_fields()` pero incluyendo `id`, `created_at` y `updated_at`. Se usa internamente en `fetch_one` y `fetch_all` para reconstruir la entidad completa tras el descifrado. Si no se sobrescribe, delega en `to_fields()` (valor por defecto del trait), lo que provocaría que esos campos queden vacíos o en cero.
    - `from_fields()` — reconstruir la entidad desde pares tras descifrado.
-2. Crear `src/commands/<entidad>/helpers.rs` reutilizando `open_crypto_context()` o copiando el patrón de `hosts/helpers.rs`.
+2. Crear `src/commands/<entidad>/helpers.rs` con una re-exportación de `commands::helpers`:
+   ```rust
+   pub use crate::commands::helpers::{get_master_key, open_crypto_context, open_pool};
+   ```
 3. Crear los cinco archivos de comandos en `src/commands/<entidad>/crud/`.
 4. Registrar los comandos en `lib.rs`.
 5. Añadir la configuración inicial de cifrado en la migración SQL correspondiente en la tabla `encryption_config`.
