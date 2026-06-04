@@ -1,7 +1,6 @@
+use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-
-use deployer_macros::DbEntity;
 
 // ============================================================================
 // Enum AuthType
@@ -54,6 +53,8 @@ pub struct Host {
     pub port: i64,
     pub username: Option<String>,
     pub auth_type: AuthType,
+    /// Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
+    /// solo la usa Rust internamente para SSH.
     #[db_encrypt(expose = false)]
     pub password: Option<String>,
     pub key_id: Option<i64>,
@@ -62,7 +63,6 @@ pub struct Host {
     pub created_at: String,
     pub updated_at: String,
 }
-
 
 // ============================================================================
 // Input para crear un Host
