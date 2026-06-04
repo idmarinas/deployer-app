@@ -23,7 +23,7 @@ const { toolbarContent } = useDashboardToolbarProvider('passkeys')
             to="/dashboard/passkeys/create"
             icon="i-tabler-plus"
             variant="outline"
-            :label="t('components.navigation.create.passkey.label')"
+            :label="t('components.navigation.add.passkey.label')"
           />
         </template>
       </UDashboardNavbar>

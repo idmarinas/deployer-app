@@ -23,7 +23,7 @@ const { toolbarContent } = useDashboardToolbarProvider('hosts')
             to="/dashboard/hosts/create"
             icon="i-tabler-plus"
             variant="outline"
-            :label="t('components.navigation.create.host.label')"
+            :label="t('components.navigation.add.host.label')"
           />
         </template>
       </UDashboardNavbar>
