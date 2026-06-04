@@ -61,36 +61,36 @@ export function useSideberMenu() {
       label: t('components.sidebar.search.actions'),
       items: [
         {
-          label: t('components.navigation.create.project.label'),
-          suffix: t('components.navigation.create.project.description'),
+          label: t('components.navigation.add.project.label'),
+          suffix: t('components.navigation.add.project.description'),
           icon: 'i-tabler-package',
           to: '/dashboard/projects/create',
           kbds: ['shift', 'P']
         },
         {
-          label: t('components.navigation.create.task.label'),
-          suffix: t('components.navigation.create.task.description'),
+          label: t('components.navigation.add.task.label'),
+          suffix: t('components.navigation.add.task.description'),
           icon: 'i-tabler-list-check',
           to: '/dashboard/tasks/create',
           kbds: ['shift', 'T']
         },
         {
-          label: t('components.navigation.create.passkey.label'),
-          suffix: t('components.navigation.create.passkey.description'),
+          label: t('components.navigation.add.passkey.label'),
+          suffix: t('components.navigation.add.passkey.description'),
           icon: 'i-tabler-key',
           to: '/dashboard/passkeys/create',
           kbds: ['shift', 'K']
         },
         {
-          label: t('components.navigation.create.host.label'),
-          suffix: t('components.navigation.create.host.description'),
+          label: t('components.navigation.add.host.label'),
+          suffix: t('components.navigation.add.host.description'),
           icon: 'i-tabler-server',
           to: '/dashboard/hosts/create',
           kbds: ['shift', 'H']
         },
         {
-          label: t('components.navigation.create.variable.label'),
-          suffix: t('components.navigation.create.variable.description'),
+          label: t('components.navigation.add.variable.label'),
+          suffix: t('components.navigation.add.variable.description'),
           icon: 'i-tabler-variable',
           to: '/dashboard/variables/create',
           kbds: ['shift', 'V']
@@ -111,36 +111,36 @@ export function useDashboardButton() {
 
   const items: DropdownMenuItem[] = [
     {
-      label: t('components.navigation.create.project.label'),
-      description: t('components.navigation.create.project.description'),
+      label: t('components.navigation.add.project.label'),
+      description: t('components.navigation.add.project.description'),
       icon: 'i-tabler-package',
       to: '/dashboard/projects/create',
       kbds: ['shift', 'P']
     },
     {
-      label: t('components.navigation.create.task.label'),
-      description: t('components.navigation.create.task.description'),
+      label: t('components.navigation.add.task.label'),
+      description: t('components.navigation.add.task.description'),
       icon: 'i-tabler-list-check',
       to: '/dashboard/tasks/create',
       kbds: ['shift', 'T']
     },
     {
-      label: t('components.navigation.create.passkey.label'),
-      description: t('components.navigation.create.passkey.description'),
+      label: t('components.navigation.add.passkey.label'),
+      description: t('components.navigation.add.passkey.description'),
       icon: 'i-tabler-key',
       to: '/dashboard/passkeys/create',
       kbds: ['shift', 'K']
     },
     {
-      label: t('components.navigation.create.host.label'),
-      description: t('components.navigation.create.host.description'),
+      label: t('components.navigation.add.host.label'),
+      description: t('components.navigation.add.host.description'),
       icon: 'i-tabler-server',
       to: '/dashboard/hosts/create',
       kbds: ['shift', 'H']
     },
     {
-      label: t('components.navigation.create.variable.label'),
-      description: t('components.navigation.create.variable.description'),
+      label: t('components.navigation.add.variable.label'),
+      description: t('components.navigation.add.variable.description'),
       icon: 'i-tabler-variable',
       to: '/dashboard/variables/create',
       kbds: ['shift', 'V']
