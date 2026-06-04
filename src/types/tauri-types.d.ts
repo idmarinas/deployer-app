@@ -10,7 +10,13 @@ export type CommandResponse<T = null> = { success: boolean, data: T | null, mess
 
 export type CreateHostInput = { name: string, host: string, port: number | null, username: string | null, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
 
+export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
+
 export type Host = { id: number, name: string, host: string, port: number, username: string | null, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean, created_at: string, updated_at: string, };
+
+export type KeyType = "rsa" | "ed25519" | "ecdsa";
+
+export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
 
 export type UpdateHostInput = { name: string | null, host: string | null, port: number | null, username: string | null, auth_type: AuthType | null, 
 /**
@@ -19,3 +25,15 @@ export type UpdateHostInput = { name: string | null, host: string | null, port: 
  * Si es `Some("valor")`, se cifra y se guarda.
  */
 password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
+
+export type UpdatePasskeyInput = { name: string | null, 
+/**
+ * Si es `None`, no se modifica el contenido actual.
+ * Si es `Some("valor")`, se cifra y se guarda.
+ */
+key_content: string | null, 
+/**
+ * Si es `None`, no se modifica la passphrase actual.
+ * Si es `Some("")`, se elimina la passphrase.
+ */
+passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
