@@ -19,8 +19,8 @@ const { toolbarContent } = useDashboardToolbarProvider('variables')
 
         <template #right>
           <UButton
-            v-if="!route.path.endsWith('/create')"
-            to="/dashboard/variables/create"
+            v-if="!route.path.endsWith('/add')"
+            to="/dashboard/variables/add"
             icon="i-tabler-plus"
             variant="outline"
             :label="t('components.navigation.add.variable.label')"

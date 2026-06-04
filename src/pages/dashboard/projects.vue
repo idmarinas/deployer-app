@@ -19,8 +19,8 @@ const { toolbarContent } = useDashboardToolbarProvider('projects')
 
         <template #right>
           <UButton
-            v-if="!route.path.endsWith('/create')"
-            to="/dashboard/projects/create"
+            v-if="!route.path.endsWith('/add')"
+            to="/dashboard/projects/add"
             icon="i-tabler-plus"
             variant="outline"
             :label="t('components.navigation.add.project.label')"

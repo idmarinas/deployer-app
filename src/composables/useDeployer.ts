@@ -5,19 +5,19 @@ export function useDeployerShortcuts() {
 
   const shortcuts = {
     shift_p: async () => {
-      await router.push('/dashboard/projects/create')
+      await router.push('/dashboard/projects/add')
     },
     shift_t: async () => {
-      await router.push('/dashboard/tasks/create')
+      await router.push('/dashboard/tasks/add')
     },
     shift_k: async () => {
-      await router.push('/dashboard/passkeys/create')
+      await router.push('/dashboard/passkeys/add')
     },
     shift_h: async () => {
-      await router.push('/dashboard/hosts/create')
+      await router.push('/dashboard/hosts/add')
     },
     shift_v: async () => {
-      await router.push('/dashboard/variables/create')
+      await router.push('/dashboard/variables/add')
     }
   }
 

@@ -64,35 +64,35 @@ export function useSideberMenu() {
           label: t('components.navigation.add.project.label'),
           suffix: t('components.navigation.add.project.description'),
           icon: 'i-tabler-package',
-          to: '/dashboard/projects/create',
+          to: '/dashboard/projects/add',
           kbds: ['shift', 'P']
         },
         {
           label: t('components.navigation.add.task.label'),
           suffix: t('components.navigation.add.task.description'),
           icon: 'i-tabler-list-check',
-          to: '/dashboard/tasks/create',
+          to: '/dashboard/tasks/add',
           kbds: ['shift', 'T']
         },
         {
           label: t('components.navigation.add.passkey.label'),
           suffix: t('components.navigation.add.passkey.description'),
           icon: 'i-tabler-key',
-          to: '/dashboard/passkeys/create',
+          to: '/dashboard/passkeys/add',
           kbds: ['shift', 'K']
         },
         {
           label: t('components.navigation.add.host.label'),
           suffix: t('components.navigation.add.host.description'),
           icon: 'i-tabler-server',
-          to: '/dashboard/hosts/create',
+          to: '/dashboard/hosts/add',
           kbds: ['shift', 'H']
         },
         {
           label: t('components.navigation.add.variable.label'),
           suffix: t('components.navigation.add.variable.description'),
           icon: 'i-tabler-variable',
-          to: '/dashboard/variables/create',
+          to: '/dashboard/variables/add',
           kbds: ['shift', 'V']
         },
       ]
@@ -114,35 +114,35 @@ export function useDashboardButton() {
       label: t('components.navigation.add.project.label'),
       description: t('components.navigation.add.project.description'),
       icon: 'i-tabler-package',
-      to: '/dashboard/projects/create',
+      to: '/dashboard/projects/add',
       kbds: ['shift', 'P']
     },
     {
       label: t('components.navigation.add.task.label'),
       description: t('components.navigation.add.task.description'),
       icon: 'i-tabler-list-check',
-      to: '/dashboard/tasks/create',
+      to: '/dashboard/tasks/add',
       kbds: ['shift', 'T']
     },
     {
       label: t('components.navigation.add.passkey.label'),
       description: t('components.navigation.add.passkey.description'),
       icon: 'i-tabler-key',
-      to: '/dashboard/passkeys/create',
+      to: '/dashboard/passkeys/add',
       kbds: ['shift', 'K']
     },
     {
       label: t('components.navigation.add.host.label'),
       description: t('components.navigation.add.host.description'),
       icon: 'i-tabler-server',
-      to: '/dashboard/hosts/create',
+      to: '/dashboard/hosts/add',
       kbds: ['shift', 'H']
     },
     {
       label: t('components.navigation.add.variable.label'),
       description: t('components.navigation.add.variable.description'),
       icon: 'i-tabler-variable',
-      to: '/dashboard/variables/create',
+      to: '/dashboard/variables/add',
       kbds: ['shift', 'V']
     }
   ]

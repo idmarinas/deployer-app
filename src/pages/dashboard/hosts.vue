@@ -19,8 +19,8 @@ const { toolbarContent } = useDashboardToolbarProvider('hosts')
 
         <template #right>
           <UButton
-            v-if="!route.path.endsWith('/create')"
-            to="/dashboard/hosts/create"
+            v-if="!route.path.endsWith('/add')"
+            to="/dashboard/hosts/add"
             icon="i-tabler-plus"
             variant="outline"
             :label="t('components.navigation.add.host.label')"

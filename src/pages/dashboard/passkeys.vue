@@ -19,8 +19,8 @@ const { toolbarContent } = useDashboardToolbarProvider('passkeys')
 
         <template #right>
           <UButton
-            v-if="!route.path.endsWith('/create')"
-            to="/dashboard/passkeys/create"
+            v-if="!route.path.endsWith('/add')"
+            to="/dashboard/passkeys/add"
             icon="i-tabler-plus"
             variant="outline"
             :label="t('components.navigation.add.passkey.label')"
