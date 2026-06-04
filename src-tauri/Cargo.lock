@@ -1241,6 +1241,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm 0.10.3",
  "base64 0.22.1",
+ "deployer-macros",
  "hex",
  "keyring",
  "rand_core 0.6.4",
@@ -1260,6 +1261,15 @@ dependencies = [
  "tauri-plugin-window-state",
  "tokio",
  "ts-rs",
+]
+
+[[package]]
+name = "deployer-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

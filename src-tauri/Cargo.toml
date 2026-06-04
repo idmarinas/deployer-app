@@ -41,6 +41,7 @@ keyring = { version = "3", features = ["windows-native"] }
 base64 = "0.22.1"
 rand_core = { version = "0.6", features = ["getrandom"] }
 hex = "0.4.3"
+deployer-macros = { path = "crates/deployer-macros" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-positioner = "2"
