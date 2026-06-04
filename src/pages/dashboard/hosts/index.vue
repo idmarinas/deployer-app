@@ -346,7 +346,7 @@ const expanded = ref({})
         {
           icon: 'i-tabler-plus',
           label: t('components.navigation.add.host.label'),
-          to: {name: 'dashboard-hosts-create'}
+          to: {name: 'dashboard-hosts-add'}
         },
         {
           icon: 'i-tabler-refresh',

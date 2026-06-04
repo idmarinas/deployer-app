@@ -14,7 +14,7 @@ import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 
 definePage({
-  name: 'dashboard-hosts-create'
+  name: 'dashboard-hosts-add'
 })
 
 const { t } = useI18n()
