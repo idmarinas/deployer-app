@@ -200,6 +200,32 @@
       letter-spacing: .1em;
     }
 
+    /* ── Botón de recarga tardía ── */
+    .reload-btn {
+      margin-top: .25rem;
+      padding: .5rem 1.25rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: .8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+      animation: fadeIn .5s ease both;
+    }
+
+    .reload-btn:hover {
+      background: var(--primary-dim);
+      border-color: var(--primary);
+      color: var(--text);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* ── Animaciones ── */
     @keyframes pulse {
 
@@ -280,6 +306,8 @@
             <span class="loading-text" id="loading-text"></span>
           </div>
         </div>
+
+        <button id="reload-btn" class="reload-btn" onclick="location.reload()" hidden></button>
       </div>
     </div>
 
@@ -287,11 +315,13 @@
       const messages = {
         es: {
           subtitle: 'Preparando el entorno de despliegue',
-          loading_text: 'Cargando recursos…'
+          loading_text: 'Cargando recursos…',
+          slow_reload: '¿Tarda demasiado? Prueba a recargar la página'
         },
         en: {
           subtitle: 'Preparing the deployment environment',
-          loading_text: 'Loading resources…'
+          loading_text: 'Loading resources…',
+          slow_reload: 'Taking too long? Try reloading the page'
         },
       }
 
@@ -307,7 +337,15 @@
 
         document.getElementById('subtitle').textContent = texts.subtitle;
         document.getElementById('loading-text').textContent = texts.loading_text;
+        const reloadBtn = document.getElementById('reload-btn');
+        if (reloadBtn) reloadBtn.textContent = texts.slow_reload;
       }
+
+      // Mostrar botón si la carga tarda más de 10 segundos
+      setTimeout(() => {
+        const btn = document.getElementById('reload-btn');
+        if (btn) btn.hidden = false;
+      }, 10000);
 
       let currentLang = navigator.language;
       window.addEventListener('focus', () => {
