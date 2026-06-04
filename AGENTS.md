@@ -67,7 +67,7 @@ Los nombres de las tablas están centralizados en `src/constants/dbTables.ts`:
 
 ```ts
 export const DB_TABLES = {
-  APP_SETTINGS: 'app_settings',
+  DEPLOYER_SETTINGS: 'deployer_settings',
 } as const
 ```
 
