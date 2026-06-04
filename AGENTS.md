@@ -46,6 +46,7 @@ Estas reglas deben seguirse sin excepción:
     - `src/commands/helpers.rs`: Helper compartido con `open_pool()`, `get_master_key()` y `open_crypto_context()`. Usado por todos los módulos con cifrado.
   - `src/crypto/`: Módulo de cifrado (keychain + AES-256-GCM).
   - `src/db/`: Módulo de base de datos genérico (trait, caché, CRUD).
+  - `crates/deployer-macros/`: Crate de proc-macros para derivar traits automáticamente.
   - `migrations/`: Archivos SQL de migración de la base de datos.
   - `src/lib.rs`: Registro de comandos Tauri y estado global.
   - `tauri.conf.json`: Configuración de la aplicación Tauri.
@@ -104,14 +105,31 @@ Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD 
 
 #### Añadir una nueva entidad con CRUD y cifrado
 
-1. Crear `src/commands/<entidad>/types.rs` e implementar el trait `DbEntity`:
-   - `table_name()` — nombre de la tabla en SQLite.
-   - `encrypted_fields()` — campos a cifrar siempre: `&[("campo", expose)]`.
-   - `conditional_encrypted_fields()` — campos cuyo cifrado depende de otro campo: `&[("valor", "condicion")]`.
-   - `from_row()` — construir la entidad desde una fila SQLite.
-   - `to_fields()` — serializar a pares `(campo, valor)` para INSERT/UPDATE. **No debe incluir `id`, `created_at` ni `updated_at`**.
-   - `to_fields_all()` — igual que `to_fields()` pero incluyendo `id`, `created_at` y `updated_at`. Se usa internamente en `fetch_one` y `fetch_all` para reconstruir la entidad completa tras el descifrado. Si no se sobrescribe, delega en `to_fields()` (valor por defecto del trait), lo que provocaría que esos campos queden vacíos o en cero.
-   - `from_fields()` — reconstruir la entidad desde pares tras descifrado.
+1. Crear `src/commands/<entidad>/types.rs` con el struct de la entidad derivando `DbEntity`:
+
+```rust
+#[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+#[db_table("nombre_tabla")]
+pub struct MiEntidad {
+    pub id: i64,
+    pub name: String,
+    #[db_encrypt(expose = false)]          // campo siempre cifrado, no expuesto al frontend
+    pub secret: Option<String>,
+    #[db_conditional_encrypt(condition = "is_secret")]  // cifrado condicional
+    pub value: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+```
+
+   Reglas del macro `DbEntity`:
+   - `#[db_table("nombre")]` — **obligatorio** en el struct.
+   - `#[db_encrypt]` o `#[db_encrypt(expose = true/false)]` — campo siempre cifrado. `expose = false` por defecto.
+   - `#[db_conditional_encrypt(condition = "campo_booleano")]` — cifrado solo si `campo_booleano` es `true` en esa fila.
+   - Los campos `id`, `created_at` y `updated_at` se excluyen automáticamente de `to_fields()`.
+   - El enum usado como tipo de campo **debe** implementar `Default`, `Serialize` y `Deserialize`.
+
 2. Crear `src/commands/<entidad>/helpers.rs` con una re-exportación de `commands::helpers`:
    ```rust
    pub use crate::commands::helpers::{get_master_key, open_crypto_context, open_pool};
@@ -120,7 +138,36 @@ Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD 
 4. Registrar los comandos en `lib.rs`.
 5. Añadir la configuración inicial de cifrado en la migración SQL correspondiente en la tabla `encryption_config`.
 
-## 6. Sistema de Cifrado Transparente
+## 6. Proc-Macro `DbEntity` (`crates/deployer-macros`)
+
+El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera automáticamente la implementación del trait homónimo.
+
+### Atributos disponibles
+
+| Atributo | Nivel | Descripción |
+|---|---|---|
+| `#[db_table("nombre")]` | Struct | **Obligatorio.** Nombre de la tabla SQLite. |
+| `#[db_encrypt]` | Campo | Cifra siempre el campo. `expose = false` por defecto. |
+| `#[db_encrypt(expose = true)]` | Campo | Cifra siempre; descifra y expone el valor al frontend al leer. |
+| `#[db_conditional_encrypt(condition = "campo")]` | Campo | Cifra solo si `campo` es `true` en la misma fila. |
+
+### Lo que genera el macro
+
+- `table_name()` — devuelve el string de `#[db_table]`.
+- `encrypted_fields()` — array estático con los campos marcados con `#[db_encrypt]` y su flag `expose`.
+- `conditional_encrypted_fields()` — array estático con los campos marcados con `#[db_conditional_encrypt]`.
+- `from_row()` — construye el struct desde una `SqliteRow` con `try_get` por cada campo.
+- `to_fields()` — serializa los campos del struct a pares `(String, serde_json::Value)`, **excluyendo** `id`, `created_at` y `updated_at`. Usa `.expect()` para que un fallo de serialización sea visible inmediatamente.
+- `to_fields_all()` — igual que `to_fields()` pero incluyendo `id`, `created_at` y `updated_at`.
+- `from_fields()` — reconstruye el struct desde un mapa de pares (tras descifrado). Usa `serde_json::from_value(...).unwrap_or_default()` por campo, por lo que el struct debe implementar `Default` (o todos sus tipos deben tenerlo).
+
+### Requisitos del struct para usar el macro
+
+- Derivar también `Serialize`, `Deserialize` (requeridos por el trait `DbEntity`).
+- Los enums usados como tipo de campo deben implementar `Default`, `Serialize` y `Deserialize`. Marcar la variante por defecto con `#[default]`.
+- Los valores por defecto de dominio para campos numéricos o booleanos los gestiona SQLite mediante las restricciones `DEFAULT` de la migración, no el macro.
+
+## 7. Sistema de Cifrado Transparente
 
 ### Principio de funcionamiento
 - El frontend opera **siempre en texto plano**.
@@ -156,7 +203,7 @@ La tabla `encryption_config` en SQLite controla qué campos se cifran y cómo se
 - Se cachea en memoria (`EncryptionConfigCache`) para evitar lecturas repetidas. La caché se invalida automáticamente al modificar `encryption_config`.
 
 ### Campos condicionales (`conditional_encrypted_fields`)
-Para campos cuyo cifrado depende del valor de otro campo en la misma fila (ej. `value` solo si `is_secret = true`). Estas tablas **no** se configuran en `encryption_config`, sino directamente en el trait `DbEntity` de la entidad.
+Para campos cuyo cifrado depende del valor de otro campo en la misma fila (ej. `value` solo si `is_secret = true`). Estas tablas **no** se configuran en `encryption_config`, sino directamente en el trait `DbEntity` de la entidad (o vía `#[db_conditional_encrypt(condition = "campo")]` en el macro).
 
 ### Configuración inicial de cifrado
 | Tabla | Campo | encrypt | expose |
@@ -165,7 +212,7 @@ Para campos cuyo cifrado depende del valor de otro campo en la misma fila (ej. `
 | `passkeys` | `key_content` | 1 | 0 |
 | `passkeys` | `passphrase` | 1 | 0 |
 
-## 7. Patrones de Acceso a Base de Datos
+## 8. Patrones de Acceso a Base de Datos
 
 ### useDatabase
 El composable `useDatabase` gestiona la conexión SQLite y expone los métodos base de acceso:
@@ -227,7 +274,7 @@ await transaction(async () => {
 
 Este patrón es similar al **Unit of Work de Doctrine ORM**.
 
-## 8. Dependencias Rust — Notas de Compatibilidad
+## 9. Dependencias Rust — Notas de Compatibilidad
 
 | Crate | Versión usada | Límite | Motivo |
 |-------|--------------|--------|--------|
@@ -236,7 +283,7 @@ Este patrón es similar al **Unit of Work de Doctrine ORM**.
 | `aes-gcm` | `0.10` | — | Estable, sin restricciones conocidas. |
 | `sqlx` | `0.9` | — | `SqliteArguments` sin lifetime. Queries dinámicas requieren `AssertSqlSafe(sql.clone())`. |
 
-## 9. Comandos Útiles
+## 10. Comandos Útiles
 - `bun run tauri dev`: Inicia el servidor de desarrollo de Vite y Tauri.
 - `bun run tauri build`: Genera el paquete de producción de la aplicación.
 
