@@ -12,7 +12,7 @@ use commands::hosts::{
 use commands::migrations::{has_pending_migrations, run_migrations};
 use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
-    crud_update_passkey,
+    crud_update_passkey, generate_passkey,
 };
 use commands::store::{check_database_exists, get_database_path, set_database_path};
 use db::EncryptionConfigCache;
@@ -55,6 +55,8 @@ pub fn run() {
             crud_get_passkey,
             crud_list_passkeys,
             crud_delete_passkey,
+            // Passkeys - otros
+            generate_passkey,
             // Store
             get_database_path,
             set_database_path,

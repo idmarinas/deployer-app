@@ -3,7 +3,7 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
-use rand_core::{OsRng, RngCore};
+use rand::{rngs::SysRng, TryRng};
 
 use super::keyring::ENCRYPTED_PREFIX;
 
@@ -12,7 +12,6 @@ use super::keyring::ENCRYPTED_PREFIX;
 /// Formato resultado: `ENC:<base64(nonce_12_bytes + ciphertext)>`
 /// El nonce se antepone al ciphertext para recuperarlo al descifrar.
 pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, String> {
-    // Si ya está cifrado, no volver a cifrar
     if plaintext.starts_with(ENCRYPTED_PREFIX) {
         return Ok(plaintext.to_string());
     }
@@ -21,7 +20,8 @@ pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, String> {
         .map_err(|e| format!("Error al inicializar el cifrado: {}", e))?;
 
     let mut nonce_bytes = [0u8; 12];
-    OsRng.fill_bytes(&mut nonce_bytes);
+    SysRng.try_fill_bytes(&mut nonce_bytes)
+        .map_err(|e| format!("Error al generar nonce: {}", e))?;
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher

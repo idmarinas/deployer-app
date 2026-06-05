@@ -1,5 +1,5 @@
 use keyring::{Entry, Error as KeyringError};
-use rand_core::{OsRng, RngCore};
+use rand::{rngs::SysRng, TryRng};
 
 /// Nombre del servicio en el keychain del sistema operativo.
 const SERVICE_NAME: &str = "deployer-app";
@@ -19,8 +19,7 @@ pub fn get_or_create_master_key() -> Result<Vec<u8>, String> {
             .map_err(|e| format!("Error al decodificar la clave maestra: {}", e)),
 
         Err(KeyringError::NoEntry) => {
-            // Primera ejecución: genera y persiste una clave de 32 bytes
-            let key = generate_key();
+            let key = generate_key()?;
             let hex_key = hex::encode(&key);
             entry
                 .set_password(&hex_key)
@@ -33,8 +32,9 @@ pub fn get_or_create_master_key() -> Result<Vec<u8>, String> {
 }
 
 /// Genera una clave aleatoria de 32 bytes usando el CSPRNG del SO.
-fn generate_key() -> Vec<u8> {
+fn generate_key() -> Result<Vec<u8>, String> {
     let mut key = vec![0u8; 32];
-    OsRng.fill_bytes(&mut key);
-    key
+    SysRng.try_fill_bytes(&mut key)
+        .map_err(|e| format!("Error al generar clave maestra: {}", e))?;
+    Ok(key)
 }

@@ -22,11 +22,11 @@ tauri = { version = "2.11.2", features = [] }
 tauri-plugin-opener = "2.5.4"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
-tauri-plugin-dialog = "2.7.1"
-tauri-plugin-store = "2.4.3"
-tauri-plugin-positioner = { version = "2.3.2", features = ["tray-icon"] }
-tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
-sqlx = { version = "0.9.0", features = [
+tauri-plugin-dialog = "2.7"
+tauri-plugin-store = "2.4"
+tauri-plugin-positioner = { version = "2.3", features = ["tray-icon"] }
+tauri-plugin-sql = { version = "2.4", features = ["sqlite"] }
+sqlx = { version = "0.9", features = [
     "runtime-tokio",
     "sqlite",
     "macros",
@@ -35,11 +35,11 @@ sqlx = { version = "0.9.0", features = [
 tokio = { version = "1.52.3", features = ["time"] }
 ts-rs = "12.0.1"
 russh = "0.61.2"
-russh-keys = "0.49.0"
 aes-gcm = "0.10"
 keyring = { version = "3", features = ["windows-native"] }
 base64 = "0.22.1"
-rand_core = { version = "0.6", features = ["getrandom"] }
+rand = { version = "0.10", default-features = false, features = ["sys_rng"] }
+rand_core = { version = "0.10" }
 hex = "0.4.3"
 deployer-macros = { path = "crates/deployer-macros" }
 
