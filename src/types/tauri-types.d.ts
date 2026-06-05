@@ -12,7 +12,47 @@ export type CreateHostInput = { name: string, host: string, port: number | null,
 
 export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
 
-export type Host = { id: number, name: string, host: string, port: number, username: string | null, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean, created_at: string, updated_at: string, };
+export type GeneratePasskeyInput = { 
+/**
+ * Tipo de clave a generar. Por defecto: Ed25519.
+ */
+key_type: KeyType | null, 
+/**
+ * Passphrase para proteger la clave privada.
+ * `None` o cadena vacía = sin passphrase.
+ */
+passphrase: string | null, };
+
+export type GeneratedPasskey = { 
+/**
+ * Clave privada en formato OpenSSH (texto plano).
+ * El cifrado lo aplica `crud_create_passkey` al guardar en BD.
+ */
+key_content: string, 
+/**
+ * Clave pública en formato OpenSSH (para añadir al servidor remoto).
+ */
+public_key: string, 
+/**
+ * Fingerprint SHA-256 de la clave (formato `SHA256:...`).
+ */
+fingerprint: string, 
+/**
+ * Tipo de clave generada.
+ */
+key_type: KeyType, 
+/**
+ * Passphrase ya cifrada con AES-256-GCM, lista para pasar directamente
+ * a `crud_create_passkey`. `None` si no se solicitó passphrase.
+ */
+passphrase: string | null, };
+
+export type Host = { id: number, name: string, host: string, port: number, username: string | null, auth_type: AuthType, 
+/**
+ * Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
+ * solo la usa Rust internamente para SSH.
+ */
+password: string | null, key_id: number | null, description: string | null, enabled: boolean, created_at: string, updated_at: string, };
 
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 

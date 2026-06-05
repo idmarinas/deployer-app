@@ -99,9 +99,21 @@ commands/
     ├── mod.rs
     ├── test_connection.rs
     └── types.rs         ← structs de la entidad e inputs
+└── passkeys/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_passkey.rs
+    │   ├── crud_update_passkey.rs
+    │   ├── crud_get_passkey.rs
+    │   ├── crud_list_passkeys.rs
+    │   └── crud_delete_passkey.rs
+    ├── helpers.rs
+    ├── mod.rs
+    ├── generate_passkey.rs  ← genera par de claves SSH sin guardar en BD
+    └── types.rs
 ```
 
-Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD (passkeys, proyectos, etc.).
+Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD (proyectos, etc.).
 
 #### Añadir una nueva entidad con CRUD y cifrado
 
