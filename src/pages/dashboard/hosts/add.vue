@@ -127,6 +127,17 @@ watch(isLoading, updateToolbar)
           ]"
           autocomplete="on"
           class="w-full"
+          @update:model-value="(value) => {
+            if (value === 'password') {
+              state.username = ''
+              state.password = ''
+              state.key_id = null
+            } else if (value === 'key') {
+              state.username = null
+              state.password = null
+              state.key_id = null
+            }
+          }"
         />
       </UFormField>
 
