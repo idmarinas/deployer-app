@@ -33,12 +33,12 @@ export function useHostSchema(hostId?: number) {
     password: hostId
       ? z.string().optional()
       : z.string().nonempty(t('schemas.hosts.validation.password.required')),
-    key_id: z.null().optional().transform(() => null),
+    key_id: z.null().optional(),
   })
 
   const authKeySchema = z.object({
-    username: z.null().optional().transform(() => null),
-    password: z.null().optional().transform(() => null),
+    username: z.null().optional(),
+    password: z.null().optional(),
     key_id: z.number().min(1, t('schemas.hosts.validation.key.required')),
   })
 
