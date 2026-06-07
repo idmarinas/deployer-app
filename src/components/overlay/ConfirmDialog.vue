@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n'
 
-import { ConfirmDialogOptions } from '@/composables/useConfirmDialog'
+import { ConfirmDialogOptions } from '@/composables/useDialog'
 import { computed } from 'vue';
 
 const props = defineProps<ConfirmDialogOptions>()
