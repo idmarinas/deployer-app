@@ -1,15 +1,11 @@
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
-import Formdialog from '@/components/overlay/Formdialog.vue'
+import GeneratedPasskeyFormDialog from '@/components/overlay/GeneratePasskeyFormDialog.vue'
+import { GeneratedPasskey } from '@/types/tauri-types'
 
 export interface ConfirmDialogOptions {
   title: string
   description?: string,
   type: 'yes_no' | 'cancel_confirm' | 'cancel_delete'
-}
-
-export interface FormDialogOptions {
-  title: string
-  description?: string
 }
 
 export const useConfirmDialog = () => {
@@ -25,11 +21,11 @@ export const useConfirmDialog = () => {
   }
 }
 
-export const useFormDialog = () => {
+export const useGeneratePasskeyDialog = () => {
   const overlay = useOverlay()
 
-  return (options: FormDialogOptions): Promise<string> => {
-    const modal = overlay.create(Formdialog, {
+  return (options: Record<string, any> = {}): Promise<GeneratedPasskey | false> => {
+    const modal = overlay.create(GeneratedPasskeyFormDialog, {
       destroyOnClose: true,
       props: options
     })
