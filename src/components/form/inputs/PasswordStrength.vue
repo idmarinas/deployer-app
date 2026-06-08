@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
 const show = ref(false)
 
 function checkStrength(str: string) {
-  if (props.optional && str.length === 0 || !props.checkStrength) return []
+  if (!props.checkStrength || props.optional && str.length === 0) return []
 
   const requirements = [
     { regex: /.{8,}/, text: t('schemas.form.password.strength.req.length') },
@@ -86,7 +86,7 @@ const text = computed(() => {
       </UInput>
     </UFormField>
 
-    <div v-if="props.optional && password.length > 0 && props.checkStrength || !props.optional" class="mt-1 space-y-2">
+    <div v-if="props.checkStrength && props.optional && password.length > 0 || !props.optional" class="mt-1 space-y-2">
       <UProgress
         :color="color"
         :indicator="text"
