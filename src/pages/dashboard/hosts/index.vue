@@ -189,7 +189,7 @@ function getActionsItems(row: Row<Host>) {
             })
           }
 
-          reload()
+          await reload()
         }
       }
     },
