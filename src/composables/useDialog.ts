@@ -1,5 +1,5 @@
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
-import GeneratedPasskeyFormDialog from '@/components/overlay/GeneratePasskeyFormDialog.vue'
+import GeneratedPasskeyFormDialog from '@/components/overlay/forms/GeneratePasskeyDialog.vue'
 import { GeneratedPasskey } from '@/types/tauri-types'
 
 export interface ConfirmDialogOptions {
