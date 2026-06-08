@@ -19,21 +19,37 @@ CREATE TABLE deployer_settings (
 -- ============================================================================
 
 CREATE TABLE encryption_config (
-    id         INTEGER CONSTRAINT encryption_config_pk PRIMARY KEY AUTOINCREMENT,
+    id INTEGER CONSTRAINT encryption_config_pk PRIMARY KEY AUTOINCREMENT,
     table_name TEXT NOT NULL,
     field_name TEXT NOT NULL,
-    encrypt    BOOLEAN NOT NULL DEFAULT 0,
-    expose     BOOLEAN NOT NULL DEFAULT 0,
+    encrypt BOOLEAN NOT NULL DEFAULT 0,
+    expose BOOLEAN NOT NULL DEFAULT 0,
     CONSTRAINT encryption_config_uq UNIQUE (table_name, field_name)
 );
 
 CREATE INDEX encryption_config_idx_table_name ON encryption_config (table_name);
 
 -- Configuración inicial de campos sensibles
-INSERT INTO encryption_config (table_name, field_name, encrypt, expose) VALUES
-    ('hosts',    'password',    1, 0),
-    ('passkeys', 'key_content', 1, 0),
-    ('passkeys', 'passphrase',  1, 0);
+INSERT INTO
+    encryption_config (
+        table_name,
+        field_name,
+        encrypt,
+        expose
+    )
+VALUES ('hosts', 'password', 1, 0),
+    (
+        'passkeys',
+        'key_content',
+        1,
+        0
+    ),
+    (
+        'passkeys',
+        'passphrase',
+        1,
+        0
+    );
 
 -- ============================================================================
 -- PASSKEYS (SSH Keys)
@@ -62,7 +78,7 @@ CREATE TABLE hosts (
     name TEXT NOT NULL CONSTRAINT hosts_uq_name UNIQUE,
     host TEXT NOT NULL,
     port INTEGER NOT NULL DEFAULT 22,
-    username TEXT,
+    username TEXT NOT NULL DEFAULT '',
     auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (
         auth_type IN ('password', 'key')
     ),
