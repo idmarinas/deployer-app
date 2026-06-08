@@ -7,7 +7,7 @@ import { ref, useTemplateRef, resolveComponent, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useToast } from '@nuxt/ui/composables'
-import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { useConfirmDialog } from '@/composables/useDialog'
 import { useRouter } from 'vue-router'
 import { useHostListAll } from '@/loaders/hosts'
 
