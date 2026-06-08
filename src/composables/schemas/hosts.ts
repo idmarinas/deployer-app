@@ -24,12 +24,12 @@ export function useHostSchema(hostId?: number) {
     description: z.string().max(1000, t('schemas.hosts.validation.description.max')).optional(),
     host: z.xor([z.ipv4(t('schemas.hosts.validation.host.ipv4')), z.ipv6(t('schemas.hosts.validation.host.ipv6'))], t('schemas.hosts.validation.host.required')),
     port: z.number().min(0, t('schemas.hosts.validation.port.min')).max(65535, t('schemas.hosts.validation.port.max')),
+    username: z.string().nonempty(t('schemas.hosts.validation.username.required')),
     auth_type: z.enum(['password', 'key'], t('schemas.hosts.validation.auth_type.required')),
     enabled: z.boolean().default(false)
   })
 
   const authPasswordSchema = z.object({
-    username: z.string().nonempty(t('schemas.hosts.validation.username.required')),
     password: hostId
       ? z.string().optional()
       : z.string().nonempty(t('schemas.hosts.validation.password.required')),
@@ -37,7 +37,6 @@ export function useHostSchema(hostId?: number) {
   })
 
   const authKeySchema = z.object({
-    username: z.null().optional(),
     password: z.null().optional(),
     key_id: z.number().min(1, t('schemas.hosts.validation.key.required')),
   })
