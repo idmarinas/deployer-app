@@ -51,7 +51,7 @@ pub struct Host {
     pub name: String,
     pub host: String,
     pub port: i64,
-    pub username: Option<String>,
+    pub username: String,
     pub auth_type: AuthType,
     /// Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
     /// solo la usa Rust internamente para SSH.
@@ -74,7 +74,7 @@ pub struct CreateHostInput {
     pub name: String,
     pub host: String,
     pub port: Option<i64>,
-    pub username: Option<String>,
+    pub username: String,
     pub auth_type: AuthType,
     pub password: Option<String>,
     pub key_id: Option<i64>,
@@ -113,7 +113,7 @@ pub struct UpdateHostInput {
     pub name: Option<String>,
     pub host: Option<String>,
     pub port: Option<i64>,
-    pub username: Option<String>,
+    pub username: Option<String>,  // None = no modificar, Some(v) = actualizar
     pub auth_type: Option<AuthType>,
     /// Si es `None`, no se modifica la contraseña actual.
     /// Si es `Some("")`, se elimina la contraseña.

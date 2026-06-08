@@ -51,6 +51,9 @@ pub async fn apply_encryption<E: DbEntity>(
 
         if should_encrypt_static || should_encrypt_db || should_encrypt_conditional {
             if let Value::String(ref plaintext) = field_value.clone() {
+                if plaintext.is_empty() {
+                    continue;
+                }
                 *field_value = Value::String(crypto::encrypt(plaintext, key)?);
             }
         }

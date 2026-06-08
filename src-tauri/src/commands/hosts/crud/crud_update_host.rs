@@ -52,7 +52,7 @@ pub async fn crud_update_host(
         name: input.name.unwrap_or(current.name),
         host: input.host.unwrap_or(current.host),
         port: input.port.unwrap_or(current.port),
-        username: input.username.or(current.username),
+        username: input.username.unwrap_or(current.username),
         auth_type: input.auth_type.unwrap_or(current.auth_type),
         // Si password es None en el input, conservar la actual (ya cifrada en BD)
         password: input.password.or(current.password),
