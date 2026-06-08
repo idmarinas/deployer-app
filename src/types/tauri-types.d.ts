@@ -8,9 +8,31 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
-export type CreateHostInput = { name: string, host: string, port: number | null, username: string | null, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
+export type CreateHostInput = { name: string, host: string, port: number | null, username: string, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
 
 export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
+
+export type ExportPublicKeyAction = "add" | "remove";
+
+export type ExportPublicKeyInput = { 
+/**
+ * ID del host destino donde se exportará la clave pública.
+ */
+host_id: number, 
+/**
+ * ID de la passkey cuya clave pública se exportará.
+ */
+passkey_id: number, 
+/**
+ * Acción a realizar: añadir o eliminar la clave del authorized_keys.
+ */
+action: ExportPublicKeyAction, 
+/**
+ * Credenciales temporales opcionales. Se usan cuando el host no tiene
+ * credenciales guardadas en BD que funcionen (ej: host con auth por key
+ * pero la passkey aún no está en el servidor).
+ */
+temp_username: string | null, temp_password: string | null, };
 
 export type GeneratePasskeyInput = { 
 /**
@@ -47,7 +69,7 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type Host = { id: number, name: string, host: string, port: number, username: string | null, auth_type: AuthType, 
+export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
 /**
  * Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
  * solo la usa Rust internamente para SSH.
