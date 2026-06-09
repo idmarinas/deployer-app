@@ -78,8 +78,22 @@ async function onSubmit(event: FormSubmitEvent<GeneratePasskeyInput>) {
       </UForm>
     </template>
     <template #footer>
-      <UButton :label="t(`overlays.dialog.generate_passkey.confirm`)" :loading="isLoading" color="primary" variant="outline" @click="() => form?.submit()" />
-      <UButton :label="t(`overlays.dialog.generate_passkey.cancel`)"  :loading="isLoading" color="neutral" variant="outline" @click="emits('close', false)" />
+      <UButton
+        :label="t(`overlays.dialog.generate_passkey.confirm`)"
+        :loading="isLoading"
+        icon="i-tabler-password-fingerprint"
+        color="primary"
+        variant="outline"
+        @click="() => form?.submit()"
+      />
+      <UButton
+        :label="t(`overlays.dialog.generate_passkey.cancel`)"
+        :loading="isLoading"
+        icon="i-tabler-x"
+        color="neutral"
+        variant="outline"
+        @click="emits('close', false)"
+      />
     </template>
   </UModal>
 </template>
