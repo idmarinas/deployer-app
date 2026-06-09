@@ -1,6 +1,9 @@
+import type { CommandResponse, Host } from '@/types/tauri-types'
+
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 import { invoke } from '@tauri-apps/api/core'
-import { CommandResponse, type Host } from '@/types/tauri-types'
+import { useDatabase } from '@/composables/useDatabase'
+import { DB_TABLES } from '@/constants/dbTables'
 
 export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
   key: to => ['hosts', `host-${to.params.id}`],
@@ -16,7 +19,6 @@ export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
   }
 })
 
-
 export const useHostListAll = defineColadaLoader('dashboard-hosts', {
   key: () => ['hosts', 'all'],
   async query() {
@@ -27,5 +29,18 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
     }
 
     return result.data || [] as Host[]
+  }
+})
+
+export const useHostSelectPopulate = defineColadaLoader({
+  key: () => ['hosts', 'select', 'populate'],
+  async query() {
+    const { db: database } = useDatabase()
+
+    try {
+      return await database.value?.select<Host[]>(`SELECT id, name AS label, username, enabled FROM ${DB_TABLES.HOSTS} ORDER BY name ASC`)
+    } catch {
+      return [] as Host[]
+    }
   }
 })
