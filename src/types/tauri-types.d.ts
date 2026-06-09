@@ -12,6 +12,8 @@ export type CreateHostInput = { name: string, host: string, port: number | null,
 
 export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
 
+export type CreateProjectInput = { name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean | null, };
+
 export type ExportPublicKeyAction = "add" | "remove";
 
 export type ExportPublicKeyInput = { 
@@ -80,6 +82,8 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
 
+export type Project = { id: number, name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean, created_at: string, updated_at: string, };
+
 export type UpdateHostInput = { name: string | null, host: string | null, port: number | null, username: string | null, auth_type: AuthType | null, 
 /**
  * Si es `None`, no se modifica la contraseña actual.
@@ -99,3 +103,5 @@ key_content: string | null,
  * Si es `Some("")`, se elimina la passphrase.
  */
 passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
+
+export type UpdateProjectInput = { name: string | null, description: string | null, repository_url: string | null, framework: string | null, enabled: boolean | null, };
