@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { Row } from '@tanstack/vue-table'
+import type { Column } from '@tanstack/vue-table'
 import type { CommandResponse, Host } from '@/types/tauri-types'
 
 import { ref, useTemplateRef, resolveComponent, h } from 'vue'
@@ -174,8 +174,8 @@ const expanded = ref({})
         :items="
           table?.tableApi
             ?.getAllColumns()
-            .filter((column) => column.getCanHide())
-            .map((column) => ({
+            .filter((column: Column<Host>) => column.getCanHide())
+            .map((column: Column<Host>) => ({
               label: column.columnDef.header as string,
               type: 'checkbox' as const,
               checked: column.getIsVisible(),
