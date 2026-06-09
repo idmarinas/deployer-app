@@ -78,44 +78,11 @@ const columns: TableColumn<Host>[] = [
   }, {
     id: 'actions',
     enableHiding: false,
-    meta: {
-      class: {
-        td: 'text-right'
-      }
-    },
-    cell: ({ row }) => {
-      return h(UDropdownMenu, {
-          content: {
-            align: 'end'
-          },
-          items: getActionsItems(row),
-          'aria-label': 'Actions dropdown'
-        },
-        () => h(UButton, {
-            icon: 'i-lucide-ellipsis-vertical',
-            color: 'neutral',
-            variant: 'ghost',
-            'aria-label': 'Actions dropdown'
-          })
-      )
-    }
-  }
-]
-
-function getActionsItems(row: Row<Host>) {
-  return [{
-      type: 'label',
-      label: t('common.actions')
-    }, {
-      label: t('common.edit'),
-      icon: 'i-tabler-pencil',
-      onSelect() {
+    cell: ({ row }) => h('div', { class: 'flex gap-2 justify-end' }, [
+      h(UButton, { icon: 'i-tabler-pencil', color: 'info', variant: 'ghost', async onClick () {
         router.push({ name: 'dashboard-hosts-id-edit', params: { id: row.original.id as number } })
-      }
-    }, {
-      label: t('pages.hosts.table.dropdown.test_connection'),
-      icon: 'i-tabler-plug',
-      async onSelect() {
+      }}),
+      h(UButton, {icon: 'i-tabler-plug', variant: 'ghost', color: 'neutral', async onClick() {
         const notice = toast.add({
           title: t('pages.hosts.toast.test_connection.loading.title'),
           description: t('pages.hosts.toast.test_connection.loading.description', { name: row.original.name }),
@@ -145,15 +112,8 @@ function getActionsItems(row: Row<Host>) {
           })
         }
 
-      }
-    }, {
-      type: 'separator',
-    },
-    {
-      label: t('common.delete.label'),
-      color: 'error',
-      icon: 'i-tabler-trash',
-      async onSelect() {
+      }}),
+      h(UButton, { icon: 'i-tabler-trash', color: 'error', variant: 'ghost', async onClick() {
         const result = await confirmDialog({
           type: 'cancel_delete',
           title: t('common.delete.label'),
@@ -191,10 +151,10 @@ function getActionsItems(row: Row<Host>) {
 
           await reload()
         }
-      }
-    },
-  ]
-}
+      }})
+    ])
+  }
+]
 
 const table = useTemplateRef('table')
 const columnVisibility = ref({})
