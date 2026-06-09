@@ -14,6 +14,10 @@ use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
     crud_update_passkey, export_public_key, generate_passkey,
 };
+use commands::projects::{
+    crud_create_project, crud_delete_project, crud_get_project, crud_list_projects,
+    crud_update_project,
+};
 use commands::store::{check_database_exists, get_database_path, set_database_path};
 use db::EncryptionConfigCache;
 
@@ -58,6 +62,12 @@ pub fn run() {
             // Passkeys - otros
             export_public_key,
             generate_passkey,
+            // Projects - CRUD
+            crud_create_project,
+            crud_update_project,
+            crud_get_project,
+            crud_list_projects,
+            crud_delete_project,
             // Store
             get_database_path,
             set_database_path,
