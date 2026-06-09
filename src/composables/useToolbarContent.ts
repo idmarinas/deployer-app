@@ -124,8 +124,8 @@ function useToolbarContent(
         checkedIcon: icon[toolbar].checkedIcon,
         loading: loading.value,
         size: 'xl',
-        'onUpdate:modelValue': (value: boolean) => {
-          state.value.enabled = value
+        'onUpdate:modelValue': (value: unknown) => {
+          state.value.enabled = value as boolean
           updateToolbar()
         }
       }),
