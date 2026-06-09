@@ -1,6 +1,8 @@
+import type { GeneratedPasskey, Passkey } from '@/types/tauri-types'
+
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
 import GeneratedPasskeyFormDialog from '@/components/overlay/forms/GeneratePasskeyDialog.vue'
-import { GeneratedPasskey } from '@/types/tauri-types'
+import CopyPasskeyToServerDialog from '@/components/overlay/forms/CopyPasskeyToServerDialog.vue'
 
 export interface ConfirmDialogOptions {
   title: string
@@ -26,6 +28,19 @@ export const useGeneratePasskeyDialog = () => {
 
   return (options: Record<string, any> = {}): Promise<GeneratedPasskey | false> => {
     const modal = overlay.create(GeneratedPasskeyFormDialog, {
+      destroyOnClose: true,
+      props: options
+    })
+
+    return modal.open()
+  }
+}
+
+export const useCopyPasskeyToServer = () => {
+  const overlay = useOverlay()
+
+  return (options: { passkey: Passkey }): Promise<boolean> => {
+    const modal = overlay.create(CopyPasskeyToServerDialog, {
       destroyOnClose: true,
       props: options
     })
