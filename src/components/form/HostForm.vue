@@ -79,7 +79,7 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
           ]"
           autocomplete="on"
           class="w-full"
-          @update:model-value="(value) => {
+          @update:model-value="(value: string) => {
             if (value === 'password') {
               state.password = ''
               state.key_id = null
