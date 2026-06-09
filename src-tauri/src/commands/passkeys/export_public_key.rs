@@ -196,15 +196,23 @@ pub async fn export_public_key(
     match connect_result {
         Ok(Ok(())) => {
             let key = match input.action {
-                ExportPublicKeyAction::Add => "passkeys.success.public_key_exported",
-                ExportPublicKeyAction::Remove => "passkeys.success.public_key_removed",
+                ExportPublicKeyAction::Add => "tauri.passkeys.success.public_key_exported",
+                ExportPublicKeyAction::Remove => "tauri.passkeys.success.public_key_removed",
             };
             Ok(CommandResponse::ok_empty(key))
         }
-        Ok(Err(e)) => Ok(CommandResponse::err(
-            "tauri.hosts.error.connection_failed",
-            params!("reason" => e),
-        )),
+        Ok(Err(e)) => {
+            // Si el error es una clave de localización (comienza con "tauri."),
+            // devolverlo directamente sin envolverlo en connection_failed
+            if e.starts_with("tauri.") {
+                Ok(CommandResponse::err(&e, params!()))
+            } else {
+                Ok(CommandResponse::err(
+                    "tauri.hosts.error.connection_failed",
+                    params!("reason" => e),
+                ))
+            }
+        }
         Err(_) => Ok(CommandResponse::err(
             "tauri.hosts.error.connection_timeout",
             params!("timeout" => SSH_TIMEOUT_SECS.to_string()),
@@ -347,7 +355,7 @@ async fn execute_authorized_keys(
 
     let command = build_authorized_keys_command(public_key_line, action);
 
-    run_channel_command(channel, &command).await?;
+    run_channel_command(channel, &command, action).await?;
 
     session
         .disconnect(
@@ -375,20 +383,29 @@ fn build_authorized_keys_command(public_key_line: &str, action: &ExportPublicKey
             )
         }
         ExportPublicKeyAction::Remove => {
-            // Elimina la línea exacta que coincide con la clave pública.
+            // Script para eliminar la clave con códigos de salida específicos:
+            // 0: clave eliminada correctamente
+            // 1: archivo ~/.ssh/authorized_keys no existe
+            // 2: archivo existe pero la clave no está presente
+            // Otros: error durante la operación
             format!(
-                "grep -v -xF '{}' ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp && mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys",
-                escaped
+                "if [ ! -f ~/.ssh/authorized_keys ]; then exit 1; fi; if ! grep -qxF '{}' ~/.ssh/authorized_keys; then exit 2; fi; grep -v -xF '{}' ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp && mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys",
+                escaped, escaped
             )
         }
     }
 }
 
 /// Ejecuta un comando en el canal SSH y espera su finalización.
-/// Devuelve error si el exit code no es 0.
+/// Para operaciones Remove, interpreta códigos de salida específicos:
+/// - 0: éxito
+/// - 1: archivo ~/.ssh/authorized_keys no existe
+/// - 2: la clave pública no está en el archivo
+/// - Otros: error genérico
 async fn run_channel_command(
     mut channel: Channel<client::Msg>,
     command: &str,
+    action: &ExportPublicKeyAction,
 ) -> Result<(), String> {
     channel
         .exec(true, command)
@@ -399,13 +416,26 @@ async fn run_channel_command(
         match channel.wait().await {
             None => break,
             Some(russh::ChannelMsg::ExitStatus { exit_status }) => {
-                if exit_status != 0 {
-                    return Err(format!(
-                        "El comando SSH terminó con código de error: {}",
-                        exit_status
-                    ));
+                if exit_status == 0 {
+                    break;
                 }
-                break;
+
+                // Interpretar códigos de salida específicos para Remove
+                if matches!(action, ExportPublicKeyAction::Remove) {
+                    return match exit_status {
+                        1 => Err("tauri.passkeys.error.authorized_keys_not_found".to_string()),
+                        2 => Err("tauri.passkeys.error.public_key_not_in_authorized_keys".to_string()),
+                        _ => Err(format!(
+                            "El comando SSH terminó con código de error: {}",
+                            exit_status
+                        )),
+                    };
+                }
+
+                return Err(format!(
+                    "El comando SSH terminó con código de error: {}",
+                    exit_status
+                ));
             }
             Some(russh::ChannelMsg::ExitSignal { signal_name, .. }) => {
                 return Err(format!(
