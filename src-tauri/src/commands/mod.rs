@@ -3,6 +3,7 @@ pub mod helpers;
 pub mod hosts;
 pub mod migrations;
 pub mod passkeys;
+pub mod projects;
 pub mod response;
 pub mod store;
 

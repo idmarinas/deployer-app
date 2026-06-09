@@ -1,7 +1,7 @@
+use super::{DB_PATH_KEY, STORE_FILE};
+use crate::commands::CommandResponse;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
-use crate::commands::CommandResponse;
-use super::{STORE_FILE, DB_PATH_KEY};
 
 /// Guarda la ruta del archivo .sqlite en el store.
 #[tauri::command]

@@ -113,7 +113,7 @@ pub struct UpdateHostInput {
     pub name: Option<String>,
     pub host: Option<String>,
     pub port: Option<i64>,
-    pub username: Option<String>,  // None = no modificar, Some(v) = actualizar
+    pub username: Option<String>, // None = no modificar, Some(v) = actualizar
     pub auth_type: Option<AuthType>,
     /// Si es `None`, no se modifica la contraseña actual.
     /// Si es `Some("")`, se elimina la contraseña.

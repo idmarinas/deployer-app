@@ -40,12 +40,11 @@ impl EncryptionConfigCache {
         }
 
         // No está en caché: cargar desde SQLite
-        let rows = sqlx::query(
-            "SELECT table_name, field_name, encrypt, expose FROM encryption_config",
-        )
-        .fetch_all(pool)
-        .await
-        .map_err(|e| format!("Error al leer encryption_config: {}", e))?;
+        let rows =
+            sqlx::query("SELECT table_name, field_name, encrypt, expose FROM encryption_config")
+                .fetch_all(pool)
+                .await
+                .map_err(|e| format!("Error al leer encryption_config: {}", e))?;
 
         let mut map = HashMap::new();
         for row in rows {

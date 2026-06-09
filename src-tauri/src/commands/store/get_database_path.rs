@@ -1,7 +1,7 @@
+use super::{DB_PATH_KEY, STORE_FILE};
+use crate::commands::CommandResponse;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
-use crate::commands::CommandResponse;
-use super::{STORE_FILE, DB_PATH_KEY};
 
 /// Helper interno de Rust para obtener la ruta de la base de datos.
 pub fn get_database_path_internal(app: AppHandle) -> Result<Option<String>, String> {

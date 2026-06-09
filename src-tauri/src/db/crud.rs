@@ -26,9 +26,7 @@ pub async fn apply_encryption<E: DbEntity>(
         let field_str = field_name.as_str();
 
         // Cifrado estático (declarado en encrypted_fields del trait)
-        let should_encrypt_static = E::encrypted_fields()
-            .iter()
-            .any(|(f, _)| *f == field_str);
+        let should_encrypt_static = E::encrypted_fields().iter().any(|(f, _)| *f == field_str);
 
         // Cifrado dinámico (leído de encryption_config en SQLite)
         let should_encrypt_db = config
@@ -37,17 +35,18 @@ pub async fn apply_encryption<E: DbEntity>(
             .unwrap_or(false);
 
         // Cifrado condicional (depende del valor de otro campo en la misma fila)
-        let should_encrypt_conditional = E::conditional_encrypted_fields()
-            .iter()
-            .any(|(value_field, condition_field)| {
-                if *value_field != field_str {
-                    return false;
-                }
-                values_map
-                    .get(*condition_field)
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false)
-            });
+        let should_encrypt_conditional =
+            E::conditional_encrypted_fields()
+                .iter()
+                .any(|(value_field, condition_field)| {
+                    if *value_field != field_str {
+                        return false;
+                    }
+                    values_map
+                        .get(*condition_field)
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false)
+                });
 
         if should_encrypt_static || should_encrypt_db || should_encrypt_conditional {
             if let Value::String(ref plaintext) = field_value.clone() {
@@ -175,10 +174,14 @@ pub async fn update<E: DbEntity>(
     }
     query = query.bind(id);
 
-    query
-        .execute(pool)
-        .await
-        .map_err(|e| format!("Error al actualizar {} con id {}: {}", E::table_name(), id, e))?;
+    query.execute(pool).await.map_err(|e| {
+        format!(
+            "Error al actualizar {} con id {}: {}",
+            E::table_name(),
+            id,
+            e
+        )
+    })?;
 
     Ok(())
 }

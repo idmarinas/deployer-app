@@ -34,7 +34,8 @@ pub fn get_or_create_master_key() -> Result<Vec<u8>, String> {
 /// Genera una clave aleatoria de 32 bytes usando el CSPRNG del SO.
 fn generate_key() -> Result<Vec<u8>, String> {
     let mut key = vec![0u8; 32];
-    SysRng.try_fill_bytes(&mut key)
+    SysRng
+        .try_fill_bytes(&mut key)
         .map_err(|e| format!("Error al generar clave maestra: {}", e))?;
     Ok(key)
 }

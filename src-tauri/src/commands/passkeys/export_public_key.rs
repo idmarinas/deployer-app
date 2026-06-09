@@ -424,7 +424,10 @@ async fn run_channel_command(
                 if matches!(action, ExportPublicKeyAction::Remove) {
                     return match exit_status {
                         1 => Err("tauri.passkeys.error.authorized_keys_not_found".to_string()),
-                        2 => Err("tauri.passkeys.error.public_key_not_in_authorized_keys".to_string()),
+                        2 => {
+                            Err("tauri.passkeys.error.public_key_not_in_authorized_keys"
+                                .to_string())
+                        }
                         _ => Err(format!(
                             "El comando SSH terminó con código de error: {}",
                             exit_status

@@ -13,11 +13,11 @@ use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::params;
 
-use tauri::State;
-use crate::db::EncryptionConfigCache;
 use crate::commands::hosts::helpers::open_crypto_context;
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
+use crate::db::EncryptionConfigCache;
+use tauri::State;
 
 /// Timeout por defecto para la conexión SSH (en segundos)
 const CONNECTION_TIMEOUT_SECS: u64 = 10;
@@ -85,7 +85,10 @@ pub async fn test_connection(
     let db_path = match get_database_path_internal(app) {
         Ok(Some(p)) => p,
         Ok(None) => {
-            return Ok(CommandResponse::err("hosts.errors.no_database_path", HashMap::new()));
+            return Ok(CommandResponse::err(
+                "hosts.errors.no_database_path",
+                HashMap::new(),
+            ));
         }
         Err(e) => {
             return Ok(CommandResponse::err(
