@@ -1,11 +1,21 @@
 [package]
 name = "deployer-app"
 version = "0.1.0"
-description = "A Tauri App"
+description = "DeployerApp una aplicación para el desplieque de sitios web, mantienendo el control de los datos en una BD localmente - by IDMarinas"
 authors = ["IDMarinas"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true        # Enables link-time-optimizations.
+opt-level = "s"   # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort"   # Higher performance by disabling panic handlers.
+strip = true      # Ensures debug symbols are removed.
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
