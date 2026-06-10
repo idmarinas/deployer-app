@@ -4,6 +4,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import ui from '@nuxt/ui/vite'
 import vueRouter from 'vue-router/vite'
 import { resolve } from 'path'
+import * as theme from './theme'
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -15,8 +16,13 @@ export default defineConfig(async () => ({
     ui({
       ui: {
         colors: {
-          primary: 'blue',
-          neutral: 'zinc'
+          primary: 'deployer-primary',
+          secondary: 'deployer-accent',
+          success: 'deployer-success',
+          info: 'deployer-info',
+          warning: 'deployer-warning',
+          error: 'deployer-error',
+          neutral: 'deployer-neutral'
         },
         icons: {
           arrowDown: 'i-tabler-arrow-down',
@@ -61,7 +67,8 @@ export default defineConfig(async () => ({
           tip: 'i-tabler-bulb',
           upload: 'i-tabler-upload',
           warning: 'i-tabler-alert-triangle'
-        }
+        },
+        button: theme.button,
       }
     }),
     vueDevTools(),
