@@ -26,7 +26,7 @@ tauri-plugin-dialog = "2.7"
 tauri-plugin-store = "2.4"
 tauri-plugin-positioner = { version = "2.3", features = ["tray-icon"] }
 tauri-plugin-sql = { version = "2.4", features = ["sqlite"] }
-sqlx = { version = "0.9", features = [
+sqlx = { version = "0.8.6", features = [
     "runtime-tokio",
     "sqlite",
     "macros",
