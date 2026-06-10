@@ -27,7 +27,13 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: t('app.title'),
   avatar: {
     icon: 'i-tabler-rocket',
-    size: 'lg'
+    src: '/logo.png',
+    class: 'bg-transparent',
+    alt: 'DeployerApp Logo',
+    size: 'lg',
+    ui: {
+      root: 'rounded-none'
+    }
   }
 }], [{
   label: t('components.deployerAppMenu.settings'),
@@ -89,7 +95,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 <template>
   <UDropdownMenu :items="items" :content="{ align: 'center', collisionPadding: 12 }"
     :ui="{ content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)' }">
-    <UButton icon="i-tabler-rocket" :label="collapsed ? undefined : t('app.title')"
+    <UButton :avatar="{ icon: 'i-tabler-rocket', src: '/logo.png', class: 'bg-transparent', ui: {root: 'rounded-none'}}" :label="collapsed ? undefined : t('app.title')"
       :trailing-icon="collapsed ? undefined : 'i-tabler-selector'" color="neutral" variant="ghost" block
       :square="collapsed" class="data-[state=open]:bg-elevated" :ui="{
         trailingIcon: 'text-dimmed'
