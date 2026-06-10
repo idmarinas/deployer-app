@@ -8,11 +8,34 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
+export type CreateFrameworkConfigInput = { project_id: number, framework: Framework, key: string, value: string, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
+
+export type CreateGlobalVariableInput = { name: string, value: string, is_secret: boolean | null, description: string | null, };
+
 export type CreateHostInput = { name: string, host: string, port: number | null, username: string, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
 
 export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
 
+export type CreateProjectHostInput = { project_id: number, host_id: number, deploy_order: number | null, enabled: boolean | null, };
+
 export type CreateProjectInput = { name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean | null, };
+
+export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
+
+export type CreateProjectVariableInput = { project_id: number, name: string, value: string, is_secret: boolean | null, description: string | null, };
+
+export type CreateTaskDependencyInput = { task_id: number, depends_on_task_id: number, dependency_type: DependencyType | null, };
+
+export type CreateTaskInput = { name: string, description: string | null, task_type: TaskType, command: string | null, working_dir: string | null, timeout: number | null, retry_count: number | null, enabled: boolean | null, is_global: boolean | null, };
+
+export type DataType = "string" | "integer" | "boolean" | "json";
+
+export type DependencyType = "success" | "failure" | "always";
+
+/**
+ * Par clave-valor de la tabla `deployer_settings`.
+ */
+export type DeployerSetting = { key: string, value: string | null, };
 
 export type ExportPublicKeyAction = "add" | "remove";
 
@@ -35,6 +58,10 @@ action: ExportPublicKeyAction,
  * pero la passkey aún no está en el servidor).
  */
 temp_username: string | null, temp_password: string | null, };
+
+export type Framework = "symfony" | "laravel" | "nextjs" | "generic";
+
+export type FrameworkConfig = { id: number, project_id: number, framework: Framework, key: string, value: string, is_secret: boolean, data_type: DataType, description: string | null, created_at: string, updated_at: string, };
 
 export type GeneratePasskeyInput = { 
 /**
@@ -71,6 +98,8 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
+export type GlobalVariable = { id: number, name: string, value: string, is_secret: boolean, description: string | null, created_at: string, updated_at: string, };
+
 export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
 /**
  * Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
@@ -80,9 +109,27 @@ password: string | null, key_id: number | null, description: string | null, enab
 
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
+export type OnFailure = "stop" | "continue" | "retry";
+
 export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
 
 export type Project = { id: number, name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean, created_at: string, updated_at: string, };
+
+export type ProjectHost = { id: number, project_id: number, host_id: number, deploy_order: number | null, enabled: boolean, created_at: string, };
+
+export type ProjectTask = { id: number, project_id: number, task_id: number, order_execution: number, enabled: boolean, condition: string | null, on_failure: OnFailure, created_at: string, updated_at: string, };
+
+export type ProjectVariable = { id: number, project_id: number, name: string, value: string, is_secret: boolean, description: string | null, created_at: string, updated_at: string, };
+
+export type Task = { id: number, name: string, description: string | null, type: TaskType, command: string | null, working_dir: string | null, timeout: number, retry_count: number, enabled: boolean, is_global: boolean, created_at: string, updated_at: string, };
+
+export type TaskDependency = { id: number, task_id: number, depends_on_task_id: number, dependency_type: DependencyType, created_at: string, };
+
+export type TaskType = "command" | "upload_file" | "download_file" | "script";
+
+export type UpdateFrameworkConfigInput = { value: string | null, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
+
+export type UpdateGlobalVariableInput = { name: string | null, value: string | null, is_secret: boolean | null, description: string | null, };
 
 export type UpdateHostInput = { name: string | null, host: string | null, port: number | null, username: string | null, auth_type: AuthType | null, 
 /**
@@ -104,4 +151,14 @@ key_content: string | null,
  */
 passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
 
+export type UpdateProjectHostInput = { deploy_order: number | null, enabled: boolean | null, };
+
 export type UpdateProjectInput = { name: string | null, description: string | null, repository_url: string | null, framework: string | null, enabled: boolean | null, };
+
+export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
+
+export type UpdateProjectVariableInput = { name: string | null, value: string | null, is_secret: boolean | null, description: string | null, };
+
+export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
+
+export type UpdateTaskInput = { name: string | null, description: string | null, task_type: TaskType | null, command: string | null, working_dir: string | null, timeout: number | null, retry_count: number | null, enabled: boolean | null, is_global: boolean | null, };
