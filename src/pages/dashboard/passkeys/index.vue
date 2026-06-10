@@ -1,6 +1,5 @@
 <script lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { Column } from '@tanstack/vue-table'
 import type { CommandResponse, Passkey } from '@/types/tauri-types'
 
 import { ref, useTemplateRef, resolveComponent, h } from 'vue'

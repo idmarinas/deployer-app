@@ -1,6 +1,5 @@
 <script lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { Column } from '@tanstack/vue-table'
 import type { CommandResponse, Host } from '@/types/tauri-types'
 
 import { ref, useTemplateRef, resolveComponent, h } from 'vue'
@@ -20,7 +19,6 @@ definePage({
 })
 
 const UButton = resolveComponent('UButton')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
 
 const { t, locale } = useI18n()
