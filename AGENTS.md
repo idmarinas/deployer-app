@@ -107,6 +107,39 @@ commands/
     ├── helpers.rs               ← re-exporta open_pool (no open_crypto_context)
     ├── mod.rs
     └── types.rs                 ← struct DeployerSetting { key, value: Option<String> }
+└── deployments/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_deployment.rs
+    │   ├── crud_update_deployment.rs   ← query manual (sin updated_at); status/started_at/finished_at/duration/notes
+    │   ├── crud_get_deployment.rs
+    │   ├── crud_list_deployments.rs    ← filtra por project_id, ORDER BY created_at DESC
+    │   └── crud_delete_deployment.rs  ← CASCADE elimina executions y rollbacks
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs                       ← enum DeploymentStatus (pending|running|success|failed); compartido con rollbacks
+└── deployment_executions/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_deployment_execution.rs
+    │   ├── crud_update_deployment_execution.rs  ← query manual (sin updated_at)
+    │   ├── crud_get_deployment_execution.rs
+    │   ├── crud_list_deployment_executions.rs   ← filtra por deployment_id, ORDER BY created_at ASC
+    │   └── crud_delete_deployment_execution.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs                                ← enum ExecutionStatus (añade 'skipped'); re-exporta DeploymentStatus
+└── deployment_rollbacks/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_deployment_rollback.rs
+    │   ├── crud_update_deployment_rollback.rs   ← query manual (sin updated_at)
+    │   ├── crud_get_deployment_rollback.rs
+    │   ├── crud_list_deployment_rollbacks.rs    ← filtra por deployment_id, ORDER BY created_at DESC
+    │   └── crud_delete_deployment_rollback.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs                                ← re-exporta DeploymentStatus de deployments
 └── passkeys/
     ├── crud/
     │   ├── mod.rs
@@ -202,7 +235,7 @@ Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD.
 
 #### Listas filtradas por FK (ej. `project_variables`)
 
-Cuando un `crud_list_*` necesita filtrar por una FK (ej. `WHERE project_id = ?`), el helper genérico `db::fetch_all` no es suficiente. En ese caso se usa `sqlx::query` directamente con `AssertSqlSafe` y se aplica el descifrado manualmente con `db::apply_decryption`. Para ello `apply_decryption` debe estar re-exportada en `db/mod.rs`:
+Cuando un `crud_list_*` necesita filtrar por una FK (ej. `WHERE project_id = ?`), el helper genérico `db::fetch_all` no es suficiente. En ese caso se usa `sqlx::query(&sql)` dinámico (con `&sql`, NO `AssertSqlSafe`) y se aplica el descifrado manualmente con `db::apply_decryption`. Para ello `apply_decryption` debe estar re-exportada en `db/mod.rs`:
 
 ```rust
 pub use crud::{apply_decryption, delete, fetch_all, fetch_one, insert, update};
@@ -382,11 +415,13 @@ Este patrón es similar al **Unit of Work de Doctrine ORM**.
 ## 9. Dependencias Rust — Notas de Compatibilidad
 
 | Crate | Versión usada | Límite | Motivo |
-|-------|--------------|--------|--------|
-| `rand_core` | `0.6` | No subir a `0.9+` | En `0.9+` `OsRng` no implementa `RngCore::fill_bytes()` directamente. Requeriría cambios en `crypto/cipher.rs` y `crypto/keyring.rs`. |
+|-------|--------------|--------|---------|
+| `rand` | `0.10` | No bajar a `0.8` | Requiere feature `sys_rng` para `OsRng`. Versiones anteriores tienen API diferente. |
+| `rand_core` | `0.10` | Mantener sincronizado con `rand` | Debe coincidir con la versión de `rand` para evitar conflictos de traits. |
 | `keyring` | `3` | No subir a `4+` | En `v4` el enum `Error` y la variante `NoEntry` son privados (`#[non_exhaustive]`). Requeriría cambios en `crypto/keyring.rs`. |
 | `aes-gcm` | `0.10` | — | Estable, sin restricciones conocidas. |
-| `sqlx` | `0.9` | — | `SqliteArguments` sin lifetime. Queries dinámicas requieren `AssertSqlSafe(sql.clone())`. |
+| `sqlx` | `0.9` | — | Queries dinámicas con `sqlx::query(&sql)` (referencia a String). No usar `AssertSqlSafe` ni `sqlx::query!` / `sqlx::query_as!` (requieren `DATABASE_URL` en compilación). |
+| `russh` | `0.61` | — | No usa crate separado `russh-keys`; las claves se gestionan con el crate `ssh-key`. |
 
 ## 10. Comandos Útiles
 - `bun run tauri dev`: Inicia el servidor de desarrollo de Vite y Tauri.
