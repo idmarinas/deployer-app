@@ -1,2 +1,88 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
+
+@theme static {
+  /* Primary (Azules) */
+  --color-deployer-primary-50:  #e6f4ff;
+  --color-deployer-primary-100: #c2e4ff;
+  --color-deployer-primary-200: #99d2ff;
+  --color-deployer-primary-300: #66bdff;
+  --color-deployer-primary-400: #33a7ff;
+  --color-deployer-primary-500: #009dff;
+  --color-deployer-primary-600: #0077e6;
+  --color-deployer-primary-700: #0057b3;
+  --color-deployer-primary-800: #003d80;
+  --color-deployer-primary-900: #00264d;
+
+  /* Accent (Morados) */
+  --color-deployer-accent-50:  #f3e8ff;
+  --color-deployer-accent-100: #e1c6ff;
+  --color-deployer-accent-200: #c99cff;
+  --color-deployer-accent-300: #b26aff;
+  --color-deployer-accent-400: #9b3aff;
+  --color-deployer-accent-500: #8a1aff;
+  --color-deployer-accent-600: #6a00d4;
+  --color-deployer-accent-700: #5300a3;
+  --color-deployer-accent-800: #3e007a;
+  --color-deployer-accent-900: #240047;
+
+  /* Success (Teal) */
+  --color-deployer-success-50:  #e6fffa;
+  --color-deployer-success-100: #b2fff0;
+  --color-deployer-success-200: #7dffe6;
+  --color-deployer-success-300: #47ffdb;
+  --color-deployer-success-400: #12ffd1;
+  --color-deployer-success-500: #00e0c6;
+  --color-deployer-success-600: #00b39a;
+  --color-deployer-success-700: #007a66;
+  --color-deployer-success-800: #004d40;
+  --color-deployer-success-900: #002e26;
+
+  /* Info */
+  --color-deployer-info-50:  #dff7ff;
+  --color-deployer-info-100: #b5ebff;
+  --color-deployer-info-200: #8adfff;
+  --color-deployer-info-300: #5ed2ff;
+  --color-deployer-info-400: #33c6ff;
+  --color-deployer-info-500: #0ab9ff;
+  --color-deployer-info-600: #0094d1;
+  --color-deployer-info-700: #006f9e;
+  --color-deployer-info-800: #004a6b;
+  --color-deployer-info-900: #002538;
+
+  /* Warning */
+  --color-deployer-warning-50:  #fff9e6;
+  --color-deployer-warning-100: #fff0b3;
+  --color-deployer-warning-200: #ffe680;
+  --color-deployer-warning-300: #ffdb4d;
+  --color-deployer-warning-400: #ffd119;
+  --color-deployer-warning-500: #e6b800;
+  --color-deployer-warning-600: #b38f00;
+  --color-deployer-warning-700: #806600;
+  --color-deployer-warning-800: #4d3d00;
+  --color-deployer-warning-900: #1a1400;
+
+  /* Error */
+  --color-deployer-error-50:  #ffe6f2;
+  --color-deployer-error-100: #ffb3d5;
+  --color-deployer-error-200: #ff80b8;
+  --color-deployer-error-300: #ff4d9b;
+  --color-deployer-error-400: #ff1a7e;
+  --color-deployer-error-500: #e60065;
+  --color-deployer-error-600: #b3004d;
+  --color-deployer-error-700: #800035;
+  --color-deployer-error-800: #4d001e;
+  --color-deployer-error-900: #1a000a;
+
+  /* Neutral */
+  --color-deployer-neutral-50:  #f5f7fa;
+  --color-deployer-neutral-100: #e2e8f0;
+  --color-deployer-neutral-200: #cbd5e1;
+  --color-deployer-neutral-300: #94a3b8;
+  --color-deployer-neutral-400: #64748b;
+  --color-deployer-neutral-500: #475569;
+  --color-deployer-neutral-600: #334155;
+  --color-deployer-neutral-700: #1e293b;
+  --color-deployer-neutral-800: #0f172a;
+  --color-deployer-neutral-900: #020617;
+}
