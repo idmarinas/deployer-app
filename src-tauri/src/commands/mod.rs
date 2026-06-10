@@ -1,11 +1,19 @@
 pub mod database;
+pub mod deployer_settings;
+pub mod framework_configs;
+pub mod global_variables;
 pub mod helpers;
 pub mod hosts;
 pub mod migrations;
 pub mod passkeys;
+pub mod project_hosts;
+pub mod project_tasks;
+pub mod project_variables;
 pub mod projects;
 pub mod response;
 pub mod store;
+pub mod task_dependencies;
+pub mod tasks;
 
 pub use response::CommandResponse;
 

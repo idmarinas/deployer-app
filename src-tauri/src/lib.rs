@@ -5,6 +5,17 @@ mod db;
 use commands::database::{
     create_database_file, get_database_url, initialize_database, validate_sqlite_database,
 };
+use commands::deployer_settings::{
+    delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
+};
+use commands::framework_configs::{
+    crud_create_framework_config, crud_delete_framework_config, crud_get_framework_config,
+    crud_list_framework_configs, crud_update_framework_config,
+};
+use commands::global_variables::{
+    crud_create_global_variable, crud_delete_global_variable, crud_get_global_variable,
+    crud_list_global_variables, crud_update_global_variable,
+};
 use commands::hosts::{
     crud_create_host, crud_delete_host, crud_get_host, crud_list_hosts, crud_update_host,
     test_connection,
@@ -14,6 +25,23 @@ use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
     crud_update_passkey, export_public_key, generate_passkey,
 };
+use commands::project_hosts::{
+    crud_create_project_host, crud_delete_project_host, crud_get_project_host,
+    crud_list_project_hosts, crud_update_project_host,
+};
+use commands::project_tasks::{
+    crud_create_project_task, crud_delete_project_task, crud_get_project_task,
+    crud_list_project_tasks, crud_update_project_task,
+};
+use commands::project_variables::{
+    crud_create_project_variable, crud_delete_project_variable, crud_get_project_variable,
+    crud_list_project_variables, crud_update_project_variable,
+};
+use commands::task_dependencies::{
+    crud_create_task_dependency, crud_delete_task_dependency, crud_get_task_dependency,
+    crud_list_task_dependencies, crud_update_task_dependency,
+};
+use commands::tasks::{crud_create_task, crud_delete_task, crud_get_task, crud_list_tasks, crud_update_task};
 use commands::projects::{
     crud_create_project, crud_delete_project, crud_get_project, crud_list_projects,
     crud_update_project,
@@ -68,6 +96,53 @@ pub fn run() {
             crud_get_project,
             crud_list_projects,
             crud_delete_project,
+            // Deployer Settings
+            get_deployer_setting,
+            set_deployer_setting,
+            list_deployer_settings,
+            delete_deployer_setting,
+            // Framework Configs - CRUD
+            crud_create_framework_config,
+            crud_update_framework_config,
+            crud_get_framework_config,
+            crud_list_framework_configs,
+            crud_delete_framework_config,
+            // Global Variables - CRUD
+            crud_create_global_variable,
+            crud_update_global_variable,
+            crud_get_global_variable,
+            crud_list_global_variables,
+            crud_delete_global_variable,
+            // Project Hosts - CRUD
+            crud_create_project_host,
+            crud_update_project_host,
+            crud_get_project_host,
+            crud_list_project_hosts,
+            crud_delete_project_host,
+            // Project Tasks - CRUD
+            crud_create_project_task,
+            crud_update_project_task,
+            crud_get_project_task,
+            crud_list_project_tasks,
+            crud_delete_project_task,
+            // Project Variables - CRUD
+            crud_create_project_variable,
+            crud_update_project_variable,
+            crud_get_project_variable,
+            crud_list_project_variables,
+            crud_delete_project_variable,
+            // Task Dependencies - CRUD
+            crud_create_task_dependency,
+            crud_update_task_dependency,
+            crud_get_task_dependency,
+            crud_list_task_dependencies,
+            crud_delete_task_dependency,
+            // Tasks - CRUD
+            crud_create_task,
+            crud_update_task,
+            crud_get_task,
+            crud_list_tasks,
+            crud_delete_task,
             // Store
             get_database_path,
             set_database_path,

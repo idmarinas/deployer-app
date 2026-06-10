@@ -1,0 +1,105 @@
+use deployer_macros::DbEntity;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS, sqlx::Type)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+#[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+pub enum TaskType {
+    #[default]
+    Command,
+    UploadFile,
+    DownloadFile,
+    Script,
+}
+
+impl std::fmt::Display for TaskType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TaskType::Command => write!(f, "command"),
+            TaskType::UploadFile => write!(f, "upload_file"),
+            TaskType::DownloadFile => write!(f, "download_file"),
+            TaskType::Script => write!(f, "script"),
+        }
+    }
+}
+
+impl std::str::FromStr for TaskType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "command" => Ok(TaskType::Command),
+            "upload_file" => Ok(TaskType::UploadFile),
+            "download_file" => Ok(TaskType::DownloadFile),
+            "script" => Ok(TaskType::Script),
+            other => Err(format!("TaskType no válido: '{}'", other)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+#[db_table("tasks")]
+pub struct Task {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    #[serde(rename = "type")]
+    pub task_type: TaskType,
+    pub command: Option<String>,
+    pub working_dir: Option<String>,
+    pub timeout: i64,
+    pub retry_count: i64,
+    pub enabled: bool,
+    pub is_global: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct CreateTaskInput {
+    pub name: String,
+    pub description: Option<String>,
+    pub task_type: TaskType,
+    pub command: Option<String>,
+    pub working_dir: Option<String>,
+    pub timeout: Option<i64>,
+    pub retry_count: Option<i64>,
+    pub enabled: Option<bool>,
+    pub is_global: Option<bool>,
+}
+
+impl CreateTaskInput {
+    pub fn into_task(self) -> Task {
+        Task {
+            id: 0,
+            name: self.name,
+            description: self.description,
+            task_type: self.task_type,
+            command: self.command,
+            working_dir: self.working_dir,
+            timeout: self.timeout.unwrap_or(300),
+            retry_count: self.retry_count.unwrap_or(0),
+            enabled: self.enabled.unwrap_or(true),
+            is_global: self.is_global.unwrap_or(false),
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct UpdateTaskInput {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub task_type: Option<TaskType>,
+    pub command: Option<String>,
+    pub working_dir: Option<String>,
+    pub timeout: Option<i64>,
+    pub retry_count: Option<i64>,
+    pub enabled: Option<bool>,
+    pub is_global: Option<bool>,
+}

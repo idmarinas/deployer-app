@@ -99,6 +99,14 @@ commands/
     ├── mod.rs
     ├── test_connection.rs
     └── types.rs         ← structs de la entidad e inputs
+└── deployer_settings/       ← patrón clave-valor, sin DbEntity, sin cifrado
+    ├── get_deployer_setting.rs
+    ├── set_deployer_setting.rs  ← upsert (INSERT OR REPLACE)
+    ├── list_deployer_settings.rs
+    ├── delete_deployer_setting.rs
+    ├── helpers.rs               ← re-exporta open_pool (no open_crypto_context)
+    ├── mod.rs
+    └── types.rs                 ← struct DeployerSetting { key, value: Option<String> }
 └── passkeys/
     ├── crud/
     │   ├── mod.rs
@@ -111,9 +119,94 @@ commands/
     ├── mod.rs
     ├── generate_passkey.rs  ← genera par de claves SSH sin guardar en BD
     └── types.rs
+└── framework_configs/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_framework_config.rs
+    │   ├── crud_update_framework_config.rs   ← project_id/framework/key inmutables
+    │   ├── crud_get_framework_config.rs
+    │   ├── crud_list_framework_configs.rs    ← filtra por project_id, ORDER BY framework, key
+    │   └── crud_delete_framework_config.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs          ← enums Framework (symfony|laravel|nextjs|generic) y DataType (string|integer|boolean|json); value con cifrado condicional
+└── global_variables/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_global_variable.rs
+    │   ├── crud_update_global_variable.rs
+    │   ├── crud_get_global_variable.rs
+    │   ├── crud_list_global_variables.rs
+    │   └── crud_delete_global_variable.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs
+└── project_hosts/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_project_host.rs
+    │   ├── crud_update_project_host.rs   ← query manual (sin updated_at)
+    │   ├── crud_get_project_host.rs
+    │   ├── crud_list_project_hosts.rs    ← filtra por project_id, ORDER BY deploy_order
+    │   └── crud_delete_project_host.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs
+└── project_tasks/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_project_task.rs
+    │   ├── crud_update_project_task.rs   ← db::update genérico (tiene updated_at)
+    │   ├── crud_get_project_task.rs
+    │   ├── crud_list_project_tasks.rs    ← filtra por project_id, ORDER BY order_execution
+    │   └── crud_delete_project_task.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs          ← enum OnFailure (stop|continue|retry)
+└── project_variables/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_project_variable.rs
+    │   ├── crud_update_project_variable.rs
+    │   ├── crud_get_project_variable.rs
+    │   ├── crud_list_project_variables.rs   ← filtra por project_id (query manual)
+    │   └── crud_delete_project_variable.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs
+└── task_dependencies/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_task_dependency.rs
+    │   ├── crud_update_task_dependency.rs   ← query manual (sin updated_at); enum serializado con serde_json
+    │   ├── crud_get_task_dependency.rs
+    │   ├── crud_list_task_dependencies.rs   ← filtra por task_id
+    │   └── crud_delete_task_dependency.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs          ← enum DependencyType (success|failure|always)
+└── tasks/
+    ├── crud/
+    │   ├── mod.rs
+    │   ├── crud_create_task.rs
+    │   ├── crud_update_task.rs
+    │   ├── crud_get_task.rs
+    │   ├── crud_list_tasks.rs
+    │   └── crud_delete_task.rs
+    ├── helpers.rs
+    ├── mod.rs
+    └── types.rs          ← incluye enum TaskType (command|upload_file|download_file|script)
 ```
 
-Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD (proyectos, etc.).
+Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD.
+
+#### Listas filtradas por FK (ej. `project_variables`)
+
+Cuando un `crud_list_*` necesita filtrar por una FK (ej. `WHERE project_id = ?`), el helper genérico `db::fetch_all` no es suficiente. En ese caso se usa `sqlx::query` directamente con `AssertSqlSafe` y se aplica el descifrado manualmente con `db::apply_decryption`. Para ello `apply_decryption` debe estar re-exportada en `db/mod.rs`:
+
+```rust
+pub use crud::{apply_decryption, delete, fetch_all, fetch_one, insert, update};
+```
 
 #### Añadir una nueva entidad con CRUD y cifrado
 
