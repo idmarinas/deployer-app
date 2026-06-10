@@ -165,37 +165,8 @@ const expanded = ref({})
 <template>
   <div v-if="isLoading || hosts.length > 0" class="flex flex-col flex-1 w-full">
     <div class="flex py-3.5 border-b border-accented justify-between">
-      <UInput v-model="globalFilter" :placeholder="t('common.filter_ellipsis')" :ui="{ trailing: 'pe-1' }">
-        <template v-if="globalFilter?.length" #trailing>
-          <UButton color="neutral" variant="link" icon="i-tabler-circle-x" aria-label="Clear input" @click="globalFilter = ''" />
-        </template>
-      </UInput>
-      <UDropdownMenu
-        :items="
-          table?.tableApi
-            ?.getAllColumns()
-            .filter((column: Column<Host>) => column.getCanHide())
-            .map((column: Column<Host>) => ({
-              label: column.columnDef.header as string,
-              type: 'checkbox' as const,
-              checked: column.getIsVisible(),
-              onUpdateChecked(checked: boolean) {
-                table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-              },
-              onSelect(e: Event) {
-                e.preventDefault()
-              }
-            }))
-        "
-        :content="{ align: 'end' }"
-      >
-        <UButton
-          :label="t('components.table.columns')"
-          color="neutral"
-          variant="outline"
-          trailing-icon="i-tabler-chevron-down"
-        />
-      </UDropdownMenu>
+      <GlobalFilter v-model="globalFilter" />
+      <ToogleColumVisibility :table-api="table?.tableApi" />
     </div>
 
     <UTable
