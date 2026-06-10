@@ -1,0 +1,11 @@
+pub mod crud_create_deployment_rollback;
+pub mod crud_delete_deployment_rollback;
+pub mod crud_get_deployment_rollback;
+pub mod crud_list_deployment_rollbacks;
+pub mod crud_update_deployment_rollback;
+
+pub use crud_create_deployment_rollback::crud_create_deployment_rollback;
+pub use crud_delete_deployment_rollback::crud_delete_deployment_rollback;
+pub use crud_get_deployment_rollback::crud_get_deployment_rollback;
+pub use crud_list_deployment_rollbacks::crud_list_deployment_rollbacks;
+pub use crud_update_deployment_rollback::crud_update_deployment_rollback;

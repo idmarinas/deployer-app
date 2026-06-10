@@ -5,6 +5,20 @@ mod db;
 use commands::database::{
     create_database_file, get_database_url, initialize_database, validate_sqlite_database,
 };
+use commands::deployment_executions::{
+    crud_create_deployment_execution, crud_delete_deployment_execution,
+    crud_get_deployment_execution, crud_list_deployment_executions,
+    crud_update_deployment_execution,
+};
+use commands::deployment_rollbacks::{
+    crud_create_deployment_rollback, crud_delete_deployment_rollback,
+    crud_get_deployment_rollback, crud_list_deployment_rollbacks,
+    crud_update_deployment_rollback,
+};
+use commands::deployments::{
+    crud_create_deployment, crud_delete_deployment, crud_get_deployment, crud_list_deployments,
+    crud_update_deployment,
+};
 use commands::deployer_settings::{
     delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
 };
@@ -37,16 +51,18 @@ use commands::project_variables::{
     crud_create_project_variable, crud_delete_project_variable, crud_get_project_variable,
     crud_list_project_variables, crud_update_project_variable,
 };
-use commands::task_dependencies::{
-    crud_create_task_dependency, crud_delete_task_dependency, crud_get_task_dependency,
-    crud_list_task_dependencies, crud_update_task_dependency,
-};
-use commands::tasks::{crud_create_task, crud_delete_task, crud_get_task, crud_list_tasks, crud_update_task};
 use commands::projects::{
     crud_create_project, crud_delete_project, crud_get_project, crud_list_projects,
     crud_update_project,
 };
 use commands::store::{check_database_exists, get_database_path, set_database_path};
+use commands::task_dependencies::{
+    crud_create_task_dependency, crud_delete_task_dependency, crud_get_task_dependency,
+    crud_list_task_dependencies, crud_update_task_dependency,
+};
+use commands::tasks::{
+    crud_create_task, crud_delete_task, crud_get_task, crud_list_tasks, crud_update_task,
+};
 use db::EncryptionConfigCache;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -101,6 +117,24 @@ pub fn run() {
             set_deployer_setting,
             list_deployer_settings,
             delete_deployer_setting,
+            // Deployments - CRUD
+            crud_create_deployment,
+            crud_update_deployment,
+            crud_get_deployment,
+            crud_list_deployments,
+            crud_delete_deployment,
+            // Deployment Executions - CRUD
+            crud_create_deployment_execution,
+            crud_update_deployment_execution,
+            crud_get_deployment_execution,
+            crud_list_deployment_executions,
+            crud_delete_deployment_execution,
+            // Deployment Rollbacks - CRUD
+            crud_create_deployment_rollback,
+            crud_update_deployment_rollback,
+            crud_get_deployment_rollback,
+            crud_list_deployment_rollbacks,
+            crud_delete_deployment_rollback,
             // Framework Configs - CRUD
             crud_create_framework_config,
             crud_update_framework_config,
