@@ -1,5 +1,5 @@
 use serde_json::Value;
-use sqlx::{query::Query, sqlite::SqliteArguments, AssertSqlSafe, SqlitePool};
+use sqlx::{query::Query, sqlite::SqliteArguments, SqlitePool};
 
 use super::cache::EncryptionConfigCache;
 use super::entity::DbEntity;
@@ -131,7 +131,7 @@ pub async fn insert<E: DbEntity>(
         placeholders.join(", ")
     );
 
-    let mut query = sqlx::query(AssertSqlSafe(sql.clone()));
+    let mut query = sqlx::query(&sql);
     for (_, value) in &fields {
         query = bind_value(query, value);
     }
@@ -168,7 +168,7 @@ pub async fn update<E: DbEntity>(
         fields.len() + 1
     );
 
-    let mut query = sqlx::query(AssertSqlSafe(sql.clone()));
+    let mut query = sqlx::query(&sql);
     for (_, value) in &fields {
         query = bind_value(query, value);
     }
@@ -195,7 +195,7 @@ pub async fn fetch_one<E: DbEntity>(
 ) -> Result<Option<E>, String> {
     let sql = format!("SELECT * FROM {} WHERE id = ?1", E::table_name());
 
-    let row = sqlx::query(AssertSqlSafe(sql.clone()))
+    let row = sqlx::query(&sql)
         .bind(id)
         .fetch_optional(pool)
         .await
@@ -221,7 +221,7 @@ pub async fn fetch_all<E: DbEntity>(
 ) -> Result<Vec<E>, String> {
     let sql = format!("SELECT * FROM {}", E::table_name());
 
-    let rows = sqlx::query(AssertSqlSafe(sql.clone()))
+    let rows = sqlx::query(&sql)
         .fetch_all(pool)
         .await
         .map_err(|e| format!("Error al listar {}: {}", E::table_name(), e))?;
@@ -242,7 +242,7 @@ pub async fn fetch_all<E: DbEntity>(
 pub async fn delete(pool: &SqlitePool, table: &str, id: i64) -> Result<bool, String> {
     let sql = format!("DELETE FROM {} WHERE id = ?1", table);
 
-    let result = sqlx::query(AssertSqlSafe(sql.clone()))
+    let result = sqlx::query(&sql)
         .bind(id)
         .execute(pool)
         .await
@@ -255,7 +255,7 @@ pub async fn delete(pool: &SqlitePool, table: &str, id: i64) -> Result<bool, Str
 // Helper interno
 // ============================================================================
 
-type SqliteQuery<'q> = Query<'q, sqlx::Sqlite, SqliteArguments>;
+type SqliteQuery<'q> = Query<'q, sqlx::Sqlite, SqliteArguments<'q>>;
 
 /// Vincula un `serde_json::Value` a una query de SQLx.
 fn bind_value<'q>(query: SqliteQuery<'q>, value: &'q Value) -> SqliteQuery<'q> {

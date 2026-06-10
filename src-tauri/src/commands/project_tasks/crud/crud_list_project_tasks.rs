@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use sqlx::AssertSqlSafe;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -31,7 +30,7 @@ pub async fn crud_list_project_tasks(
         ProjectTask::table_name()
     );
 
-    let rows = match sqlx::query(AssertSqlSafe(sql))
+    let rows = match sqlx::query(&sql)
         .bind(project_id)
         .fetch_all(&pool)
         .await

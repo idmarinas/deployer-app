@@ -21,9 +21,12 @@ pub use response::CommandResponse;
 /// Construye un HashMap<String, String> de forma concisa.
 #[macro_export]
 macro_rules! params {
-    ($($k:expr => $v:expr),*) => {{
+    () => {{
+        std::collections::HashMap::new()
+    }};
+    ($($k:expr => $v:expr),+ $(,)?) => {{
         let mut m = std::collections::HashMap::new();
-        $(m.insert($k.to_string(), $v.to_string());)*
+        $(m.insert($k.to_string(), $v.to_string());)+
         m
     }};
 }

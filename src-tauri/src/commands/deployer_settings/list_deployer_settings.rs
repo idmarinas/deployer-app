@@ -20,9 +20,8 @@ pub async fn list_deployer_settings(
         }
     };
 
-    let rows = sqlx::query_as!(
-        DeployerSetting,
-        "SELECT key, value FROM deployer_settings ORDER BY key ASC"
+    let rows = sqlx::query_as::<_, DeployerSetting>(
+        "SELECT key, value FROM deployer_settings ORDER BY key ASC",
     )
     .fetch_all(&pool)
     .await

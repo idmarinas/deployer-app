@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use sqlx::AssertSqlSafe;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -49,7 +48,7 @@ pub async fn crud_update_task_dependency(
         TaskDependency::table_name()
     );
 
-    match sqlx::query(AssertSqlSafe(sql))
+    match sqlx::query(&sql)
         .bind(serde_json::to_string(&input.dependency_type)
             .map_err(|e| e.to_string())?
             .trim_matches('"')

@@ -21,10 +21,10 @@ pub async fn delete_deployer_setting(
         }
     };
 
-    let result = sqlx::query!(
+    let result = sqlx::query(
         "DELETE FROM deployer_settings WHERE key = ?1",
-        key
     )
+    .bind(&key)
     .execute(&pool)
     .await
     .map_err(|e| format!("Error al eliminar deployer_setting '{}': {}", key, e));

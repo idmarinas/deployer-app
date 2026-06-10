@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use sqlx::AssertSqlSafe;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -51,7 +50,7 @@ pub async fn crud_update_project_host(
         ProjectHost::table_name()
     );
 
-    match sqlx::query(AssertSqlSafe(sql))
+    match sqlx::query(&sql)
         .bind(new_deploy_order)
         .bind(new_enabled)
         .bind(id)

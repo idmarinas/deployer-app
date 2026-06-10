@@ -22,11 +22,10 @@ pub async fn get_deployer_setting(
         }
     };
 
-    let row = sqlx::query_as!(
-        DeployerSetting,
+    let row = sqlx::query_as::<_, DeployerSetting>(
         "SELECT key, value FROM deployer_settings WHERE key = ?1",
-        key
     )
+    .bind(&key)
     .fetch_optional(&pool)
     .await
     .map_err(|e| format!("Error al obtener deployer_setting '{}': {}", key, e));

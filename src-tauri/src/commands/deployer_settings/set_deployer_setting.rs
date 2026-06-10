@@ -21,12 +21,12 @@ pub async fn set_deployer_setting(
         }
     };
 
-    let result = sqlx::query!(
+    let result = sqlx::query(
         "INSERT INTO deployer_settings (key, value) VALUES (?1, ?2)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        key,
-        value
     )
+    .bind(&key)
+    .bind(&value)
     .execute(&pool)
     .await
     .map_err(|e| format!("Error al guardar deployer_setting '{}': {}", key, e));

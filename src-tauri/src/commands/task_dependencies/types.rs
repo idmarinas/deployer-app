@@ -2,9 +2,11 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS, sqlx::Type)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 #[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "TEXT")]
+#[sqlx(rename_all = "snake_case")]
 pub enum DependencyType {
     #[default]
     Success,
