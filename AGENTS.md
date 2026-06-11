@@ -87,148 +87,81 @@ Los comandos CRUD se organizan en una subcarpeta `crud/` dentro de la carpeta de
 
 ```
 commands/
-└── hosts/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_host.rs
-    │   ├── crud_update_host.rs
-    │   ├── crud_get_host.rs
-    │   ├── crud_list_hosts.rs
-    │   └── crud_delete_host.rs
-    ├── helpers.rs       ← open_crypto_context() y utilidades compartidas
-    ├── mod.rs
-    ├── test_connection.rs
-    └── types.rs         ← structs de la entidad e inputs
-└── deployer_settings/       ← patrón clave-valor, sin DbEntity, sin cifrado
-    ├── get_deployer_setting.rs
-    ├── set_deployer_setting.rs  ← upsert (INSERT OR REPLACE)
-    ├── list_deployer_settings.rs
-    ├── delete_deployer_setting.rs
-    ├── helpers.rs               ← re-exporta open_pool (no open_crypto_context)
-    ├── mod.rs
-    └── types.rs                 ← struct DeployerSetting { key, value: Option<String> }
-└── deployments/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_deployment.rs
-    │   ├── crud_update_deployment.rs   ← query manual (sin updated_at); status/started_at/finished_at/duration/notes
-    │   ├── crud_get_deployment.rs
-    │   ├── crud_list_deployments.rs    ← filtra por project_id, ORDER BY created_at DESC
-    │   └── crud_delete_deployment.rs  ← CASCADE elimina executions y rollbacks
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs                       ← enum DeploymentStatus (pending|running|success|failed); compartido con rollbacks
-└── deployment_executions/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_deployment_execution.rs
-    │   ├── crud_update_deployment_execution.rs  ← query manual (sin updated_at)
-    │   ├── crud_get_deployment_execution.rs
-    │   ├── crud_list_deployment_executions.rs   ← filtra por deployment_id, ORDER BY created_at ASC
-    │   └── crud_delete_deployment_execution.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs                                ← enum ExecutionStatus (añade 'skipped'); re-exporta DeploymentStatus
-└── deployment_rollbacks/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_deployment_rollback.rs
-    │   ├── crud_update_deployment_rollback.rs   ← query manual (sin updated_at)
-    │   ├── crud_get_deployment_rollback.rs
-    │   ├── crud_list_deployment_rollbacks.rs    ← filtra por deployment_id, ORDER BY created_at DESC
-    │   └── crud_delete_deployment_rollback.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs                                ← re-exporta DeploymentStatus de deployments
-└── passkeys/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_passkey.rs
-    │   ├── crud_update_passkey.rs
-    │   ├── crud_get_passkey.rs
-    │   ├── crud_list_passkeys.rs
-    │   └── crud_delete_passkey.rs
-    ├── helpers.rs
-    ├── mod.rs
-    ├── generate_passkey.rs  ← genera par de claves SSH sin guardar en BD
-    └── types.rs
-└── framework_configs/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_framework_config.rs
-    │   ├── crud_update_framework_config.rs   ← project_id/framework/key inmutables
-    │   ├── crud_get_framework_config.rs
-    │   ├── crud_list_framework_configs.rs    ← filtra por project_id, ORDER BY framework, key
-    │   └── crud_delete_framework_config.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs          ← enums Framework (symfony|laravel|nextjs|generic) y DataType (string|integer|boolean|json); value con cifrado condicional
-└── global_variables/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_global_variable.rs
-    │   ├── crud_update_global_variable.rs
-    │   ├── crud_get_global_variable.rs
-    │   ├── crud_list_global_variables.rs
-    │   └── crud_delete_global_variable.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs
-└── project_hosts/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_project_host.rs
-    │   ├── crud_update_project_host.rs   ← query manual (sin updated_at)
-    │   ├── crud_get_project_host.rs
-    │   ├── crud_list_project_hosts.rs    ← filtra por project_id, ORDER BY deploy_order
-    │   └── crud_delete_project_host.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs
-└── project_tasks/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_project_task.rs
-    │   ├── crud_update_project_task.rs   ← db::update genérico (tiene updated_at)
-    │   ├── crud_get_project_task.rs
-    │   ├── crud_list_project_tasks.rs    ← filtra por project_id, ORDER BY order_execution
-    │   └── crud_delete_project_task.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs          ← enum OnFailure (stop|continue|retry)
-└── project_variables/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_project_variable.rs
-    │   ├── crud_update_project_variable.rs
-    │   ├── crud_get_project_variable.rs
-    │   ├── crud_list_project_variables.rs   ← filtra por project_id (query manual)
-    │   └── crud_delete_project_variable.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs
-└── task_dependencies/
-    ├── crud/
-    │   ├── mod.rs
-    │   ├── crud_create_task_dependency.rs
-    │   ├── crud_update_task_dependency.rs   ← query manual (sin updated_at); enum serializado con serde_json
-    │   ├── crud_get_task_dependency.rs
-    │   ├── crud_list_task_dependencies.rs   ← filtra por task_id
-    │   └── crud_delete_task_dependency.rs
-    ├── helpers.rs
-    ├── mod.rs
-    └── types.rs          ← enum DependencyType (success|failure|always)
+├── deployer_settings/       ← patrón clave-valor, sin DbEntity, sin cifrado
+│   ├── get_deployer_setting.rs
+│   ├── set_deployer_setting.rs  ← upsert (INSERT OR REPLACE)
+│   ├── list_deployer_settings.rs
+│   ├── delete_deployer_setting.rs
+│   ├── helpers.rs               ← re-exporta open_pool (no open_crypto_context)
+│   ├── mod.rs
+│   └── types.rs                 ← struct DeployerSetting { key, value: Option<String> }
+├── deployments/
+│   ├── crud/                    ← CRUD de deployments
+│   ├── executions/              ← hijo: deployment_executions
+│   │   ├── crud/
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs             ← enum ExecutionStatus (añade 'skipped')
+│   ├── rollbacks/               ← hijo: deployment_rollbacks
+│   │   ├── crud/
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs             ← re-exporta DeploymentStatus
+│   ├── helpers.rs
+│   ├── mod.rs                   ← re-exporta commandos de executions y rollbacks
+│   └── types.rs                 ← enum DeploymentStatus (pending|running|success|failed)
+├── global_variables/
+│   ├── crud/
+│   ├── helpers.rs
+│   ├── mod.rs
+│   └── types.rs
+├── hosts/
+│   ├── crud/
+│   ├── helpers.rs
+│   ├── mod.rs
+│   ├── test_connection.rs
+│   └── types.rs
+├── passkeys/
+│   ├── crud/
+│   ├── helpers.rs
+│   ├── mod.rs
+│   ├── generate_passkey.rs
+│   └── types.rs
+├── projects/
+│   ├── crud/                    ← CRUD de projects
+│   ├── framework_configs/       ← hijo: framework_configs
+│   │   ├── crud/
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs             ← enums Framework y DataType; value con cifrado condicional
+│   ├── hosts/                   ← hijo: project_hosts
+│   │   ├── crud/                ← crud_update usa query manual (sin updated_at)
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs
+│   ├── tasks/                   ← hijo: project_tasks
+│   │   ├── crud/                ← crud_list ORDER BY order_execution
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs             ← enum OnFailure (stop|continue|retry)
+│   ├── variables/               ← hijo: project_variables
+│   │   ├── crud/                ← crud_list filtra por project_id (query manual)
+│   │   ├── helpers.rs
+│   │   ├── mod.rs
+│   │   └── types.rs
+│   ├── helpers.rs
+│   ├── mod.rs                   ← re-exporta comandos de todos los hijos
+│   └── types.rs
 └── tasks/
-    ├── crud/
+    ├── crud/                    ← CRUD de tasks (entidad global)
+    ├── dependencies/            ← hijo: task_dependencies
+    │   ├── crud/                ← crud_update usa query manual + serde_json para enum
+    │   ├── helpers.rs
     │   ├── mod.rs
-    │   ├── crud_create_task.rs
-    │   ├── crud_update_task.rs
-    │   ├── crud_get_task.rs
-    │   ├── crud_list_tasks.rs
-    │   └── crud_delete_task.rs
+    │   └── types.rs             ← enum DependencyType (success|failure|always)
     ├── helpers.rs
-    ├── mod.rs
-    └── types.rs          ← incluye enum TaskType (command|upload_file|download_file|script)
+    ├── mod.rs                   ← re-exporta comandos de dependencies
+    └── types.rs                 ← enum TaskType (command|upload_file|download_file|script)
 ```
 
 Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD.
