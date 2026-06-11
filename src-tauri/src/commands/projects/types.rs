@@ -9,7 +9,7 @@ pub struct Project {
     pub id: i64,
     pub name: String,
     pub description: Option<String>,
-    pub repository_url: Option<String>,
+    pub git_url: Option<String>,
     pub framework: String,
     pub enabled: bool,
     pub created_at: String,
@@ -21,7 +21,7 @@ pub struct Project {
 pub struct CreateProjectInput {
     pub name: String,
     pub description: Option<String>,
-    pub repository_url: Option<String>,
+    pub git_url: Option<String>,
     pub framework: String,
     pub enabled: Option<bool>,
 }
@@ -32,7 +32,7 @@ impl CreateProjectInput {
             id: 0,
             name: self.name,
             description: self.description,
-            repository_url: self.repository_url,
+            git_url: self.git_url,
             framework: self.framework,
             enabled: self.enabled.unwrap_or(true),
             created_at: String::new(),
@@ -46,7 +46,7 @@ impl CreateProjectInput {
 pub struct UpdateProjectInput {
     pub name: Option<String>,
     pub description: Option<String>,
-    pub repository_url: Option<String>,
+    pub git_url: Option<String>,
     pub framework: Option<String>,
     pub enabled: Option<bool>,
 }

@@ -118,7 +118,7 @@ CREATE TABLE projects (
     id INTEGER CONSTRAINT projects_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT projects_uq_name UNIQUE,
     description TEXT,
-    repository_url TEXT,
+    git_url TEXT,
     framework TEXT CONSTRAINT projects_chk_framework CHECK (
         framework IN (
             'symfony',
