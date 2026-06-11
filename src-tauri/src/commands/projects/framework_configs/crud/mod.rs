@@ -1,0 +1,11 @@
+pub mod crud_create_framework_config;
+pub mod crud_delete_framework_config;
+pub mod crud_get_framework_config;
+pub mod crud_list_framework_configs;
+pub mod crud_update_framework_config;
+
+pub use crud_create_framework_config::crud_create_framework_config;
+pub use crud_delete_framework_config::crud_delete_framework_config;
+pub use crud_get_framework_config::crud_get_framework_config;
+pub use crud_list_framework_configs::crud_list_framework_configs;
+pub use crud_update_framework_config::crud_update_framework_config;
