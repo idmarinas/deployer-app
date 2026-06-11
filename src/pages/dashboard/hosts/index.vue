@@ -260,7 +260,7 @@ const expanded = ref({})
 								}}
 							</span>
 							<span class="flex gap-1.5 items-center">
-								<UIcon name="i-tabler-calendar-edit" class="size-4" />
+								<UIcon name="i-tabler-calendar-time" class="size-4" />
 								<strong>{{ t('entity.host.updated_at') }}:</strong>
 								{{
 									new Date(row.original.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
