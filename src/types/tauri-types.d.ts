@@ -24,7 +24,7 @@ export type CreatePasskeyInput = { name: string, key_content: string, passphrase
 
 export type CreateProjectHostInput = { project_id: number, host_id: number, deploy_order: number | null, enabled: boolean | null, };
 
-export type CreateProjectInput = { name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean | null, };
+export type CreateProjectInput = { name: string, description: string | null, git_url: string | null, framework: string, enabled: boolean | null, };
 
 export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
 
@@ -129,7 +129,7 @@ export type OnFailure = "stop" | "continue" | "retry";
 
 export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
 
-export type Project = { id: number, name: string, description: string | null, repository_url: string | null, framework: string, enabled: boolean, created_at: string, updated_at: string, };
+export type Project = { id: number, name: string, description: string | null, git_url: string | null, framework: string, enabled: boolean, created_at: string, updated_at: string, };
 
 export type ProjectHost = { id: number, project_id: number, host_id: number, deploy_order: number | null, enabled: boolean, created_at: string, };
 
@@ -175,7 +175,7 @@ passphrase: string | null, key_type: KeyType | null, fingerprint: string | null,
 
 export type UpdateProjectHostInput = { deploy_order: number | null, enabled: boolean | null, };
 
-export type UpdateProjectInput = { name: string | null, description: string | null, repository_url: string | null, framework: string | null, enabled: boolean | null, };
+export type UpdateProjectInput = { name: string | null, description: string | null, git_url: string | null, framework: string | null, enabled: boolean | null, };
 
 export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
 
