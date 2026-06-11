@@ -8,6 +8,12 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
+export type CreateDeploymentExecutionInput = { deployment_id: number, host_id: number, task_id: number, retry_attempt: number | null, };
+
+export type CreateDeploymentInput = { project_id: number, version: string, tag: string, build: number, triggered_by: string | null, notes: string | null, };
+
+export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back_to_deployment_id: number, reason: string | null, triggered_by: string | null, };
+
 export type CreateFrameworkConfigInput = { project_id: number, framework: Framework, key: string, value: string, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
 
 export type CreateGlobalVariableInput = { name: string, value: string, is_secret: boolean | null, description: string | null, };
@@ -36,6 +42,16 @@ export type DependencyType = "success" | "failure" | "always";
  * Par clave-valor de la tabla `deployer_settings`.
  */
 export type DeployerSetting = { key: string, value: string | null, };
+
+export type Deployment = { id: number, project_id: number, version: string, tag: string, build: number, status: DeploymentStatus, started_at: string | null, finished_at: string | null, duration_seconds: number | null, triggered_by: string | null, notes: string | null, created_at: string, };
+
+export type DeploymentExecution = { id: number, deployment_id: number, host_id: number, task_id: number, status: ExecutionStatus, exit_code: number | null, output: string | null, error_message: string | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, retry_attempt: number, created_at: string, };
+
+export type DeploymentRollback = { id: number, deployment_id: number, rolled_back_to_deployment_id: number, status: DeploymentStatus, reason: string | null, triggered_by: string | null, started_at: string | null, finished_at: string | null, created_at: string, };
+
+export type DeploymentStatus = "pending" | "running" | "success" | "failed";
+
+export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
 export type ExportPublicKeyAction = "add" | "remove";
 
@@ -126,6 +142,12 @@ export type Task = { id: number, name: string, description: string | null, type:
 export type TaskDependency = { id: number, task_id: number, depends_on_task_id: number, dependency_type: DependencyType, created_at: string, };
 
 export type TaskType = "command" | "upload_file" | "download_file" | "script";
+
+export type UpdateDeploymentExecutionInput = { status: ExecutionStatus | null, exit_code: number | null, output: string | null, error_message: string | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, retry_attempt: number | null, };
+
+export type UpdateDeploymentInput = { status: DeploymentStatus | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, notes: string | null, };
+
+export type UpdateDeploymentRollbackInput = { status: DeploymentStatus | null, started_at: string | null, finished_at: string | null, };
 
 export type UpdateFrameworkConfigInput = { value: string | null, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
 
