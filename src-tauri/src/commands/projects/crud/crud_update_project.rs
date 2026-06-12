@@ -46,6 +46,8 @@ pub async fn crud_update_project(
         name: input.name.unwrap_or(current.name),
         description: input.description.or(current.description),
         git_url: input.git_url.or(current.git_url),
+        local_working_dir: input.local_working_dir.or(current.local_working_dir),
+        remote_working_dir: input.remote_working_dir.or(current.remote_working_dir),
         framework: input.framework.unwrap_or(current.framework),
         enabled: input.enabled.unwrap_or(current.enabled),
         created_at: current.created_at,

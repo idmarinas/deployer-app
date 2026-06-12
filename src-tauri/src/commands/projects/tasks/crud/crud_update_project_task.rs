@@ -49,6 +49,11 @@ pub async fn crud_update_project_task(
         enabled: input.enabled.unwrap_or(current.enabled),
         condition: input.condition.or(current.condition),
         on_failure: input.on_failure.unwrap_or(current.on_failure),
+        config: input.config.or(current.config),
+        local_working_dir: input.local_working_dir.or(current.local_working_dir),
+        remote_working_dir: input.remote_working_dir.or(current.remote_working_dir),
+        retry_count: input.retry_count.or(current.retry_count),
+        retry_delay: input.retry_delay.or(current.retry_delay),
         created_at: current.created_at,
         updated_at: current.updated_at,
     };

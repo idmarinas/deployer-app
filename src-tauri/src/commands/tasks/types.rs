@@ -47,10 +47,14 @@ pub struct Task {
     pub description: Option<String>,
     #[serde(rename = "type")]
     pub task_type: TaskType,
+    /// Comando a ejecutar (o contenido del script si task_type = Script).
+    /// Para UploadFile / DownloadFile este campo no se usa; la configuración
+    /// específica va en project_tasks.config (TaskConfig).
     pub command: Option<String>,
-    pub working_dir: Option<String>,
     pub timeout: i64,
     pub retry_count: i64,
+    /// Segundos de espera entre reintentos. Puede sobreescribirse en project_tasks.
+    pub retry_delay: i64,
     pub enabled: bool,
     pub is_global: bool,
     pub created_at: String,
@@ -64,9 +68,9 @@ pub struct CreateTaskInput {
     pub description: Option<String>,
     pub task_type: TaskType,
     pub command: Option<String>,
-    pub working_dir: Option<String>,
     pub timeout: Option<i64>,
     pub retry_count: Option<i64>,
+    pub retry_delay: Option<i64>,
     pub enabled: Option<bool>,
     pub is_global: Option<bool>,
 }
@@ -79,9 +83,9 @@ impl CreateTaskInput {
             description: self.description,
             task_type: self.task_type,
             command: self.command,
-            working_dir: self.working_dir,
             timeout: self.timeout.unwrap_or(300),
             retry_count: self.retry_count.unwrap_or(0),
+            retry_delay: self.retry_delay.unwrap_or(5),
             enabled: self.enabled.unwrap_or(true),
             is_global: self.is_global.unwrap_or(false),
             created_at: String::new(),
@@ -97,9 +101,9 @@ pub struct UpdateTaskInput {
     pub description: Option<String>,
     pub task_type: Option<TaskType>,
     pub command: Option<String>,
-    pub working_dir: Option<String>,
     pub timeout: Option<i64>,
     pub retry_count: Option<i64>,
+    pub retry_delay: Option<i64>,
     pub enabled: Option<bool>,
     pub is_global: Option<bool>,
 }
