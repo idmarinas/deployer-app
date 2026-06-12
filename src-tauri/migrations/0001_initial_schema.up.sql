@@ -127,6 +127,10 @@ CREATE TABLE projects (
             'generic'
         )
     ),
+    -- Ruta base del proyecto en el PC local (se usa como working_dir por defecto para tareas locales)
+    local_working_dir TEXT,
+    -- Ruta base del proyecto en el servidor remoto (se usa como working_dir por defecto para tareas remotas)
+    remote_working_dir TEXT,
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -209,6 +213,10 @@ CREATE INDEX framework_configs_idx_key ON framework_configs (key);
 
 -- ============================================================================
 -- TASKS
+-- Plantillas de tarea globales y reutilizables.
+-- working_dir eliminado: el directorio de trabajo se gestiona en project_tasks
+-- (heredado del project si la task no lo sobreescribe).
+-- retry_delay: segundos de espera entre reintentos (hereda project_tasks si NULL allí).
 -- ============================================================================
 
 CREATE TABLE tasks (
@@ -224,9 +232,9 @@ CREATE TABLE tasks (
         )
     ),
     command TEXT,
-    working_dir TEXT,
     timeout INTEGER NOT NULL DEFAULT 300,
     retry_count INTEGER NOT NULL DEFAULT 0,
+    retry_delay INTEGER NOT NULL DEFAULT 5,
     enabled BOOLEAN NOT NULL DEFAULT 1,
     is_global BOOLEAN NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -241,6 +249,13 @@ CREATE INDEX tasks_idx_is_global ON tasks (is_global);
 
 -- ============================================================================
 -- PROJECT_TASKS (N:N Relation)
+-- Personalización de una task base para un proyecto concreto.
+-- config: JSON serializado con la configuración específica del TaskType
+--   (ej. UploadFileConfig { src, dest } para upload_file / download_file).
+-- local_working_dir: sobreescribe el del proyecto para esta task (nullable).
+-- remote_working_dir: sobreescribe el del proyecto para esta task (nullable).
+-- retry_count: sobreescribe el de la task base (nullable → hereda tasks.retry_count).
+-- retry_delay: sobreescribe el de la task base (nullable → hereda tasks.retry_delay).
 -- ============================================================================
 
 CREATE TABLE project_tasks (
@@ -253,6 +268,11 @@ CREATE TABLE project_tasks (
     on_failure TEXT NOT NULL DEFAULT 'stop' CONSTRAINT project_tasks_chk_on_failure CHECK (
         on_failure IN ('stop', 'continue', 'retry')
     ),
+    config TEXT,
+    local_working_dir TEXT,
+    remote_working_dir TEXT,
+    retry_count INTEGER,
+    retry_delay INTEGER,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (
