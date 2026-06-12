@@ -11,7 +11,6 @@ node_modules
 dist
 dist-ssr
 *.local
-bun.lock
 *.bak
 
 # Editor directories and files
