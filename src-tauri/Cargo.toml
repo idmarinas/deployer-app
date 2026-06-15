@@ -1,5 +1,5 @@
 [package]
-name = "deployer-app"
+name = "DeployerApp"
 version = "0.1.0"
 description = "DeployerApp una aplicación para el desplieque de sitios web, manteniendo el control de los datos en una BD localmente - by IDMarinas"
 authors = ["IDMarinas"]
