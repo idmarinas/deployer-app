@@ -24,15 +24,15 @@ export type CreatePasskeyInput = { name: string, key_content: string, passphrase
 
 export type CreateProjectHostInput = { project_id: number, host_id: number, deploy_order: number | null, enabled: boolean | null, };
 
-export type CreateProjectInput = { name: string, description: string | null, git_url: string | null, framework: string, enabled: boolean | null, };
+export type CreateProjectInput = { name: string, description: string | null, git_url: string | null, framework: string, local_working_dir: string | null, remote_working_dir: string | null, enabled: boolean | null, };
 
-export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
+export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
 
 export type CreateProjectVariableInput = { project_id: number, name: string, value: string, is_secret: boolean | null, description: string | null, };
 
 export type CreateTaskDependencyInput = { task_id: number, depends_on_task_id: number, dependency_type: DependencyType | null, };
 
-export type CreateTaskInput = { name: string, description: string | null, task_type: TaskType, command: string | null, working_dir: string | null, timeout: number | null, retry_count: number | null, enabled: boolean | null, is_global: boolean | null, };
+export type CreateTaskInput = { name: string, description: string | null, task_type: TaskType, command: string | null, timeout: number | null, retry_count: number | null, retry_delay: number | null, enabled: boolean | null, is_global: boolean | null, };
 
 export type DataType = "string" | "integer" | "boolean" | "json";
 
@@ -74,6 +74,28 @@ action: ExportPublicKeyAction,
  * pero la passkey aún no está en el servidor).
  */
 temp_username: string | null, temp_password: string | null, };
+
+/**
+ * Configuración de transferencia de archivo (Upload o Download).
+ * Las rutas soportan interpolación de variables {{variable}}.
+ */
+export type FileTransferConfig = { 
+/**
+ * Ruta de origen.
+ * - UploadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
+ * - DownloadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
+ */
+src: string, 
+/**
+ * Ruta de destino.
+ * - UploadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
+ * - DownloadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
+ */
+dest: string, 
+/**
+ * Si true, transfiere directorios de forma recursiva. Por defecto false.
+ */
+recursive: boolean, };
 
 export type Framework = "symfony" | "laravel" | "nextjs" | "generic";
 
@@ -129,15 +151,70 @@ export type OnFailure = "stop" | "continue" | "retry";
 
 export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
 
-export type Project = { id: number, name: string, description: string | null, git_url: string | null, framework: string, enabled: boolean, created_at: string, updated_at: string, };
+export type ProgressEvent = { "event": "deployment_started", deployment_id: number, total_tasks: number, } | { "event": "task_pending", execution_id: number, task_name: string, order: number, } | { "event": "task_started", execution_id: number, task_name: string, } | { "event": "output_chunk", execution_id: number, chunk: string, } | { "event": "task_retrying", execution_id: number, attempt: number, max_attempts: number, delay_secs: number, } | { "event": "task_finished", execution_id: number, task_name: string, status: ExecutionStatus, exit_code: number | null, duration_seconds: number, } | { "event": "task_skipped", execution_id: number, task_name: string, reason: string, } | { "event": "deployment_finished", deployment_id: number, status: DeploymentStatus, duration_seconds: number, } | { "event": "fatal_error", message: string, };
+
+export type Project = { id: number, name: string, description: string | null, git_url: string | null, framework: string, 
+/**
+ * Ruta base local del proyecto en el PC del usuario.
+ * Actúa como working_dir por defecto para tareas locales (UploadFile, DownloadFile).
+ */
+local_working_dir: string | null, 
+/**
+ * Ruta base del proyecto en el servidor remoto.
+ * Actúa como working_dir por defecto para tareas remotas (Command, Script).
+ */
+remote_working_dir: string | null, enabled: boolean, created_at: string, updated_at: string, };
 
 export type ProjectHost = { id: number, project_id: number, host_id: number, deploy_order: number | null, enabled: boolean, created_at: string, };
 
-export type ProjectTask = { id: number, project_id: number, task_id: number, order_execution: number, enabled: boolean, condition: string | null, on_failure: OnFailure, created_at: string, updated_at: string, };
+export type ProjectTask = { id: number, project_id: number, task_id: number, order_execution: number, enabled: boolean, condition: string | null, on_failure: OnFailure, 
+/**
+ * JSON serializado de TaskConfig. Solo requerido para UploadFile / DownloadFile.
+ */
+config: string | null, 
+/**
+ * Sobreescribe local_working_dir del proyecto para esta task concreta.
+ */
+local_working_dir: string | null, 
+/**
+ * Sobreescribe remote_working_dir del proyecto para esta task concreta.
+ */
+remote_working_dir: string | null, 
+/**
+ * Sobreescribe retry_count de la task base. Si es None, hereda tasks.retry_count.
+ */
+retry_count: number | null, 
+/**
+ * Sobreescribe retry_delay de la task base. Si es None, hereda tasks.retry_delay.
+ */
+retry_delay: number | null, created_at: string, updated_at: string, };
 
 export type ProjectVariable = { id: number, project_id: number, name: string, value: string, is_secret: boolean, description: string | null, created_at: string, updated_at: string, };
 
-export type Task = { id: number, name: string, description: string | null, type: TaskType, command: string | null, working_dir: string | null, timeout: number, retry_count: number, enabled: boolean, is_global: boolean, created_at: string, updated_at: string, };
+export type RunDeploymentInput = { deployment_id: number, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, };
+
+export type Task = { id: number, name: string, description: string | null, type: TaskType, 
+/**
+ * Comando a ejecutar (o contenido del script si task_type = Script).
+ * Para UploadFile / DownloadFile este campo no se usa; la configuración
+ * específica va en project_tasks.config (TaskConfig).
+ */
+command: string | null, timeout: number, retry_count: number, 
+/**
+ * Segundos de espera entre reintentos. Puede sobreescribirse en project_tasks.
+ */
+retry_delay: number, enabled: boolean, is_global: boolean, created_at: string, updated_at: string, };
+
+/**
+ * Configuración serializada en project_tasks.config.
+ * Usa un tag "type" para identificar el variante al deserializar.
+ * Command y Script no necesitan config adicional (usan tasks.command directamente).
+ */
+export type TaskConfig = { "type": "upload_file" } & FileTransferConfig | { "type": "download_file" } & FileTransferConfig;
 
 export type TaskDependency = { id: number, task_id: number, depends_on_task_id: number, dependency_type: DependencyType, created_at: string, };
 
@@ -175,12 +252,12 @@ passphrase: string | null, key_type: KeyType | null, fingerprint: string | null,
 
 export type UpdateProjectHostInput = { deploy_order: number | null, enabled: boolean | null, };
 
-export type UpdateProjectInput = { name: string | null, description: string | null, git_url: string | null, framework: string | null, enabled: boolean | null, };
+export type UpdateProjectInput = { name: string | null, description: string | null, git_url: string | null, framework: string | null, local_working_dir: string | null, remote_working_dir: string | null, enabled: boolean | null, };
 
-export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, };
+export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
 
 export type UpdateProjectVariableInput = { name: string | null, value: string | null, is_secret: boolean | null, description: string | null, };
 
 export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
 
-export type UpdateTaskInput = { name: string | null, description: string | null, task_type: TaskType | null, command: string | null, working_dir: string | null, timeout: number | null, retry_count: number | null, enabled: boolean | null, is_global: boolean | null, };
+export type UpdateTaskInput = { name: string | null, description: string | null, task_type: TaskType | null, command: string | null, timeout: number | null, retry_count: number | null, retry_delay: number | null, enabled: boolean | null, is_global: boolean | null, };
