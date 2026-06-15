@@ -2,6 +2,7 @@ pub mod crud;
 pub mod executions;
 pub mod helpers;
 pub mod rollbacks;
+pub mod run;
 pub mod types;
 
 pub use crud::{
@@ -18,3 +19,4 @@ pub use rollbacks::{
     crud_get_deployment_rollback, crud_list_deployment_rollbacks,
     crud_update_deployment_rollback,
 };
+pub use run::run_deployment;
