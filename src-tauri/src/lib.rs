@@ -17,6 +17,7 @@ use commands::deployments::{
     crud_create_deployment_rollback, crud_delete_deployment_rollback,
     crud_get_deployment_rollback, crud_list_deployment_rollbacks,
     crud_update_deployment_rollback,
+    run_deployment,
 };
 use commands::global_variables::{
     crud_create_global_variable, crud_delete_global_variable, crud_get_global_variable,
@@ -144,6 +145,8 @@ pub fn run() {
             crud_get_deployment_rollback,
             crud_list_deployment_rollbacks,
             crud_delete_deployment_rollback,
+            // Deployments - Runner
+            run_deployment,
             // Global Variables - CRUD
             crud_create_global_variable,
             crud_update_global_variable,

@@ -43,6 +43,7 @@ impl TaskConfig {
     }
 
     /// Serializa el TaskConfig a string JSON.
+    #[allow(dead_code)]
     pub fn to_json(&self) -> Result<String, String> {
         serde_json::to_string(self).map_err(|e| format!("Error al serializar TaskConfig: {}", e))
     }
