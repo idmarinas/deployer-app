@@ -10,9 +10,9 @@ Su objetivo es **sustituir DeployerPHP** en los proyectos por un único deployer
 ### Características Principales:
 - **Ejecución Local:** Aplicación de escritorio multiplataforma (vía Tauri 2).
 - **Configuración:** Almacenada en una base de datos **SQLite** local en el PC del usuario.
-- **Importación:** Permite importar archivos de configuración existentes.
 - **SSH:** Conexión a servidores remotos, ejecución de comandos y transferencia de archivos.
 - **Cifrado transparente:** Los campos sensibles se cifran automáticamente en SQLite mediante AES-256-GCM. La clave maestra reside en el keychain del SO.
+- **Runner universal:** Motor de ejecución de deployments via `run_deployment` (command, script, upload_file, download_file).
 
 ## 2. Stack Tecnológico
 Es fundamental respetar el stack tecnológico elegido:
@@ -33,6 +33,7 @@ Estas reglas deben seguirse sin excepción:
 5. **Dependencias:** Antes de instalar nuevas dependencias, comprueba las que ya existen en `package.json` y en `src-tauri/Cargo.toml`.
 6. **Plugins Tauri:** El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en registrarse.
 7. **Versiones de dependencias Rust:** No actualizar `rand_core` más allá de `0.6` ni `keyring` más allá de `3` sin adaptar el código del módulo `crypto/`. Ver sección 8.
+8. **Orden de implementación:** Crear primero todos los archivos nuevos y modificar types existentes. Conectar módulos (`mod.rs`) y registrar en `lib.rs` siempre como **último paso**, para no romper el build mientras el trabajo está en curso.
 
 ## 4. Estructura del Proyecto
 - `/src`: Lógica del Frontend (Vue + TypeScript).
@@ -87,129 +88,141 @@ Los comandos CRUD se organizan en una subcarpeta `crud/` dentro de la carpeta de
 
 ```
 commands/
-├── deployer_settings/       ← patrón clave-valor, sin DbEntity, sin cifrado
-│   ├── get_deployer_setting.rs
-│   ├── set_deployer_setting.rs  ← upsert (INSERT OR REPLACE)
-│   ├── list_deployer_settings.rs
-│   ├── delete_deployer_setting.rs
-│   ├── helpers.rs               ← re-exporta open_pool (no open_crypto_context)
-│   ├── mod.rs
-│   └── types.rs                 ← struct DeployerSetting { key, value: Option<String> }
+├── deployer_settings/
 ├── deployments/
-│   ├── crud/                    ← CRUD de deployments
-│   ├── executions/              ← hijo: deployment_executions
-│   │   ├── crud/
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs             ← enum ExecutionStatus (añade 'skipped')
-│   ├── rollbacks/               ← hijo: deployment_rollbacks
-│   │   ├── crud/
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs             ← re-exporta DeploymentStatus
+│   ├── crud/
+│   ├── executions/
+│   ├── rollbacks/
+│   ├── run/                         ← Runner universal de deployments
+│   │   ├── mod.rs                   ← Comando #[tauri::command] run_deployment
+│   │   ├── types.rs                 ← RunDeploymentInput, ProgressEvent, VariableSnapshot, ResolvedTask
+│   │   ├── runner.rs                ← Orquestador principal
+│   │   ├── session.rs               ← Sesión SSH única con reconexión automática
+│   │   ├── interpolator.rs          ← build_snapshot() + evaluate_condition()
+│   │   ├── ssh_executor.rs          ← execute_command() + execute_script()
+│   │   └── sftp_executor.rs         ← upload_file() + download_file()
 │   ├── helpers.rs
-│   ├── mod.rs                   ← re-exporta commandos de executions y rollbacks
-│   └── types.rs                 ← enum DeploymentStatus (pending|running|success|failed)
+│   ├── mod.rs
+│   └── types.rs
 ├── global_variables/
-│   ├── crud/
-│   ├── helpers.rs
-│   ├── mod.rs
-│   └── types.rs
 ├── hosts/
-│   ├── crud/
-│   ├── helpers.rs
-│   ├── mod.rs
-│   ├── test_connection.rs
-│   └── types.rs
 ├── passkeys/
+├── projects/
 │   ├── crud/
+│   ├── framework_configs/
+│   ├── hosts/
+│   ├── tasks/
+│   ├── variables/
 │   ├── helpers.rs
 │   ├── mod.rs
-│   ├── generate_passkey.rs
-│   └── types.rs
-├── projects/
-│   ├── crud/                    ← CRUD de projects
-│   ├── framework_configs/       ← hijo: framework_configs
-│   │   ├── crud/
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs             ← enums Framework y DataType; value con cifrado condicional
-│   ├── hosts/                   ← hijo: project_hosts
-│   │   ├── crud/                ← crud_update usa query manual (sin updated_at)
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs
-│   ├── tasks/                   ← hijo: project_tasks
-│   │   ├── crud/                ← crud_list ORDER BY order_execution
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs             ← enum OnFailure (stop|continue|retry)
-│   ├── variables/               ← hijo: project_variables
-│   │   ├── crud/                ← crud_list filtra por project_id (query manual)
-│   │   ├── helpers.rs
-│   │   ├── mod.rs
-│   │   └── types.rs
-│   ├── helpers.rs
-│   ├── mod.rs                   ← re-exporta comandos de todos los hijos
-│   └── types.rs
+│   └── types.rs                     ← local_working_dir, remote_working_dir en Project
 └── tasks/
-    ├── crud/                    ← CRUD de tasks (entidad global)
-    ├── dependencies/            ← hijo: task_dependencies
-    │   ├── crud/                ← crud_update usa query manual + serde_json para enum
-    │   ├── helpers.rs
-    │   ├── mod.rs
-    │   └── types.rs             ← enum DependencyType (success|failure|always)
+    ├── crud/
+    ├── dependencies/
     ├── helpers.rs
-    ├── mod.rs                   ← re-exporta comandos de dependencies
-    └── types.rs                 ← enum TaskType (command|upload_file|download_file|script)
+    ├── mod.rs
+    └── types.rs                     ← TaskType; sin working_dir; retry_delay añadido
 ```
 
-Este mismo patrón debe seguirse para cualquier entidad nueva que requiera CRUD.
+## 6. Runner Universal (`run_deployment`)
 
-#### Listas filtradas por FK (ej. `project_variables`)
+### Diseño
 
-Cuando un `crud_list_*` necesita filtrar por una FK (ej. `WHERE project_id = ?`), el helper genérico `db::fetch_all` no es suficiente. En ese caso se usa `sqlx::query(&sql)` dinámico (con `&sql`, NO `AssertSqlSafe`) y se aplica el descifrado manualmente con `db::apply_decryption`. Para ello `apply_decryption` debe estar re-exportada en `db/mod.rs`:
+El comando `run_deployment` es el motor de ejecución de deployments. Usa un **IPC Channel** (Tauri 2) para emitir eventos de progreso en tiempo real al frontend, punto a punto por invocación.
 
-```rust
-pub use crud::{apply_decryption, delete, fetch_all, fetch_one, insert, update};
+```ts
+// Frontend — uso típico
+import { Channel } from '@tauri-apps/api/core'
+import type { ProgressEvent } from '@/tauri-types'
+
+const channel = new Channel<ProgressEvent>()
+channel.onmessage = (event) => { /* actualizar UI */ }
+await invoke('run_deployment', { input: { deploymentId: 123 }, channel })
 ```
 
-#### Añadir una nueva entidad con CRUD y cifrado
+### Eventos emitidos (`ProgressEvent`)
 
-1. Crear `src/commands/<entidad>/types.rs` con el struct de la entidad derivando `DbEntity`:
+| Evento | Descripción |
+|--------|-------------|
+| `deployment_started` | Inicio del deployment; incluye `total_tasks` |
+| `task_pending` | Task en cola, antes de ejecutarse |
+| `task_started` | Task comenzando ejecución |
+| `output_chunk` | Fragmento de output acumulado (~100ms) |
+| `task_retrying` | Task reintentándose; incluye `attempt`, `delay_secs` |
+| `task_finished` | Task finalizada; incluye `status`, `exit_code`, `duration_seconds` |
+| `task_skipped` | Task saltada; incluye `reason` |
+| `deployment_finished` | Deployment finalizado; incluye `status`, `duration_seconds` |
+| `fatal_error` | Error que impide continuar |
 
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-#[db_table("nombre_tabla")]
-pub struct MiEntidad {
-    pub id: i64,
-    pub name: String,
-    #[db_encrypt(expose = false)]          // campo siempre cifrado, no expuesto al frontend
-    pub secret: Option<String>,
-    #[db_conditional_encrypt(condition = "is_secret")]  // cifrado condicional
-    pub value: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
+### Interpolación de variables (`{{variable}}`)
+
+Precedencia (mayor a menor, el más alto sobreescribe):
+1. Variables de proyecto (`project_variables`)
+2. Variables globales (`global_variables`)
+3. Variables de sistema (inyectadas por el runner)
+
+Variables de sistema disponibles automáticamente:
+
+| Variable | Valor |
+|----------|-------|
+| `{{deployment_id}}` | ID del deployment |
+| `{{version}}` | Versión del deployment |
+| `{{tag}}` | Tag del deployment |
+| `{{build}}` | Número de build |
+| `{{host}}` | Hostname/IP del servidor |
+| `{{host_user}}` | Usuario SSH |
+| `{{remote_working_dir}}` | Working dir remoto del proyecto |
+| `{{local_working_dir}}` | Working dir local del proyecto |
+
+### `TaskConfig` — configuración específica por tipo
+
+Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile` y `DownloadFile`; `Command` y `Script` usan `tasks.command` directamente.
+
+```json
+// UploadFile
+{ "type": "upload_file", "src": "{{local_working_dir}}/dist", "dest": "{{remote_working_dir}}/public", "recursive": true }
+
+// DownloadFile
+{ "type": "download_file", "src": "{{remote_working_dir}}/storage/logs/app.log", "dest": "{{local_working_dir}}/.deployer/logs/" }
 ```
 
-   Reglas del macro `DbEntity`:
-   - `#[db_table("nombre")]` — **obligatorio** en el struct.
-   - `#[db_encrypt]` o `#[db_encrypt(expose = true/false)]` — campo siempre cifrado. `expose = false` por defecto.
-   - `#[db_conditional_encrypt(condition = "campo_booleano")]` — cifrado solo si `campo_booleano` es `true` en esa fila.
-   - Los campos `id`, `created_at` y `updated_at` se excluyen automáticamente de `to_fields()`.
-   - El enum usado como tipo de campo **debe** implementar `Default`, `Serialize` y `Deserialize`.
+### Herencia de campos (project_task > project)
 
-2. Crear `src/commands/<entidad>/helpers.rs` con una re-exportación de `commands::helpers`:
-   ```rust
-   pub use crate::commands::helpers::{get_master_key, open_crypto_context, open_pool};
-   ```
-3. Crear los cinco archivos de comandos en `src/commands/<entidad>/crud/`.
-4. Registrar los comandos en `lib.rs`.
-5. Añadir la configuración inicial de cifrado en la migración SQL correspondiente en la tabla `encryption_config`.
+| Campo | Fuente 1 (prioritaria) | Fuente 2 (fallback) |
+|-------|----------------------|---------------------|
+| `local_working_dir` | `project_tasks.local_working_dir` | `projects.local_working_dir` |
+| `remote_working_dir` | `project_tasks.remote_working_dir` | `projects.remote_working_dir` |
+| `retry_count` | `project_tasks.retry_count` | `tasks.retry_count` |
+| `retry_delay` | `project_tasks.retry_delay` | `tasks.retry_delay` |
 
-## 6. Proc-Macro `DbEntity` (`crates/deployer-macros`)
+### Reanudación automática
+
+Si el deployment tiene executions previas en `success`, el runner las salta automáticamente. Si todas están en `success`, devuelve error informativo ("ya completado").
+
+### Logs de output
+
+El output completo de cada execution se guarda en:
+```
+{local_working_dir}/.deployer/logs/execution_{id}.log
+```
+En BD se almacena truncado a 64 KB con nota al pie si fue truncado.
+
+### Sesión SSH
+
+- Una única sesión SSH por host durante todo el deployment (más eficiente).
+- Reconexión automática con backoff lineal de 2s si la sesión cae.
+- Intentos configurables via `RunDeploymentInput.ssh_reconnect_attempts` (por defecto: 3).
+
+### Condiciones de task
+
+Sintaxis simple evaluada por `evaluate_condition()`:
+```
+"{{version}} == 1.0.0"   →  ejecutar solo si version es 1.0.0
+"{{tag}} != hotfix"      →  ejecutar si tag no es hotfix
+```
+Si la condición no puede parsearse, se ejecuta la task (safe default).
+
+## 7. Proc-Macro `DbEntity` (`crates/deployer-macros`)
 
 El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera automáticamente la implementación del trait homónimo.
 
@@ -228,133 +241,40 @@ El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera aut
 - `encrypted_fields()` — array estático con los campos marcados con `#[db_encrypt]` y su flag `expose`.
 - `conditional_encrypted_fields()` — array estático con los campos marcados con `#[db_conditional_encrypt]`.
 - `from_row()` — construye el struct desde una `SqliteRow` con `try_get` por cada campo.
-- `to_fields()` — serializa los campos del struct a pares `(String, serde_json::Value)`, **excluyendo** `id`, `created_at` y `updated_at`. Usa `.expect()` para que un fallo de serialización sea visible inmediatamente.
+- `to_fields()` — serializa los campos del struct a pares `(String, serde_json::Value)`, **excluyendo** `id`, `created_at` y `updated_at`.
 - `to_fields_all()` — igual que `to_fields()` pero incluyendo `id`, `created_at` y `updated_at`.
-- `from_fields()` — reconstruye el struct desde un mapa de pares (tras descifrado). Usa `serde_json::from_value(...).unwrap_or_default()` por campo, por lo que el struct debe implementar `Default` (o todos sus tipos deben tenerlo).
+- `from_fields()` — reconstruye el struct desde un mapa de pares (tras descifrado).
 
-### Requisitos del struct para usar el macro
-
-- Derivar también `Serialize`, `Deserialize` (requeridos por el trait `DbEntity`).
-- Los enums usados como tipo de campo deben implementar `Default`, `Serialize` y `Deserialize`. Marcar la variante por defecto con `#[default]`.
-- Los valores por defecto de dominio para campos numéricos o booleanos los gestiona SQLite mediante las restricciones `DEFAULT` de la migración, no el macro.
-
-## 7. Sistema de Cifrado Transparente
+## 8. Sistema de Cifrado Transparente
 
 ### Principio de funcionamiento
 - El frontend opera **siempre en texto plano**.
 - Rust cifra los valores sensibles al guardar y los descifra al leer, de forma automática.
 - Los valores cifrados en SQLite tienen el prefijo `ENC:` seguido del valor en base64.
-- Si un valor ya tiene el prefijo `ENC:` al llegar a Rust, **no se vuelve a cifrar** (evita doble cifrado al editar sin cambiar el campo).
-
-### Clave maestra
-- Se genera automáticamente en la primera ejecución.
-- Se almacena en el **keychain del sistema operativo**:
-  - Windows: Windows Credential Manager.
-  - macOS: Keychain.
-  - Linux: Secret Service.
-- Módulo: `src/crypto/keyring.rs`.
+- Si un valor ya tiene el prefijo `ENC:` al llegar a Rust, **no se vuelve a cifrar**.
 
 ### Algoritmo
 - **AES-256-GCM** con nonce aleatorio de 12 bytes por cada cifrado.
-- Módulo: `src/crypto/cipher.rs`.
 
 ### Configuración de campos cifrados (`encryption_config`)
-La tabla `encryption_config` en SQLite controla qué campos se cifran y cómo se exponen:
 
-| Columna | Descripción |
-|---------|-------------|
-| `table_name` | Nombre de la tabla |
-| `field_name` | Nombre del campo |
-| `encrypt` | `1` = se cifra al guardar |
-| `expose` | `1` = se descifra al leer y se envía en texto plano al frontend |
-
-- `expose = 0` (por defecto): el campo cifrado **no** se descifra al enviarlo al frontend. Rust lo usa internamente (ej. contraseñas SSH).
-- `expose = 1`: el campo se descifra antes de enviarlo (ej. claves privadas que el frontend necesita).
-- La configuración es modificable por el usuario desde la interfaz.
-- Se cachea en memoria (`EncryptionConfigCache`) para evitar lecturas repetidas. La caché se invalida automáticamente al modificar `encryption_config`.
-
-### Campos condicionales (`conditional_encrypted_fields`)
-Para campos cuyo cifrado depende del valor de otro campo en la misma fila (ej. `value` solo si `is_secret = true`). Estas tablas **no** se configuran en `encryption_config`, sino directamente en el trait `DbEntity` de la entidad (o vía `#[db_conditional_encrypt(condition = "campo")]` en el macro).
-
-### Configuración inicial de cifrado
 | Tabla | Campo | encrypt | expose |
 |-------|-------|---------|--------|
 | `hosts` | `password` | 1 | 0 |
 | `passkeys` | `key_content` | 1 | 0 |
 | `passkeys` | `passphrase` | 1 | 0 |
 
-## 8. Patrones de Acceso a Base de Datos
-
-### useDatabase
-El composable `useDatabase` gestiona la conexión SQLite y expone los métodos base de acceso:
-- `load()`: Fuerza la inicialización de la conexión.
-- `select<T>()`: Ejecuta un SELECT y devuelve un array tipado.
-- `first<T>()`: Devuelve el primer resultado de un SELECT, o null.
-- `execute()`: Ejecuta INSERT, UPDATE o DELETE. Devuelve `ExecuteResult`.
-- `transaction(callback)`: Ver sección de transacciones más abajo.
-- `beginTransaction()` / `commit()` / `rollback()`: Transacción manual explícita (uso avanzado).
-
-> **Importante:** `useDatabase` (y `tauri-plugin-sql`) solo debe usarse para tablas **sin campos cifrados**. Para tablas con cifrado, usar los comandos Tauri CRUD (`invoke('crud_*')`).
-
-### useQuery
-El composable `useQuery` contiene todas las consultas de negocio organizadas por tabla.
-
-#### Patrón OrThrow (obligatorio para métodos futuros)
-Cada método de escritura debe tener **dos variantes**:
-
-| Variante | Comportamiento | Cuándo usar |
-|---|---|---|
-| `saveXxx()` | Captura el error y devuelve `{ error: string \| null }` | Uso general, fuera de transacciones |
-| `saveXxxOrThrow()` | Lanza la excepción tal cual | Dentro de `transaction()` |
-
-La lógica real vive en `OrThrow`. La variante segura es un wrapper:
-
-```ts
-async function saveDeployerSettingsOrThrow(settings: Record<string, string>): Promise<ExecuteResult> {
-  // lógica real — lanza si falla
-}
-
-async function saveDeployerSettings(settings: Record<string, string>): Promise<ExecuteResult> {
-  try {
-    return await saveDeployerSettingsOrThrow(settings)
-  } catch (e) {
-    console.error('Error saving app settings:', e)
-    return { rowsAffected: 0, lastInsertId: 0, error: String(e) }
-  }
-}
-```
-
-### Transacciones con transaction()
-Para operaciones relacionadas que deben ser atómicas (todas o ninguna), usar `transaction()`:
-
-```ts
-const { transaction } = useDatabase()
-const { saveHostOrThrow, saveProjectOrThrow } = useQuery()
-
-await transaction(async () => {
-  await saveHostOrThrow(host)
-  await saveProjectOrThrow(project)
-})
-```
-
-**Reglas:**
-- Dentro de `transaction()`, usar **siempre** las variantes `OrThrow`.
-- Si cualquier operación lanza una excepción, se hace `ROLLBACK` automático.
-- Si todo va bien, se hace `COMMIT` automático.
-- Capturar el error fuera del `transaction()` con `try/catch`.
-
-Este patrón es similar al **Unit of Work de Doctrine ORM**.
-
 ## 9. Dependencias Rust — Notas de Compatibilidad
 
 | Crate | Versión usada | Límite | Motivo |
 |-------|--------------|--------|---------|
-| `rand` | `0.10` | No bajar a `0.8` | Requiere feature `sys_rng` para `OsRng`. Versiones anteriores tienen API diferente. |
-| `rand_core` | `0.10` | Mantener sincronizado con `rand` | Debe coincidir con la versión de `rand` para evitar conflictos de traits. |
-| `keyring` | `3` | No subir a `4+` | En `v4` el enum `Error` y la variante `NoEntry` son privados (`#[non_exhaustive]`). Requeriría cambios en `crypto/keyring.rs`. |
-| `aes-gcm` | `0.10` | — | Estable, sin restricciones conocidas. |
-| `sqlx` | `0.9` | — | Queries dinámicas con `sqlx::query(&sql)` (referencia a String). No usar `AssertSqlSafe` ni `sqlx::query!` / `sqlx::query_as!` (requieren `DATABASE_URL` en compilación). |
-| `russh` | `0.61` | — | No usa crate separado `russh-keys`; las claves se gestionan con el crate `ssh-key`. |
+| `rand` | `0.10` | No bajar a `0.8` | Requiere feature `sys_rng` para `OsRng`. |
+| `rand_core` | `0.10` | Sincronizado con `rand` | Debe coincidir para evitar conflictos de traits. |
+| `keyring` | `3` | No subir a `4+` | En `v4` el enum `Error` es `#[non_exhaustive]`. |
+| `russh` | `0.61` | — | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum; `connection_timeout` eliminado. |
+| `russh-sftp` | `2.0.6` | — | Subsistema SFTP para upload/download. |
+| `chrono` | `0.4` | — | Timestamps RFC3339 para `started_at`/`finished_at` en runner. |
+| `sqlx` | `0.8.6` | — | Queries dinámicas con `sqlx::query(&sql)`. No usar `AssertSqlSafe` ni macros que requieran `DATABASE_URL`. |
 
 ## 10. Comandos Útiles
 - `bun run tauri dev`: Inicia el servidor de desarrollo de Vite y Tauri.
