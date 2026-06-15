@@ -17,7 +17,7 @@ export default defineConfig(async () => ({
 			ui: {
 				colors: {
 					primary: 'deployer-primary',
-					secondary: 'deployer-accent',
+					secondary: 'deployer-secondary',
 					success: 'deployer-success',
 					info: 'deployer-info',
 					warning: 'deployer-warning',

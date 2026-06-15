@@ -2,87 +2,94 @@
 @import '@nuxt/ui';
 
 @theme static {
-  /* Primary (Azules) */
-  --color-deployer-primary-50:  #e6f4ff;
-  --color-deployer-primary-100: #c2e4ff;
-  --color-deployer-primary-200: #99d2ff;
-  --color-deployer-primary-300: #66bdff;
-  --color-deployer-primary-400: #33a7ff;
-  --color-deployer-primary-500: #009dff;
-  --color-deployer-primary-600: #0077e6;
-  --color-deployer-primary-700: #0057b3;
-  --color-deployer-primary-800: #003d80;
-  --color-deployer-primary-900: #00264d;
+	/* Primary (Azul eléctrico) */
+	--color-deployer-primary-50: #e8f4ff;
+	--color-deployer-primary-100: #c7e4ff;
+	--color-deployer-primary-200: #9acfff;
+	--color-deployer-primary-300: #6cb9ff;
+	--color-deployer-primary-400: #3da3ff;
+	--color-deployer-primary-500: #0a8dff;
+	--color-deployer-primary-600: #0070d1;
+	--color-deployer-primary-700: #0055a3;
+	--color-deployer-primary-800: #003b75;
+	--color-deployer-primary-900: #002247;
+	--color-deployer-primary-950: #001326;
 
-  /* Accent (Morados) */
-  --color-deployer-accent-50:  #f3e8ff;
-  --color-deployer-accent-100: #e1c6ff;
-  --color-deployer-accent-200: #c99cff;
-  --color-deployer-accent-300: #b26aff;
-  --color-deployer-accent-400: #9b3aff;
-  --color-deployer-accent-500: #8a1aff;
-  --color-deployer-accent-600: #6a00d4;
-  --color-deployer-accent-700: #5300a3;
-  --color-deployer-accent-800: #3e007a;
-  --color-deployer-accent-900: #240047;
+	/* Secondary (Morado neón) */
+	--color-deployer-secondary-50: #f3e8ff;
+	--color-deployer-secondary-100: #e3c6ff;
+	--color-deployer-secondary-200: #cc9cff;
+	--color-deployer-secondary-300: #b36aff;
+	--color-deployer-secondary-400: #9a3aff;
+	--color-deployer-secondary-500: #821aff;
+	--color-deployer-secondary-600: #6700d1;
+	--color-deployer-secondary-700: #4d00a3;
+	--color-deployer-secondary-800: #330075;
+	--color-deployer-secondary-900: #1c0047;
+	--color-deployer-secondary-950: #0f0026;
 
-  /* Success (Teal) */
-  --color-deployer-success-50:  #e6fffa;
-  --color-deployer-success-100: #b2fff0;
-  --color-deployer-success-200: #7dffe6;
-  --color-deployer-success-300: #47ffdb;
-  --color-deployer-success-400: #12ffd1;
-  --color-deployer-success-500: #00e0c6;
-  --color-deployer-success-600: #00b39a;
-  --color-deployer-success-700: #007a66;
-  --color-deployer-success-800: #004d40;
-  --color-deployer-success-900: #002e26;
+	/* Success (Verde azulado) */
+	--color-deployer-success-50: #e6fffa;
+	--color-deployer-success-100: #b3fff0;
+	--color-deployer-success-200: #7dffe6;
+	--color-deployer-success-300: #47ffdb;
+	--color-deployer-success-400: #12ffd1;
+	--color-deployer-success-500: #00c8a3;
+	--color-deployer-success-600: #009b7f;
+	--color-deployer-success-700: #006e5b;
+	--color-deployer-success-800: #004137;
+	--color-deployer-success-900: #001413;
+	--color-deployer-success-950: #000a09;
 
-  /* Info */
-  --color-deployer-info-50:  #dff7ff;
-  --color-deployer-info-100: #b5ebff;
-  --color-deployer-info-200: #8adfff;
-  --color-deployer-info-300: #5ed2ff;
-  --color-deployer-info-400: #33c6ff;
-  --color-deployer-info-500: #0ab9ff;
-  --color-deployer-info-600: #0094d1;
-  --color-deployer-info-700: #006f9e;
-  --color-deployer-info-800: #004a6b;
-  --color-deployer-info-900: #002538;
+	/* Info (Cyan neón) */
+	--color-deployer-info-50: #e8fcff;
+	--color-deployer-info-100: #c6f4ff;
+	--color-deployer-info-200: #9ceaff;
+	--color-deployer-info-300: #6adfff;
+	--color-deployer-info-400: #3ad3ff;
+	--color-deployer-info-500: #00c7ff;
+	--color-deployer-info-600: #009ecc;
+	--color-deployer-info-700: #007699;
+	--color-deployer-info-800: #004d66;
+	--color-deployer-info-900: #002533;
+	--color-deployer-info-950: #00131a;
 
-  /* Warning */
-  --color-deployer-warning-50:  #fff9e6;
-  --color-deployer-warning-100: #fff0b3;
-  --color-deployer-warning-200: #ffe680;
-  --color-deployer-warning-300: #ffdb4d;
-  --color-deployer-warning-400: #ffd119;
-  --color-deployer-warning-500: #e6b800;
-  --color-deployer-warning-600: #b38f00;
-  --color-deployer-warning-700: #806600;
-  --color-deployer-warning-800: #4d3d00;
-  --color-deployer-warning-900: #1a1400;
+	/* Warning (Amarillo naranja) */
+	--color-deployer-warning-50: #fff9e6;
+	--color-deployer-warning-100: #ffefb3;
+	--color-deployer-warning-200: #ffe47d;
+	--color-deployer-warning-300: #ffd847;
+	--color-deployer-warning-400: #ffcb12;
+	--color-deployer-warning-500: #e6b200;
+	--color-deployer-warning-600: #b38a00;
+	--color-deployer-warning-700: #806200;
+	--color-deployer-warning-800: #4d3a00;
+	--color-deployer-warning-900: #1a1300;
+	--color-deployer-warning-950: #0d0900;
 
-  /* Error */
-  --color-deployer-error-50:  #ffe6f2;
-  --color-deployer-error-100: #ffb3d5;
-  --color-deployer-error-200: #ff80b8;
-  --color-deployer-error-300: #ff4d9b;
-  --color-deployer-error-400: #ff1a7e;
-  --color-deployer-error-500: #e60065;
-  --color-deployer-error-600: #b3004d;
-  --color-deployer-error-700: #800035;
-  --color-deployer-error-800: #4d001e;
-  --color-deployer-error-900: #1a000a;
+	/* Error (Rojo magenta) */
+	--color-deployer-error-50: #ffe8f0;
+	--color-deployer-error-100: #ffc6d4;
+	--color-deployer-error-200: #ff9cb5;
+	--color-deployer-error-300: #ff6a93;
+	--color-deployer-error-400: #ff3a74;
+	--color-deployer-error-500: #ff0a55;
+	--color-deployer-error-600: #d1003f;
+	--color-deployer-error-700: #a3002e;
+	--color-deployer-error-800: #75001f;
+	--color-deployer-error-900: #470012;
+	--color-deployer-error-950: #260009;
 
-  /* Neutral */
-  --color-deployer-neutral-50:  #f5f7fa;
-  --color-deployer-neutral-100: #e2e8f0;
-  --color-deployer-neutral-200: #cbd5e1;
-  --color-deployer-neutral-300: #94a3b8;
-  --color-deployer-neutral-400: #64748b;
-  --color-deployer-neutral-500: #475569;
-  --color-deployer-neutral-600: #334155;
-  --color-deployer-neutral-700: #1e293b;
-  --color-deployer-neutral-800: #0f172a;
-  --color-deployer-neutral-900: #020617;
+	/* Neutral (Gris azulado) */
+	--color-deployer-neutral-50: #f2f4f7;
+	--color-deployer-neutral-100: #d9dde3;
+	--color-deployer-neutral-200: #bfc6cf;
+	--color-deployer-neutral-300: #a5aebc;
+	--color-deployer-neutral-400: #8b97a8;
+	--color-deployer-neutral-500: #717f94;
+	--color-deployer-neutral-600: #596474;
+	--color-deployer-neutral-700: #424a55;
+	--color-deployer-neutral-800: #2b3136;
+	--color-deployer-neutral-900: #15181b;
+	--color-deployer-neutral-950: #0b0c0e;
 }
