@@ -16,7 +16,7 @@ Su objetivo es **sustituir DeployerPHP** en los proyectos por un único deployer
 
 ## 2. Stack Tecnológico
 Es fundamental respetar el stack tecnológico elegido:
-- **Frontend:** [Vue.js 3](https://vuejs.org/) con TypeScript y [Nuxt UI v3](https://ui.nuxt.com/) como librería de componentes (**no** como meta-framework).
+- **Frontend:** [Vue.js 3](https://vuejs.org/) con TypeScript y [Nuxt UI v4](https://ui.nuxt.com/) como librería de componentes (**no** como meta-framework).
 - **Enrutamiento:** Vue Router directamente (no el enrutamiento basado en archivos de Nuxt).
 - **Backend:** [Rust](https://www.rust-lang.org/) utilizando [Tauri 2](https://tauri.app/).
 - **Estilos:** Tailwind CSS v4 (integrado en Nuxt UI).
@@ -133,11 +133,12 @@ El comando `run_deployment` es el motor de ejecución de deployments. Usa un **I
 ```ts
 // Frontend — uso típico
 import { Channel } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
 import type { ProgressEvent } from '@/tauri-types'
 
 const channel = new Channel<ProgressEvent>()
 channel.onmessage = (event) => { /* actualizar UI */ }
-await invoke('run_deployment', { input: { deploymentId: 123 }, channel })
+await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 ```
 
 ### Eventos emitidos (`ProgressEvent`)
@@ -269,7 +270,7 @@ El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera aut
 | Crate | Versión usada | Límite | Motivo |
 |-------|--------------|--------|---------|
 | `rand` | `0.10` | No bajar a `0.8` | Requiere feature `sys_rng` para `OsRng`. |
-| `rand_core` | `0.10` | Sincronizado con `rand` | Debe coincidir para evitar conflictos de traits. |
+| `rand_core` | `0.10` | Alineado con `rand 0.10` | `rand 0.10` requiere `rand_core 0.10` internamente; declarar `0.6` causaría conflictos de traits. |
 | `keyring` | `3` | No subir a `4+` | En `v4` el enum `Error` es `#[non_exhaustive]`. |
 | `russh` | `0.61` | — | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum; `connection_timeout` eliminado. |
 | `russh-sftp` | `2.0.6` | — | Subsistema SFTP para upload/download. |
