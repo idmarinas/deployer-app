@@ -69,6 +69,8 @@ export default defineConfig(async () => ({
 					warning: 'i-tabler-alert-triangle',
 				},
 				button: theme.button,
+				badge: theme.badge,
+				alert: theme.alert,
 			},
 		}),
 		vueDevTools(),
