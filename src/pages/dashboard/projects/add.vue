@@ -28,6 +28,8 @@ const initialState: ProjectSchema = {
 	name: '',
 	description: undefined,
 	git_url: '',
+	local_working_dir: '',
+	remote_working_dir: '',
 	framework: 'symfony',
 	enabled: false,
 }
