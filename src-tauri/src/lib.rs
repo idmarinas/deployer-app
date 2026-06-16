@@ -67,6 +67,7 @@ pub fn run() {
             #[cfg(desktop)]
             {
                 tauri::tray::TrayIconBuilder::new()
+                    .icon(app.default_window_icon().unwrap().clone())
                     .on_tray_icon_event(|tray_handle, event| {
                         tauri_plugin_positioner::on_tray_event(tray_handle.app_handle(), &event);
                     })
