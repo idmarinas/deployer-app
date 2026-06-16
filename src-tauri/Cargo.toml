@@ -28,14 +28,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2.11.2", features = [] }
+tauri = { version = "2.11.2", features = ["tray-icon"] }
 tauri-plugin-opener = "2.5.4"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
 tauri-plugin-dialog = "2.7"
 tauri-plugin-store = "2.4"
 tauri-plugin-positioner = { version = "2.3", features = ["tray-icon"] }
 tauri-plugin-sql = { version = "2.4", features = ["sqlite"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "macros", "migrate"] }
 tokio = { version = "1.52.3", features = ["time"] }
 ts-rs = "12.0.1"
