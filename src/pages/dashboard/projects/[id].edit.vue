@@ -105,8 +105,6 @@ watch(isLoading, () => {
 </script>
 
 <template>
-	<!-- Tener en cuenta si se esta cargando los datos o se está guardando las modificaciones -->
-	<!-- Esto puede ayudar a distinguir si estamos cargando o guardando datos -->
 	<Loading v-if="isLoading && !isSaving" what="project" />
 	<UForm
 		v-else
@@ -118,6 +116,6 @@ watch(isLoading, () => {
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
 		@submit="onSubmit"
 	>
-		<ProjectForm v-model="state" :is-loading="isLoading" />
+		<ProjectForm v-model="state" />
 	</UForm>
 </template>
