@@ -2,13 +2,16 @@ import { ref, inject, provide, type VNode, isVNode } from 'vue'
 
 export type ToolbarContent = VNode[] | undefined
 export type ToolbarManager = {
-  setToolbarContent: (content: ToolbarContent | VNode) => void
-  clearToolbarContent: () => void
+	moduleName: string
+	toolbarKey: string
+	setToolbarFn: (fn: () => ToolbarContent | VNode) => void
+	clearContent: () => void
+	updateToolbar: () => void
 }
 
 // Crear una key única por módulo
 function createToolbarKey(moduleName: string = 'default'): string {
-  return (`dashboard:toolbar:${moduleName}`)
+	return `dashboard:toolbar:${moduleName}`
 }
 
 /**
@@ -18,27 +21,37 @@ function createToolbarKey(moduleName: string = 'default'): string {
  * @param moduleName - Nombre del módulo (hosts, projects, deployments, etc)
  */
 export function useDashboardToolbarProvider(moduleName: string = 'default') {
-  const toolbarContent = ref<ToolbarContent>(undefined)
-  const toolbarKey = createToolbarKey(moduleName)
+	const toolbarContent = ref<ToolbarContent>(undefined)
+	const toolbarKey = createToolbarKey(moduleName)
+	let toolbarFn: () => ToolbarContent | VNode
 
-  const setToolbarContent = (content: ToolbarContent | VNode) => {
-    toolbarContent.value = isVNode(content) ? [content] : content
-  }
+	const setToolbarFn = (fn: () => ToolbarContent | VNode) => {
+		toolbarFn = fn
+		updateToolbar()
+	}
 
-  const clearToolbarContent = () => {
-    toolbarContent.value = undefined
-  }
+	const updateToolbar = () => {
+		const content = toolbarFn()
+		toolbarContent.value = isVNode(content) ? [content] : content
+	}
 
-  const toolbarManager: ToolbarManager = {
-    setToolbarContent,
-    clearToolbarContent,
-  }
+	const clearContent = () => {
+		toolbarContent.value = undefined
+	}
 
-  provide(toolbarKey, toolbarManager)
+	const toolbarManager: ToolbarManager = {
+		moduleName,
+		toolbarKey,
+		setToolbarFn,
+		clearContent,
+		updateToolbar,
+	}
 
-  return {
-    toolbarContent,
-  }
+	provide(toolbarKey, toolbarManager)
+
+	return {
+		toolbarContent,
+	}
 }
 
 /**
@@ -48,13 +61,15 @@ export function useDashboardToolbarProvider(moduleName: string = 'default') {
  * @param moduleName - Nombre del módulo (debe coincidir con el usado en useDashboardToolbarProvider)
  */
 export function useDashboardToolbar(moduleName: string = 'default') {
-  const toolbarKey = createToolbarKey(moduleName)
+	const toolbarKey = createToolbarKey(moduleName)
 
-  let toolbar = inject<ToolbarManager>(toolbarKey)
+	let toolbar = inject<ToolbarManager>(toolbarKey)
 
-  if (!toolbar) {
-    console.warn(`useDashboardToolbar("${moduleName}") no encontró el contexto. Asegúrate de que useDashboardToolbarProvider("${moduleName}") se está ejecutando en el componente padre.`)
-  }
+	if (!toolbar) {
+		console.warn(
+			`useDashboardToolbar("${moduleName}") no encontró el contexto. Asegúrate de que useDashboardToolbarProvider("${moduleName}") se está ejecutando en el componente padre.`,
+		)
+	}
 
-  return toolbar
+	return toolbar
 }
