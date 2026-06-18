@@ -9,19 +9,19 @@ import { sanitizeNulls } from '@/utils/sanitize'
 import { useToolbarContentEdit } from '@/composables/useToolbarContent'
 import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { CommandResponse, UpdateHostInput } from '@/types/tauri-types'
-import { FormSubmitEvent } from '@nuxt/ui'
+import { Form, FormSubmitEvent } from '@nuxt/ui'
 import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
 definePage({
-  path: '/dashboard/hosts/:id(\\d+)/edit',
-  name: 'dashboard-hosts-id-edit',
-  params: {
-    path: {
-      id: 'int'
-    }
-  }
+	path: '/dashboard/hosts/:id(\\d+)/edit',
+	name: 'dashboard-hosts-id-edit',
+	params: {
+		path: {
+			id: 'int',
+		},
+	},
 })
 
 const { t } = useI18n()
@@ -33,58 +33,72 @@ const { data: host, isLoading, reload } = useHostById()
 const { hostSchema } = useHostSchema(Number.parseInt(route.params.id))
 
 const state = ref<any>({})
-const form = useTemplateRef('form')
+const form = useTemplateRef<Form<HostSchema>>('form')
 
-const updateToolbar = () => toolbar?.setToolbarContent(generateToolbarContent())
 // Generar contenido del toolbar
-const generateToolbarContent = useToolbarContentEdit('hosts', state, isLoading, updateToolbar, () => form.value?.submit(), () => {
-  if (host.value) {
-    state.value = sanitizeNulls(host.value)
-  }
-  form.value?.clear()
-})
+useToolbarContentEdit(state, host, isLoading, form, toolbar)
 
-async function onSubmit(event: FormSubmitEvent<HostSchema>){
-  isLoading.value = true
-  const host: Partial<UpdateHostInput> = event.data
+async function onSubmit(event: FormSubmitEvent<HostSchema>) {
+	isLoading.value = true
+	const host: Partial<UpdateHostInput> = event.data
 
-  const result = await invoke<CommandResponse<number>>('crud_update_host', {id: Number.parseInt(route.params.id), input: host})
+	const result = await invoke<CommandResponse<number>>('crud_update_host', {
+		id: Number.parseInt(route.params.id),
+		input: host,
+	})
 
-  if (result.success) {
-    toast.add({title: t('overlays.toast.title.success'), description: t('schemas.hosts.updated', { name: host.name }), color: 'success'})
-    isLoading.value = false
-    router.push({ name: 'dashboard-hosts' })
-  } else {
-    toast.add({title: t('overlays.toast.title.error'), description: result.message_key, color: 'error'})
-    isLoading.value = false
-  }
+	if (result.success) {
+		toast.add({
+			title: t('overlays.toast.title.success'),
+			description: t('schemas.hosts.updated', { name: host.name }),
+			color: 'success',
+		})
+		isLoading.value = false
+		router.push({ name: 'dashboard-hosts' })
+	} else {
+		toast.add({ title: t('overlays.toast.title.error'), description: result.message_key, color: 'error' })
+		isLoading.value = false
+	}
 }
 
 // Inyectar contenido en el toolbar cuando se monta el componente
 onMounted(() => {
-  reload()
-  updateToolbar()
+	reload()
+	toolbar?.updateToolbar()
 })
 
 // Limpiar el toolbar cuando se desmonta
 onBeforeUnmount(() => {
-  toolbar?.clearToolbarContent()
+	toolbar?.clearContent()
 })
 
-watch(host, (newHost) => {
-  if (newHost) {
-    state.value = sanitizeNulls(newHost)
-  }
-}, { immediate: true })
+watch(
+	host,
+	newHost => {
+		if (newHost) {
+			state.value = sanitizeNulls(newHost)
+		}
+	},
+	{ immediate: true },
+)
 
 watch(isLoading, () => {
-  updateToolbar()
+	toolbar?.updateToolbar()
 })
 </script>
 
 <template>
-  <USkeleton v-if="isLoading" class="size-9 rounded-full" />
-  <UForm v-else ref="form" :disabled="isLoading" id="form-host-edit" :schema="hostSchema" :state="state" class="grid grid-cols-1 md:grid-cols-2 gap-4" @submit="onSubmit">
-    <HostForm v-model="state" :is-loading="isLoading" />
-  </UForm>
+	<USkeleton v-if="isLoading" class="size-9 rounded-full" />
+	<UForm
+		v-else
+		ref="form"
+		:disabled="isLoading"
+		id="form-host-edit"
+		:schema="hostSchema"
+		:state="state"
+		class="grid grid-cols-1 md:grid-cols-2 gap-4"
+		@submit="onSubmit"
+	>
+		<HostForm v-model="state" :is-loading="isLoading" />
+	</UForm>
 </template>
