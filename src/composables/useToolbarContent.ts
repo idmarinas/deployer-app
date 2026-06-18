@@ -1,6 +1,8 @@
-import { h } from 'vue'
+import type { Ref, ShallowRef, VNode } from 'vue'
+import type { Form } from '@nuxt/ui'
+
+import { h, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Ref, VNode } from 'vue'
 
 import UButton from '@nuxt/ui/components/Button.vue'
 import USwitch from '@nuxt/ui/components/Switch.vue'
@@ -85,9 +87,9 @@ function getIcon(moduleName: string, isIconify = false): { uncheckedIcon: string
 
 function useToolbarContent(
 	state: Ref<{ enabled: boolean }>,
+	initialState: Ref | object,
 	loading: Ref<boolean>,
-	onSubmit: () => void,
-	onReset: () => void,
+	form: ShallowRef<Form<any> | null>,
 	type: 'add' | 'edit',
 	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
@@ -95,15 +97,11 @@ function useToolbarContent(
 	const { t } = useI18n()
 	const router = useRouter()
 
-	if (!manager) {
-		return () => undefined
-	}
-
 	// ---------------------------------------------------------------------------
 	// Helper interno: intercala botones extra en las posiciones indicadas
 	// ---------------------------------------------------------------------------
 
-	function buildRightZone(): VNode[] {
+	function builButtonsZone(): VNode[] {
 		const at = (position: ExtraButtonPosition): VNode[] =>
 			extraButtons.filter(b => b.position === position).map(b => b.vnode())
 
@@ -114,7 +112,7 @@ function useToolbarContent(
 				icon: type === 'edit' ? 'i-tabler-device-floppy' : 'i-tabler-send',
 				loading: loading.value,
 				class: 'first:mr-10',
-				onClick: onSubmit,
+				onClick: () => form.value?.submit(),
 			}),
 			...at('after-submit'),
 			...at('before-reset'),
@@ -123,7 +121,10 @@ function useToolbarContent(
 				icon: 'i-tabler-refresh',
 				variant: 'soft',
 				loading: loading.value,
-				onClick: onReset,
+				onClick: () => {
+					state.value = (isRef(initialState) ? initialState.value : initialState) as any
+					form.value?.clear()
+				},
 			}),
 			...at('after-reset'),
 			...at('before-cancel'),
@@ -139,7 +140,11 @@ function useToolbarContent(
 		]
 	}
 
-	return () => [
+	if (!manager) {
+		return
+	}
+
+	manager.setToolbarFn(() => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
 			h(USwitch, {
 				modelValue: state.value.enabled,
@@ -163,8 +168,8 @@ function useToolbarContent(
 				),
 			]),
 		]),
-		h('div', { class: 'flex gap-2 items-center' }, buildRightZone()),
-	]
+		h('div', { class: 'flex gap-2 items-center' }, builButtonsZone()),
+	])
 }
 
 // ---------------------------------------------------------------------------
@@ -173,24 +178,24 @@ function useToolbarContent(
 
 export function useToolbarContentCreate(
 	state: Ref<{ enabled: boolean }>,
+	initialState: Ref | object,
 	loading: Ref<boolean>,
-	onSubmit: () => void,
-	onReset: () => void,
+	form: ShallowRef<Form<any> | null>,
 	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
 ) {
-	return useToolbarContent(state, loading, onSubmit, onReset, 'add', manager, extraButtons)
+	return useToolbarContent(state, initialState, loading, form, 'add', manager, extraButtons)
 }
 
 export function useToolbarContentEdit(
 	state: Ref<{ enabled: boolean }>,
+	initialState: Ref | object,
 	loading: Ref<boolean>,
-	onSubmit: () => void,
-	onReset: () => void,
+	form: ShallowRef<Form<any> | null>,
 	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
 ) {
-	return useToolbarContent(state, loading, onSubmit, onReset, 'edit', manager, extraButtons)
+	return useToolbarContent(state, initialState, loading, form, 'edit', manager, extraButtons)
 }
 
 export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarManager): void {
