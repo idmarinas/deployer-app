@@ -86,14 +86,18 @@ function getIcon(moduleName: string, isIconify = false): { uncheckedIcon: string
 function useToolbarContent(
 	state: Ref<{ enabled: boolean }>,
 	loading: Ref<boolean>,
-	updateToolbar: () => void,
 	onSubmit: () => void,
 	onReset: () => void,
 	type: 'add' | 'edit',
+	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
 ) {
 	const { t } = useI18n()
 	const router = useRouter()
+
+	if (!manager) {
+		return () => undefined
+	}
 
 	// ---------------------------------------------------------------------------
 	// Helper interno: intercala botones extra en las posiciones indicadas
@@ -135,21 +139,21 @@ function useToolbarContent(
 		]
 	}
 
-	return (toolbar: string) => [
+	return () => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
 			h(USwitch, {
 				modelValue: state.value.enabled,
-				uncheckedIcon: getIcon(toolbar).uncheckedIcon,
-				checkedIcon: getIcon(toolbar).checkedIcon,
+				uncheckedIcon: getIcon(manager.moduleName).uncheckedIcon,
+				checkedIcon: getIcon(manager.moduleName).checkedIcon,
 				loading: loading.value,
 				size: 'xl',
 				'onUpdate:modelValue': (value: unknown) => {
 					state.value.enabled = value as boolean
-					updateToolbar()
+					manager.updateToolbar()
 				},
 			}),
 			h('span', { class: 'flex flex-col' }, [
-				h('span', {}, t(`schemas.${toolbar}.form.title.${type}`)),
+				h('span', {}, t(`schemas.${manager.moduleName}.form.title.${type}`)),
 				h(
 					'span',
 					{
@@ -170,23 +174,23 @@ function useToolbarContent(
 export function useToolbarContentCreate(
 	state: Ref<{ enabled: boolean }>,
 	loading: Ref<boolean>,
-	updateToolbar: () => void,
 	onSubmit: () => void,
 	onReset: () => void,
+	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
 ) {
-	return useToolbarContent(state, loading, updateToolbar, onSubmit, onReset, 'add', extraButtons)
+	return useToolbarContent(state, loading, onSubmit, onReset, 'add', manager, extraButtons)
 }
 
 export function useToolbarContentEdit(
 	state: Ref<{ enabled: boolean }>,
 	loading: Ref<boolean>,
-	updateToolbar: () => void,
 	onSubmit: () => void,
 	onReset: () => void,
+	manager?: ToolbarManager,
 	extraButtons: ExtraButton[] = [],
 ) {
-	return useToolbarContent(state, loading, updateToolbar, onSubmit, onReset, 'edit', extraButtons)
+	return useToolbarContent(state, loading, onSubmit, onReset, 'edit', manager, extraButtons)
 }
 
 export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarManager): void {
