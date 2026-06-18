@@ -1,8 +1,18 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   FUENTES — JetBrains Mono + Inter (autohospedadas en /fonts.css)
+   ───────────────────────────────────────────────────────────────────────────── */
+@import './fonts.css';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PALETA DE COLOR — DeployerApp
+   Tokens estáticos de Tailwind. Nuxt UI los consume a través de la config
+   de colores semánticos mapeados en vite.config.ts → ui.colors.
+   ───────────────────────────────────────────────────────────────────────────── */
 @theme static {
-	/* Primary (Azul eléctrico) */
+	/* Primary — Azul eléctrico */
 	--color-deployer-primary-50: #e8f4ff;
 	--color-deployer-primary-100: #c7e4ff;
 	--color-deployer-primary-200: #9acfff;
@@ -15,7 +25,7 @@
 	--color-deployer-primary-900: #002247;
 	--color-deployer-primary-950: #001326;
 
-	/* Secondary (Morado neón) */
+	/* Secondary — Morado neón */
 	--color-deployer-secondary-50: #f3e8ff;
 	--color-deployer-secondary-100: #e3c6ff;
 	--color-deployer-secondary-200: #cc9cff;
@@ -28,7 +38,7 @@
 	--color-deployer-secondary-900: #1c0047;
 	--color-deployer-secondary-950: #0f0026;
 
-	/* Success (Verde azulado) */
+	/* Success — Verde azulado (circuito activo) */
 	--color-deployer-success-50: #e6fffa;
 	--color-deployer-success-100: #b3fff0;
 	--color-deployer-success-200: #7dffe6;
@@ -41,7 +51,7 @@
 	--color-deployer-success-900: #001413;
 	--color-deployer-success-950: #000a09;
 
-	/* Info (Cyan neón) */
+	/* Info — Cyan neón */
 	--color-deployer-info-50: #e8fcff;
 	--color-deployer-info-100: #c6f4ff;
 	--color-deployer-info-200: #9ceaff;
@@ -54,7 +64,7 @@
 	--color-deployer-info-900: #002533;
 	--color-deployer-info-950: #00131a;
 
-	/* Warning (Amarillo naranja) */
+	/* Warning — Amarillo-naranja */
 	--color-deployer-warning-50: #fff9e6;
 	--color-deployer-warning-100: #ffefb3;
 	--color-deployer-warning-200: #ffe47d;
@@ -67,7 +77,7 @@
 	--color-deployer-warning-900: #1a1300;
 	--color-deployer-warning-950: #0d0900;
 
-	/* Error (Rojo magenta) */
+	/* Error — Rojo magenta */
 	--color-deployer-error-50: #ffe8f0;
 	--color-deployer-error-100: #ffc6d4;
 	--color-deployer-error-200: #ff9cb5;
@@ -80,7 +90,7 @@
 	--color-deployer-error-900: #470012;
 	--color-deployer-error-950: #260009;
 
-	/* Neutral (Gris azulado) */
+	/* Neutral — Gris azulado oscuro */
 	--color-deployer-neutral-50: #f2f4f7;
 	--color-deployer-neutral-100: #d9dde3;
 	--color-deployer-neutral-200: #bfc6cf;
@@ -92,4 +102,342 @@
 	--color-deployer-neutral-800: #2b3136;
 	--color-deployer-neutral-900: #15181b;
 	--color-deployer-neutral-950: #0b0c0e;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOKENS SEMÁNTICOS DE NUXT UI v4
+   Variables CSS leídas por Nuxt UI en runtime para sus componentes internos.
+   Se definen en :root y se sobreescriben en .dark para modo oscuro.
+   Los colores semánticos (primary, secondary, success, info, warning, error)
+   NO se redeclaran aquí: ya los genera Nuxt UI automáticamente a partir de
+   vite.config.ts → ui.colors. Redeclararlos sería redundante.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+	/* Modo claro */
+	--ui-bg: var(--color-deployer-neutral-50);
+	--ui-bg-elevated: var(--color-deployer-neutral-100);
+	--ui-bg-accented: var(--color-deployer-neutral-200);
+	--ui-bg-inverted: var(--color-deployer-neutral-900);
+	--ui-border: var(--color-deployer-neutral-300);
+	--ui-border-accented: var(--color-deployer-neutral-400);
+	--ui-border-inverted: var(--color-deployer-neutral-700);
+	--ui-text: var(--color-deployer-neutral-900);
+	--ui-text-dimmed: var(--color-deployer-neutral-600);
+	--ui-text-muted: var(--color-deployer-neutral-500);
+	--ui-text-toned: var(--color-deployer-neutral-700);
+	--ui-text-highlighted: var(--color-deployer-neutral-950);
+	--ui-text-inverted: var(--color-deployer-neutral-50);
+	--ui-radius: 0.375rem;
+
+	/* Variables PCB propias — modo claro */
+	--pcb-trace: var(--color-deployer-primary-600);
+	--pcb-trace-glow: rgba(10, 141, 255, 0.25);
+	--pcb-pad: var(--color-deployer-primary-500);
+	--pcb-board: var(--color-deployer-neutral-100);
+	--pcb-silk: var(--color-deployer-neutral-400);
+}
+
+.dark {
+	/* Modo oscuro */
+	--ui-bg: var(--color-deployer-neutral-950);
+	--ui-bg-elevated: var(--color-deployer-neutral-900);
+	--ui-bg-accented: var(--color-deployer-neutral-800);
+	--ui-bg-inverted: var(--color-deployer-neutral-50);
+	--ui-border: var(--color-deployer-neutral-800);
+	--ui-border-accented: var(--color-deployer-neutral-700);
+	--ui-border-inverted: var(--color-deployer-neutral-200);
+	--ui-text: var(--color-deployer-neutral-100);
+	--ui-text-dimmed: var(--color-deployer-neutral-400);
+	--ui-text-muted: var(--color-deployer-neutral-500);
+	--ui-text-toned: var(--color-deployer-neutral-300);
+	--ui-text-highlighted: var(--color-deployer-neutral-50);
+	--ui-text-inverted: var(--color-deployer-neutral-950);
+
+	/* Variables PCB propias — modo oscuro */
+	--pcb-trace: var(--color-deployer-primary-400);
+	--pcb-trace-glow: rgba(10, 141, 255, 0.35);
+	--pcb-pad: var(--color-deployer-primary-400);
+	--pcb-board: var(--color-deployer-neutral-900);
+	--pcb-silk: var(--color-deployer-neutral-600);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TIPOGRAFÍA BASE
+   ───────────────────────────────────────────────────────────────────────────── */
+html,
+body,
+#app {
+	font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Clase utilitaria para fuente mono (badges, tooltips, labels técnicos) */
+.font-pcb {
+	font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILIDADES PCB — Clip-paths reutilizables
+   Nomenclatura: .pcb-clip-{variante}
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Esquina inferior-derecha recortada — botones, inputs */
+.pcb-clip-br {
+	clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+}
+
+/* Esquinas superior-derecha e inferior-izquierda recortadas — badges */
+.pcb-clip-badge {
+	clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+
+/* Esquinas opuestas: sup-izq e inf-der recortadas — badges secundarios */
+.pcb-clip-badge-alt {
+	clip-path: polygon(0% 0%, calc(100% - 6px) 0%, 100% 100%, 6px 100%);
+}
+
+/* Rectángulo con las 4 esquinas recortadas — cards, modals */
+.pcb-clip-card {
+	clip-path: polygon(
+		10px 0%,
+		calc(100% - 10px) 0%,
+		100% 10px,
+		100% calc(100% - 10px),
+		calc(100% - 10px) 100%,
+		10px 100%,
+		0% calc(100% - 10px),
+		0% 10px
+	);
+}
+
+/* Hexágono achatado — iconos de estado, indicadores */
+.pcb-clip-hex {
+	clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0% 50%);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILIDADES PCB — Sombras compatibles con clip-path
+   `box-shadow` se proyecta sobre la caja rectangular ANTES del recorte: en
+   cualquier elemento con `pcb-clip-*` la sombra "se asoma" en forma de esquina
+   recta justo donde el clip-path corta en diagonal (o en forma de halo
+   cuadrado, si el elemento además tiene `border-radius` circular, como los
+   botones `square`). `filter: drop-shadow(...)` sigue la silueta real (alpha)
+   del elemento ya recortado, así que es la forma correcta de proyectar
+   cualquier sombra/glow en estos casos — INCLUYENDO animaciones (ver
+   `pcb-pulse` más abajo, que también se reescribió a drop-shadow por esto).
+
+   USAR `.pcb-shadow-*` SIEMPRE que el elemento tenga `pcb-clip-*`.
+   Usar `shadow-[...]` de Tailwind normalmente en el resto de casos.
+   ───────────────────────────────────────────────────────────────────────────── */
+.pcb-shadow-xs {
+	filter: drop-shadow(0 1px 4px var(--pcb-trace-glow));
+}
+.pcb-shadow-sm {
+	filter: drop-shadow(0 2px 8px var(--pcb-trace-glow));
+}
+.pcb-shadow-md {
+	filter: drop-shadow(0 4px 16px var(--pcb-trace-glow));
+}
+.pcb-shadow-lg {
+	filter: drop-shadow(0 6px 24px var(--pcb-trace-glow)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.25));
+}
+/* Variante neutra (sin glow de color) — cards/badges sin énfasis de color */
+.pcb-shadow-neutral {
+	filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
+}
+.dark .pcb-shadow-neutral {
+	filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45));
+}
+/* Variante hover — usar en hover: junto con la base correspondiente */
+.pcb-shadow-hover-md {
+	filter: drop-shadow(0 4px 20px var(--pcb-trace-glow));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILIDADES PCB — Efectos de traza y nodos
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Línea de traza superior (header de card, modal, sidebar) */
+.pcb-trace-top::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(to right, transparent 0%, var(--pcb-trace) 20%, var(--pcb-trace) 80%, transparent 100%);
+	box-shadow: 0 0 6px var(--pcb-trace-glow);
+}
+
+/* Línea de traza inferior */
+.pcb-trace-bottom::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(to right, transparent 0%, var(--pcb-trace) 20%, var(--pcb-trace) 80%, transparent 100%);
+	box-shadow: 0 0 6px var(--pcb-trace-glow);
+}
+
+/* Indicador lateral izquierdo tipo traza activa — color fijo (azul→morado) */
+.pcb-trace-left::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 6px;
+	bottom: 6px;
+	width: 2px;
+	border-radius: 0 2px 2px 0;
+	background: linear-gradient(to bottom, var(--color-deployer-primary-500), var(--color-deployer-secondary-500));
+	box-shadow: 0 0 8px var(--pcb-trace-glow);
+}
+
+/* Indicador lateral izquierdo que toma el color semántico actual (currentColor).
+   Usar en componentes donde el color debe variar según `color` prop (alert, toast),
+   aplicando `text-{color}-*` en el elemento para fijar el currentColor. */
+.pcb-trace-left-current::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 6px;
+	bottom: 6px;
+	width: 2px;
+	border-radius: 0 2px 2px 0;
+	background: currentColor;
+	box-shadow: 0 0 8px currentColor;
+	opacity: 0.7;
+}
+
+/* Nodos en esquinas — decoración PCB sobre elemento padre con position:relative */
+.pcb-corners::before,
+.pcb-corners::after {
+	content: '';
+	position: absolute;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--pcb-pad);
+	box-shadow: 0 0 4px var(--pcb-trace-glow);
+}
+.pcb-corners::before {
+	top: 4px;
+	left: 4px;
+}
+.pcb-corners::after {
+	bottom: 4px;
+	right: 4px;
+}
+
+/* Pad de soldadura circular — usado en separadores, indicadores */
+.pcb-pad {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--pcb-pad);
+	box-shadow: 0 0 6px var(--pcb-trace-glow);
+	flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANIMACIONES PCB
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Pulso de energía — botones solid en hover.
+   IMPORTANTE: anima `filter: drop-shadow(...)`, NUNCA `box-shadow`. Este
+   keyframe se aplica sobre elementos con `pcb-clip-br` (esquina recortada) y,
+   en botones icon-only, con `border-radius` circular — un box-shadow ahí
+   dibuja un halo/anillo CUADRADO (la caja original) que sobresale por las
+   esquinas del círculo. drop-shadow sigue la silueta real en ambos casos. */
+@keyframes pcb-pulse {
+	0% {
+		filter: drop-shadow(0 0 0 var(--pcb-trace-glow));
+	}
+	50% {
+		filter: drop-shadow(0 0 10px var(--pcb-trace-glow));
+	}
+	100% {
+		filter: drop-shadow(0 0 0 transparent);
+	}
+}
+
+/* Flujo de traza — barras de progreso */
+@keyframes pcb-flow {
+	0% {
+		background-position: 0% 50%;
+	}
+	100% {
+		background-position: 200% 50%;
+	}
+}
+
+/* Parpadeo LED — usar EXPLÍCITAMENTE (no por defecto) para marcar estados que
+   requieren atención inmediata: error crítico, alerta activa sin confirmar. */
+@keyframes pcb-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* Scan line — efecto de lectura en tooltips/readouts */
+@keyframes pcb-scan {
+	0% {
+		transform: translateY(-100%);
+		opacity: 0;
+	}
+	10% {
+		opacity: 0.15;
+	}
+	90% {
+		opacity: 0.15;
+	}
+	100% {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+}
+
+.pcb-animate-pulse {
+	animation: pcb-pulse 1.5s ease-out infinite;
+}
+.pcb-animate-flow {
+	animation: pcb-flow 2s linear infinite;
+}
+/* Animación de parpadeo: aplicar SOLO de forma explícita y puntual (ver nota arriba) */
+.pcb-animate-blink {
+	animation: pcb-blink 1.2s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR — estilizada con tema PCB
+   ───────────────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--color-deployer-neutral-600);
+	border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-deployer-primary-500);
+	box-shadow: 0 0 6px var(--pcb-trace-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SELECCIÓN DE TEXTO
+   ───────────────────────────────────────────────────────────────────────────── */
+::selection {
+	background-color: rgba(10, 141, 255, 0.25);
+	color: var(--color-deployer-neutral-50);
 }
