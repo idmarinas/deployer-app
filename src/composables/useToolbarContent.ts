@@ -35,31 +35,48 @@ export interface ExtraButton {
 	vnode: () => VNode
 }
 
-const icon: Record<string, { uncheckedIcon: string; checkedIcon: string }> = {
-	hosts: {
-		uncheckedIcon: 'i-tabler-server-off',
-		checkedIcon: 'i-tabler-server',
-	},
-	projects: {
-		uncheckedIcon: 'i-tabler-package-off',
-		checkedIcon: 'i-tabler-package',
-	},
-	deployments: {
-		uncheckedIcon: 'i-tabler-send-off',
-		checkedIcon: 'i-tabler-send',
-	},
-	variables: {
-		uncheckedIcon: 'i-tabler-variable-off',
-		checkedIcon: 'i-tabler-variable',
-	},
-	passkeys: {
-		uncheckedIcon: 'i-tabler-key-off',
-		checkedIcon: 'i-tabler-key',
-	},
-	tasks: {
-		uncheckedIcon: 'i-tabler-x',
-		checkedIcon: 'i-tabler-check',
-	},
+function getIcon(moduleName: string, isIconify = false): { uncheckedIcon: string; checkedIcon: string } {
+	const icons: Record<string, { uncheckedIcon: string; checkedIcon: string }> = {
+		hosts: {
+			uncheckedIcon: 'i-tabler-server-off',
+			checkedIcon: 'i-tabler-server',
+		},
+		projects: {
+			uncheckedIcon: 'i-tabler-package-off',
+			checkedIcon: 'i-tabler-package',
+		},
+		deployments: {
+			uncheckedIcon: 'i-tabler-send-off',
+			checkedIcon: 'i-tabler-send',
+		},
+		variables: {
+			uncheckedIcon: 'i-tabler-variable-off',
+			checkedIcon: 'i-tabler-variable',
+		},
+		passkeys: {
+			uncheckedIcon: 'i-tabler-key-off',
+			checkedIcon: 'i-tabler-key',
+		},
+		tasks: {
+			uncheckedIcon: 'i-tabler-x',
+			checkedIcon: 'i-tabler-check',
+		},
+		default: {
+			checkedIcon: 'i-tabler-check',
+			uncheckedIcon: 'i-tabler-x',
+		},
+	}
+
+	const icon = icons[moduleName] ?? icons['default']
+
+	if (isIconify) {
+		return {
+			uncheckedIcon: icon.uncheckedIcon.replace('i-tabler-', 'tabler:'),
+			checkedIcon: icon.checkedIcon.replace('i-tabler-', 'tabler:'),
+		}
+	}
+
+	return icon
 }
 
 // ---------------------------------------------------------------------------
@@ -122,8 +139,8 @@ function useToolbarContent(
 		h('h2', { class: 'flex gap-2 items-center' }, [
 			h(USwitch, {
 				modelValue: state.value.enabled,
-				uncheckedIcon: icon[toolbar].uncheckedIcon,
-				checkedIcon: icon[toolbar].checkedIcon,
+				uncheckedIcon: getIcon(toolbar).uncheckedIcon,
+				checkedIcon: getIcon(toolbar).checkedIcon,
 				loading: loading.value,
 				size: 'xl',
 				'onUpdate:modelValue': (value: unknown) => {
@@ -179,7 +196,7 @@ export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarMana
 
 	manager.setToolbarFn(() => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
-			h(Icon, { icon: icon[manager.moduleName].checkedIcon.replace('i-tabler-', 'tabler:'), class: 'size-5' }),
+			h(Icon, { icon: getIcon(manager.moduleName, true).checkedIcon, class: 'size-5' }),
 			h('div', {}, title.value),
 		]),
 	])
