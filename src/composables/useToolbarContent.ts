@@ -165,5 +165,18 @@ export function useToolbarContentEdit(
   onReset: () => void,
   extraButtons: ExtraButton[] = []
 ) {
-  return useToolbarContent(toolbar, state, loading, updateToolbar, onSubmit, onReset, 'edit', extraButtons)
+	return useToolbarContent(state, loading, updateToolbar, onSubmit, onReset, 'edit', extraButtons)
+}
+
+export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarManager): void {
+	if (!manager) {
+		return
+	}
+
+	manager.setToolbarContent(() => [
+		h('h2', { class: 'flex gap-2 items-center' }, [
+			h(Icon, { icon: icon[manager.toolbar].checkedIcon.replace('i-tabler-', 'tabler:'), class: 'size-5' }),
+			h('div', {}, title.value),
+		]),
+	])
 }
