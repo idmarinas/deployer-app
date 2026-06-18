@@ -55,6 +55,7 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/passkeys/[...path]'
       | '/dashboard/projects'
       | '/dashboard/projects/[...path]'
+      | '/dashboard/projects/[id]'
       | '/dashboard/tasks'
       | '/dashboard/tasks/'
       | '/dashboard/tasks/[...path]'
@@ -74,6 +75,7 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-passkeys-id-edit'
       | 'dashboard-projects'
       | 'dashboard-projects-add'
+      | 'dashboard-projects-id'
       | 'dashboard-projects-id-edit'
       | 'dashboard-tasks-id-edit'
       | 'dashboard-variables-id-edit'
@@ -226,8 +228,10 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       Record<never, never>,
       | '/dashboard/projects/[...path]'
+      | '/dashboard/projects/[id]'
       | 'dashboard-projects'
       | 'dashboard-projects-add'
+      | 'dashboard-projects-id'
       | 'dashboard-projects-id-edit'
     >,
     'dashboard-projects': RouteRecordInfo<
@@ -235,6 +239,20 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/projects',
       Record<never, never>,
       Record<never, never>,
+      | never
+    >,
+    '/dashboard/projects/[id]': RouteRecordInfo<
+      '/dashboard/projects/[id]',
+      '/dashboard/projects/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | 'dashboard-projects-id'
+    >,
+    'dashboard-projects-id': RouteRecordInfo<
+      'dashboard-projects-id',
+      '/dashboard/projects/:id(\\d+)',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
       | never
     >,
     '/dashboard/projects/[...path]': RouteRecordInfo<
@@ -400,6 +418,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/passkeys/[...path]'
         | '/dashboard/projects'
         | '/dashboard/projects/[...path]'
+        | '/dashboard/projects/[id]'
         | '/dashboard/tasks'
         | '/dashboard/tasks/'
         | '/dashboard/tasks/[...path]'
@@ -419,6 +438,7 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-passkeys-id-edit'
         | 'dashboard-projects'
         | 'dashboard-projects-add'
+        | 'dashboard-projects-id'
         | 'dashboard-projects-id-edit'
         | 'dashboard-tasks-id-edit'
         | 'dashboard-variables-id-edit'
@@ -595,8 +615,10 @@ declare module 'vue-router/auto-routes' {
       routes:
         | '/dashboard/projects'
         | '/dashboard/projects/[...path]'
+        | '/dashboard/projects/[id]'
         | 'dashboard-projects'
         | 'dashboard-projects-add'
+        | 'dashboard-projects-id'
         | 'dashboard-projects-id-edit'
       views:
         | 'default'
@@ -606,6 +628,23 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/projects/index.vue': {
       routes:
         | 'dashboard-projects'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/projects/[id].vue': {
+      routes:
+        | '/dashboard/projects/[id]'
+        | 'dashboard-projects-id'
+      views:
+        | 'default'
+      pathParamNames:
+        | 'id'
+    }
+    'src/pages/dashboard/projects/[id]/(entity).vue': {
+      routes:
+        | 'dashboard-projects-id'
       views:
         | never
       pathParamNames:
