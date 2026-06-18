@@ -35,6 +35,33 @@ export interface ExtraButton {
   vnode: () => VNode
 }
 
+const icon: Record<string, { uncheckedIcon: string; checkedIcon: string }> = {
+	hosts: {
+		uncheckedIcon: 'i-tabler-server-off',
+		checkedIcon: 'i-tabler-server',
+	},
+	projects: {
+		uncheckedIcon: 'i-tabler-package-off',
+		checkedIcon: 'i-tabler-package',
+	},
+	deployments: {
+		uncheckedIcon: 'i-tabler-send-off',
+		checkedIcon: 'i-tabler-send',
+	},
+	variables: {
+		uncheckedIcon: 'i-tabler-variable-off',
+		checkedIcon: 'i-tabler-variable',
+	},
+	passkeys: {
+		uncheckedIcon: 'i-tabler-key-off',
+		checkedIcon: 'i-tabler-key',
+	},
+	tasks: {
+		uncheckedIcon: 'i-tabler-x',
+		checkedIcon: 'i-tabler-check',
+	},
+}
+
 // ---------------------------------------------------------------------------
 // Función interna principal
 // ---------------------------------------------------------------------------
@@ -51,33 +78,6 @@ function useToolbarContent(
 ) {
   const { t } = useI18n()
   const router = useRouter()
-
-  const icon = {
-    hosts: {
-      uncheckedIcon: 'i-tabler-server-off',
-      checkedIcon: 'i-tabler-server'
-    },
-    projects: {
-      uncheckedIcon: 'i-tabler-package-off',
-      checkedIcon: 'i-tabler-package'
-    },
-    deployments: {
-      uncheckedIcon: 'i-tabler-send-off',
-      checkedIcon: 'i-tabler-send'
-    },
-    variables: {
-      uncheckedIcon: 'i-tabler-variable-off',
-      checkedIcon: 'i-tabler-variable'
-    },
-    passkeys: {
-      uncheckedIcon: 'i-tabler-key-off',
-      checkedIcon: 'i-tabler-key'
-    },
-    tasks: {
-      uncheckedIcon: 'i-tabler-x',
-      checkedIcon: 'i-tabler-check'
-    }
-  }
 
   // ---------------------------------------------------------------------------
   // Helper interno: intercala botones extra en las posiciones indicadas
