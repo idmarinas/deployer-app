@@ -4,7 +4,10 @@ import type { Ref, VNode } from 'vue'
 
 import UButton from '@nuxt/ui/components/Button.vue'
 import USwitch from '@nuxt/ui/components/Switch.vue'
+import { Icon } from '@iconify/vue'
+
 import { useRouter } from 'vue-router'
+import { ToolbarManager } from './useDashboardToolbar'
 
 // ---------------------------------------------------------------------------
 // Tipos públicos
@@ -173,9 +176,9 @@ export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarMana
 		return
 	}
 
-	manager.setToolbarContent(() => [
+	manager.setToolbarFn(() => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
-			h(Icon, { icon: icon[manager.toolbar].checkedIcon.replace('i-tabler-', 'tabler:'), class: 'size-5' }),
+			h(Icon, { icon: icon[manager.moduleName].checkedIcon.replace('i-tabler-', 'tabler:'), class: 'size-5' }),
 			h('div', {}, title.value),
 		]),
 	])
