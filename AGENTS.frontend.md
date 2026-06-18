@@ -10,7 +10,9 @@
 src/
 ├── assets/
 │   └── css/
-│       └── main.css     <- Fuentes + paleta + tokens semánticos + utilidades PCB
+│       ├── main.css     <- Paleta + tokens semánticos + utilidades PCB
+│       ├── fonts.css    <- @font-face de Inter y JetBrains Mono (autohospedadas)
+│       └── fonts/        <- Archivos .woff2 de las fuentes
 ├── components/          <- Componentes reutilizables de UI
 ├── composables/         <- Lógica reactiva reutilizable de Vue
 │   └── queries/         <- Composables de acceso a datos, organizados por dominio
@@ -75,50 +77,94 @@ colors: {
 }
 ```
 
-> **Clave:** al estar mapeado en `ui.colors`, Nuxt UI genera automáticamente las variantes claro/oscuro de cada color. **Por eso los archivos de tema NUNCA deben hardcodear hexadecimales** — siempre clases semánticas (`primary-500`, `neutral-300`...) o tokens `--ui-*`.
+> **Clave:** al estar mapeado en `ui.colors`, Nuxt UI genera automáticamente las variantes claro/oscuro de cada color **y sus propios `--ui-primary`, `--ui-secondary`, etc.** Por eso esos tokens de color semántico **NO se redeclaran en `main.css`**. Solo se declaran los tokens de superficie/texto (`--ui-bg`, `--ui-text`...). Los archivos de tema **nunca deben hardcodear hexadecimales** — siempre clases semánticas o tokens `--ui-*`.
 
-### Tokens semánticos Nuxt UI (`--ui-*`)
+### Tokens semánticos Nuxt UI (`--ui-*`) declarados en `main.css`
 
 En `main.css` se declaran en `:root` (modo claro) y se sobreescriben en `.dark` (modo oscuro):
-- `--ui-primary`, `--ui-secondary`, `--ui-success`, `--ui-info`, `--ui-warning`, `--ui-error`
 - `--ui-bg`, `--ui-bg-elevated`, `--ui-bg-accented`, `--ui-bg-inverted`
 - `--ui-border`, `--ui-border-accented`, `--ui-border-inverted`
 - `--ui-text`, `--ui-text-dimmed`, `--ui-text-muted`, `--ui-text-toned`, `--ui-text-highlighted`, `--ui-text-inverted`
 - `--ui-radius`
 
-Uso en theme files vía sintaxis arbitraria de Tailwind: `bg-(--ui-bg-elevated)`, `text-(--ui-text-dimmed)`, `border-(--ui-border)`.
+Los colores semánticos (`--ui-primary`, `--ui-secondary`, `--ui-success`...) **no se declaran aquí**: ya los genera Nuxt UI desde `ui.colors`.
 
-También existen variables propias del sistema PCB (`--pcb-trace`, `--pcb-trace-glow`, `--pcb-pad`, `--pcb-board`, `--pcb-silk`), con valores distintos en claro/oscuro, usadas por las utilidades de `main.css`.
+Variables propias PCB: `--pcb-trace`, `--pcb-trace-glow`, `--pcb-pad`, `--pcb-board`, `--pcb-silk` — con valores distintos en claro/oscuro.
 
 ### Tipografía
 
-- **Inter** (texto general de la UI) — variable, libre, Google Fonts.
-- **JetBrains Mono** (`font-pcb`) — para badges, labels técnicos, tooltips, valores numéricos, separadores con etiqueta. Da el aspecto de "etiqueta de componente electrónico".
-
-Ambas se importan en `main.css` vía `@import url('https://fonts.googleapis.com/...')`. Si se necesita self-host (sin conexión a internet en build), descargar los `.woff2` de [Google Fonts](https://fonts.google.com/specimen/Inter) y [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (ambas de uso libre) y servirlas localmente.
+- **Inter** (texto general) — autohospedada en `src/assets/css/fonts/`.
+- **JetBrains Mono** (`font-pcb`) — badges, labels técnicos, tooltips, valores numéricos.
 
 ### Utilidades CSS reutilizables (definidas en `main.css`)
 
 | Clase | Uso |
 |---|---|
-| `.pcb-clip-br` | Esquina inferior-derecha recortada — inputs, botones |
+| `.pcb-clip-br` | Esquina inferior-derecha recortada — botones (no-square), inputs |
 | `.pcb-clip-badge` / `.pcb-clip-badge-alt` | Esquinas opuestas recortadas — badges tipo chip SMD |
 | `.pcb-clip-card` | Las 4 esquinas recortadas — cards, modals |
 | `.pcb-clip-hex` | Hexágono achatado — indicadores de estado |
-| `.pcb-trace-top` / `.pcb-trace-bottom` | Línea de traza energizada en borde sup/inf (requiere `relative`) |
-| `.pcb-trace-left` | Indicador lateral tipo traza activa (alerts, toasts, nav activo) |
-| `.pcb-corners` | Nodos circulares en las esquinas (requiere `relative`) — cards, modals |
-| `.pcb-pad` | Pad de soldadura circular inline — separadores, indicadores |
+| `.pcb-shadow-xs/sm/md/lg` | Glow de marca vía `filter: drop-shadow(...)` — **obligatorio con `pcb-clip-*`** |
+| `.pcb-shadow-neutral` | Sombra neutra vía `drop-shadow` — cards/elementos sin énfasis de color |
+| `.pcb-shadow-hover-md` | Variante hover de glow |
+| `.pcb-trace-top` / `.pcb-trace-bottom` | Línea de traza energizada en borde sup/inf |
+| `.pcb-trace-left` | Indicador lateral degradado fijo azul→morado |
+| `.pcb-trace-left-current` | Igual pero usa `currentColor` — para alert, toast (fijar con `text-{color}-*`) |
+| `.pcb-corners` | Nodos circulares en esquinas — cards, modals |
+| `.pcb-pad` | Pad de soldadura circular inline |
 | `.pcb-animate-pulse` | Pulso de energía en hover — botones solid |
-| `.pcb-animate-flow` | Flujo de gradiente — barras de progreso |
-| `.pcb-animate-blink` | Parpadeo tipo LED — badges de error/alerta |
+| `.pcb-animate-flow` | Flujo de gradiente — progress |
+| `.pcb-animate-blink` | Parpadeo LED — **solo uso explícito y puntual** |
 | `.font-pcb` | Aplica JetBrains Mono |
 
-**No duplicar estas utilidades dentro de archivos de tema individuales** — siempre reutilizar las de `main.css` para mantener consistencia y un único punto de mantenimiento.
+### ⚠️ Regla crítica: `box-shadow` NO es compatible con `clip-path`
+
+`box-shadow` se proyecta sobre la caja rectangular original, antes del `clip-path`. En elementos con `pcb-clip-*` esto produce sombras rectangulares con esquinas "fantasma" visibles. Lo mismo aplica a `@keyframes` que animen `box-shadow` (ver `pcb-pulse` en `main.css`, que anima `filter` por este motivo).
+
+**Regla:** todo elemento con `pcb-clip-*` usa `filter: drop-shadow(...)` — nunca `shadow-[...]`. No combinar dos utilidades que fijen `filter` en el mismo selector (`hover:pcb-shadow-*` + `hover:pcb-animate-pulse`): solo una "gana". Si hay animación de pulso en hover, esa es la única regla de filter.
+
+### ⚠️ Regla crítica: `pcb-clip-*` incompatible con formas circulares
+
+`clip-path` define una silueta poligonal. Si el elemento también tiene `border-radius` que lo hace circular (p. ej. un botón `square` con `rounded-full`), el clip-path corta esquinas rectas justo en la zona donde el radio intenta curvar — se ven "esquinas rectas" dentro del propio círculo.
+
+**Regla:** nunca aplicar `pcb-clip-*` a un elemento que vaya a tener `border-radius` circular o que sea icon-only. En `button.ts` esto se resuelve condicionando el clip-path a la variant `square`:
+
+```ts
+variants: {
+  square: {
+    false: { base: 'pcb-clip-br' }, // botón rectangular → esquina recortada
+    true:  { base: '' },            // botón icon-only → sin clip-path
+  },
+},
+```
+
+El theme base de Nuxt UI define `variants.square: { true: "" }` (solo padding via compoundVariants). Al redefinir `square` en el custom theme, `defu` fusiona ambos sin conflicto: el resultado es `{ true: "", false: "pcb-clip-br" }`. Verificado contra `node_modules/@nuxt/ui/dist/shared/ui.*.mjs`.
+
+### ⚠️ Regla: animaciones de "atención" (`pcb-animate-blink`) nunca por defecto
+
+No se aplica en ningún `color`/`variant` por defecto — se añade manualmente y puntualmente:
+
+```vue
+<UBadge label="CRÍTICO" color="error" variant="solid" class="pcb-animate-blink" />
+```
+
+### ⚠️ Regla crítica: estados `disabled` deben anular `hover`/`active`/`highlighted`
+
+`hover:`, `active:`, `data-highlighted:` se disparan por posición del cursor independientemente del estado disabled.
+
+**Regla:** todo slot interactivo con `hover:`/`active:` incluye `disabled:pointer-events-none` junto a la reducción de opacidad. En componentes de Reka UI donde el disabled se marca con atributo de datos, usar `data-disabled:pointer-events-none`.
+
+```ts
+// Pseudo-clase nativa (botones, checkbox, switch, tabs, inputs...)
+'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none'
+
+// Atributo de datos (items de menús, links de navegación en Reka UI...)
+'data-disabled:opacity-40 data-disabled:cursor-not-allowed data-disabled:pointer-events-none'
+```
+
+Componentes que ya siguen esta regla: `button`, `select` (base + item), `checkbox`, `switch`, `tabs` (trigger), `navigationMenu` (link + childLink), `dropdownMenu`/`contextMenu` (item).
 
 ### Registro de temas en vite.config.ts
-
-**Todos** los componentes con tema personalizado deben registrarse en el objeto `ui` del plugin en `vite.config.ts`. Las claves son camelCase del nombre del componente Nuxt UI:
 
 ```ts
 ui({
@@ -138,7 +184,7 @@ ui({
     progress: theme.progress,
     select: theme.select,
     separator: theme.separator,
-    switch: theme.switchTheme,   // ← alias porque "switch" es palabra reservada en JS
+    switch: theme.switchTheme,   // ← alias: "switch" es palabra reservada en JS
     table: theme.table,
     tabs: theme.tabs,
     textarea: theme.textarea,
@@ -150,47 +196,46 @@ ui({
 })
 ```
 
-> **Nota:** `switch` es palabra reservada. El export de `theme/index.ts` lo aliasa como `switchTheme`, y en `vite.config.ts` se registra como `switch: theme.switchTheme`.
-
 ### Concepto visual por componente
 
 | Componente | Tratamiento PCB |
 |---|---|
-| `button` | Esquina inf-derecha recortada, pulso de energía en hover (solid) |
-| `badge` | Esquinas opuestas recortadas tipo chip SMD, fuente mono, mayúsculas |
-| `input` / `textarea` / `select` | Esquina inf-izquierda recortada, traza activa (glow) en focus |
+| `button` | Esquina inf-derecha recortada (solo no-square), pulso en hover solid, `drop-shadow` |
+| `badge` | Esquinas opuestas tipo chip SMD, fuente mono, `drop-shadow` |
+| `input` / `textarea` / `select` | Esquina inf-izquierda recortada, glow `drop-shadow` en focus |
 | `checkbox` | Pad de soldadura cuadrado, degradado de marca al marcar |
 | `switch` | Track como pista de circuito, thumb como pad deslizante |
-| `card` / `modal` | 4 esquinas recortadas + nodos en esquinas (`pcb-corners`), traza en header/footer |
+| `card` / `modal` | 4 esquinas recortadas + nodos (`pcb-corners`), traza en header/footer, `drop-shadow` |
 | `tabs` | Indicador activo como puente conductor deslizante |
-| `progress` | Pista con anillo sutil, relleno con flujo de energía animado |
-| `separator` | Línea de traza con degradado, label en mono con pads |
+| `progress` | Pista con anillo, relleno con flujo animado |
+| `separator` | Línea de traza con degradado, label en mono |
 | `tooltip` | Panel tipo "readout" técnico, fuente mono |
-| `alert` / `toast` | Traza lateral izquierda energizada (`pcb-trace-left`) |
+| `alert` | Traza lateral izquierda (`pcb-trace-left`) |
+| `toast` | Fondo tintado + traza lateral (`pcb-trace-left-current`) + borde — distinguible sin icono |
 | `navigationMenu` | Item activo con traza lateral izquierda |
-| `dashboardNavbar` / `dashboardSidebar` | Traza energizada en separación de header/footer |
+| `dashboardNavbar` / `dashboardSidebar` | Traza energizada en separación header/footer |
 | `table` | Cabecera sticky, nodo PCB en primera columna, filas iluminadas en hover |
 | `dropdownMenu` / `contextMenu` | Panel readout, item resaltado con borde-traza izquierdo |
 
-### Estructura de un archivo de tema
+### Estructura de un archivo de tema — checklist
 
 ```ts
-// theme/miComponente.ts
 export default {
-  slots: {
-    root: 'clases-base ...',
-    // ...demás slots del componente
-  },
+  slots: { base: '...' },
+  variants: { /* solo si el componente necesita condicionar pcb-clip-* por variant */ },
   compoundVariants: [
-    { color: 'primary', variant: 'solid', class: { root: '...' } },
-    // ...
+    { color: 'primary', variant: 'solid', class: '...' },
   ],
 }
 ```
 
-- Usar siempre clases Tailwind semánticas (`primary-*`, `secondary-*`, `neutral-*`...) o tokens `bg-(--ui-*)` — nunca hexadecimales ni `neutral-950` hardcodeado (rompe el modo claro).
-- Los efectos de glow se logran con `shadow-[0_0_Xpx_rgba(...)]`.
-- Reutilizar las utilidades `.pcb-*` de `main.css` en lugar de redefinir clip-paths o pseudo-elementos en cada theme file.
+Al añadir o modificar cualquier theme file, verificar:
+- ✅ Sin hexadecimales hardcodeados — solo clases semánticas o tokens `--ui-*`
+- ✅ Slots con `pcb-clip-*` usan `drop-shadow`, nunca `shadow-[...]`
+- ✅ No hay dos reglas de `filter` en el mismo selector
+- ✅ `pcb-clip-*` no se aplica a elementos que sean o puedan ser circulares
+- ✅ Ningún color/variant lleva `pcb-animate-blink` por defecto
+- ✅ Slots con `hover:`/`active:` llevan `disabled:pointer-events-none` o `data-disabled:pointer-events-none`
 
 ---
 
@@ -275,16 +320,12 @@ import type { ProgressEvent } from '@/tauri-types'
 
 const channel = new Channel<ProgressEvent>()
 channel.onmessage = (event) => {
-  // Procesar evento según event.event:
   // deployment_started | task_pending | task_started |
   // output_chunk | task_retrying | task_finished |
   // task_skipped | deployment_finished | fatal_error
 }
 
-await invoke('run_deployment', {
-  input: { deployment_id: 123 },
-  channel
-})
+await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 ```
 
 ### Eventos del runner
