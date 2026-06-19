@@ -12,6 +12,8 @@ Los comandos Tauri se organizan en `src-tauri/src/commands/`, **un archivo por c
 commands/
 ├── helpers.rs                       <- open_pool(), get_master_key(), open_crypto_context()
 ├── response.rs                      <- CommandResponse<T>
+├── database/
+│   └── query_raw.rs                 <- Comando genérico de solo lectura (SELECT) para Drizzle
 ├── deployer_settings/
 ├── deployments/
 │   ├── crud/
@@ -71,8 +73,10 @@ El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en regi
 
 ### Acceso desde el frontend
 
-- El acceso directo a SQLite (vía `tauri-plugin-sql`) solo es válido para tablas **sin campos cifrados**.
-- Las tablas con campos sensibles deben usar los comandos Tauri CRUD correspondientes.
+- Las lecturas SELECT sobre tablas **sin campos cifrados** se hacen desde el frontend con **Drizzle en modo proxy** (`src/lib/db.ts`), que delega la ejecución al comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
+- `query_raw` valida que el SQL recibido sea un `SELECT` (rechaza cualquier otra instrucción) y devuelve las filas como JSON, sin aplicar descifrado.
+- Las tablas con campos sensibles que deban descifrarse, y **todas las escrituras** (INSERT/UPDATE/DELETE), deben usar los comandos Tauri CRUD específicos — nunca pasar por `query_raw`.
+- Antes de crear un nuevo comando `crud_get_*` / `crud_list_*`, comprobar si la tabla tiene campos cifrados o lógica especial. Si no los tiene, usar Drizzle en su lugar (ver tabla de decisión en `AGENTS.md` sección 6).
 
 ### Nombres de tablas
 
@@ -83,6 +87,7 @@ Centralizados en `src/constants/dbTables.ts`. Nunca escribir el nombre de una ta
 - Archivo: `src-tauri/migrations/0001_initial_schema.up.sql`
 - Mientras la app esté en versión `0.1.0`, se usa un único archivo de migración inicial.
 - A partir de `0.2.0`, usar archivos numerados adicionales.
+- Tras cualquier migración nueva, regenerar `drizzle/schema.ts` siguiendo `drizzle/README.md` (aplicar la migración sobre `drizzle/dev.sqlite` y ejecutar `bun run db:introspect`).
 
 ### Tablas actuales y campos destacados
 
@@ -255,7 +260,29 @@ Si la condición no puede parsearse, se ejecuta la task (safe default).
 
 ---
 
-## 6. Dependencias Rust — Notas de Compatibilidad
+## 6. Comando `query_raw` (lecturas para Drizzle)
+
+### Propósito
+
+Único punto de entrada que permite al frontend ejecutar SELECTs arbitrarios generados por Drizzle (modo proxy), sin necesidad de crear un comando Rust específico para cada consulta.
+
+### Reglas de implementación
+
+- Solo acepta sentencias que empiecen por `SELECT` (case-insensitive); cualquier otra instrucción se rechaza con error.
+- No aplica descifrado: las filas devueltas son los valores crudos de SQLite. Por eso solo debe usarse desde el frontend para tablas sin campos cifrados, o para campos cifrados que el frontend no necesita ver en claro.
+- Los parámetros llegan como `Vec<serde_json::Value>` y se bindean en orden a la query con `sqlx::query(&sql).bind(...)`.
+- El resultado se devuelve como `Vec<HashMap<String, serde_json::Value>>`, con conversión de tipos SQLite → JSON (INTEGER → number, REAL → number, TEXT/BLOB → string, NULL → null).
+- Disponible tanto en desarrollo como en producción (no usar `#[cfg(debug_assertions)]`), ya que es necesario para el funcionamiento normal de la app.
+
+### Lo que NUNCA debe hacer `query_raw`
+
+- Ejecutar INSERT, UPDATE, DELETE, ni ningún DDL.
+- Descifrar campos cifrados.
+- Saltarse la validación de que el SQL es un SELECT.
+
+---
+
+## 7. Dependencias Rust — Notas de Compatibilidad
 
 | Crate | Versión | Límite | Motivo |
 |-------|---------|--------|--------|

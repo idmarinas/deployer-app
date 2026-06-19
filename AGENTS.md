@@ -14,6 +14,7 @@ Su objetivo es **sustituir DeployerPHP** en los proyectos por un único deployer
 - **SSH:** Conexión a servidores remotos, ejecución de comandos y transferencia de archivos.
 - **Cifrado transparente:** Los campos sensibles se cifran automáticamente en SQLite mediante AES-256-GCM. La clave maestra reside en el keychain del SO.
 - **Runner universal:** Motor de ejecución de deployments via `run_deployment` (command, script, upload_file, download_file).
+- **Lecturas flexibles:** Las consultas SELECT ad-hoc sin campos cifrados se hacen desde el frontend con Drizzle (modo proxy) sobre el comando `query_raw`, sin necesidad de crear un comando Rust nuevo para cada variación.
 
 ---
 
@@ -29,6 +30,7 @@ Es fundamental respetar el stack tecnológico elegido:
 | **Estado** | Pinia |
 | **Backend** | Rust + [Tauri 2](https://tauri.app/) |
 | **Base de Datos** | SQLite gestionada desde el backend en Rust |
+| **Lecturas ad-hoc** | Drizzle ORM (modo proxy) desde el frontend, vía comando `query_raw` |
 | **Gestor de paquetes** | Bun |
 
 ---
@@ -43,6 +45,7 @@ Estas reglas deben seguirse sin excepción:
 4. **Flujo de Trabajo:** Antes de realizar cualquier cambio en el código, **crea un plan de implementación** y espera la aprobación del usuario.
 5. **Dependencias:** Antes de instalar nuevas dependencias, comprueba las que ya existen en `package.json` y en `src-tauri/Cargo.toml`.
 6. **Leer antes de modificar:** Lee siempre el archivo actual antes de editarlo. Nunca asumas el estado del código.
+7. **Comandos de solo lectura nuevos:** Antes de crear un comando Rust de tipo `crud_get_*` / `crud_list_*` nuevo, valora si la tabla tiene campos cifrados o lógica especial. Si NO los tiene, la lectura debe hacerse desde el frontend con Drizzle (`src/lib/db.ts`) en lugar de crear un comando Rust. Ver sección 7.
 
 ---
 
@@ -50,18 +53,28 @@ Estas reglas deben seguirse sin excepción:
 
 ```
 deployer-app/
+├── drizzle/                    <- Artefactos de drizzle-kit introspect (NO migraciones)
+│   ├── dev.sqlite              <- BD de desarrollo dedicada (gitignored)
+│   ├── schema.ts               <- Schema TypeScript generado automáticamente
+│   └── README.md               <- Flujo para regenerar el schema
+├── drizzle.config.ts           <- Config de drizzle-kit (solo introspect)
 ├── src/                        <- Frontend (Vue + TypeScript)
 │   ├── components/             <- Componentes reutilizables de UI
 │   ├── composables/            <- Lógica reactiva reutilizable de Vue
 │   ├── constants/              <- Constantes globales (ej. nombres de tablas)
+│   ├── lib/
+│   │   ├── db.ts               <- Cliente Drizzle (proxy) → comando query_raw
+│   │   └── schema.ts           <- Schema Drizzle (copiado/ajustado desde drizzle/schema.ts)
 │   ├── pages/                  <- Vistas de la aplicación
 │   └── utils/                  <- Funciones puras sin reactividad de Vue
 └── src-tauri/                  <- Backend (Rust + Tauri)
     ├── crates/deployer-macros/ <- Proc-macros para derivar traits automáticamente
-    ├── migrations/             <- Archivos SQL de migración
+    ├── migrations/             <- Archivos SQL de migración (fuente de verdad del schema)
     └── src/
         ├── commands/           <- Comandos Tauri (un archivo por comando)
-        │   └── helpers.rs      <- open_pool(), get_master_key(), open_crypto_context()
+        │   ├── helpers.rs      <- open_pool(), get_master_key(), open_crypto_context()
+        │   └── database/
+        │       └── query_raw.rs <- Comando genérico de solo lectura (SELECT) para Drizzle
         ├── crypto/             <- Cifrado AES-256-GCM + keychain
         ├── db/                 <- Trait DbEntity, caché, operaciones CRUD genéricas
         └── lib.rs              <- Registro de comandos Tauri y estado global
@@ -98,14 +111,34 @@ Según el tipo de tarea, consulta la guía correspondiente **antes de implementa
 - Implementar la UI del runner de deployments
 - Trabajar con composables, i18n o el sistema de toolbar
 - Añadir dependencias en `package.json`
+- Hacer consultas SELECT ad-hoc con Drizzle (`src/lib/db.ts`)
 
 ---
 
-## 6. Comandos Útiles
+## 6. Lecturas con Drizzle vs. comandos Rust
+
+Regla de decisión al necesitar un nuevo dato del frontend:
+
+| Situación | Solución |
+|---|---|
+| SELECT simple, tabla sin campos cifrados | Drizzle (`src/lib/db.ts`) — no crear comando Rust |
+| SELECT con joins/filtros variables, sin campos cifrados | Drizzle (`src/lib/db.ts`) — no crear comando Rust |
+| SELECT sobre tabla con campos cifrados que deben descifrarse | Comando Rust específico (usa `open_crypto_context`) |
+| Cualquier escritura (INSERT/UPDATE) | Comando Rust CRUD específico (mantiene cifrado y validaciones) |
+| DELETE | Comando Rust específico (controla cascadas y validaciones) |
+
+El comando `query_raw` (`src-tauri/src/commands/database/query_raw.rs`) es el único punto de entrada para Drizzle: valida que el SQL sea `SELECT`, no descifra nada, y devuelve filas como JSON.
+
+Cuando cambie el schema SQLite (nueva migración sqlx), regenerar `drizzle/schema.ts` siguiendo `drizzle/README.md`.
+
+---
+
+## 7. Comandos Útiles
 
 ```bash
-bun run tauri dev      # Inicia el servidor de desarrollo (Vite + Tauri)
-bun run tauri build    # Genera el paquete de producción
+bun run tauri dev        # Inicia el servidor de desarrollo (Vite + Tauri)
+bun run tauri build      # Genera el paquete de producción
+bun run db:introspect    # Regenera drizzle/schema.ts desde drizzle/dev.sqlite
 ```
 
 ---
