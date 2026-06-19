@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "db:introspect": "drizzle-kit introspect"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.8.2",
+    "@nuxt/ui": "^4.9.0",
     "@pinia/colada": "^1.3.1",
-    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "~2.7.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "@tauri-apps/plugin-positioner": "~2.3.2",
@@ -20,16 +21,18 @@
     "@tauri-apps/plugin-store": "~2.4.3",
     "@tauri-apps/plugin-window-state": "~2.4.1",
     "@unhead/vue": "^3.1.4",
+    "drizzle-orm": "^0.45.2",
     "maska": "^3.2.0",
     "vue": "^3.5.38",
-    "vue-i18n": "^11.4.5",
+    "vue-i18n": "^11.4.6",
     "vue-router": "^5.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.2",
-    "@types/node": "^25.9.3",
+    "@types/node": "^25.9.4",
     "@vitejs/plugin-vue": "^6.0.7",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4.3.1",
     "typescript": "~6.0.3",
     "vite": "^8.0.16",
