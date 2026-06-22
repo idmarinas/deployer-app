@@ -27,4 +27,8 @@ dist-ssr
 # Auto-generated type declarations
 auto-imports.d.ts
 components.d.ts
-typed-router.d.ts
+typed-locale.d.ts
+
+# Drizzle - BD de desarrollo para introspección (no es la BD real de la app)
+drizzle/dev.sqlite
+drizzle/dev.sqlite-*
