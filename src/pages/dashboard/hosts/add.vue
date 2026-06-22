@@ -4,6 +4,7 @@ import type { CommandResponse, CreateHostInput } from '@/types/tauri-types'
 
 import { ref, useTemplateRef, onMounted, onBeforeUnmount, watch } from 'vue'
 
+import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import {
@@ -45,6 +46,7 @@ const initialState: HostFullSchema = {
 const state = ref<any>({ ...initialState })
 const form = useTemplateRef<Form<HostSchema>>('form')
 const isLoading = ref(false)
+const queryCache = useQueryCache()
 
 // Generar contenido del toolbar
 useToolbarContentCreate(state, initialState, isLoading, form, toolbar)
@@ -56,6 +58,8 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	const result = await invoke<CommandResponse<number>>('crud_create_host', { input: host })
 
 	if (result.success) {
+		await queryCache.invalidateQueries({ key: ['hosts'] })
+
 		toast.add({
 			title: t('overlays.toast.title.success'),
 			description: t('schemas.hosts.added', { name: host.name }),

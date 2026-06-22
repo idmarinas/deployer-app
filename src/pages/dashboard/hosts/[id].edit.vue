@@ -4,6 +4,7 @@ import { watch, ref, useTemplateRef, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import { useQueryCache } from '@pinia/colada'
 import { useHostSchema, type HostSchema } from '@/composables/schemas/hosts'
 import { sanitizeNulls } from '@/utils/sanitize'
 import { useToolbarContentEdit } from '@/composables/useToolbarContent'
@@ -32,6 +33,8 @@ const toast = useToast()
 const { data: host, isLoading, reload } = useHostById()
 const { hostSchema } = useHostSchema(Number.parseInt(route.params.id))
 
+const queryCache = useQueryCache()
+
 const state = ref<any>({})
 const form = useTemplateRef<Form<HostSchema>>('form')
 
@@ -48,6 +51,8 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	})
 
 	if (result.success) {
+		await queryCache.invalidateQueries({ key: ['hosts'] })
+
 		toast.add({
 			title: t('overlays.toast.title.success'),
 			description: t('schemas.hosts.updated', { name: host.name }),
