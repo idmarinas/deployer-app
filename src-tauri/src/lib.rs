@@ -3,10 +3,12 @@ mod crypto;
 mod db;
 
 use commands::database::{
-    create_database_file, get_database_url, initialize_database, validate_sqlite_database,
+    create_database_file, get_database_url, initialize_database, query_raw,
+    validate_sqlite_database,
 };
 use commands::deployer_settings::{
     delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
+    set_deployer_settings,
 };
 use commands::deployments::{
     crud_create_deployment, crud_delete_deployment, crud_get_deployment, crud_list_deployments,
@@ -126,6 +128,7 @@ pub fn run() {
             // Deployer Settings
             get_deployer_setting,
             set_deployer_setting,
+            set_deployer_settings,
             list_deployer_settings,
             delete_deployer_setting,
             // Deployments - CRUD
@@ -175,6 +178,7 @@ pub fn run() {
             initialize_database,
             create_database_file,
             validate_sqlite_database,
+            query_raw,
             // Migrations
             run_migrations,
             has_pending_migrations,
