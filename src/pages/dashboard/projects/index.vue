@@ -26,7 +26,7 @@ const { t } = useI18n()
 const toast = useToast()
 const confirmDialog = useConfirmDialog()
 const router = useRouter()
-const { tableColumnExpand, tableColumnEnabled } = useTableColumns<Project>()
+const { tableColumnEnabled } = useTableColumns<Project>()
 
 const { data: projects, isLoading, reload } = useProjectsListAll()
 
