@@ -82,6 +82,12 @@ El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en regi
 
 Centralizados en `src/constants/dbTables.ts`. Nunca escribir el nombre de una tabla como string literal fuera de ese archivo.
 
+### Patrón: escritura batch (varios upserts en una transacción)
+
+Para tablas tipo clave-valor (ej. `deployer_settings`), además del comando singular (`set_deployer_setting`, un solo `key`/`value`) existe un comando plural (`set_deployer_settings`) que acepta un `HashMap<String, String>` con 1 o varios pares y los aplica con `pool.begin()` / `tx.commit()` en una única transacción. Si algún upsert falla, se hace `tx.rollback()` y se devuelve error sin dejar cambios parciales.
+
+El frontend solo debe llamar al comando plural (incluso para guardar un único ajuste, pasando un objeto de una clave); evita múltiples invocaciones IPC sueltas cuando hay que guardar varios valores a la vez (p. ej. un formulario completo de configuración). Mismo patrón a reutilizar si aparece otra tabla clave-valor o de ajustes en bloque.
+
 ### Migraciones
 
 - Archivo: `src-tauri/migrations/0001_initial_schema.up.sql`
