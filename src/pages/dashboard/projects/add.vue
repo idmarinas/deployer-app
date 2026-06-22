@@ -1,15 +1,16 @@
 <script lang="ts">
 import type { ProjectSchema } from '@/composables/schemas/projects'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
+import { useProjectSchema } from '@/composables/schemas/projects'
 import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { useToolbarContentCreate } from '@/composables/useToolbarContent'
-import { FormSubmitEvent } from '@nuxt/ui'
 import { CommandResponse, CreateProjectInput } from '@/types/tauri-types'
-import { useProjectSchema } from '@/composables/schemas/projects'
-import { useRouter } from 'vue-router'
+import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
@@ -22,8 +23,9 @@ definePage({
 const { projectSchema } = useProjectSchema()
 const { t } = useI18n()
 
+const queryCache = useQueryCache()
 const toolbar = useDashboardToolbar('projects')
-const form = useTemplateRef('form')
+const form = useTemplateRef<Form<ProjectSchema>>('form')
 const initialState: ProjectSchema = {
 	name: '',
 	description: undefined,
@@ -38,19 +40,7 @@ const isLoading = ref(false)
 const toast = useToast()
 const router = useRouter()
 
-const handleReset = () => {
-	Object.assign(state, initialState)
-	form.value?.clear()
-}
-const updateToolbar = () => toolbar?.setToolbarContent(generateToolbarContent()) // Generar contenido del toolbar
-const generateToolbarContent = useToolbarContentCreate(
-	'projects',
-	state,
-	isLoading,
-	updateToolbar,
-	() => form.value?.submit(),
-	handleReset,
-)
+useToolbarContentCreate(state, initialState, isLoading, form, toolbar)
 
 async function onSubmit(event: FormSubmitEvent<ProjectSchema>) {
 	isLoading.value = true
@@ -59,6 +49,7 @@ async function onSubmit(event: FormSubmitEvent<ProjectSchema>) {
 	const response = await invoke<CommandResponse<number>>('crud_create_project', { input })
 
 	if (response.success) {
+		await queryCache.invalidateQueries({ key: ['projects'] })
 		toast.add({
 			title: t('overlays.toast.title.success'),
 			description: t('schemas.projects.added', { name: input.name }),
@@ -74,16 +65,16 @@ async function onSubmit(event: FormSubmitEvent<ProjectSchema>) {
 
 // Inyectar contenido en el toolbar cuando se monta el componente
 onMounted(() => {
-	updateToolbar()
+	toolbar?.updateToolbar()
 })
 
 // Limpiar el toolbar cuando se desmonta
 onBeforeUnmount(() => {
-	toolbar?.clearToolbarContent()
+	toolbar?.clearContent()
 })
 
 // Actualizar toolbar cuando isLoading cambia
-watch(isLoading, updateToolbar)
+watch(isLoading, () => toolbar?.updateToolbar())
 </script>
 
 <template>
