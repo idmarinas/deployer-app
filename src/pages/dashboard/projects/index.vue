@@ -1,18 +1,18 @@
 <script lang="ts">
-import type { TableColumn } from '@nuxt/ui'
 import type { CommandResponse, Project } from '@/types/tauri-types'
+import type { TableColumn } from '@nuxt/ui'
 
-import { ref, useTemplateRef, resolveComponent, h } from 'vue'
+import { h, ref, resolveComponent, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useToast } from '@nuxt/ui/composables'
 import { useConfirmDialog } from '@/composables/useDialog'
-import { useRouter } from 'vue-router'
 import { useProjectsListAll } from '@/loaders/projects'
+import { useToast } from '@nuxt/ui/composables'
+import { useRouter } from 'vue-router'
 
-import { invoke } from '@tauri-apps/api/core'
-import { useTableColumns } from '@/composables/useTableColumns'
 import { useFrameworkBadge } from '@/composables/useFrameworkBadge'
+import { useTableColumns } from '@/composables/useTableColumns'
+import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -31,7 +31,6 @@ const { tableColumnExpand, tableColumnEnabled } = useTableColumns<Project>()
 const { data: projects, isLoading, reload } = useProjectsListAll()
 
 const columns: TableColumn<Project>[] = [
-	tableColumnExpand,
 	{
 		accessorKey: 'id',
 		header: '#',
@@ -50,6 +49,14 @@ const columns: TableColumn<Project>[] = [
 		enableHiding: false,
 		cell: ({ row }) =>
 			h('div', { class: 'flex gap-2 justify-end' }, [
+				h(UButton, {
+					color: 'neutral',
+					variant: 'ghost',
+					icon: 'i-tabler-eye',
+					async onClick() {
+						router.push({ name: 'dashboard-projects-id', params: { id: row.original.id } })
+					},
+				}),
 				h(UButton, {
 					icon: 'i-tabler-pencil',
 					color: 'info',
