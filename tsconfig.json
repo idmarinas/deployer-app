@@ -28,7 +28,15 @@
 	"vueCompilerOptions": {
 		"plugins": ["vue-router/volar/sfc-route-blocks", "vue-router/volar/sfc-typed-router"]
 	},
-	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "auto-imports.d.ts", "components.d.ts"],
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.d.ts",
+		"src/**/*.tsx",
+		"src/**/*.vue",
+		"auto-imports.d.ts",
+		"components.d.ts",
+		"typed-locale.d.ts"
+	],
 	"references": [
 		{
 			"path": "./tsconfig.node.json"
