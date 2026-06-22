@@ -274,7 +274,7 @@ export function useDatabaseSetup() {
 
 				if (!success) {
 					toast.add({
-						title: t('components.toast.title.error'),
+						title: t('overlays.toast.title.error'),
 						description: t(result?.message_key, result?.message_params),
 						color: 'error',
 					})
@@ -285,7 +285,7 @@ export function useDatabaseSetup() {
 
 				if (!success) {
 					toast.add({
-						title: t('components.toast.title.error'),
+						title: t('overlays.toast.title.error'),
 						description: t(result?.message_key, result?.message_params),
 						color: 'error',
 					})
@@ -306,8 +306,8 @@ export function useDatabaseSetup() {
 	function completeSetup(all_steps_completed: boolean) {
 		if (all_steps_completed) {
 			toast.add({
-				title: t('components.toast.title.success'),
-				description: t('components.toast.description.success'),
+				title: t('overlays.toast.title.success'),
+				description: t('overlays.toast.description.success'),
 				color: 'success',
 			})
 
