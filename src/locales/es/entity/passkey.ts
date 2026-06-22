@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from "vue-i18n"
+import type { LocaleMessageValue } from "vue-i18n"
 
-export default <LocaleMessageValue>{
+export default {
   name: 'Nombre',
   description: 'Descripción',
   key_type: 'Tipo de clave',
@@ -10,4 +10,4 @@ export default <LocaleMessageValue>{
   fingerprint: 'Huella digital',
   created_at: 'Fecha de creación',
   updated_at: 'Fecha de actualización'
-}
+} satisfies LocaleMessageValue

@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue } from 'vue-i18n'
 
-export default <LocaleMessageValue> {
+export default {
   statusMessage: 'No encontrado',
   message: 'No se ha podido encontrar lo que estabas buscando.',
   host: {
@@ -27,4 +27,4 @@ export default <LocaleMessageValue> {
     statusMessage: 'Despliegue no encontrado',
     message: 'No se ha podido encontrar el despiegue que estabas buscando.'
   }
-}
+} satisfies LocaleMessageValue

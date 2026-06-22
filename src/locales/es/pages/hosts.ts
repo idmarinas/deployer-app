@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue } from 'vue-i18n'
 
-export default <LocaleMessageValue>{
+export default {
   title: 'Servidores',
   table: {
     columns: {
@@ -49,4 +49,4 @@ export default <LocaleMessageValue>{
       }
     }
   }
-}
+} satisfies LocaleMessageValue

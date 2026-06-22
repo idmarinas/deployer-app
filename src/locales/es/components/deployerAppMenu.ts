@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue } from 'vue-i18n'
 
-export default <LocaleMessageValue>{
+export default {
   settings: 'Configuración',
   appearance: {
     label: 'Apariencia',
@@ -9,4 +9,4 @@ export default <LocaleMessageValue>{
     system: 'Sistema'
   },
   locale: 'Idioma',
-}
+} satisfies LocaleMessageValue

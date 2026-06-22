@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from "vue-i18n"
+import type { LocaleMessageValue } from "vue-i18n"
 
-export default <LocaleMessageValue>{
+export default {
   label: 'Servidor',
   name: 'Nombre',
   description: 'Descripción',
@@ -13,4 +13,4 @@ export default <LocaleMessageValue>{
   enabled: 'Habilitado',
   created_at: 'Fecha de creación',
   updated_at: 'Fecha de actualización'
-}
+} satisfies LocaleMessageValue

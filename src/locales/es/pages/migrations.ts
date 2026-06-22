@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue } from 'vue-i18n'
 
-export default <LocaleMessageValue> {
+export default {
   title: 'Migraciones pendientes',
   headline: 'La base de datos requiere actualización',
   description: 'Se han detectado migraciones pendientes que deben ejecutarse para que la aplicación funcione correctamente. Por favor, haz clic en el botón de abajo para ejecutar las migraciones necesarias.',
@@ -37,4 +37,4 @@ export default <LocaleMessageValue> {
       error: 'Error al ejecutar migraciones',
     }
   }
-}
+} satisfies LocaleMessageValue

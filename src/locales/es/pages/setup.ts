@@ -1,6 +1,6 @@
-import { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue } from 'vue-i18n'
 
-export default <LocaleMessageValue>{
+export default {
   title: '¡Bienvenido a @:app.title !',
   headline: 'Configuración inicial',
   description: 'Una aplicación de despliegue de aplicaciones web, totalmente configurable y fácil de usar.\n @:app.title utiliza un archivo SQLite para almacenar la configuración y el estado de las aplicaciones desplegadas. Puedes seleccionar un archivo SQLite existente o crear uno nuevo para comenzar.',
@@ -73,4 +73,4 @@ export default <LocaleMessageValue>{
       validate: 'Error al validar instalación'
     }
   }
-}
+} satisfies LocaleMessageValue
