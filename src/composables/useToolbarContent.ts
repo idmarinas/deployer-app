@@ -1,12 +1,12 @@
-import type { Ref, ShallowRef, VNode } from 'vue'
 import type { Form } from '@nuxt/ui'
+import type { Ref, ShallowRef, VNode } from 'vue'
 
 import { h, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { Icon } from '@iconify/vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 import USwitch from '@nuxt/ui/components/Switch.vue'
-import { Icon } from '@iconify/vue'
 
 import { useRouter } from 'vue-router'
 import { ToolbarManager } from './useDashboardToolbar'
@@ -198,7 +198,7 @@ export function useToolbarContentEdit(
 	return useToolbarContent(state, initialState, loading, form, 'edit', manager, extraButtons)
 }
 
-export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarManager): void {
+export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarManager, extra?: Ref<VNode[]>): void {
 	if (!manager) {
 		return
 	}
@@ -208,5 +208,6 @@ export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarMana
 			h(Icon, { icon: getIcon(manager.moduleName, true).checkedIcon, class: 'size-5' }),
 			h('div', {}, title.value),
 		]),
+		h('div', { class: 'flex gap-3 items-center' }, extra?.value),
 	])
 }
