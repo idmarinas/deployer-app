@@ -11,6 +11,7 @@
 8. Campos password agregar un medidor de fuerza (como guia), tener en cuenta si el campo es opcional o no.
 9. Cuando se usa un select que permita seleccinar un host, project... permitir el crear uno. Como USelectMenu lo permite en su documentación
 10. Actualizar la pantalla de carga (principal) para que sea igual que el resto de la app
+11. Ajustes de la app, agregar a la tabla campo para determinar si se cargan al inicio o no.
 
 ```ts
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
