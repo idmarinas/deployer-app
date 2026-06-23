@@ -206,7 +206,7 @@ export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarMana
 	manager.setToolbarFn(() => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
 			h(Icon, { icon: getIcon(manager.moduleName, true).checkedIcon, class: 'size-5' }),
-			h('div', {}, title.value),
+			h('span', {}, title.value),
 		]),
 		h('div', { class: 'flex gap-3 items-center' }, extra?.value),
 	])
