@@ -4,10 +4,13 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
+		"predev": "bun run i18n:types",
 		"dev": "vite",
+		"prebuild": "bun run i18n:types",
 		"build": "vue-tsc --noEmit && vite build",
 		"preview": "vite preview",
 		"tauri": "tauri",
+		"i18n:types": "bun scripts/generate-i18n-schema.ts",
 		"dev:db:introspect": "drizzle-kit introspect --dialect=sqlite --out=./drizzle --url=./drizzle/dev.sqlite",
 		"dev:db:create": "sqlx database create --database-url=sqlite:./drizzle/dev.sqlite",
 		"dev:db:migrate": "sqlx migrate run --database-url=sqlite:./drizzle/dev.sqlite --source=./src-tauri/migrations/",
