@@ -148,6 +148,83 @@ for row in rows {
 
 ---
 
+## 3.1 Updates parciales: `Patch<T>` + `db::update_fields`
+
+### Problema que resuelve
+
+Los `UpdateXInput` con campos `Option<T>` y merge `.or(current.campo)` **nunca pueden poner a `NULL` un campo opcional**: tanto la clave ausente en el JSON como un `null` explícito deserializan a `None`, así que `.or()` siempre conserva el valor actual. Es imposible borrar un campo nullable una vez que tiene valor.
+
+### Solución: `Patch<T>` (en `commands/patch.rs`)
+
+`Patch<T>` distingue los 3 estados posibles de un campo en un update parcial:
+
+```rust
+pub enum Patch<T> {
+    Unset,      // la clave no vino en el JSON -> no tocar
+    Null,       // vino como `null`           -> borrar (NULL en BD)
+    Value(T),   // vino con un valor           -> actualizar
+}
+```
+
+Se usa **solo en campos `NULL`-ables** de `UpdateXInput`. Los campos `NOT NULL` siguen usando `Option<T>` simple (no necesitan distinguir "borrar", solo "actualizar o no tocar").
+
+```rust
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct UpdateProjectInput {
+    pub name: Option<String>,           // NOT NULL -> Option simple
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,     // NULLABLE -> Patch
+    pub enabled: Option<bool>,          // NOT NULL -> Option simple
+}
+```
+
+- `#[serde(default)]` es **obligatorio** en cada campo `Patch<T>`: hace que, si la clave no aparece en el JSON, el campo se rellene con `Patch::Unset` vía `Default`, sin invocar al `Deserialize` de `Patch` (que nunca devuelve `Unset` por sí mismo).
+- `#[ts(optional = nullable)]` es **obligatorio** para que `ts-rs` genere `campo?: T | null` en vez de un tipo obligatorio.
+
+### TypeScript generado
+
+```ts
+export interface UpdateProjectInput {
+  name?: string
+  description?: string | null
+  enabled?: boolean
+}
+```
+
+Desde el frontend: omitir la clave = no tocar; `null` = borrar; valor = actualizar. Tauri serializa el `invoke` igual que `JSON.stringify`, así que esto funciona sin lógica adicional en Vue.
+
+### Comando: sin `fetch_one` previo, `UPDATE` dinámico
+
+Los comandos `crud_update_*` que migren a este patrón **dejan de hacer `fetch_one` + reconstruir la entidad completa**. En su lugar, construyen un `Vec<(String, serde_json::Value)>` solo con los campos presentes y llaman a `db::update_fields::<E>`:
+
+```rust
+let mut fields: Vec<(String, Value)> = Vec::new();
+
+if let Some(name) = input.name {
+    fields.push(("name".to_string(), Value::String(name)));
+}
+if let Some(v) = input.description.to_field_value() {
+    fields.push(("description".to_string(), v));
+}
+
+match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
+    Ok(true) => Ok(CommandResponse::ok_empty("projects.success.updated")),
+    Ok(false) => Ok(CommandResponse::err("projects.errors.not_found", ...)),
+    Err(e) => Ok(CommandResponse::err("projects.errors.update_failed", ...)),
+}
+```
+
+`db::update_fields` (en `db/crud.rs`) construye un `UPDATE ... SET` únicamente con las columnas presentes en `fields` (principio de "dirty tracking", igual que Doctrine/Drizzle: solo se tocan las columnas indicadas explícitamente), aplica cifrado igual que `db::update`, y devuelve `Ok(false)` si no existe ninguna fila con ese `id` (en vez de error).
+
+### Estado de la migración
+
+- ✅ `projects` (prueba de concepto, ya aplicado).
+- ⏳ Pendiente replicar a: `hosts`, `passkeys`, `global_variables`, `project_variables`, `tasks`, `project_tasks`, `project_hosts`, `framework_configs`, `deployments`, `deployment_executions`, `deployment_rollbacks`, `task_dependencies` (cualquier campo `Option<T>` que mapee a una columna `NULL`-able en SQLite).
+
+---
+
 ## 4. Sistema de Cifrado Transparente
 
 ### Principio de funcionamiento

@@ -297,6 +297,32 @@ Los tipos del backend se generan automáticamente mediante `ts-rs` en `tauri-typ
 - Los mensajes de error del backend llegan como claves i18n con parámetros `HashMap<String, String>`.
 - El backend es agnóstico al idioma — nunca devuelve strings en español directamente.
 
+### Carga de mensajes (`src/locales/_loader.ts`)
+
+- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...).
+- `_loader.ts` usa `import.meta.glob` para cargar todos los `.ts` de `es/**` (excluyendo `es/formats/**`, que son los formatos de fecha/número) y los ensambla en un objeto anidado según la ruta del archivo (`pages/setup.ts` → `{ pages: { setup: {...} } }`).
+- Caso especial: un archivo `index.ts` fusiona sus claves directamente en el padre en vez de anidarse bajo `index` (ej. `pages/index.ts` → `result.pages`, no `result.pages.index`).
+- En `DEV`, se avisa por consola si a un idioma le faltan archivos respecto al idioma de referencia (`es`).
+- Al añadir un idioma nuevo: añadir sus entradas en `LOCALE_GLOBS`, `DATETIME_GLOBS` y `NUMBER_GLOBS` de `_loader.ts`.
+
+### Mensajes type-safe (autocompletado y validación de `t()` / `$t()`)
+
+- Cada archivo de mensajes exporta con `satisfies LocaleMessageValue` (nunca con el cast `<LocaleMessageValue>{...}`) para conservar el tipo literal de sus claves:
+
+  ```ts
+  import type { LocaleMessageValue } from 'vue-i18n'
+
+  export default {
+    active: 'Activo',
+    confirm: { label: 'Confirmar', delete: 'Eliminar' },
+  } satisfies LocaleMessageValue
+  ```
+
+- `scripts/generate-i18n-schema.ts` recorre `src/locales/es/**` (misma exclusión de `formats/` y misma regla de `index.ts` que `_loader.ts`) y genera `typed-locale.d.ts` en la raíz del proyecto: un `import type` + `typeof` por cada archivo, compuestos en una interfaz `MessageSchema` que aumenta `DefineLocaleMessage` de `vue-i18n` vía `declare module`.
+- `typed-locale.d.ts` es un archivo **autogenerado** (está en `.gitignore`) — nunca editarlo a mano. Se regenera automáticamente en `bun run dev` y `bun run build` (ambos scripts ejecutan `bun run i18n:types` antes de arrancar Vite/`vue-tsc`); también se puede regenerar manualmente con `bun run i18n:types`.
+- Gracias a la augmentation global, `t('common.active')`, `useI18n().t(...)` y `$t(...)` en plantillas quedan autocompletados y validados en toda la app sin tipar cada `useI18n()` manualmente.
+- Al añadir un archivo de mensajes nuevo en `es/`, no hace falta tocar `typed-locale.d.ts` — se regenera solo en el siguiente `dev`/`build`/`i18n:types`. El idioma `en` no tiene su propio schema: solo `es` se usa como referencia de tipos (igual que es la referencia para `warnMissingKeys` en runtime).
+
 ---
 
 ## 7. Llamadas a comandos Tauri
