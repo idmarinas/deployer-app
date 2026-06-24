@@ -228,35 +228,27 @@ export type UpdateDeploymentRollbackInput = { status: DeploymentStatus | null, s
 
 export type UpdateFrameworkConfigInput = { value: string | null, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
 
-export type UpdateGlobalVariableInput = { name: string | null, value: string | null, is_secret: boolean | null, description: string | null, };
+export type UpdateGlobalVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
 
-export type UpdateHostInput = { name: string | null, host: string | null, port: number | null, username: string | null, auth_type: AuthType | null, 
+export type UpdateHostInput = { name?: string, host?: string, port?: number, username?: string, auth_type?: AuthType, 
 /**
- * Si es `None`, no se modifica la contraseña actual.
- * Si es `Some("")`, se elimina la contraseña.
- * Si es `Some("valor")`, se cifra y se guarda.
+ * `Unset` = no modificar; `Null` = eliminar la contraseña; `Value(v)` = cifrar y guardar.
  */
-password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
+password?: string | null, key_id?: number | null, description?: string | null, enabled?: boolean, };
 
-export type UpdatePasskeyInput = { name: string | null, 
+export type UpdatePasskeyInput = { name?: string, 
 /**
- * Si es `None`, no se modifica el contenido actual.
- * Si es `Some("valor")`, se cifra y se guarda.
+ * `NOT NULL` en BD: omitir = no modificar; valor = sustituir y volver a cifrar.
  */
-key_content: string | null, 
-/**
- * Si es `None`, no se modifica la passphrase actual.
- * Si es `Some("")`, se elimina la passphrase.
- */
-passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
+key_content?: string, passphrase?: string | null, key_type?: KeyType | null, fingerprint?: string | null, description?: string | null, };
 
 export type UpdateProjectHostInput = { deploy_order: number | null, enabled: boolean | null, };
 
-export type UpdateProjectInput = { name: string | null, description: string | null, git_url: string | null, framework: string | null, local_working_dir: string | null, remote_working_dir: string | null, enabled: boolean | null, };
+export type UpdateProjectInput = { name?: string, description?: string | null, git_url?: string | null, framework?: string, local_working_dir?: string | null, remote_working_dir?: string | null, enabled?: boolean, };
 
 export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
 
-export type UpdateProjectVariableInput = { name: string | null, value: string | null, is_secret: boolean | null, description: string | null, };
+export type UpdateProjectVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
 
 export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
 
