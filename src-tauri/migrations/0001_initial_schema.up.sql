@@ -407,3 +407,76 @@ CREATE TABLE deployment_rollbacks (
 CREATE INDEX deployment_rollbacks_idx_deployment_id ON deployment_rollbacks (deployment_id);
 
 CREATE INDEX deployment_rollbacks_idx_status ON deployment_rollbacks (status);
+
+-- ============================================================================
+-- TRIGGERS: actualización automática de `updated_at`
+-- Solo en las tablas que tienen esa columna. El `WHEN NEW.updated_at = OLD.updated_at`
+-- evita una recursión infinita: la propia UPDATE del trigger dispara el trigger de
+-- nuevo, pero en esa segunda pasada `NEW.updated_at` (CURRENT_TIMESTAMP recién puesto)
+-- ya no coincide con `OLD.updated_at`, así que la condición es falsa y no se repite.
+-- Con esto, el código Rust (`db::update_fields`) nunca necesita tocar `updated_at`.
+-- ============================================================================
+
+CREATE TRIGGER passkeys_trg_set_updated_at
+AFTER UPDATE ON passkeys
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE passkeys SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER hosts_trg_set_updated_at
+AFTER UPDATE ON hosts
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER global_variables_trg_set_updated_at
+AFTER UPDATE ON global_variables
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE global_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER projects_trg_set_updated_at
+AFTER UPDATE ON projects
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER project_variables_trg_set_updated_at
+AFTER UPDATE ON project_variables
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE project_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER framework_configs_trg_set_updated_at
+AFTER UPDATE ON framework_configs
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE framework_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER tasks_trg_set_updated_at
+AFTER UPDATE ON tasks
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER project_tasks_trg_set_updated_at
+AFTER UPDATE ON project_tasks
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE project_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;

@@ -2,6 +2,22 @@
 -- Migration 1: Drop All Tables (Rollback)
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS project_tasks_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS tasks_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS framework_configs_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS project_variables_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS projects_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS global_variables_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS hosts_trg_set_updated_at;
+
+DROP TRIGGER IF EXISTS passkeys_trg_set_updated_at;
+
 DROP TABLE IF EXISTS encryption_config;
 
 DROP TABLE IF EXISTS deployment_rollbacks;
