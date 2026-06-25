@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -8,6 +9,11 @@ use crate::commands::CommandResponse;
 use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza una variable global existente por su `id`.
+///
+/// `value` está cifrado condicionalmente según `is_secret` (`#[db_conditional_encrypt]`).
+/// `apply_encryption` decide si cifrar `value` mirando `is_secret` dentro del mismo
+/// lote de campos que se envía al `UPDATE`; si se actualiza `value` sin enviar
+/// `is_secret`, se consulta su valor actual para que la condición se evalúe bien.
 #[tauri::command]
 pub async fn crud_update_global_variable(
     app: AppHandle,
@@ -25,34 +31,55 @@ pub async fn crud_update_global_variable(
         }
     };
 
-    let current = match db::fetch_one::<GlobalVariable>(&pool, id, cache, &key).await {
-        Ok(Some(v)) => v,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "global_variables.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "global_variables.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let updated = GlobalVariable {
-        id: current.id,
-        name: input.name.unwrap_or(current.name),
-        value: input.value.unwrap_or(current.value),
-        is_secret: input.is_secret.unwrap_or(current.is_secret),
-        description: input.description.or(current.description),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(name) = input.name {
+        fields.push(("name".to_string(), Value::String(name)));
+    }
 
-    match db::update::<GlobalVariable>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("global_variables.success.updated")),
+    if let Some(value) = input.value {
+        let is_secret = match input.is_secret {
+            Some(s) => s,
+            None => {
+                match sqlx::query_scalar::<_, bool>(
+                    "SELECT is_secret FROM global_variables WHERE id = ?1",
+                )
+                .bind(id)
+                .fetch_optional(&pool)
+                .await
+                {
+                    Ok(Some(s)) => s,
+                    Ok(None) => {
+                        return Ok(CommandResponse::err(
+                            "global_variables.errors.not_found",
+                            HashMap::from([("id".to_string(), id.to_string())]),
+                        ))
+                    }
+                    Err(e) => {
+                        return Ok(CommandResponse::err(
+                            "global_variables.errors.fetch_failed",
+                            HashMap::from([("reason".to_string(), e.to_string())]),
+                        ))
+                    }
+                }
+            }
+        };
+        fields.push(("value".to_string(), Value::String(value)));
+        fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+    } else if let Some(is_secret) = input.is_secret {
+        fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+    }
+
+    if let Some(v) = input.description.to_field_value() {
+        fields.push(("description".to_string(), v));
+    }
+
+    match db::update_fields::<GlobalVariable>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("global_variables.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "global_variables.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "global_variables.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

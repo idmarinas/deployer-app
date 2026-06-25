@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 #[db_table("project_variables")]
@@ -45,8 +47,13 @@ impl CreateProjectVariableInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateProjectVariableInput {
+    #[ts(optional)]
     pub name: Option<String>,
+    #[ts(optional)]
     pub value: Option<String>,
+    #[ts(optional)]
     pub is_secret: Option<bool>,
-    pub description: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,
 }

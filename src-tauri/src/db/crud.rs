@@ -144,15 +144,44 @@ pub async fn insert<E: DbEntity>(
     Ok(result.last_insert_rowid())
 }
 
-/// Actualiza una fila existente por su `id`.
-pub async fn update<E: DbEntity>(
+/// Actualiza solo los campos indicados de una fila existente por su `id`,
+/// sin necesitar la entidad completa ni un `fetch_one` previo.
+///
+/// A diferencia de `update`, construye un `UPDATE ... SET` dinámico únicamente
+/// con las columnas presentes en `fields` (principio de "dirty tracking": solo
+/// se tocan en SQL las columnas que el llamador indicó explícitamente).
+///
+/// `updated_at` NUNCA se incluye aquí: las tablas que tienen esa columna la
+/// actualizan solas vía trigger SQL (`AFTER UPDATE`, ver migración). Las tablas
+/// sin `updated_at` simplemente no tienen trigger y no pasa nada.
+///
+/// Devuelve `true` si la fila existía (se actualizó o, si `fields` estaba vacío,
+/// simplemente existía), o `false` si no existe ninguna fila con ese `id`.
+pub async fn update_fields<E: DbEntity>(
     pool: &SqlitePool,
     id: i64,
-    entity: &E,
+    mut fields: Vec<(String, Value)>,
     cache: &EncryptionConfigCache,
     key: &[u8],
-) -> Result<(), String> {
-    let mut fields = entity.to_fields();
+) -> Result<bool, String> {
+    if fields.is_empty() {
+        let sql = format!("SELECT 1 FROM {} WHERE id = ?1", E::table_name());
+        let exists = sqlx::query(&sql)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| {
+                format!(
+                    "Error al comprobar existencia en {} con id {}: {}",
+                    E::table_name(),
+                    id,
+                    e
+                )
+            })?
+            .is_some();
+        return Ok(exists);
+    }
+
     apply_encryption::<E>(&mut fields, cache, pool, key).await?;
 
     let set_clause: Vec<String> = fields
@@ -162,7 +191,7 @@ pub async fn update<E: DbEntity>(
         .collect();
 
     let sql = format!(
-        "UPDATE {} SET {}, updated_at = CURRENT_TIMESTAMP WHERE id = ?{}",
+        "UPDATE {} SET {} WHERE id = ?{}",
         E::table_name(),
         set_clause.join(", "),
         fields.len() + 1
@@ -174,7 +203,7 @@ pub async fn update<E: DbEntity>(
     }
     query = query.bind(id);
 
-    query.execute(pool).await.map_err(|e| {
+    let result = query.execute(pool).await.map_err(|e| {
         format!(
             "Error al actualizar {} con id {}: {}",
             E::table_name(),
@@ -183,7 +212,7 @@ pub async fn update<E: DbEntity>(
         )
     })?;
 
-    Ok(())
+    Ok(result.rows_affected() > 0)
 }
 
 /// Obtiene una fila por su `id`.

@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS, sqlx::Type)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 #[serde(rename_all = "snake_case")]
@@ -77,8 +79,13 @@ impl CreateFrameworkConfigInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateFrameworkConfigInput {
+    #[ts(optional)]
     pub value: Option<String>,
+    #[ts(optional)]
     pub is_secret: Option<bool>,
+    #[ts(optional)]
     pub data_type: Option<DataType>,
-    pub description: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,
 }

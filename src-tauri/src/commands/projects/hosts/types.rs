@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 #[db_table("project_hosts")]
@@ -39,6 +41,9 @@ impl CreateProjectHostInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateProjectHostInput {
-    pub deploy_order: Option<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub deploy_order: Patch<i64>,
+    #[ts(optional)]
     pub enabled: Option<bool>,
 }

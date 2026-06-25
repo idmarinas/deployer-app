@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -9,9 +10,10 @@ use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza un host existente por su `id`.
 ///
-/// Solo se actualizan los campos presentes en `UpdateHostInput`.
-/// Si `password` es `None`, la contraseña actual no se modifica.
-/// Si `password` ya tiene el prefijo `ENC:`, no se vuelve a cifrar.
+/// Solo se incluyen en el `UPDATE` los campos presentes en `input`. `password`,
+/// `key_id` y `description` son `Patch<T>`: omitir la clave no la toca, `null`
+/// la borra, un valor la actualiza. El cifrado de `password` lo aplica
+/// `db::update_fields` automáticamente (vía `Host::encrypted_fields()`).
 #[tauri::command]
 pub async fn crud_update_host(
     app: AppHandle,
@@ -29,42 +31,45 @@ pub async fn crud_update_host(
         }
     };
 
-    // Obtener el host actual para fusionar con los cambios
-    let current = match db::fetch_one::<Host>(&pool, id, cache, &key).await {
-        Ok(Some(h)) => h,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "hosts.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "hosts.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    // Fusionar: usar el valor del input si está presente, o mantener el actual
-    let updated = Host {
-        id: current.id,
-        name: input.name.unwrap_or(current.name),
-        host: input.host.unwrap_or(current.host),
-        port: input.port.unwrap_or(current.port),
-        username: input.username.unwrap_or(current.username),
-        auth_type: input.auth_type.unwrap_or(current.auth_type),
-        // Si password es None en el input, conservar la actual (ya cifrada en BD)
-        password: input.password.or(current.password),
-        key_id: input.key_id.or(current.key_id),
-        description: input.description.or(current.description),
-        enabled: input.enabled.unwrap_or(current.enabled),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(name) = input.name {
+        fields.push(("name".to_string(), Value::String(name)));
+    }
+    if let Some(host) = input.host {
+        fields.push(("host".to_string(), Value::String(host)));
+    }
+    if let Some(port) = input.port {
+        fields.push(("port".to_string(), Value::from(port)));
+    }
+    if let Some(username) = input.username {
+        fields.push(("username".to_string(), Value::String(username)));
+    }
+    if let Some(auth_type) = input.auth_type {
+        fields.push((
+            "auth_type".to_string(),
+            serde_json::to_value(auth_type).unwrap_or(Value::Null),
+        ));
+    }
+    if let Some(enabled) = input.enabled {
+        fields.push(("enabled".to_string(), Value::Bool(enabled)));
+    }
+    if let Some(v) = input.password.to_field_value() {
+        fields.push(("password".to_string(), v));
+    }
+    if let Some(v) = input.key_id.to_field_value() {
+        fields.push(("key_id".to_string(), v));
+    }
+    if let Some(v) = input.description.to_field_value() {
+        fields.push(("description".to_string(), v));
+    }
 
-    match db::update::<Host>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("hosts.success.updated")),
+    match db::update_fields::<Host>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("hosts.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "hosts.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "hosts.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

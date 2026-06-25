@@ -1,13 +1,17 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
 use crate::commands::projects::hosts::helpers::open_crypto_context;
 use crate::commands::projects::hosts::types::{ProjectHost, UpdateProjectHostInput};
 use crate::commands::CommandResponse;
-use crate::db::{self, DbEntity, EncryptionConfigCache};
+use crate::db::{self, EncryptionConfigCache};
 
-/// Actualiza `deploy_order` y/o `enabled` de una asociación proyecto-host.
+/// Actualiza los campos mutables de una asociación proyecto-host.
+///
+/// `project_hosts` no tiene columna `updated_at`, así que esa tabla no tiene
+/// trigger de auto-actualización; `db::update_fields` funciona igual.
 #[tauri::command]
 pub async fn crud_update_project_host(
     app: AppHandle,
@@ -25,40 +29,21 @@ pub async fn crud_update_project_host(
         }
     };
 
-    let current = match db::fetch_one::<ProjectHost>(&pool, id, cache, &key).await {
-        Ok(Some(ph)) => ph,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "project_hosts.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "project_hosts.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let new_deploy_order = input.deploy_order.or(current.deploy_order);
-    let new_enabled = input.enabled.unwrap_or(current.enabled);
+    if let Some(enabled) = input.enabled {
+        fields.push(("enabled".to_string(), Value::Bool(enabled)));
+    }
+    if let Some(v) = input.deploy_order.to_field_value() {
+        fields.push(("deploy_order".to_string(), v));
+    }
 
-    // project_hosts no tiene updated_at: usamos query manual sin ese campo.
-    let sql = format!(
-        "UPDATE {} SET deploy_order = ?1, enabled = ?2 WHERE id = ?3",
-        ProjectHost::table_name()
-    );
-
-    match sqlx::query(&sql)
-        .bind(new_deploy_order)
-        .bind(new_enabled)
-        .bind(id)
-        .execute(&pool)
-        .await
-        .map_err(|e| format!("Error al actualizar project_host {}: {}", id, e))
-    {
-        Ok(_) => Ok(CommandResponse::ok_empty("project_hosts.success.updated")),
+    match db::update_fields::<ProjectHost>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("project_hosts.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "project_hosts.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "project_hosts.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

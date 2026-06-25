@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -25,41 +26,45 @@ pub async fn crud_update_project_task(
         }
     };
 
-    let current = match db::fetch_one::<ProjectTask>(&pool, id, cache, &key).await {
-        Ok(Some(pt)) => pt,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "project_tasks.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "project_tasks.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let updated = ProjectTask {
-        id: current.id,
-        project_id: current.project_id,
-        task_id: current.task_id,
-        order_execution: input.order_execution.unwrap_or(current.order_execution),
-        enabled: input.enabled.unwrap_or(current.enabled),
-        condition: input.condition.or(current.condition),
-        on_failure: input.on_failure.unwrap_or(current.on_failure),
-        config: input.config.or(current.config),
-        local_working_dir: input.local_working_dir.or(current.local_working_dir),
-        remote_working_dir: input.remote_working_dir.or(current.remote_working_dir),
-        retry_count: input.retry_count.or(current.retry_count),
-        retry_delay: input.retry_delay.or(current.retry_delay),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(order_execution) = input.order_execution {
+        fields.push(("order_execution".to_string(), Value::from(order_execution)));
+    }
+    if let Some(enabled) = input.enabled {
+        fields.push(("enabled".to_string(), Value::Bool(enabled)));
+    }
+    if let Some(on_failure) = input.on_failure {
+        fields.push((
+            "on_failure".to_string(),
+            serde_json::to_value(on_failure).unwrap_or(Value::Null),
+        ));
+    }
+    if let Some(v) = input.condition.to_field_value() {
+        fields.push(("condition".to_string(), v));
+    }
+    if let Some(v) = input.config.to_field_value() {
+        fields.push(("config".to_string(), v));
+    }
+    if let Some(v) = input.local_working_dir.to_field_value() {
+        fields.push(("local_working_dir".to_string(), v));
+    }
+    if let Some(v) = input.remote_working_dir.to_field_value() {
+        fields.push(("remote_working_dir".to_string(), v));
+    }
+    if let Some(v) = input.retry_count.to_field_value() {
+        fields.push(("retry_count".to_string(), v));
+    }
+    if let Some(v) = input.retry_delay.to_field_value() {
+        fields.push(("retry_delay".to_string(), v));
+    }
 
-    match db::update::<ProjectTask>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("project_tasks.success.updated")),
+    match db::update_fields::<ProjectTask>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("project_tasks.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "project_tasks.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "project_tasks.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

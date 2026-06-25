@@ -6,11 +6,13 @@ pub mod helpers;
 pub mod hosts;
 pub mod migrations;
 pub mod passkeys;
+pub mod patch;
 pub mod projects;
 pub mod response;
 pub mod store;
 pub mod tasks;
 
+pub use patch::Patch;
 pub use response::CommandResponse;
 
 /// Macro params! global - disponible en todos los módulos de commands.

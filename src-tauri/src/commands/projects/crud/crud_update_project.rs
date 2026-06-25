@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -8,6 +9,11 @@ use crate::commands::CommandResponse;
 use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza un proyecto existente por su `id`.
+///
+/// Solo se incluyen en el `UPDATE` los campos presentes en `input`: las claves
+/// ausentes no se tocan, y los campos `NULL`-ables (modelados como `Patch<T>`)
+/// pueden borrarse explícitamente enviando `null`. No requiere `fetch_one`
+/// previo: el `UPDATE` dinámico se construye directamente desde `input`.
 #[tauri::command]
 pub async fn crud_update_project(
     app: AppHandle,
@@ -25,37 +31,36 @@ pub async fn crud_update_project(
         }
     };
 
-    let current = match db::fetch_one::<Project>(&pool, id, cache, &key).await {
-        Ok(Some(project)) => project,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "projects.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "projects.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let updated = Project {
-        id: current.id,
-        name: input.name.unwrap_or(current.name),
-        description: input.description.or(current.description),
-        git_url: input.git_url.or(current.git_url),
-        local_working_dir: input.local_working_dir.or(current.local_working_dir),
-        remote_working_dir: input.remote_working_dir.or(current.remote_working_dir),
-        framework: input.framework.unwrap_or(current.framework),
-        enabled: input.enabled.unwrap_or(current.enabled),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(name) = input.name {
+        fields.push(("name".to_string(), Value::String(name)));
+    }
+    if let Some(framework) = input.framework {
+        fields.push(("framework".to_string(), Value::String(framework)));
+    }
+    if let Some(enabled) = input.enabled {
+        fields.push(("enabled".to_string(), Value::Bool(enabled)));
+    }
+    if let Some(v) = input.description.to_field_value() {
+        fields.push(("description".to_string(), v));
+    }
+    if let Some(v) = input.git_url.to_field_value() {
+        fields.push(("git_url".to_string(), v));
+    }
+    if let Some(v) = input.local_working_dir.to_field_value() {
+        fields.push(("local_working_dir".to_string(), v));
+    }
+    if let Some(v) = input.remote_working_dir.to_field_value() {
+        fields.push(("remote_working_dir".to_string(), v));
+    }
 
-    match db::update::<Project>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("projects.success.updated")),
+    match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("projects.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "projects.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "projects.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

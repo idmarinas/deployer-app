@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS, sqlx::Type)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 #[serde(rename_all = "snake_case")]
@@ -97,13 +99,24 @@ impl CreateTaskInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateTaskInput {
+    #[ts(optional)]
     pub name: Option<String>,
-    pub description: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,
+    #[ts(optional)]
     pub task_type: Option<TaskType>,
-    pub command: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub command: Patch<String>,
+    #[ts(optional)]
     pub timeout: Option<i64>,
+    #[ts(optional)]
     pub retry_count: Option<i64>,
+    #[ts(optional)]
     pub retry_delay: Option<i64>,
+    #[ts(optional)]
     pub enabled: Option<bool>,
+    #[ts(optional)]
     pub is_global: Option<bool>,
 }

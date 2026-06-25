@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -7,9 +8,12 @@ use crate::commands::deployments::rollbacks::types::{
     DeploymentRollback, UpdateDeploymentRollbackInput,
 };
 use crate::commands::CommandResponse;
-use crate::db::{self, DbEntity, EncryptionConfigCache};
+use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza el estado y campos de ciclo de vida de un rollback.
+///
+/// `deployment_rollbacks` no tiene columna `updated_at`, así que esa tabla no
+/// tiene trigger de auto-actualización; `db::update_fields` funciona igual.
 #[tauri::command]
 pub async fn crud_update_deployment_rollback(
     app: AppHandle,
@@ -27,42 +31,31 @@ pub async fn crud_update_deployment_rollback(
         }
     };
 
-    let current = match db::fetch_one::<DeploymentRollback>(&pool, id, cache, &key).await {
-        Ok(Some(r)) => r,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "deployment_rollbacks.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "deployment_rollbacks.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let new_status = input.status.unwrap_or(current.status);
-    let new_started_at = input.started_at.or(current.started_at);
-    let new_finished_at = input.finished_at.or(current.finished_at);
+    if let Some(status) = input.status {
+        fields.push((
+            "status".to_string(),
+            serde_json::to_value(status).unwrap_or(Value::Null),
+        ));
+    }
+    if let Some(v) = input.started_at.to_field_value() {
+        fields.push(("started_at".to_string(), v));
+    }
+    if let Some(v) = input.finished_at.to_field_value() {
+        fields.push(("finished_at".to_string(), v));
+    }
 
-    // deployment_rollbacks no tiene updated_at: query manual.
-    let sql = format!(
-        "UPDATE {} SET status = ?1, started_at = ?2, finished_at = ?3 WHERE id = ?4",
-        DeploymentRollback::table_name()
-    );
-
-    match sqlx::query(&sql)
-        .bind(new_status.to_string())
-        .bind(new_started_at)
-        .bind(new_finished_at)
-        .bind(id)
-        .execute(&pool)
+    match db::update_fields::<DeploymentRollback>(&pool, id, fields, cache, &key)
         .await
-        .map_err(|e| format!("Error al actualizar deployment_rollback {}: {}", id, e))
     {
-        Ok(_) => Ok(CommandResponse::ok_empty("deployment_rollbacks.success.updated")),
+        Ok(true) => Ok(CommandResponse::ok_empty(
+            "deployment_rollbacks.success.updated",
+        )),
+        Ok(false) => Ok(CommandResponse::err(
+            "deployment_rollbacks.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "deployment_rollbacks.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

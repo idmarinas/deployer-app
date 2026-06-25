@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -9,9 +10,9 @@ use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza una passkey existente por su `id`.
 ///
-/// Solo se actualizan los campos presentes en `UpdatePasskeyInput`.
-/// Si `key_content` o `passphrase` son `None`, se conservan los valores actuales
-/// (ya cifrados en BD) sin volver a cifrarlos.
+/// `passphrase`, `key_type`, `fingerprint` y `description` son `Patch<T>`:
+/// omitir la clave no la toca, `null` la borra, un valor la actualiza. El
+/// cifrado de `passphrase` lo aplica `db::update_fields` automáticamente.
 #[tauri::command]
 pub async fn crud_update_passkey(
     app: AppHandle,
@@ -29,37 +30,33 @@ pub async fn crud_update_passkey(
         }
     };
 
-    // Obtener la passkey actual para fusionar con los cambios
-    let current = match db::fetch_one::<Passkey>(&pool, id, cache, &key).await {
-        Ok(Some(p)) => p,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "passkeys.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "passkeys.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let updated = Passkey {
-        id: current.id,
-        name: input.name.unwrap_or(current.name),
-        key_content: input.key_content.unwrap_or(current.key_content),
-        passphrase: input.passphrase.or(current.passphrase),
-        key_type: input.key_type.or(current.key_type),
-        fingerprint: input.fingerprint.or(current.fingerprint),
-        description: input.description.or(current.description),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(name) = input.name {
+        fields.push(("name".to_string(), Value::String(name)));
+    }
+    if let Some(key_content) = input.key_content {
+        fields.push(("key_content".to_string(), Value::String(key_content)));
+    }
+    if let Some(v) = input.passphrase.to_field_value() {
+        fields.push(("passphrase".to_string(), v));
+    }
+    if let Some(v) = input.key_type.to_field_value() {
+        fields.push(("key_type".to_string(), v));
+    }
+    if let Some(v) = input.fingerprint.to_field_value() {
+        fields.push(("fingerprint".to_string(), v));
+    }
+    if let Some(v) = input.description.to_field_value() {
+        fields.push(("description".to_string(), v));
+    }
 
-    match db::update::<Passkey>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("passkeys.success.updated")),
+    match db::update_fields::<Passkey>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("passkeys.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "passkeys.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "passkeys.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

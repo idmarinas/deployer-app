@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 #[allow(unused_imports)]
 pub use crate::commands::deployments::types::DeploymentStatus;
 
@@ -111,12 +113,26 @@ impl CreateDeploymentExecutionInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateDeploymentExecutionInput {
+    #[ts(optional)]
     pub status: Option<ExecutionStatus>,
-    pub exit_code: Option<i64>,
-    pub output: Option<String>,
-    pub error_message: Option<String>,
-    pub started_at: Option<String>,
-    pub finished_at: Option<String>,
-    pub duration_seconds: Option<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub exit_code: Patch<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub output: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub error_message: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub started_at: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub finished_at: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub duration_seconds: Patch<i64>,
+    #[ts(optional)]
     pub retry_attempt: Option<i64>,
 }

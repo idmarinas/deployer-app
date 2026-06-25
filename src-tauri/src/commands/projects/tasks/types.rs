@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 // ============================================================================
 // TaskConfig — configuración específica por TaskType, serializada como JSON
 // en project_tasks.config
@@ -142,13 +144,28 @@ impl CreateProjectTaskInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateProjectTaskInput {
+    #[ts(optional)]
     pub order_execution: Option<i64>,
+    #[ts(optional)]
     pub enabled: Option<bool>,
-    pub condition: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub condition: Patch<String>,
+    #[ts(optional)]
     pub on_failure: Option<OnFailure>,
-    pub config: Option<String>,
-    pub local_working_dir: Option<String>,
-    pub remote_working_dir: Option<String>,
-    pub retry_count: Option<i64>,
-    pub retry_delay: Option<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub config: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub local_working_dir: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub remote_working_dir: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub retry_count: Patch<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub retry_delay: Patch<i64>,
 }

@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 // ============================================================================
 // Enum DeploymentStatus — compartido con deployment_rollbacks
 // ============================================================================
@@ -105,9 +107,18 @@ impl CreateDeploymentInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateDeploymentInput {
+    #[ts(optional)]
     pub status: Option<DeploymentStatus>,
-    pub started_at: Option<String>,
-    pub finished_at: Option<String>,
-    pub duration_seconds: Option<i64>,
-    pub notes: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub started_at: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub finished_at: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub duration_seconds: Patch<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub notes: Patch<String>,
 }

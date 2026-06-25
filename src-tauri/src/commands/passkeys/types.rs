@@ -3,6 +3,8 @@ use ts_rs::TS;
 
 use deployer_macros::DbEntity;
 
+use crate::commands::Patch;
+
 // ============================================================================
 // Enum KeyType
 // ============================================================================
@@ -100,14 +102,21 @@ impl CreatePasskeyInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdatePasskeyInput {
+    #[ts(optional)]
     pub name: Option<String>,
-    /// Si es `None`, no se modifica el contenido actual.
-    /// Si es `Some("valor")`, se cifra y se guarda.
+    /// `NOT NULL` en BD: omitir = no modificar; valor = sustituir y volver a cifrar.
+    #[ts(optional)]
     pub key_content: Option<String>,
-    /// Si es `None`, no se modifica la passphrase actual.
-    /// Si es `Some("")`, se elimina la passphrase.
-    pub passphrase: Option<String>,
-    pub key_type: Option<KeyType>,
-    pub fingerprint: Option<String>,
-    pub description: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub passphrase: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub key_type: Patch<KeyType>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub fingerprint: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,
 }

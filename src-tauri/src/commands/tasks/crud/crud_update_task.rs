@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -25,39 +26,45 @@ pub async fn crud_update_task(
         }
     };
 
-    let current = match db::fetch_one::<Task>(&pool, id, cache, &key).await {
-        Ok(Some(t)) => t,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "tasks.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "tasks.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let updated = Task {
-        id: current.id,
-        name: input.name.unwrap_or(current.name),
-        description: input.description.or(current.description),
-        task_type: input.task_type.unwrap_or(current.task_type),
-        command: input.command.or(current.command),
-        timeout: input.timeout.unwrap_or(current.timeout),
-        retry_count: input.retry_count.unwrap_or(current.retry_count),
-        retry_delay: input.retry_delay.unwrap_or(current.retry_delay),
-        enabled: input.enabled.unwrap_or(current.enabled),
-        is_global: input.is_global.unwrap_or(current.is_global),
-        created_at: current.created_at,
-        updated_at: current.updated_at,
-    };
+    if let Some(name) = input.name {
+        fields.push(("name".to_string(), Value::String(name)));
+    }
+    if let Some(task_type) = input.task_type {
+        fields.push((
+            "task_type".to_string(),
+            serde_json::to_value(task_type).unwrap_or(Value::Null),
+        ));
+    }
+    if let Some(timeout) = input.timeout {
+        fields.push(("timeout".to_string(), Value::from(timeout)));
+    }
+    if let Some(retry_count) = input.retry_count {
+        fields.push(("retry_count".to_string(), Value::from(retry_count)));
+    }
+    if let Some(retry_delay) = input.retry_delay {
+        fields.push(("retry_delay".to_string(), Value::from(retry_delay)));
+    }
+    if let Some(enabled) = input.enabled {
+        fields.push(("enabled".to_string(), Value::Bool(enabled)));
+    }
+    if let Some(is_global) = input.is_global {
+        fields.push(("is_global".to_string(), Value::Bool(is_global)));
+    }
+    if let Some(v) = input.description.to_field_value() {
+        fields.push(("description".to_string(), v));
+    }
+    if let Some(v) = input.command.to_field_value() {
+        fields.push(("command".to_string(), v));
+    }
 
-    match db::update::<Task>(&pool, id, &updated, cache, &key).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("tasks.success.updated")),
+    match db::update_fields::<Task>(&pool, id, fields, cache, &key).await {
+        Ok(true) => Ok(CommandResponse::ok_empty("tasks.success.updated")),
+        Ok(false) => Ok(CommandResponse::err(
+            "tasks.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "tasks.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),

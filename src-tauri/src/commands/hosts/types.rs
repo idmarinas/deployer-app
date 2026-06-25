@@ -2,6 +2,8 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::commands::Patch;
+
 // ============================================================================
 // Enum AuthType
 // ============================================================================
@@ -110,16 +112,26 @@ impl CreateHostInput {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct UpdateHostInput {
+    #[ts(optional)]
     pub name: Option<String>,
+    #[ts(optional)]
     pub host: Option<String>,
+    #[ts(optional)]
     pub port: Option<i64>,
-    pub username: Option<String>, // None = no modificar, Some(v) = actualizar
+    #[ts(optional)]
+    pub username: Option<String>,
+    #[ts(optional)]
     pub auth_type: Option<AuthType>,
-    /// Si es `None`, no se modifica la contraseña actual.
-    /// Si es `Some("")`, se elimina la contraseña.
-    /// Si es `Some("valor")`, se cifra y se guarda.
-    pub password: Option<String>,
-    pub key_id: Option<i64>,
-    pub description: Option<String>,
+    /// `Unset` = no modificar; `Null` = eliminar la contraseña; `Value(v)` = cifrar y guardar.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub password: Patch<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub key_id: Patch<i64>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub description: Patch<String>,
+    #[ts(optional)]
     pub enabled: Option<bool>,
 }

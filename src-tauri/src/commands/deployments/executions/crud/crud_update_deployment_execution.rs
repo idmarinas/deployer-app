@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde_json::Value;
 use tauri::AppHandle;
 use tauri::State;
 
@@ -7,9 +8,12 @@ use crate::commands::deployments::executions::types::{
     DeploymentExecution, UpdateDeploymentExecutionInput,
 };
 use crate::commands::CommandResponse;
-use crate::db::{self, DbEntity, EncryptionConfigCache};
+use crate::db::{self, EncryptionConfigCache};
 
 /// Actualiza el estado y campos de ciclo de vida de una ejecución.
+///
+/// `deployment_executions` no tiene columna `updated_at`, así que esa tabla no
+/// tiene trigger de auto-actualización; `db::update_fields` funciona igual.
 #[tauri::command]
 pub async fn crud_update_deployment_execution(
     app: AppHandle,
@@ -27,54 +31,46 @@ pub async fn crud_update_deployment_execution(
         }
     };
 
-    let current = match db::fetch_one::<DeploymentExecution>(&pool, id, cache, &key).await {
-        Ok(Some(e)) => e,
-        Ok(None) => {
-            return Ok(CommandResponse::err(
-                "deployment_executions.errors.not_found",
-                HashMap::from([("id".to_string(), id.to_string())]),
-            ))
-        }
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "deployment_executions.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
-        }
-    };
+    let mut fields: Vec<(String, Value)> = Vec::new();
 
-    let new_status = input.status.unwrap_or(current.status);
-    let new_exit_code = input.exit_code.or(current.exit_code);
-    let new_output = input.output.or(current.output);
-    let new_error = input.error_message.or(current.error_message);
-    let new_started_at = input.started_at.or(current.started_at);
-    let new_finished_at = input.finished_at.or(current.finished_at);
-    let new_duration = input.duration_seconds.or(current.duration_seconds);
-    let new_retry = input.retry_attempt.unwrap_or(current.retry_attempt);
+    if let Some(status) = input.status {
+        fields.push((
+            "status".to_string(),
+            serde_json::to_value(status).unwrap_or(Value::Null),
+        ));
+    }
+    if let Some(retry_attempt) = input.retry_attempt {
+        fields.push(("retry_attempt".to_string(), Value::from(retry_attempt)));
+    }
+    if let Some(v) = input.exit_code.to_field_value() {
+        fields.push(("exit_code".to_string(), v));
+    }
+    if let Some(v) = input.output.to_field_value() {
+        fields.push(("output".to_string(), v));
+    }
+    if let Some(v) = input.error_message.to_field_value() {
+        fields.push(("error_message".to_string(), v));
+    }
+    if let Some(v) = input.started_at.to_field_value() {
+        fields.push(("started_at".to_string(), v));
+    }
+    if let Some(v) = input.finished_at.to_field_value() {
+        fields.push(("finished_at".to_string(), v));
+    }
+    if let Some(v) = input.duration_seconds.to_field_value() {
+        fields.push(("duration_seconds".to_string(), v));
+    }
 
-    // deployment_executions no tiene updated_at: query manual.
-    let sql = format!(
-        "UPDATE {} SET status = ?1, exit_code = ?2, output = ?3, error_message = ?4,
-         started_at = ?5, finished_at = ?6, duration_seconds = ?7, retry_attempt = ?8
-         WHERE id = ?9",
-        DeploymentExecution::table_name()
-    );
-
-    match sqlx::query(&sql)
-        .bind(new_status.to_string())
-        .bind(new_exit_code)
-        .bind(new_output)
-        .bind(new_error)
-        .bind(new_started_at)
-        .bind(new_finished_at)
-        .bind(new_duration)
-        .bind(new_retry)
-        .bind(id)
-        .execute(&pool)
+    match db::update_fields::<DeploymentExecution>(&pool, id, fields, cache, &key)
         .await
-        .map_err(|e| format!("Error al actualizar deployment_execution {}: {}", id, e))
     {
-        Ok(_) => Ok(CommandResponse::ok_empty("deployment_executions.success.updated")),
+        Ok(true) => Ok(CommandResponse::ok_empty(
+            "deployment_executions.success.updated",
+        )),
+        Ok(false) => Ok(CommandResponse::err(
+            "deployment_executions.errors.not_found",
+            HashMap::from([("id".to_string(), id.to_string())]),
+        )),
         Err(e) => Ok(CommandResponse::err(
             "deployment_executions.errors.update_failed",
             HashMap::from([("reason".to_string(), e)]),
