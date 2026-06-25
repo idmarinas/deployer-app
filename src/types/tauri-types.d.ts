@@ -220,13 +220,13 @@ export type TaskDependency = { id: number, task_id: number, depends_on_task_id: 
 
 export type TaskType = "command" | "upload_file" | "download_file" | "script";
 
-export type UpdateDeploymentExecutionInput = { status: ExecutionStatus | null, exit_code: number | null, output: string | null, error_message: string | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, retry_attempt: number | null, };
+export type UpdateDeploymentExecutionInput = { status?: ExecutionStatus, exit_code?: number | null, output?: string | null, error_message?: string | null, started_at?: string | null, finished_at?: string | null, duration_seconds?: number | null, retry_attempt?: number, };
 
-export type UpdateDeploymentInput = { status: DeploymentStatus | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, notes: string | null, };
+export type UpdateDeploymentInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, duration_seconds?: number | null, notes?: string | null, };
 
-export type UpdateDeploymentRollbackInput = { status: DeploymentStatus | null, started_at: string | null, finished_at: string | null, };
+export type UpdateDeploymentRollbackInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, };
 
-export type UpdateFrameworkConfigInput = { value: string | null, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
+export type UpdateFrameworkConfigInput = { value?: string, is_secret?: boolean, data_type?: DataType, description?: string | null, };
 
 export type UpdateGlobalVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
 
@@ -242,14 +242,14 @@ export type UpdatePasskeyInput = { name?: string,
  */
 key_content?: string, passphrase?: string | null, key_type?: KeyType | null, fingerprint?: string | null, description?: string | null, };
 
-export type UpdateProjectHostInput = { deploy_order: number | null, enabled: boolean | null, };
+export type UpdateProjectHostInput = { deploy_order?: number | null, enabled?: boolean, };
 
 export type UpdateProjectInput = { name?: string, description?: string | null, git_url?: string | null, framework?: string, local_working_dir?: string | null, remote_working_dir?: string | null, enabled?: boolean, };
 
-export type UpdateProjectTaskInput = { order_execution: number | null, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
+export type UpdateProjectTaskInput = { order_execution?: number, enabled?: boolean, condition?: string | null, on_failure?: OnFailure, config?: string | null, local_working_dir?: string | null, remote_working_dir?: string | null, retry_count?: number | null, retry_delay?: number | null, };
 
 export type UpdateProjectVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
 
 export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
 
-export type UpdateTaskInput = { name: string | null, description: string | null, task_type: TaskType | null, command: string | null, timeout: number | null, retry_count: number | null, retry_delay: number | null, enabled: boolean | null, is_global: boolean | null, };
+export type UpdateTaskInput = { name?: string, description?: string | null, task_type?: TaskType, command?: string | null, timeout?: number, retry_count?: number, retry_delay?: number, enabled?: boolean, is_global?: boolean, };
