@@ -10,7 +10,7 @@
 		"tauri": "tauri",
 		"i18n:types": "bun scripts/generate-i18n-schema.ts",
 		"dev:db:introspect": "drizzle-kit introspect --dialect=sqlite --out=./drizzle --url=./drizzle/dev.sqlite",
-		"dev:db:create": "sqlx database create --database-url=sqlite:./drizzle/dev.sqlite",
+		"dev:db:create": "sqlx database drop -y -D=sqlite:./drizzle/dev.sqlite && sqlx database create -D=sqlite:./drizzle/dev.sqlite",
 		"dev:db:migrate": "sqlx migrate run --database-url=sqlite:./drizzle/dev.sqlite --source=./src-tauri/migrations/",
 		"dev:db:generate": "bun run dev:db:create && bun run dev:db:migrate && bun run dev:db:introspect"
 	},
