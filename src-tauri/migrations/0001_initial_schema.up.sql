@@ -419,7 +419,6 @@ CREATE INDEX deployment_rollbacks_idx_status ON deployment_rollbacks (status);
 
 CREATE TRIGGER passkeys_trg_set_updated_at
 AFTER UPDATE ON passkeys
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE passkeys SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -427,7 +426,6 @@ END;
 
 CREATE TRIGGER hosts_trg_set_updated_at
 AFTER UPDATE ON hosts
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -435,7 +433,6 @@ END;
 
 CREATE TRIGGER global_variables_trg_set_updated_at
 AFTER UPDATE ON global_variables
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE global_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -443,7 +440,6 @@ END;
 
 CREATE TRIGGER projects_trg_set_updated_at
 AFTER UPDATE ON projects
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -451,7 +447,6 @@ END;
 
 CREATE TRIGGER project_variables_trg_set_updated_at
 AFTER UPDATE ON project_variables
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE project_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -459,7 +454,6 @@ END;
 
 CREATE TRIGGER framework_configs_trg_set_updated_at
 AFTER UPDATE ON framework_configs
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE framework_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -467,7 +461,6 @@ END;
 
 CREATE TRIGGER tasks_trg_set_updated_at
 AFTER UPDATE ON tasks
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
@@ -475,7 +468,6 @@ END;
 
 CREATE TRIGGER project_tasks_trg_set_updated_at
 AFTER UPDATE ON project_tasks
-FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE project_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
