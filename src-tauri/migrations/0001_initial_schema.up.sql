@@ -395,7 +395,7 @@ CREATE TRIGGER deployer_settings_trg_set_updated_at
 AFTER UPDATE ON deployer_settings
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-UPDATE deployer_settings SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+UPDATE deployer_settings SET updated_at = CURRENT_TIMESTAMP WHERE key = OLD.key;
 END;
 
 CREATE TRIGGER encryption_config_trg_set_updated_at
