@@ -216,12 +216,35 @@ match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
 }
 ```
 
-`db::update_fields` (en `db/crud.rs`) construye un `UPDATE ... SET` únicamente con las columnas presentes en `fields` (principio de "dirty tracking", igual que Doctrine/Drizzle: solo se tocan las columnas indicadas explícitamente), aplica cifrado igual que `db::update`, y devuelve `Ok(false)` si no existe ninguna fila con ese `id` (en vez de error).
+`db::update_fields` (en `db/crud.rs`) construye un `UPDATE ... SET` únicamente con las columnas presentes en `fields` (principio de "dirty tracking", igual que Doctrine/Drizzle: solo se tocan las columnas indicadas explícitamente), aplica cifrado igual que `db::update`, y devuelve `Ok(false)` si no existe ninguna fila con ese `id` (en vez de error). **Nunca incluye `updated_at`** en el `SET`: esa columna se actualiza sola vía trigger SQL (ver §3.2), así que `update_fields` sirve igual para tablas con o sin esa columna.
 
 ### Estado de la migración
 
-- ✅ `projects` (prueba de concepto, ya aplicado).
-- ⏳ Pendiente replicar a: `hosts`, `passkeys`, `global_variables`, `project_variables`, `tasks`, `project_tasks`, `project_hosts`, `framework_configs`, `deployments`, `deployment_executions`, `deployment_rollbacks`, `task_dependencies` (cualquier campo `Option<T>` que mapee a una columna `NULL`-able en SQLite).
+- ✅ Migradas a `Patch<T>` + `db::update_fields`: `projects`, `hosts`, `passkeys`, `global_variables`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`, `project_hosts`, `deployments`, `deployment_executions`, `deployment_rollbacks`.
+- `task_dependencies` no existe aún como entidad (solo mencionado como futuro), no aplica todavía.
+- Nota especial: `global_variables.value`, `project_variables.value` y `framework_configs.value` tienen `#[db_conditional_encrypt(condition = "is_secret")]`. Si se actualiza `value` sin enviar `is_secret` en el mismo `input`, el comando consulta el `is_secret` actual en BD antes de construir `fields`, para que `apply_encryption` evalúe bien la condición (que solo mira el `Vec<(String, Value)>` que se le pasa, no el resto de la fila).
+
+---
+
+## 3.2 `updated_at` automático vía trigger SQL
+
+Las 8 tablas con columna `updated_at` (`passkeys`, `hosts`, `global_variables`, `projects`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`) tienen un trigger `AFTER UPDATE` en la migración (`0001_initial_schema.up.sql`):
+
+```sql
+CREATE TRIGGER projects_trg_set_updated_at
+AFTER UPDATE ON projects
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+```
+
+La condición `WHEN NEW.updated_at = OLD.updated_at` evita la recursión infinita: la propia `UPDATE` del trigger vuelve a disparar el trigger, pero en esa segunda pasada `NEW.updated_at` (el `CURRENT_TIMESTAMP` recién puesto) ya no coincide con `OLD.updated_at`, así que la condición es falsa y no se repite.
+
+Gracias a esto, **el código Rust nunca toca `updated_at`** en ningún `UPDATE`: ni `db::update_fields` lo añade, ni hace falta una variante separada para las tablas sin esa columna (`project_hosts`, `task_dependencies`, `deployments`, `deployment_executions`, `deployment_rollbacks` simplemente no tienen trigger y `update_fields` funciona igual para ellas).
+
+Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspondiente en la migración (y el `DROP TRIGGER` en el `.down.sql`).
 
 ---
 
