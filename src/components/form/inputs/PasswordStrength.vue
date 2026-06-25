@@ -29,10 +29,10 @@ function checkStrength(str: string) {
 	if (!props.checkStrength || (props.optional && str.length === 0)) return []
 
 	const requirements = [
-		{ regex: /.{8,}/, text: t('schemas.form.password.strength.req.length') },
-		{ regex: /\d/, text: t('schemas.form.password.strength.req.number') },
-		{ regex: /[a-z]/, text: t('schemas.form.password.strength.req.lower') },
-		{ regex: /[A-Z]/, text: t('schemas.form.password.strength.req.upper') },
+		{ regex: /.{8,}/, text: t('form.shared.password.strength.req.length') },
+		{ regex: /\d/, text: t('form.shared.password.strength.req.number') },
+		{ regex: /[a-z]/, text: t('form.shared.password.strength.req.lower') },
+		{ regex: /[A-Z]/, text: t('form.shared.password.strength.req.upper') },
 	]
 
 	return requirements.map(req => ({ met: req.regex.test(str), text: req.text }))
@@ -50,10 +50,10 @@ const color = computed(() => {
 })
 
 const text = computed(() => {
-	if (score.value === 0) return t('schemas.form.password.strength.score._0')
-	if (score.value <= 2) return t('schemas.form.password.strength.score._2')
-	if (score.value === 3) return t('schemas.form.password.strength.score._3')
-	return t('schemas.form.password.strength.score._4')
+	if (score.value === 0) return t('form.shared.password.strength.score._0')
+	if (score.value <= 2) return t('form.shared.password.strength.score._2')
+	if (score.value === 3) return t('form.shared.password.strength.score._3')
+	return t('form.shared.password.strength.score._4')
 })
 </script>
 
@@ -62,7 +62,7 @@ const text = computed(() => {
 		<UFormField :name="props.name" :label="props.label" :help="props.help" :required="!optional">
 			<UInput
 				v-model="password"
-				:placeholder="t('schemas.form.placeholder.password.input')"
+				:placeholder="t('form.shared.placeholder.password.input')"
 				autocomplete="off"
 				:color="color"
 				:type="show ? 'text' : 'password'"
@@ -78,7 +78,7 @@ const text = computed(() => {
 						variant="link"
 						size="sm"
 						:icon="show ? 'i-tabler-eye-off' : 'i-tabler-eye'"
-						:aria-label="show ? t('schemas.form.hide.password') : t('schemas.form.show.password')"
+						:aria-label="show ? t('form.shared.hide.password') : t('form.shared.show.password')"
 						:aria-pressed="show"
 						aria-controls="password"
 						:disabled="disabled"
@@ -99,7 +99,7 @@ const text = computed(() => {
 
 			<p id="password-strength" class="text-sm font-medium">
 				<em>{{ text }}</em
-				>. {{ t('schemas.form.password.strength.label') }}:
+				>. {{ t('form.shared.password.strength.label') }}:
 			</p>
 
 			<ul class="space-y-1" aria-label="Password requirements">
@@ -117,8 +117,8 @@ const text = computed(() => {
 							-
 							{{
 								req.met
-									? t('schemas.form.password.strength.req.meet')
-									: t('schemas.form.password.strength.req.not_meet')
+									? t('form.shared.password.strength.req.meet')
+									: t('form.shared.password.strength.req.not_meet')
 							}}
 						</span>
 					</span>

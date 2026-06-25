@@ -158,7 +158,7 @@ function useToolbarContent(
 				},
 			}),
 			h('span', { class: 'flex flex-col' }, [
-				h('span', {}, t(`schemas.${manager.moduleName}.form.title.${type}`)),
+				h('span', {}, t(`form.${manager.moduleName}.title.${type}`)),
 				h(
 					'span',
 					{

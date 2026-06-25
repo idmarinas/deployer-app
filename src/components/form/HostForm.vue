@@ -26,7 +26,7 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
 </script>
 
 <template>
-    <UFormField name="name" :label="t('schemas.hosts.form.name.label')" :help="t('schemas.hosts.form.name.help')" required>
+    <UFormField name="name" :label="t('form.hosts.name.label')" :help="t('form.hosts.name.help')" required>
       <UInput v-model="state.name" autocomplete="off" class="w-full" :ui="{ trailing: 'pointer-events-none' }" maxlength="120">
         <template #trailing>
           <div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
@@ -38,9 +38,9 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
 
     <UFormField
       name="description"
-      :label="t('schemas.hosts.form.description.label')"
-      :help="t('schemas.hosts.form.description.help')"
-      :hint="t('schemas.form.hint.optional')"
+      :label="t('form.hosts.description.label')"
+      :help="t('form.hosts.description.help')"
+      :hint="t('form.shared.hint.optional')"
     >
       <UTextarea v-model="state.description" class="w-full" :ui="{ trailing: 'pointer-events-none' }" maxlength="1000">
         <template #trailing>
@@ -51,31 +51,31 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
       </UTextarea>
     </UFormField>
 
-    <UFormField name="host" :label="t('schemas.hosts.form.host.label')" :help="t('schemas.hosts.form.host.help')" required>
+    <UFormField name="host" :label="t('form.hosts.host.label')" :help="t('form.hosts.host.help')" required>
       <UInput v-model="state.host" autocomplete="on" class="w-full" />
     </UFormField>
 
-    <UFormField name="port" :label="t('schemas.hosts.form.port.label')" :help="t('schemas.hosts.form.port.help')" required>
+    <UFormField name="port" :label="t('form.hosts.port.label')" :help="t('form.hosts.port.help')" required>
       <UInputNumber v-model="state.port" autocomplete="on" class="w-full" :min="0" :max="65535" />
     </UFormField>
 
     <UFormField
       name="username"
-      :label="t('schemas.hosts.form.username.label')"
-      :help="t('schemas.hosts.form.username.help')"
+      :label="t('form.hosts.username.label')"
+      :help="t('form.hosts.username.help')"
       required
     >
       <UInput v-model="state.username" autocomplete="on" class="w-full" />
     </UFormField>
 
     <div class="flex flex-col gap-3">
-      <UFormField name="auth_type" :label="t('schemas.hosts.form.auth_type.label')" :help="t('schemas.hosts.form.auth_type.help')" required>
+      <UFormField name="auth_type" :label="t('form.hosts.auth_type.label')" :help="t('form.hosts.auth_type.help')" required>
         <USelect
           v-model="state.auth_type"
           value-key="id"
           :items="[
-            {label: t('schemas.hosts.form.auth_type.select.password'), id: 'password'},
-            {label: t('schemas.hosts.form.auth_type.select.key'), id: 'key'}
+            {label: t('form.hosts.auth_type.select.password'), id: 'password'},
+            {label: t('form.hosts.auth_type.select.key'), id: 'key'}
           ]"
           autocomplete="on"
           class="w-full"
@@ -95,14 +95,14 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
         <PasswordStrength
           name="password"
           v-model="state.password"
-          :label="t('schemas.hosts.form.password.label')"
-          :help="t('schemas.hosts.form.password.help')"
+          :label="t('form.hosts.password.label')"
+          :help="t('form.hosts.password.help')"
           :required="state.auth_type === 'password'"
           :optional="state.auth_type !== 'password'"
         />
       </UForm>
       <UForm v-else-if="state.auth_type === 'key'" :disabled="isLoading" :schema="authKeySchema" class="space-y-4" nested>
-        <UFormField name="key_id" :label="t('schemas.hosts.form.key.label')" :help="t('schemas.hosts.form.key.help')" :required="state.auth_type === 'key'">
+        <UFormField name="key_id" :label="t('form.hosts.key.label')" :help="t('form.hosts.key.help')" :required="state.auth_type === 'key'">
           <SelectKeypass v-model="state.key_id" class="w-full" />
         </UFormField>
       </UForm>

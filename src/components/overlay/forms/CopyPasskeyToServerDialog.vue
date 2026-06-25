@@ -64,15 +64,15 @@ async function onSubmit(event: FormSubmitEvent<Partial<ExportPublicKeyInput>>) {
 
 <template>
     <UModal
-      :title="t('schemas.passkeys.copy_to_host.title')"
-      :description="t('schemas.passkeys.copy_to_host.description', { name: props.passkey.name})"
+      :title="t('form.passkeys.copy_to_host.title')"
+      :description="t('form.passkeys.copy_to_host.description', { name: props.passkey.name})"
       :close="false"
       :dismissible="false"
       :ui="{ content: 'max-w-xl' }"
     >
       <template #body>
         <UForm ref="form-copy-passkey" :state="state as any" :schema="passkeyToServerSchema" :disabled="isLoading" class="flex flex-col gap-4" @submit="onSubmit">
-          <UFormField name="host_id" :label="t('schemas.passkeys.form.server.label')" :help="t('schemas.passkeys.form.server.help')" required>
+          <UFormField name="host_id" :label="t('form.passkeys.server.label')" :help="t('form.passkeys.server.help')" required>
             <SelectHost v-model="state.host_id" class="w-full" />
           </UFormField>
         </UForm>

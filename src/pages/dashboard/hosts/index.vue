@@ -54,8 +54,8 @@ const columns: TableColumn<Host>[] = [
 		cell({ row }) {
 			const label =
 				row.getValue('auth_type') === 'password'
-					? t('schemas.hosts.form.auth_type.select.password')
-					: t('schemas.hosts.form.auth_type.select.key')
+					? t('form.hosts.auth_type.select.password')
+					: t('form.hosts.auth_type.select.key')
 			const color = row.getValue('auth_type') === 'password' ? 'neutral' : 'info'
 			const icon = row.getValue('auth_type') === 'password' ? 'i-tabler-password-user' : 'i-tabler-key'
 

@@ -96,7 +96,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 
 		toast.add({
 			title: t('overlays.toast.title.success'),
-			description: t('schemas.passkeys.added', { name: passkey.name }),
+			description: t('notifications.passkeys.added', { name: passkey.name }),
 			color: 'success',
 		})
 		isLoading.value = false

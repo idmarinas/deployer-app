@@ -23,7 +23,7 @@ const { data: items, isLoading } = useHostSelectPopulate()
     :items="items as SelectMenuItemExtends[]"
     :loading="isLoading"
     :disabled="isLoading"
-    :placeholder="t('schemas.form.placeholder.hosts.select')"
+    :placeholder="t('form.shared.placeholder.hosts.select')"
     icon="i-tabler-server"
   >
     <template #item-leading="{ item }">

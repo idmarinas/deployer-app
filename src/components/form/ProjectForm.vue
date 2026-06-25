@@ -24,8 +24,8 @@ const { projectSchema: schema } = useProjectSchema()
 <template>
 	<UFormField
 		name="name"
-		:label="t('schemas.passkeys.form.name.label')"
-		:help="t('schemas.passkeys.form.name.help')"
+		:label="t('form.projects.name.label')"
+		:help="t('form.projects.name.help')"
 		required
 	>
 		<UInput
@@ -45,9 +45,9 @@ const { projectSchema: schema } = useProjectSchema()
 
 	<UFormField
 		name="description"
-		:label="t('schemas.passkeys.form.description.label')"
-		:help="t('schemas.passkeys.form.description.help')"
-		:hint="t('schemas.form.hint.optional')"
+		:label="t('form.projects.description.label')"
+		:help="t('form.projects.description.help')"
+		:hint="t('form.shared.hint.optional')"
 	>
 		<UTextarea
 			v-model="state.description"
@@ -65,40 +65,40 @@ const { projectSchema: schema } = useProjectSchema()
 
 	<UFormField
 		name="git_url"
-		:label="t('schemas.projects.form.git_url.label')"
-		:description="t('schemas.projects.form.git_url.description')"
-		:help="t('schemas.projects.form.git_url.help')"
+		:label="t('form.projects.git_url.label')"
+		:description="t('form.projects.git_url.description')"
+		:help="t('form.projects.git_url.help')"
 		required
 	>
 		<UInput type="url" v-model="state.git_url" class="w-full" autocomplete="off" />
 	</UFormField>
 	<UFormField
 		name="framework"
-		:label="t('schemas.projects.form.framework.label')"
-		:help="t('schemas.projects.form.framework.help')"
+		:label="t('form.projects.framework.label')"
+		:help="t('form.projects.framework.help')"
 		required
 	>
 		<USelect
 			v-model="state.framework"
 			:items="[
 				{
-					label: t('schemas.projects.form.framework.select.symfony.label'),
-					description: t('schemas.projects.form.framework.select.symfony.description'),
+					label: t('form.projects.framework.select.symfony.label'),
+					description: t('form.projects.framework.select.symfony.description'),
 					value: 'symfony',
 				},
 				{
-					label: t('schemas.projects.form.framework.select.laravel.label'),
-					description: t('schemas.projects.form.framework.select.laravel.description'),
+					label: t('form.projects.framework.select.laravel.label'),
+					description: t('form.projects.framework.select.laravel.description'),
 					value: 'laravel',
 				},
 				{
-					label: t('schemas.projects.form.framework.select.nextjs.label'),
-					description: t('schemas.projects.form.framework.select.nextjs.description'),
+					label: t('form.projects.framework.select.nextjs.label'),
+					description: t('form.projects.framework.select.nextjs.description'),
 					value: 'nextjs',
 				},
 				{
-					label: t('schemas.projects.form.framework.select.generic.label'),
-					description: t('schemas.projects.form.framework.select.generic.description'),
+					label: t('form.projects.framework.select.generic.label'),
+					description: t('form.projects.framework.select.generic.description'),
 					value: 'generic',
 				},
 			]"
@@ -109,8 +109,8 @@ const { projectSchema: schema } = useProjectSchema()
 
 	<UFormField
 		name="local_working_dir"
-		:label="t('schemas.projects.form.local_working_dir.label')"
-		:help="t('schemas.projects.form.local_working_dir.help')"
+		:label="t('form.projects.local_working_dir.label')"
+		:help="t('form.projects.local_working_dir.help')"
 		required
 	>
 		<UFieldGroup class="w-full">
@@ -128,8 +128,8 @@ const { projectSchema: schema } = useProjectSchema()
 
 	<UFormField
 		name="remote_working_dir"
-		:label="t('schemas.projects.form.remote_working_dir.label')"
-		:help="t('schemas.projects.form.remote_working_dir.help')"
+		:label="t('form.projects.remote_working_dir.label')"
+		:help="t('form.projects.remote_working_dir.help')"
 		required
 	>
 		<UInput v-model="state.remote_working_dir" class="w-full" autocomplete="off" />

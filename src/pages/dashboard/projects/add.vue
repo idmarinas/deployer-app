@@ -52,7 +52,7 @@ async function onSubmit(event: FormSubmitEvent<ProjectSchema>) {
 		await queryCache.invalidateQueries({ key: ['projects'] })
 		toast.add({
 			title: t('overlays.toast.title.success'),
-			description: t('schemas.projects.added', { name: input.name }),
+			description: t('notifications.projects.added', { name: input.name }),
 			color: 'success',
 		})
 		isLoading.value = false

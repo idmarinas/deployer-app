@@ -16,6 +16,6 @@ const { data: items, isLoading } = useSelectPasskeys()
     :items="items as SelectMenuItem[]"
     :loading="isLoading"
     :disabled="isLoading"
-    :placeholder="t('schemas.form.placeholder.passkeys.select')"
+    :placeholder="t('form.shared.placeholder.passkeys.select')"
   />
 </template>

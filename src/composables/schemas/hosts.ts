@@ -8,10 +8,10 @@ export function useHostSchema(hostId?: number) {
   const { count } = useQuery()
 
   const hostSchema = z.object({
-    name: z.string(t('schemas.hosts.validation.name.required'))
+    name: z.string(t('validation.hosts.name.required'))
       .normalize()
-      .min(3, t('schemas.hosts.validation.name.min'))
-      .max(120, t('schemas.hosts.validation.name.max'))
+      .min(3, t('validation.hosts.name.min'))
+      .max(120, t('validation.hosts.name.max'))
       .refine(async (value) => {
         let query = `name = '${value}'`
         if (hostId) {
@@ -19,26 +19,26 @@ export function useHostSchema(hostId?: number) {
         }
         const exist = await count(DB_TABLES.HOSTS, query)
         return exist <= 0
-      }, t('schemas.hosts.validation.name.not_unique')
+      }, t('validation.hosts.name.not_unique')
       ),
-    description: z.string().max(1000, t('schemas.hosts.validation.description.max')).optional(),
-    host: z.xor([z.ipv4(t('schemas.hosts.validation.host.ipv4')), z.ipv6(t('schemas.hosts.validation.host.ipv6'))], t('schemas.hosts.validation.host.required')),
-    port: z.number().min(0, t('schemas.hosts.validation.port.min')).max(65535, t('schemas.hosts.validation.port.max')),
-    username: z.string().nonempty(t('schemas.hosts.validation.username.required')),
-    auth_type: z.enum(['password', 'key'], t('schemas.hosts.validation.auth_type.required')),
+    description: z.string().max(1000, t('validation.hosts.description.max')).optional(),
+    host: z.xor([z.ipv4(t('validation.hosts.host.ipv4')), z.ipv6(t('validation.hosts.host.ipv6'))], t('validation.hosts.host.required')),
+    port: z.number().min(0, t('validation.hosts.port.min')).max(65535, t('validation.hosts.port.max')),
+    username: z.string().nonempty(t('validation.hosts.username.required')),
+    auth_type: z.enum(['password', 'key'], t('validation.hosts.auth_type.required')),
     enabled: z.boolean().default(false)
   })
 
   const authPasswordSchema = z.object({
     password: hostId
       ? z.string().optional()
-      : z.string().nonempty(t('schemas.hosts.validation.password.required')),
+      : z.string().nonempty(t('validation.hosts.password.required')),
     key_id: z.null().optional(),
   })
 
   const authKeySchema = z.object({
     password: z.null().optional(),
-    key_id: z.number().min(1, t('schemas.hosts.validation.key.required')),
+    key_id: z.number().min(1, t('validation.hosts.key.required')),
   })
 
   return {

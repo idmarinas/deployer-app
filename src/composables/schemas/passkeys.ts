@@ -8,10 +8,10 @@ export function usePasskeySchema(passkeyId?: number) {
   const { count } = useQuery()
 
   const passkeySchema = z.object({
-    name: z.string(t('schemas.passkeys.validation.name.required'))
+    name: z.string(t('validation.passkeys.name.required'))
       .normalize()
-      .min(3, t('schemas.passkeys.validation.name.min'))
-      .max(120, t('schemas.passkeys.validation.name.max'))
+      .min(3, t('validation.passkeys.name.min'))
+      .max(120, t('validation.passkeys.name.max'))
       .refine(async (value) => {
         let query = `name = '${value}'`
         if (passkeyId) {
@@ -19,19 +19,19 @@ export function usePasskeySchema(passkeyId?: number) {
         }
         const exist = await count(DB_TABLES.PASSKEYS, query)
         return exist <= 0
-      }, t('schemas.passkeys.validation.name.not_unique')
+      }, t('validation.passkeys.name.not_unique')
       ),
-    description: z.string().normalize().max(1000, t('schemas.passkeys.validation.description.max')).optional(),
-    key_type: z.enum(["rsa", "ed25519", "ecdsa"], t('schemas.passkeys.validation.key_type.required')),
-    key_content: z.string(t('schemas.passkeys.validation.key_content.required')).normalize().nonempty(t('schemas.passkeys.validation.key_content.required')),
+    description: z.string().normalize().max(1000, t('validation.passkeys.description.max')).optional(),
+    key_type: z.enum(["rsa", "ed25519", "ecdsa"], t('validation.passkeys.key_type.required')),
+    key_content: z.string(t('validation.passkeys.key_content.required')).normalize().nonempty(t('validation.passkeys.key_content.required')),
     passphrase: z.string().normalize().optional(),
     fingerprint: z.string().optional(),
   })
 
   const passkeyToServerSchema = z.object({
-    passkey_id: z.number(t('schemas.passkeys.validation.passkey_id.required')),
-    host_id: z.number(t('schemas.passkeys.validation.server.required')),
-    action: z.enum(['add', 'remove'], t('schemas.passkeys.validation.action.required')),
+    passkey_id: z.number(t('validation.passkeys.passkey_id.required')),
+    host_id: z.number(t('validation.passkeys.server.required')),
+    action: z.enum(['add', 'remove'], t('validation.passkeys.action.required')),
     temp_password: z.string().optional(),
     temp_username: z.string().optional(),
   })

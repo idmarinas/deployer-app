@@ -44,8 +44,8 @@ async function onSubmit(event: FormSubmitEvent<GeneratePasskeyInput>) {
 
 <template>
   <UModal
-    :title="t('schemas.passkeys.generate.title')"
-    :description="t('schemas.passkeys.generate.description')"
+    :title="t('form.passkeys.generate.title')"
+    :description="t('form.passkeys.generate.description')"
     :ui="{ footer: 'justify-end' }"
     :close="false"
     :dismissible="false"
@@ -53,14 +53,14 @@ async function onSubmit(event: FormSubmitEvent<GeneratePasskeyInput>) {
   >
     <template #body>
       <UForm ref="form-generate-passkey" :state="state" :disabled="isLoading" class="flex flex-col gap-4" @submit="onSubmit">
-        <UFormField name="key_type" :label="t('schemas.passkeys.form.key_type.label')" :help="t('schemas.passkeys.form.key_type.help')" required>
+        <UFormField name="key_type" :label="t('form.passkeys.key_type.label')" :help="t('form.passkeys.key_type.help')" required>
           <USelect
             v-model="state.key_type"
             value-key="id"
             :items="[
-              {label: t('schemas.passkeys.form.key_type.select.rsa.label'), description: t('schemas.passkeys.form.key_type.select.rsa.description'), id: 'rsa'},
-              {label: t('schemas.passkeys.form.key_type.select.ed25519.label'), description: t('schemas.passkeys.form.key_type.select.ed25519.description'), id: 'ed25519'},
-              {label: t('schemas.passkeys.form.key_type.select.ecdsa.label'), description: t('schemas.passkeys.form.key_type.select.ecdsa.description'), id: 'ecdsa'}
+              {label: t('form.passkeys.key_type.select.rsa.label'), description: t('form.passkeys.key_type.select.rsa.description'), id: 'rsa'},
+              {label: t('form.passkeys.key_type.select.ed25519.label'), description: t('form.passkeys.key_type.select.ed25519.description'), id: 'ed25519'},
+              {label: t('form.passkeys.key_type.select.ecdsa.label'), description: t('form.passkeys.key_type.select.ecdsa.description'), id: 'ecdsa'}
             ]"
             :ui="{itemDescription: 'whitespace-normal leading-snug'}"
             autocomplete="on"
@@ -71,8 +71,8 @@ async function onSubmit(event: FormSubmitEvent<GeneratePasskeyInput>) {
         <PasswordStrength
           name="passphrase"
           v-model="state.passphrase"
-          :label="t('schemas.passkeys.form.passphrase.label')"
-          :help="t('schemas.passkeys.form.passphrase.help')"
+          :label="t('form.passkeys.passphrase.label')"
+          :help="t('form.passkeys.passphrase.help')"
           optional
         />
       </UForm>

@@ -62,7 +62,7 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 
 		toast.add({
 			title: t('overlays.toast.title.success'),
-			description: t('schemas.hosts.added', { name: host.name }),
+			description: t('notifications.hosts.added', { name: host.name }),
 			color: 'success',
 		})
 		isLoading.value = false
