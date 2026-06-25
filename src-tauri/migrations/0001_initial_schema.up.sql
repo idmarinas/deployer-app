@@ -8,7 +8,9 @@
 
 CREATE TABLE deployer_settings (
     key TEXT CONSTRAINT deployer_settings_pk PRIMARY KEY,
-    value TEXT
+    value TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================================
@@ -24,32 +26,18 @@ CREATE TABLE encryption_config (
     field_name TEXT NOT NULL,
     encrypt BOOLEAN NOT NULL DEFAULT 0,
     expose BOOLEAN NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT encryption_config_uq UNIQUE (table_name, field_name)
 );
 
 CREATE INDEX encryption_config_idx_table_name ON encryption_config (table_name);
 
 -- Configuración inicial de campos sensibles
-INSERT INTO
-    encryption_config (
-        table_name,
-        field_name,
-        encrypt,
-        expose
-    )
+INSERT INTO encryption_config (table_name, field_name, encrypt, expose)
 VALUES ('hosts', 'password', 1, 0),
-    (
-        'passkeys',
-        'key_content',
-        1,
-        0
-    ),
-    (
-        'passkeys',
-        'passphrase',
-        1,
-        0
-    );
+       ('passkeys', 'key_content', 1, 0),
+       ('passkeys', 'passphrase', 1, 0);
 
 -- ============================================================================
 -- PASSKEYS (SSH Keys)
@@ -60,9 +48,7 @@ CREATE TABLE passkeys (
     name TEXT NOT NULL CONSTRAINT passkeys_uq_name UNIQUE,
     key_content TEXT NOT NULL,
     passphrase TEXT,
-    key_type TEXT CONSTRAINT passkeys_chk_key_type CHECK (
-        key_type IN ('rsa', 'ed25519', 'ecdsa')
-    ),
+    key_type TEXT CONSTRAINT passkeys_chk_key_type CHECK (key_type IN ('rsa', 'ed25519', 'ecdsa')),
     fingerprint TEXT,
     description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -79,9 +65,7 @@ CREATE TABLE hosts (
     host TEXT NOT NULL,
     port INTEGER NOT NULL DEFAULT 22,
     username TEXT NOT NULL DEFAULT '',
-    auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (
-        auth_type IN ('password', 'key')
-    ),
+    auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (auth_type IN ('password', 'key')),
     password TEXT,
     key_id INTEGER CONSTRAINT hosts_fk_key_id REFERENCES passkeys (id) ON DELETE SET NULL,
     description TEXT,
@@ -151,6 +135,7 @@ CREATE TABLE project_hosts (
     deploy_order INTEGER,
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT project_hosts_uq_project_id_host_id UNIQUE (project_id, host_id)
 );
 
@@ -275,11 +260,7 @@ CREATE TABLE project_tasks (
     retry_delay INTEGER,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (
-        project_id,
-        task_id,
-        order_execution
-    )
+    CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (project_id, task_id, order_execution)
 );
 
 CREATE INDEX project_tasks_idx_project_id ON project_tasks (project_id);
@@ -321,14 +302,7 @@ CREATE TABLE deployments (
     version TEXT NOT NULL,
     tag TEXT NOT NULL,
     build INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployments_chk_status CHECK (
-        status IN (
-            'pending',
-            'running',
-            'success',
-            'failed'
-        )
-    ),
+    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployments_chk_status CHECK (status IN ('pending', 'running', 'success', 'failed')),
     started_at TIMESTAMP,
     finished_at TIMESTAMP,
     duration_seconds INTEGER,
@@ -417,6 +391,20 @@ CREATE INDEX deployment_rollbacks_idx_status ON deployment_rollbacks (status);
 -- Con esto, el código Rust (`db::update_fields`) nunca necesita tocar `updated_at`.
 -- ============================================================================
 
+CREATE TRIGGER deployer_settings_trg_set_updated_at
+AFTER UPDATE ON deployer_settings
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE deployer_settings SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER encryption_config_trg_set_updated_at
+AFTER UPDATE ON encryption_config
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE encryption_config SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
 CREATE TRIGGER passkeys_trg_set_updated_at
 AFTER UPDATE ON passkeys
 WHEN NEW.updated_at = OLD.updated_at
@@ -443,6 +431,13 @@ AFTER UPDATE ON projects
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER project_hosts_trg_set_updated_at
+AFTER UPDATE ON project_hosts
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE project_hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 CREATE TRIGGER project_variables_trg_set_updated_at
