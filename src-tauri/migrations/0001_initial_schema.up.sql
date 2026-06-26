@@ -103,7 +103,7 @@ CREATE TABLE projects (
     name TEXT NOT NULL CONSTRAINT projects_uq_name UNIQUE,
     description TEXT,
     git_url TEXT,
-    framework TEXT CONSTRAINT projects_chk_framework CHECK (
+    framework TEXT NOT NULL CONSTRAINT projects_chk_framework CHECK (
         framework IN (
             'symfony',
             'laravel',
