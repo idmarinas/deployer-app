@@ -32,3 +32,6 @@ typed-locale.d.ts
 # Drizzle - BD de desarrollo para introspección (no es la BD real de la app)
 drizzle/dev.sqlite
 drizzle/dev.sqlite-*
+drizzle/*.ts
+drizzle/*.sql
+drizzle/**/*.json
