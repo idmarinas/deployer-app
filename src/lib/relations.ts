@@ -1,125 +1,125 @@
 import { relations } from "drizzle-orm/relations";
-import { passkeys, hosts, projectHosts, projects, projectVariables, frameworkConfigs, tasks, projectTasks, taskDependencies, deployments, deploymentExecutions, deploymentRollbacks } from "./schema";
+import { passkeys, hosts, project_hosts, projects, project_variables, framework_configs, tasks, project_tasks, task_dependencies, deployments, deployment_executions, deployment_rollbacks } from "./schema";
 
 export const hostsRelations = relations(hosts, ({one, many}) => ({
 	passkey: one(passkeys, {
-		fields: [hosts.keyId],
+		fields: [hosts.key_id],
 		references: [passkeys.id]
 	}),
-	projectHosts: many(projectHosts),
-	deploymentExecutions: many(deploymentExecutions),
+	project_hosts: many(project_hosts),
+	deployment_executions: many(deployment_executions),
 }));
 
 export const passkeysRelations = relations(passkeys, ({many}) => ({
 	hosts: many(hosts),
 }));
 
-export const projectHostsRelations = relations(projectHosts, ({one}) => ({
+export const project_hostsRelations = relations(project_hosts, ({one}) => ({
 	host: one(hosts, {
-		fields: [projectHosts.hostId],
+		fields: [project_hosts.host_id],
 		references: [hosts.id]
 	}),
 	project: one(projects, {
-		fields: [projectHosts.projectId],
+		fields: [project_hosts.project_id],
 		references: [projects.id]
 	}),
 }));
 
 export const projectsRelations = relations(projects, ({many}) => ({
-	projectHosts: many(projectHosts),
-	projectVariables: many(projectVariables),
-	frameworkConfigs: many(frameworkConfigs),
-	projectTasks: many(projectTasks),
+	project_hosts: many(project_hosts),
+	project_variables: many(project_variables),
+	framework_configs: many(framework_configs),
+	project_tasks: many(project_tasks),
 	deployments: many(deployments),
 }));
 
-export const projectVariablesRelations = relations(projectVariables, ({one}) => ({
+export const project_variablesRelations = relations(project_variables, ({one}) => ({
 	project: one(projects, {
-		fields: [projectVariables.projectId],
+		fields: [project_variables.project_id],
 		references: [projects.id]
 	}),
 }));
 
-export const frameworkConfigsRelations = relations(frameworkConfigs, ({one}) => ({
+export const framework_configsRelations = relations(framework_configs, ({one}) => ({
 	project: one(projects, {
-		fields: [frameworkConfigs.projectId],
+		fields: [framework_configs.project_id],
 		references: [projects.id]
 	}),
 }));
 
-export const projectTasksRelations = relations(projectTasks, ({one, many}) => ({
+export const project_tasksRelations = relations(project_tasks, ({one, many}) => ({
 	task: one(tasks, {
-		fields: [projectTasks.taskId],
+		fields: [project_tasks.task_id],
 		references: [tasks.id]
 	}),
 	project: one(projects, {
-		fields: [projectTasks.projectId],
+		fields: [project_tasks.project_id],
 		references: [projects.id]
 	}),
-	taskDependencies_dependsOnTaskId: many(taskDependencies, {
-		relationName: "taskDependencies_dependsOnTaskId_projectTasks_id"
+	task_dependencies_depends_on_task_id: many(task_dependencies, {
+		relationName: "task_dependencies_depends_on_task_id_project_tasks_id"
 	}),
-	taskDependencies_taskId: many(taskDependencies, {
-		relationName: "taskDependencies_taskId_projectTasks_id"
+	task_dependencies_task_id: many(task_dependencies, {
+		relationName: "task_dependencies_task_id_project_tasks_id"
 	}),
-	deploymentExecutions: many(deploymentExecutions),
+	deployment_executions: many(deployment_executions),
 }));
 
 export const tasksRelations = relations(tasks, ({many}) => ({
-	projectTasks: many(projectTasks),
+	project_tasks: many(project_tasks),
 }));
 
-export const taskDependenciesRelations = relations(taskDependencies, ({one}) => ({
-	projectTask_dependsOnTaskId: one(projectTasks, {
-		fields: [taskDependencies.dependsOnTaskId],
-		references: [projectTasks.id],
-		relationName: "taskDependencies_dependsOnTaskId_projectTasks_id"
+export const task_dependenciesRelations = relations(task_dependencies, ({one}) => ({
+	project_task_depends_on_task_id: one(project_tasks, {
+		fields: [task_dependencies.depends_on_task_id],
+		references: [project_tasks.id],
+		relationName: "task_dependencies_depends_on_task_id_project_tasks_id"
 	}),
-	projectTask_taskId: one(projectTasks, {
-		fields: [taskDependencies.taskId],
-		references: [projectTasks.id],
-		relationName: "taskDependencies_taskId_projectTasks_id"
+	project_task_task_id: one(project_tasks, {
+		fields: [task_dependencies.task_id],
+		references: [project_tasks.id],
+		relationName: "task_dependencies_task_id_project_tasks_id"
 	}),
 }));
 
 export const deploymentsRelations = relations(deployments, ({one, many}) => ({
 	project: one(projects, {
-		fields: [deployments.projectId],
+		fields: [deployments.project_id],
 		references: [projects.id]
 	}),
-	deploymentExecutions: many(deploymentExecutions),
-	deploymentRollbacks_rolledBackToDeploymentId: many(deploymentRollbacks, {
-		relationName: "deploymentRollbacks_rolledBackToDeploymentId_deployments_id"
+	deployment_executions: many(deployment_executions),
+	deployment_rollbacks_rolled_back_to_deployment_id: many(deployment_rollbacks, {
+		relationName: "deployment_rollbacks_rolled_back_to_deployment_id_deployments_id"
 	}),
-	deploymentRollbacks_deploymentId: many(deploymentRollbacks, {
-		relationName: "deploymentRollbacks_deploymentId_deployments_id"
+	deployment_rollbacks_deployment_id: many(deployment_rollbacks, {
+		relationName: "deployment_rollbacks_deployment_id_deployments_id"
 	}),
 }));
 
-export const deploymentExecutionsRelations = relations(deploymentExecutions, ({one}) => ({
-	projectTask: one(projectTasks, {
-		fields: [deploymentExecutions.taskId],
-		references: [projectTasks.id]
+export const deployment_executionsRelations = relations(deployment_executions, ({one}) => ({
+	project_task: one(project_tasks, {
+		fields: [deployment_executions.task_id],
+		references: [project_tasks.id]
 	}),
 	host: one(hosts, {
-		fields: [deploymentExecutions.hostId],
+		fields: [deployment_executions.host_id],
 		references: [hosts.id]
 	}),
 	deployment: one(deployments, {
-		fields: [deploymentExecutions.deploymentId],
+		fields: [deployment_executions.deployment_id],
 		references: [deployments.id]
 	}),
 }));
 
-export const deploymentRollbacksRelations = relations(deploymentRollbacks, ({one}) => ({
-	deployment_rolledBackToDeploymentId: one(deployments, {
-		fields: [deploymentRollbacks.rolledBackToDeploymentId],
+export const deployment_rollbacksRelations = relations(deployment_rollbacks, ({one}) => ({
+	deployment_rolled_back_to_deployment_id: one(deployments, {
+		fields: [deployment_rollbacks.rolled_back_to_deployment_id],
 		references: [deployments.id],
-		relationName: "deploymentRollbacks_rolledBackToDeploymentId_deployments_id"
+		relationName: "deployment_rollbacks_rolled_back_to_deployment_id_deployments_id"
 	}),
-	deployment_deploymentId: one(deployments, {
-		fields: [deploymentRollbacks.deploymentId],
+	deployment_deployment_id: one(deployments, {
+		fields: [deployment_rollbacks.deployment_id],
 		references: [deployments.id],
-		relationName: "deploymentRollbacks_deploymentId_deployments_id"
+		relationName: "deployment_rollbacks_deployment_id_deployments_id"
 	}),
 }));
