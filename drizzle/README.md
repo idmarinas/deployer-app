@@ -10,19 +10,37 @@ viven en `src-tauri/migrations/` y se gestionan con `sqlx` desde Rust.
 
 - `dev.sqlite` — BD de desarrollo dedicada, con las migraciones sqlx aplicadas.
   No se sube al repositorio (ver `.gitignore`).
-- `schema.ts` — generado automáticamente por `drizzle-kit introspect`. Sí se
-  sube al repositorio; es la fuente de tipos para el query builder de Drizzle
-  en el frontend (`src/lib/db.ts`).
+- `schema.ts` — generado automáticamente por `drizzle-kit introspect`. Se
+  copia a `src/lib/schema.ts` automáticamente (ver más abajo); ahí es donde
+  el resto de la app lo importa.
+- `relations.ts` — generado automáticamente por `drizzle-kit introspect` a
+  partir de las foreign keys del schema SQLite. Habilita el Relational
+  Queries API (`db.query.*.findFirst/findMany`). También se copia a
+  `src/lib/relations.ts` automáticamente.
 
 ## Cómo regenerar el schema tras un cambio de esquema
 
-1. Asegúrate de tener `drizzle/dev.sqlite` con las migraciones sqlx más
-   recientes aplicadas. Si no existe, créalo desde cero:
+Un único comando hace todo el proceso (recrea la BD de dev, aplica
+migraciones, introspecciona, y copia los archivos a `src/lib/`):
 
-   ```bash
-   bun run dev:db:generate
-   ```
+```bash
+bun run dev:db:generate
+```
 
-2. Revisa el `schema.ts` generado en esta carpeta, cópialo o ajústalo en
-   `src/lib/schema.ts` si es necesario, y haz commit de ambos cambios
-   (la migración sqlx y el schema Drizzle).
+Internamente ejecuta, en este orden:
+
+1. `dev:db:create` — recrea `drizzle/dev.sqlite` desde cero.
+2. `dev:db:migrate` — aplica todas las migraciones de `src-tauri/migrations/` (vía `sqlx migrate run`).
+3. `dev:db:introspect` — genera `drizzle/schema.ts` y `drizzle/relations.ts`.
+4. `dev:db:copy-schema` — copia ambos archivos a `src/lib/` (ver `scripts/copy-drizzle-schema.ts`).
+
+**No hace falta copiar nada a mano.** Si solo quieres repetir un paso
+suelto (por ejemplo, volver a copiar sin regenerar todo), cada paso también
+está disponible por separado: `bun run dev:db:introspect`,
+`bun run dev:db:copy-schema`, etc.
+
+**No editar a mano** `drizzle/schema.ts`, `drizzle/relations.ts`,
+`src/lib/schema.ts` ni `src/lib/relations.ts` — los cuatro se sobreescriben
+en cada `bun run dev:db:generate`. Cualquier ajuste de tipos (por ejemplo,
+columnas booleanas mal inferidas como `numeric()`) se gestiona aparte en
+`src/lib/normalize.ts`, que no se toca en este proceso.
