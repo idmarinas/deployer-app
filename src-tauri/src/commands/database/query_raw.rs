@@ -1,7 +1,7 @@
 use serde_json::Value;
 use sqlx::Column;
 use sqlx::Row;
-use sqlx::TypeInfo;
+use sqlx::ValueRef;
 use tauri::AppHandle;
 
 use crate::commands::helpers::open_pool;
@@ -84,42 +84,55 @@ pub async fn query_raw(
         let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
 
         for col in row.columns() {
-            let type_info = col.type_info().name().to_lowercase();
-
-            let value: Value = match type_info.as_str() {
-                "integer" | "int" | "int4" | "int8" | "bigint" | "smallint" => {
-                    match row.try_get::<i64, _>(col.ordinal()) {
-                        Ok(v) => Value::Number(v.into()),
-                        Err(_) => Value::Null,
-                    }
-                }
-                "real" | "float" | "double" | "numeric" | "decimal" => {
-                    match row.try_get::<f64, _>(col.ordinal()) {
-                        Ok(v) => serde_json::Number::from_f64(v)
-                            .map(Value::Number)
-                            .unwrap_or(Value::Null),
-                        Err(_) => Value::Null,
-                    }
-                }
-                "boolean" | "bool" => match row.try_get::<bool, _>(col.ordinal()) {
-                    Ok(v) => Value::Bool(v),
-                    Err(_) => Value::Null,
-                },
-                _ => {
-                    // TEXT, BLOB, tipos desconocidos y NULL → string o null
-                    match row.try_get::<Option<String>, _>(col.ordinal()) {
-                        Ok(Some(v)) => Value::String(v),
-                        Ok(None) => Value::Null,
-                        Err(_) => Value::Null,
-                    }
-                }
-            };
-
-            values.push(value);
+            let ord = col.ordinal();
+            values.push(decode_column_value(row, ord));
         }
 
         result.push(values);
     }
 
     CommandResponse::ok(result, "database.success.query_raw_executed")
+}
+
+/// Decodifica el valor de una columna SQLite sin fiarse de `type_info()`.
+///
+/// SQLite es de tipado dinámico: para columnas calculadas (subqueries,
+/// expresiones, agregados) `type_info()` a menudo viene vacío o con un tipo
+/// que no refleja el dato real almacenado. En vez de decidir por tipo
+/// declarado, se comprueba primero si el valor crudo es NULL (con
+/// `try_get_raw().is_null()`) — comprobación explícita, no inferida — y solo
+/// si no lo es, se prueba la decodificación en cascada: entero, real,
+/// booleano, texto.
+///
+/// IMPORTANTE: este orden es deliberado. Probar `try_get::<i64, _>` (u otros
+/// tipos no-Option) directamente sobre una columna NULL puede no fallar como
+/// se espera con algunas combinaciones tipo/valor en sqlx-sqlite, devolviendo
+/// `Ok(0)` en vez de `Err` — causando que NULL se decodifique como `0` en
+/// vez de `null`. Comprobar `is_null()` explícitamente antes evita ese caso.
+fn decode_column_value(row: &sqlx::sqlite::SqliteRow, ordinal: usize) -> Value {
+    let is_null = row
+        .try_get_raw(ordinal)
+        .map(|raw| raw.is_null())
+        .unwrap_or(true);
+
+    if is_null {
+        return Value::Null;
+    }
+
+    if let Ok(v) = row.try_get::<i64, _>(ordinal) {
+        return Value::Number(v.into());
+    }
+    if let Ok(v) = row.try_get::<f64, _>(ordinal) {
+        return serde_json::Number::from_f64(v)
+            .map(Value::Number)
+            .unwrap_or(Value::Null);
+    }
+    if let Ok(v) = row.try_get::<bool, _>(ordinal) {
+        return Value::Bool(v);
+    }
+    if let Ok(v) = row.try_get::<String, _>(ordinal) {
+        return Value::String(v);
+    }
+
+    Value::Null
 }
