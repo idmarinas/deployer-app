@@ -2,6 +2,7 @@
 
 <script setup lang="ts">
 import { useSideberMenu } from '@/composables/useNavigationMenu'
+import { ICONS } from '@/utils/icons'
 
 const { navigationMenu, searchGroups } = useSideberMenu()
 
@@ -13,17 +14,17 @@ const socials: {
   }
 } = {
 	x: {
-    icon: 'i-tabler-brand-x',
+    icon: ICONS.social.x,
     label: 'X',
     url: 'https://x.com/idmarinas'
   },
 	reddit: {
-    icon: 'i-tabler-brand-reddit',
+    icon: ICONS.social.reddit,
     label: 'Reddit',
     url: 'https://reddit.com/u/idmarinas'
   },
 	paypal: {
-    icon: 'i-tabler-brand-paypal',
+    icon: ICONS.social.paypal,
     label: 'Paypal',
     url: 'https://www.paypal.me/idmarinas'
   },
@@ -33,12 +34,12 @@ const socials: {
   //   url: 'https://bit.ly/m/idmarinas'
   // },
 	github: {
-    icon: 'i-tabler-brand-github',
+    icon: ICONS.social.github,
     label: 'Github',
     url: 'https://github.com/sponsors/idmarinas'
   },
 	linkedin: {
-    icon: 'i-tabler-brand-linkedin',
+    icon: ICONS.social.linkedin,
     label: 'Linkedin',
     url: 'https://linkedin.com/in/idmarinas'
   },

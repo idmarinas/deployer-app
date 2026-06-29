@@ -12,6 +12,8 @@ import useToaster from '@/composables/useToaster'
 
 import { useQueryCache } from '@pinia/colada'
 import { invoke } from '@tauri-apps/api/core'
+
+import { ICONS } from '@/utils/icons'
 </script>
 
 <script setup lang="ts">
@@ -35,7 +37,7 @@ const canToggle = computed(() => props.command && props.command.length > 3 && pr
 const icon = computed(() => (inverse = false) => {
 	const enabled = inverse ? !props.enabled : props.enabled
 
-	return enabled ? 'i-tabler-check' : 'i-tabler-x'
+	return enabled ? ICONS.status.check : ICONS.status.cross
 })
 const color = computed(() => (inverse = false) => {
 	const enabled = inverse ? !props.enabled : props.enabled
@@ -76,7 +78,7 @@ async function toggleEnable() {
 <template>
 	<UBadge
 		v-if="isLoading"
-		icon="i-tabler-loader-2"
+		:icon="ICONS.status.loading"
 		color="warning"
 		label="Guardando"
 		:ui="{ leadingIcon: 'animate-spin' }"

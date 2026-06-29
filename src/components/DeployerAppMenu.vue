@@ -9,6 +9,7 @@ import { useColorMode } from '@vueuse/core'
 import * as uiLocales from '@nuxt/ui/locale'
 
 import { useLocale } from '@/composables/useLocale'
+import { ICONS } from '@/utils/icons'
 </script>
 
 <script setup lang="ts">
@@ -26,7 +27,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: t('app.title'),
   avatar: {
-    icon: 'i-tabler-rocket',
+    icon: ICONS.app.logo,
     src: '/logo.png',
     class: 'bg-transparent',
     alt: 'DeployerApp Logo',
@@ -37,11 +38,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 }], [{
   label: t('components.deployerAppMenu.settings'),
-  icon: 'i-tabler-settings',
+  icon: ICONS.app.settings,
   to: '/app/settings'
 },{
     label: 'Restablecer ventana',
-    icon: 'i-tabler-window',
+    icon: ICONS.app.window,
     onClick: async () => {
       const win = getCurrentWindow()
       await win.setSize(new LogicalSize(1400, 900))
@@ -50,7 +51,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 ], [{
   label: t('components.deployerAppMenu.appearance.label'),
-  icon: 'i-tabler-sun-moon',
+  icon: ICONS.app.appearance,
   children: [{
     label: t('components.deployerAppMenu.appearance.light'),
     icon: appConfig.ui.icons.light,
@@ -74,7 +75,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }]
 }, {
   label: t('components.deployerAppMenu.locale'),
-  icon: 'i-tabler-language',
+  icon: ICONS.app.language,
   children: Object.values(uiLocales).filter(lang => availableLocales.includes(lang.code)).map(lang => ({
     label: lang.name,
     icon: `circle-flags:lang-${lang.code}`,
@@ -95,7 +96,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 <template>
   <UDropdownMenu :items="items" :content="{ align: 'center', collisionPadding: 12 }"
     :ui="{ content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)' }">
-    <UButton :avatar="{ icon: 'i-tabler-rocket', src: '/logo.png', class: 'bg-transparent', ui: {root: 'rounded-none'}}" :label="collapsed ? undefined : t('app.title')"
+    <UButton :avatar="{ icon: ICONS.app.logo, src: '/logo.png', class: 'bg-transparent', ui: {root: 'rounded-none'}}" :label="collapsed ? undefined : t('app.title')"
       :trailing-icon="collapsed ? undefined : 'i-tabler-selector'" color="neutral" variant="ghost" block
       :square="collapsed" class="data-[state=open]:bg-elevated" :ui="{
         trailingIcon: 'text-dimmed'

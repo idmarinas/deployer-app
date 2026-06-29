@@ -2,6 +2,8 @@ import type { CommandPaletteGroup, DropdownMenuItem, NavigationMenuItem } from '
 
 import { useI18n } from 'vue-i18n'
 
+import { getModuleIcon } from '@/utils/icons'
+
 export function useSideberMenu() {
   const { t } = useI18n()
 
@@ -16,41 +18,41 @@ export function useSideberMenu() {
     // Proyectos
     {
       label: t('components.sidebar.projects'),
-      icon: 'i-tabler-packages',
+      icon: getModuleIcon('projects'),
       to: '/dashboard/projects',
     },
     // Claves de acceso
     {
       label: t('components.sidebar.passkeys'),
-      icon: 'i-tabler-key',
+      icon: getModuleIcon('passkeys'),
       to: '/dashboard/passkeys',
       // description: 'Gestionar claves SSH (RSA, ED25519, ECDSA)'
     },
     // Servidores
     {
       label: t('components.sidebar.hosts'),
-      icon: 'i-tabler-cloud-network',
+      icon: getModuleIcon('hosts'),
       to: '/dashboard/hosts',
       // description: 'Configurar conexiones a servidores'
     },
     // Variables
     {
       label: t('components.sidebar.variables'),
-      icon: 'i-tabler-variable',
+      icon: getModuleIcon('variables'),
       to: '/dashboard/variables',
       // description: 'Variables reutilizables en todos los proyectos'
     },
     // Tareas Globales
     {
       label: t('components.sidebar.tasks'),
-      icon: 'i-tabler-list-check',
+      icon: getModuleIcon('tasks'),
       to: '/dashboard/tasks',
       // description: 'Tareas reutilizables en múltiples proyectos'
     },
     // Despliegues
     {
       label: t('components.sidebar.deployments'),
-      icon: 'i-tabler-send',
+      icon: getModuleIcon('deployments'),
       to: '/dashboard/deployments',
     },
   ]
@@ -63,35 +65,35 @@ export function useSideberMenu() {
         {
           label: t('components.navigation.add.project.label'),
           suffix: t('components.navigation.add.project.description'),
-          icon: 'i-tabler-package',
+          icon: getModuleIcon('projects', 'singular'),
           to: '/dashboard/projects/add',
           kbds: ['shift', 'P']
         },
         {
           label: t('components.navigation.add.task.label'),
           suffix: t('components.navigation.add.task.description'),
-          icon: 'i-tabler-list-check',
+          icon: getModuleIcon('tasks'),
           to: '/dashboard/tasks/add',
           kbds: ['shift', 'T']
         },
         {
           label: t('components.navigation.add.passkey.label'),
           suffix: t('components.navigation.add.passkey.description'),
-          icon: 'i-tabler-key',
+          icon: getModuleIcon('passkeys'),
           to: '/dashboard/passkeys/add',
           kbds: ['shift', 'K']
         },
         {
           label: t('components.navigation.add.host.label'),
           suffix: t('components.navigation.add.host.description'),
-          icon: 'i-tabler-server',
+          icon: getModuleIcon('hosts', 'singular'),
           to: '/dashboard/hosts/add',
           kbds: ['shift', 'H']
         },
         {
           label: t('components.navigation.add.variable.label'),
           suffix: t('components.navigation.add.variable.description'),
-          icon: 'i-tabler-variable',
+          icon: getModuleIcon('variables'),
           to: '/dashboard/variables/add',
           kbds: ['shift', 'V']
         },
@@ -113,35 +115,35 @@ export function useDashboardButton() {
     {
       label: t('components.navigation.add.project.label'),
       description: t('components.navigation.add.project.description'),
-      icon: 'i-tabler-package',
+      icon: getModuleIcon('projects', 'singular'),
       to: '/dashboard/projects/add',
       kbds: ['shift', 'P']
     },
     {
       label: t('components.navigation.add.task.label'),
       description: t('components.navigation.add.task.description'),
-      icon: 'i-tabler-list-check',
+      icon: getModuleIcon('tasks'),
       to: '/dashboard/tasks/add',
       kbds: ['shift', 'T']
     },
     {
       label: t('components.navigation.add.passkey.label'),
       description: t('components.navigation.add.passkey.description'),
-      icon: 'i-tabler-key',
+      icon: getModuleIcon('passkeys'),
       to: '/dashboard/passkeys/add',
       kbds: ['shift', 'K']
     },
     {
       label: t('components.navigation.add.host.label'),
       description: t('components.navigation.add.host.description'),
-      icon: 'i-tabler-server',
+      icon: getModuleIcon('hosts', 'singular'),
       to: '/dashboard/hosts/add',
       kbds: ['shift', 'H']
     },
     {
       label: t('components.navigation.add.variable.label'),
       description: t('components.navigation.add.variable.description'),
-      icon: 'i-tabler-variable',
+      icon: getModuleIcon('variables'),
       to: '/dashboard/variables/add',
       kbds: ['shift', 'V']
     }

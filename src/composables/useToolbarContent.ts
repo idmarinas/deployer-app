@@ -8,6 +8,7 @@ import { Icon } from '@iconify/vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 import USwitch from '@nuxt/ui/components/Switch.vue'
 
+import { ICONS, getModuleIcon, getModuleSwitchIcons } from '@/utils/icons'
 import { useRouter } from 'vue-router'
 import { ToolbarManager } from './useDashboardToolbar'
 
@@ -35,50 +36,6 @@ export interface ExtraButton {
 	position: ExtraButtonPosition
 	/** Función que devuelve el VNode — usar `() => h(UButton, { ... })` en la página hija */
 	vnode: () => VNode
-}
-
-function getIcon(moduleName: string, isIconify = false): { uncheckedIcon: string; checkedIcon: string } {
-	const icons: Record<string, { uncheckedIcon: string; checkedIcon: string }> = {
-		hosts: {
-			uncheckedIcon: 'i-tabler-server-off',
-			checkedIcon: 'i-tabler-server',
-		},
-		projects: {
-			uncheckedIcon: 'i-tabler-package-off',
-			checkedIcon: 'i-tabler-package',
-		},
-		deployments: {
-			uncheckedIcon: 'i-tabler-send-off',
-			checkedIcon: 'i-tabler-send',
-		},
-		variables: {
-			uncheckedIcon: 'i-tabler-variable-off',
-			checkedIcon: 'i-tabler-variable',
-		},
-		passkeys: {
-			uncheckedIcon: 'i-tabler-key-off',
-			checkedIcon: 'i-tabler-key',
-		},
-		tasks: {
-			uncheckedIcon: 'i-tabler-x',
-			checkedIcon: 'i-tabler-check',
-		},
-		default: {
-			checkedIcon: 'i-tabler-check',
-			uncheckedIcon: 'i-tabler-x',
-		},
-	}
-
-	const icon = icons[moduleName] ?? icons['default']
-
-	if (isIconify) {
-		return {
-			uncheckedIcon: icon.uncheckedIcon.replace('i-tabler-', 'tabler:'),
-			checkedIcon: icon.checkedIcon.replace('i-tabler-', 'tabler:'),
-		}
-	}
-
-	return icon
 }
 
 // ---------------------------------------------------------------------------
@@ -109,7 +66,7 @@ function useToolbarContent(
 			...at('before-submit'),
 			h(UButton, {
 				label: t(`components.form.${type === 'edit' ? 'save' : 'submit'}`),
-				icon: type === 'edit' ? 'i-tabler-device-floppy' : 'i-tabler-send',
+				icon: type === 'edit' ? ICONS.actions.save : ICONS.actions.submit,
 				loading: loading.value,
 				class: 'first:mr-10',
 				onClick: () => form.value?.submit(),
@@ -118,7 +75,7 @@ function useToolbarContent(
 			...at('before-reset'),
 			h(UButton, {
 				label: t('components.form.reset'),
-				icon: 'i-tabler-refresh',
+				icon: ICONS.actions.reset,
 				variant: 'soft',
 				loading: loading.value,
 				onClick: () => {
@@ -130,7 +87,7 @@ function useToolbarContent(
 			...at('before-cancel'),
 			h(UButton, {
 				label: t('components.form.cancel'),
-				icon: 'i-tabler-cancel',
+				icon: ICONS.actions.cancel,
 				variant: 'outline',
 				color: 'neutral',
 				loading: loading.value,
@@ -148,8 +105,7 @@ function useToolbarContent(
 		h('h2', { class: 'flex gap-2 items-center' }, [
 			h(USwitch, {
 				modelValue: state.value.enabled,
-				uncheckedIcon: getIcon(manager.moduleName).uncheckedIcon,
-				checkedIcon: getIcon(manager.moduleName).checkedIcon,
+				...getModuleSwitchIcons(manager.moduleName),
 				loading: loading.value,
 				size: 'xl',
 				'onUpdate:modelValue': (value: unknown) => {
@@ -205,7 +161,7 @@ export function useToolbarContentTitle(title: Ref<string>, manager?: ToolbarMana
 
 	manager.setToolbarFn(() => [
 		h('h2', { class: 'flex gap-2 items-center' }, [
-			h(Icon, { icon: getIcon(manager.moduleName, true).checkedIcon, class: 'size-5' }),
+			h(Icon, { icon: getModuleIcon(manager.moduleName, 'singular', true), class: 'size-5' }),
 			h('span', {}, title.value),
 		]),
 		h('div', { class: 'flex gap-3 items-center' }, extra?.value),

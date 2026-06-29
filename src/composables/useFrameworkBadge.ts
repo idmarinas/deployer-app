@@ -4,6 +4,8 @@ import { h } from 'vue'
 
 import UBadge from '@nuxt/ui/components/Badge.vue'
 
+import { ICONS } from '@/utils/icons'
+
 export function useFrameworkBadge(framework?: string, props?: BadgeProps) {
 	const frameworks: Record<string, BadgeProps> = {
 		symfony: {
@@ -11,28 +13,28 @@ export function useFrameworkBadge(framework?: string, props?: BadgeProps) {
 			class: 'bg-black text-white',
 			variant: 'soft',
 			size: 'sm',
-			icon: 'i-tabler-brand-symfony',
+			icon: ICONS.framework.symfony,
 		},
 		laravel: {
 			label: 'Laravel',
 			class: 'bg-[#FF2D20] text-white',
 			variant: 'soft',
 			size: 'sm',
-			icon: 'i-tabler-brand-laravel',
+			icon: ICONS.framework.laravel,
 		},
 		nextjs: {
 			label: 'Next.js',
 			class: 'bg-black text-white',
 			variant: 'soft',
 			size: 'sm',
-			icon: 'i-tabler-brand-nextjs',
+			icon: ICONS.framework.nextjs,
 		},
 		generic: {
 			label: 'Generic',
 			color: 'neutral',
 			variant: 'soft',
 			size: 'sm',
-			icon: 'i-tabler-code',
+			icon: ICONS.framework.generic,
 		},
 	}
 	let badgeProps = frameworks.generic
