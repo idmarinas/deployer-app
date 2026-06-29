@@ -6,7 +6,7 @@ import { h, ref, resolveComponent, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useConfirmDialog } from '@/composables/useDialog'
-import { useProjectsListAll } from '@/loaders/projects'
+import { useProjectsList } from '@/loaders/projects'
 import { useToast } from '@nuxt/ui/composables'
 import { useRouter } from 'vue-router'
 
@@ -28,7 +28,7 @@ const confirmDialog = useConfirmDialog()
 const router = useRouter()
 const { tableColumnEnabled } = useTableColumns<Project>()
 
-const { data: projects, isLoading, reload } = useProjectsListAll()
+const { data: projects, isLoading, status, reload } = useProjectsList()
 
 const columns: TableColumn<Project>[] = [
 	{
@@ -120,8 +120,7 @@ const expanded = ref({})
 </script>
 
 <template>
-	<Loading v-if="isLoading" what="project" plural />
-	<div v-else-if="!isLoading && projects.length > 0" class="flex flex-col flex-1 w-full">
+	<div v-if="!isLoading && status === 'success' && projects.length > 0" class="flex flex-col flex-1 w-full">
 		<div class="flex py-3.5 border-b border-accented justify-between">
 			<GlobalFilter v-model="globalFilter" />
 			<ToogleColumVisibility :table-api="table?.tableApi" />
@@ -182,24 +181,12 @@ const expanded = ref({})
 			</template>
 		</UTable>
 	</div>
-	<UEmpty
-		v-else
-		icon="i-tabler-packages"
-		:title="t('pages.projects.table.empty.title')"
-		:description="t('pages.projects.table.empty.description')"
-		:actions="[
-			{
-				icon: 'i-tabler-plus',
-				label: t('components.navigation.add.project.label'),
-				to: { name: 'dashboard-projects-add' },
-			},
-			{
-				icon: 'i-tabler-refresh',
-				label: t('common.refresh'),
-				color: 'neutral',
-				variant: 'soft',
-				onClick: () => reload(),
-			},
-		]"
+	<Loading v-else-if="isLoading" what="project" plural />
+	<EmptyList
+		v-else-if="!isLoading && status === 'success' && projects.length === 0"
+		module="projects"
+		:add-route="{ name: 'dashboard-projects-add' }"
+		:reload-fn="reload"
 	/>
+	<UError v-else />
 </template>
