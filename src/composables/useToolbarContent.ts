@@ -65,7 +65,7 @@ function useToolbarContent(
 		return [
 			...at('before-submit'),
 			h(UButton, {
-				label: t(`components.form.${type === 'edit' ? 'save' : 'submit'}`),
+				label: type === 'edit' ? t('form.save') : t('form.submit'),
 				icon: type === 'edit' ? ICONS.actions.save : ICONS.actions.submit,
 				loading: loading.value,
 				class: 'first:mr-10',
@@ -74,7 +74,7 @@ function useToolbarContent(
 			...at('after-submit'),
 			...at('before-reset'),
 			h(UButton, {
-				label: t('components.form.reset'),
+				label: t('form.reset'),
 				icon: ICONS.actions.reset,
 				variant: 'soft',
 				loading: loading.value,
@@ -86,7 +86,7 @@ function useToolbarContent(
 			...at('after-reset'),
 			...at('before-cancel'),
 			h(UButton, {
-				label: t('components.form.cancel'),
+				label: t('form.cancel'),
 				icon: ICONS.actions.cancel,
 				variant: 'outline',
 				color: 'neutral',
@@ -120,7 +120,7 @@ function useToolbarContent(
 					{
 						class: `text-sm ${state.value.enabled ? 'text-green-600' : 'text-red-600'}`,
 					},
-					state.value.enabled ? t('common.active') : t('common.inactive'),
+					state.value.enabled ? t('common.status.active') : t('common.status.inactive'),
 				),
 			]),
 		]),
