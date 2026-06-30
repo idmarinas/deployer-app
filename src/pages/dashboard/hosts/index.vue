@@ -10,6 +10,7 @@ import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useRouter } from 'vue-router'
 import { useHostListAll } from '@/loaders/hosts'
+import { ICONS, getModuleIcon } from '@/utils/icons'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
@@ -57,7 +58,7 @@ const columns: TableColumn<Host>[] = [
 					? t('form.hosts.auth_type.select.password')
 					: t('form.hosts.auth_type.select.key')
 			const color = row.getValue('auth_type') === 'password' ? 'neutral' : 'info'
-			const icon = row.getValue('auth_type') === 'password' ? 'i-tabler-password-user' : 'i-tabler-key'
+			const icon = row.getValue('auth_type') === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key
 
 			return h(UBadge, { label, color, icon })
 		},
@@ -69,7 +70,7 @@ const columns: TableColumn<Host>[] = [
 		cell: ({ row }) =>
 			h('div', { class: 'flex gap-2 justify-end' }, [
 				h(UButton, {
-					icon: 'i-tabler-pencil',
+					icon: ICONS.actions.edit,
 					color: 'info',
 					variant: 'ghost',
 					async onClick() {
@@ -77,7 +78,7 @@ const columns: TableColumn<Host>[] = [
 					},
 				}),
 				h(UButton, {
-					icon: 'i-tabler-plug',
+					icon: ICONS.server.plug,
 					variant: 'ghost',
 					color: 'neutral',
 					async onClick() {
@@ -85,7 +86,7 @@ const columns: TableColumn<Host>[] = [
 							title: t('pages.hosts.toast.test_connection.loading.title'),
 							description: t('pages.hosts.toast.test_connection.loading.description', { name: row.original.name }),
 							color: 'warning',
-							icon: 'i-tabler-plug',
+							icon: ICONS.server.plug,
 							duration: 0,
 						})
 
@@ -97,7 +98,7 @@ const columns: TableColumn<Host>[] = [
 								title: t('pages.hosts.toast.test_connection.success.title'),
 								description: t('pages.hosts.toast.test_connection.success.description', { name: row.original.name }),
 								color: 'success',
-								icon: 'i-tabler-check',
+								icon: ICONS.status.check,
 								duration: undefined,
 							})
 						} else {
@@ -105,14 +106,14 @@ const columns: TableColumn<Host>[] = [
 								title: t('pages.hosts.toast.test_connection.error.title'),
 								description: t('pages.hosts.toast.test_connection.error.description', { name: row.original.name }),
 								color: 'error',
-								icon: 'i-tabler-x',
+								icon: ICONS.status.cross,
 								duration: undefined,
 							})
 						}
 					},
 				}),
 				h(UButton, {
-					icon: 'i-tabler-trash',
+					icon: ICONS.actions.delete,
 					color: 'error',
 					variant: 'ghost',
 					async onClick() {
@@ -127,7 +128,7 @@ const columns: TableColumn<Host>[] = [
 								title: t('pages.hosts.toast.delete.loading.title'),
 								description: t('pages.hosts.toast.delete.loading.description', { name: row.original.name }),
 								color: 'warning',
-								icon: 'i-tabler-trash',
+								icon: ICONS.actions.delete,
 								duration: 0,
 							})
 
@@ -138,7 +139,7 @@ const columns: TableColumn<Host>[] = [
 									title: t('pages.hosts.toast.delete.success.title'),
 									description: t('pages.hosts.toast.delete.success.description', { name: row.original.name }),
 									color: 'success',
-									icon: 'i-tabler-check',
+									icon: ICONS.status.check,
 									duration: undefined,
 								})
 							} else {
@@ -146,7 +147,7 @@ const columns: TableColumn<Host>[] = [
 									title: t('pages.hosts.toast.delete.error.title'),
 									description: t('pages.hosts.toast.delete.error.description', { name: row.original.name }),
 									color: 'error',
-									icon: 'i-tabler-x',
+									icon: ICONS.status.cross,
 									duration: undefined,
 								})
 							}
@@ -196,7 +197,7 @@ const expanded = ref({})
 							<UBadge
 								:color="row.original.auth_type === 'password' ? 'neutral' : 'info'"
 								variant="subtle"
-								:icon="row.original.auth_type === 'password' ? 'i-tabler-password-user' : 'i-tabler-key'"
+								:icon="row.original.auth_type === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key"
 							>
 								{{ t(`entity.host.${row.original.auth_type || 'auth_type'}`) }}
 							</UBadge>
@@ -209,7 +210,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-server" class="text-muted size-4" />
+									<UIcon :name="ICONS.server.server" class="text-muted size-4" />
 									{{ row.original.host }}
 								</span>
 							</div>
@@ -217,7 +218,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-plug-connected" class="text-muted size-4" />
+									<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
 									{{ row.original.port }}
 								</span>
 							</div>
@@ -225,7 +226,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-user" class="text-muted size-4" />
+									<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
 									{{ row.original.username || '-' }}
 								</span>
 							</div>
@@ -236,11 +237,11 @@ const expanded = ref({})
 								</span>
 								<span class="text-sm text-foreground flex items-center gap-1.5">
 									<template v-if="row.original.auth_type === 'password'">
-										<UIcon name="i-tabler-lock" class="text-muted size-4" />
+										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
 										<span class="font-mono text-xs">••••••••</span>
 									</template>
 									<template v-else>
-										<UIcon name="i-tabler-key" class="text-muted size-4" />
+										<UIcon :name="ICONS.auth.key" class="text-muted size-4" />
 										<UBadge variant="subtle" size="sm" color="info" class="font-mono">
 											ID: {{ row.original.key_id || '-' }}
 										</UBadge>
@@ -253,14 +254,14 @@ const expanded = ref({})
 					<template #footer>
 						<div class="flex gap-4 items-center justify-between text-xs text-muted">
 							<span class="flex gap-1.5 items-center">
-								<UIcon name="i-tabler-calendar-plus" class="size-4" />
+								<UIcon :name="ICONS.calendar.createdAt" class="size-4" />
 								<strong>{{ t('entity.host.created_at') }}:</strong>
 								{{
 									new Date(row.original.created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
 								}}
 							</span>
 							<span class="flex gap-1.5 items-center">
-								<UIcon name="i-tabler-calendar-time" class="size-4" />
+								<UIcon :name="ICONS.calendar.updatedAt" class="size-4" />
 								<strong>{{ t('entity.host.updated_at') }}:</strong>
 								{{
 									new Date(row.original.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
@@ -274,17 +275,17 @@ const expanded = ref({})
 	</div>
 	<UEmpty
 		v-else
-		icon="i-tabler-cloud-network"
+		:icon="getModuleIcon('hosts')"
 		:title="t('pages.hosts.table.empty.title')"
 		:description="t('pages.hosts.table.empty.description')"
 		:actions="[
 			{
-				icon: 'i-tabler-plus',
+				icon: ICONS.actions.add,
 				label: t('components.navigation.add.host.label'),
 				to: { name: 'dashboard-hosts-add' },
 			},
 			{
-				icon: 'i-tabler-refresh',
+				icon: ICONS.actions.refresh,
 				label: t('common.refresh'),
 				color: 'neutral',
 				variant: 'soft',
