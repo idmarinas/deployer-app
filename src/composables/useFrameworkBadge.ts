@@ -29,6 +29,13 @@ export function useFrameworkBadge(framework?: string, props?: BadgeProps) {
 			size: 'sm',
 			icon: ICONS.framework.nextjs,
 		},
+		vuejs: {
+			label: 'Vue.js',
+			class: 'bg-[#4FC08D] text-white',
+			variant: 'soft',
+			size: 'sm',
+			icon: ICONS.framework.vuejs,
+		},
 		generic: {
 			label: 'Generic',
 			color: 'neutral',
@@ -36,11 +43,18 @@ export function useFrameworkBadge(framework?: string, props?: BadgeProps) {
 			size: 'sm',
 			icon: ICONS.framework.generic,
 		},
+		unknown: {
+			label: 'Unknown',
+			color: 'neutral',
+			variant: 'outline',
+			size: 'sm',
+			icon: ICONS.framework.unknown,
+		},
 	}
-	let badgeProps = frameworks.generic
+	let badgeProps = frameworks.unknown
 
 	if (typeof framework === 'string') {
-		badgeProps = frameworks[framework] || frameworks.generic
+		badgeProps = frameworks[framework] || frameworks.unknown
 	}
 
 	return h(UBadge, {
