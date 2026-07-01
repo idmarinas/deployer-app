@@ -79,18 +79,34 @@ const imports = paths.map(p => `import type ${aliasByPath.get(p)} from './src/lo
 // ---------------------------------------------------------------------------
 // 3. Montar el árbol anidado de tipos, replicando setDeep() de _loader.ts
 // ---------------------------------------------------------------------------
-type TypeTree = { [key: string]: TypeTree | string }
+type TypeTree = {
+	__index?: string
+	[key: string]: TypeTree | string | undefined
+}
 
-function setDeep(obj: TypeTree, parts: string[], typeRef: string): void {
+function setDeep(obj: TypeTree, parts: string[], typeRef: string, isIndex = false): void {
 	const [key, ...rest] = parts
 	if (rest.length === 0) {
-		obj[key] = typeRef
+		if (isIndex) {
+			if (typeof obj[key] !== 'object') {
+				obj[key] = { __index: typeRef }
+			} else {
+				;(obj[key] as TypeTree).__index = typeRef
+			}
+		} else {
+			if (typeof obj[key] === 'object') {
+				;(obj[key] as TypeTree).__index = typeRef
+			} else {
+				obj[key] = typeRef
+			}
+		}
 		return
 	}
 	if (typeof obj[key] !== 'object') {
-		obj[key] = {}
+		const existing = obj[key] as string | undefined
+		obj[key] = existing ? { __index: existing } : {}
 	}
-	setDeep(obj[key] as TypeTree, rest, typeRef)
+	setDeep(obj[key] as TypeTree, rest, typeRef, isIndex)
 }
 
 const tree: TypeTree = {}
@@ -107,15 +123,33 @@ for (const p of paths) {
 		continue
 	}
 
-	setDeep(tree, parts, `typeof ${aliasByPath.get(p)}`)
+	setDeep(tree, parts, `typeof ${aliasByPath.get(p)}`, isIndex)
 }
 
 function render(obj: TypeTree, indent = 2): string {
 	const pad = ' '.repeat(indent)
 	return Object.entries(obj)
-		.map(([key, value]) =>
-			typeof value === 'string' ? `${pad}${key}: ${value}` : `${pad}${key}: {\n${render(value, indent + 2)}\n${pad}}`,
-		)
+		.filter(([key]) => key !== '__index')
+		.map(([key, value]) => {
+			if (typeof value === 'string') {
+				return `${pad}${key}: ${value}`
+			}
+			
+			const treeVal = value as TypeTree
+			const indexRef = treeVal.__index
+			const childKeys = Object.keys(treeVal).filter(k => k !== '__index')
+			
+			if (childKeys.length === 0) {
+				return `${pad}${key}: ${indexRef ?? '{}'}`
+			}
+			
+			const nestedObjStr = `{\n${render(treeVal, indent + 2)}\n${pad}}`
+			
+			if (indexRef) {
+				return `${pad}${key}: ${indexRef} & ${nestedObjStr}`
+			}
+			return `${pad}${key}: ${nestedObjStr}`
+		})
 		.join('\n')
 }
 
