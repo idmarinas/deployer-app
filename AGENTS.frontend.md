@@ -273,6 +273,41 @@ Nunca escribir el nombre de una tabla como string literal fuera de este archivo.
 
 ---
 
+## 4b. Sistema de iconos centralizado (`src/utils/icons.ts`)
+
+Todos los iconos de la app (Tabler vía Nuxt UI) están centralizados en `src/utils/icons.ts`. **No hardcodear `'i-tabler-...'` como string literal en componentes/composables nuevos** — importar siempre desde aquí.
+
+```ts
+import { ICONS, getModuleIcon, getModuleSwitchIcons, toIconify } from '@/utils/icons'
+```
+
+### `MODULE_ICONS` / `getModuleIcon(moduleName, variant?, isIconify?)`
+
+Un set `{ plural, singular, off }` por cada módulo (`hosts`, `projects`, `deployments`, `variables`, `passkeys`, `tasks`):
+
+- `plural` — icono de listado/navegación/módulo (sidebar, `UDashboardNavbar`, `UEmpty`).
+- `singular` — icono de un elemento individual activo.
+- `off` — icono del elemento inactivo/deshabilitado (errores 404 de entidad, switches).
+
+```ts
+getModuleIcon('hosts')                    // 'i-tabler-cloud-network' (plural, por defecto)
+getModuleIcon('hosts', 'singular')        // 'i-tabler-server'
+getModuleIcon('hosts', 'off')              // 'i-tabler-server-off'
+getModuleIcon('hosts', 'singular', true)   // 'tabler:server' (formato Iconify, para <Icon /> de @iconify/vue)
+```
+
+`getModuleSwitchIcons(moduleName, isIconify?)` devuelve `{ uncheckedIcon, checkedIcon }` listo para `USwitch`/`UToggle` (usa `off`/`singular`).
+
+### `ICONS` — resto de iconos, agrupados por categoría
+
+`app`, `actions`, `status`, `auth`, `server`, `database`, `calendar`, `framework`, `social`, `misc`. Ver el propio archivo para el listado completo.
+
+### Migración completada
+
+Las tablas de `pages/dashboard/{hosts,projects,passkeys}/index.vue` (columnas de acciones, badges de auth_type, iconos de fecha en filas expandidas) y las páginas de error `[...path].vue` de los 6 módulos (`hosts`, `projects`, `passkeys`, `tasks`, `variables`, `deployments`) ya usan `ICONS`/`getModuleIcon`. No queda ningún `i-tabler-...` hardcodeado conocido fuera de archivos no tocados aún (revisar al editar cualquier archivo nuevo que use iconos).
+
+---
+
 ## 4. Toolbar
 
 El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
@@ -367,6 +402,22 @@ await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 | `task_skipped` | `execution_id`, `task_name`, `reason` |
 | `deployment_finished` | `deployment_id`, `status`, `duration_seconds` |
 | `fatal_error` | `message` |
+
+---
+
+## 7b. Patrón "ver + editar" en pantallas de detalle (`InputFieldWithView`)
+
+Para pantallas de detalle de una entidad (ej. `pages/dashboard/projects/[id]/(view).vue`) que deben permitir ver **y** editar sin salir de la página, se combina:
+
+1. **Edición global por toggle** — un `ref<boolean>` `isEditMode` se crea en la página raíz (`(view).vue`) y se inyecta (`provide('isEditMode', isEditMode)`) junto con la entidad (`provide('project', project)`). El tab/sección que quiera ofrecer edición masiva (ej. `ProjectTabInfo.vue`) inyecta ambos, mantiene un `state` local (copia con `sanitizeNulls`), muestra un botón "Editar" que activa `isEditMode`, y al enviar el `UForm` calcula un **patch dirty-tracking** (solo las claves que cambiaron respecto a la entidad original) antes de invocar el comando `crud_update_*`.
+2. **Edición inline por campo** — el componente `InputFieldWithView.vue` (`src/components/form/inputs/field-with-view/`) resuelve ambos modos a la vez:
+   - Si `isEditMode` (inyectado) es `true`: se comporta como un campo de formulario normal, enlazado al `state` del `UForm` padre (que valida contra el schema Zod de la entidad).
+   - Si `isEditMode` es `false`: muestra el valor en modo lectura con un icono de lápiz al hover. Al pulsarlo activa edición **solo de ese campo** (estado local `editingLocal`, no toca `isEditMode` global) y al guardar hace un `invoke(command, { id, input: { [name]: valor } })` puntual — compatible con el patrón `Patch<T>` del backend, ya que solo se envía la clave que cambió.
+   - Props clave: `name`, `label`, `as` (`input | textarea | select | directory | url`), `items` (para `select`), `command` (comando Tauri a invocar en guardado inline), `id`, `invalidate-key` (clave de `pinia-colada` a invalidar tras guardar).
+   - Sin `command`/`id`, el campo no ofrece edición inline (solo participa en el modo edición global).
+3. Los componentes `*ViewEditForm.vue` (`src/components/form/view-edit/`) son el listado de `InputFieldWithView` de una entidad, reutilizado tanto dentro del `UForm` (modo edición global) como fuera de él (modo vista/inline), con el mismo `v-model` (el `state` local o la entidad real, según el modo).
+
+Referencia de implementación: `ProjectTabInfo.vue` + `ProjectViewEditForm.vue` + `InputFieldWithView.vue` para la entidad `projects`.
 
 ---
 
