@@ -419,6 +419,14 @@ Para pantallas de detalle de una entidad (ej. `pages/dashboard/projects/[id]/(vi
 
 Referencia de implementación: `ProjectTabInfo.vue` + `ProjectViewEditForm.vue` + `InputFieldWithView.vue` para la entidad `projects`.
 
+### Tabs de relaciones N:M (ej. `ProjectTabHosts.vue`)
+
+Para relaciones tipo `project_hosts` (N:M con datos propios: `deploy_order`, `enabled`), la tab **no** depende del `isEditMode` global de la pantalla — alta, orden, activar/desactivar y baja son acciones siempre disponibles con guardado inmediato por acción (no hay un modo "edición" separado):
+- Los datos de la relación ya vienen anidados en la entidad padre (`project.project_hosts`, cargados por Drizzle en `useProjectQuery`), no hace falta query aparte.
+- El catálogo de la entidad relacionada (ej. lista de hosts para el selector de alta) se resuelve con los loaders `useXSelectPopulate` ya existentes (ej. `useHostSelectPopulate`).
+- Alta/baja/actualización llaman a `crud_create_*` / `crud_delete_*` / `crud_update_*` directamente y mutan el array local (`project.value.project_hosts`) en el mismo `then`, sin depender de invalidar caché de `pinia-colada` para refrescar la UI (más inmediato, evita refetch innecesario).
+- `ToggleEnabled.vue` se reutiliza para el campo `enabled` de la relación; como invalida una key de caché fija (`['projects','list']`) pensada para el toggle de proyectos, en este contexto se ignora ese efecto y se escucha su evento `@updated` para mutar el estado local en su lugar.
+
 ---
 
 ## 8. Loading Screen
