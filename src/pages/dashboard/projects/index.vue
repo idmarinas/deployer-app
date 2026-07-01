@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 
 import { useFrameworkBadge } from '@/composables/useFrameworkBadge'
 import { useTableColumns } from '@/composables/useTableColumns'
+import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 </script>
 
@@ -52,13 +53,13 @@ const columns: TableColumn<Project>[] = [
 				h(UButton, {
 					color: 'neutral',
 					variant: 'ghost',
-					icon: 'i-tabler-eye',
+					icon: ICONS.actions.view,
 					async onClick() {
 						router.push({ name: 'dashboard-projects-id', params: { id: row.original.id } })
 					},
 				}),
 				h(UButton, {
-					icon: 'i-tabler-pencil',
+					icon: ICONS.actions.edit,
 					color: 'info',
 					variant: 'ghost',
 					async onClick() {
@@ -66,7 +67,7 @@ const columns: TableColumn<Project>[] = [
 					},
 				}),
 				h(UButton, {
-					icon: 'i-tabler-trash',
+					icon: ICONS.actions.delete,
 					color: 'error',
 					variant: 'ghost',
 					async onClick() {
@@ -81,7 +82,7 @@ const columns: TableColumn<Project>[] = [
 								title: t('pages.projects.toast.delete.loading.title'),
 								description: t('pages.projects.toast.delete.loading.description', { name: row.original.name }),
 								color: 'warning',
-								icon: 'i-tabler-trash',
+								icon: ICONS.actions.delete,
 								duration: 0,
 							})
 
@@ -92,7 +93,7 @@ const columns: TableColumn<Project>[] = [
 									title: t('pages.projects.toast.delete.success.title'),
 									description: t('pages.projects.toast.delete.success.description', { name: row.original.name }),
 									color: 'success',
-									icon: 'i-tabler-check',
+									icon: ICONS.status.check,
 									duration: undefined,
 								})
 							} else {
@@ -100,7 +101,7 @@ const columns: TableColumn<Project>[] = [
 									title: t('pages.projects.toast.delete.error.title'),
 									description: t('pages.projects.toast.delete.error.description', { name: row.original.name }),
 									color: 'error',
-									icon: 'i-tabler-x',
+									icon: ICONS.status.cross,
 									duration: undefined,
 								})
 							}
@@ -155,7 +156,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.project.git_url') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-brand-git" class="text-muted size-4" />
+									<UIcon :name="ICONS.framework.git" class="text-muted size-4" />
 									{{ row.original.git_url }}
 								</span>
 							</div>
@@ -163,7 +164,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.project.local_working_dir') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-device-desktop" class="text-muted size-4" />
+									<UIcon :name="ICONS.server.deviceDesktop" class="text-muted size-4" />
 									{{ row.original.local_working_dir }}
 								</span>
 							</div>
@@ -171,7 +172,7 @@ const expanded = ref({})
 							<div class="flex flex-col gap-1">
 								<span class="text-xs text-muted font-medium">{{ t('entity.project.remote_working_dir') }}</span>
 								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon name="i-tabler-server" class="text-muted size-4" />
+									<UIcon :name="ICONS.server.server" class="text-muted size-4" />
 									{{ row.original.remote_working_dir }}
 								</span>
 							</div>

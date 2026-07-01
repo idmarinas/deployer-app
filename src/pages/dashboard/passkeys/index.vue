@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { useToast } from '@nuxt/ui/composables'
 import { useConfirmDialog, useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
+import { ICONS, getModuleIcon } from '@/utils/icons'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
@@ -40,7 +41,7 @@ const columns : TableColumn<Passkey>[] = [
       h(UButton, {
         color: 'neutral',
         variant: 'ghost',
-        icon: (row.getIsExpanded() ? 'i-tabler-eye-off' : 'i-tabler-eye'),
+        icon: (row.getIsExpanded() ? ICONS.actions.viewOff : ICONS.actions.view),
         square: true,
         'aria-label': 'Expand',
         onClick: () => row.toggleExpanded()
@@ -61,14 +62,14 @@ const columns : TableColumn<Passkey>[] = [
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => h('div', { class: 'flex gap-2 justify-end' }, [
-      h(UButton, { icon: 'i-tabler-pencil', color: 'info', variant: 'ghost', async onClick () {
+      h(UButton, { icon: ICONS.actions.edit, color: 'info', variant: 'ghost', async onClick () {
         router.push({ name: 'dashboard-passkeys-id-edit', params: { id: row.original.id as number } })
       }}),
-      h(UButton, {icon: 'i-tabler-server-cog', variant: 'ghost', color: 'neutral', async onClick() {
+      h(UButton, {icon: ICONS.server.serverCog, variant: 'ghost', color: 'neutral', async onClick() {
         const copyToServer = useCopyPasskeyToServer()
         await copyToServer({passkey: row.original})
       }}),
-      h(UButton, { icon: 'i-tabler-trash', color: 'error', variant: 'ghost', async onClick() {
+      h(UButton, { icon: ICONS.actions.delete, color: 'error', variant: 'ghost', async onClick() {
         const result = await confirmDialog({
           type: 'cancel_delete',
           title: t('common.delete.label'),
@@ -80,7 +81,7 @@ const columns : TableColumn<Passkey>[] = [
             title: t('pages.passkeys.toast.delete.loading.title'),
             description: t('pages.passkeys.toast.delete.loading.description', { name: row.original.name }),
             color: 'warning',
-            icon: 'i-tabler-trash',
+            icon: ICONS.actions.delete,
             duration: 0
           })
 
@@ -91,7 +92,7 @@ const columns : TableColumn<Passkey>[] = [
               title: t('pages.passkeys.toast.delete.success.title'),
               description: t('pages.passkeys.toast.delete.success.description', { name: row.original.name }),
               color: 'success',
-              icon: 'i-tabler-check',
+              icon: ICONS.status.check,
               duration: undefined
             })
           } else {
@@ -99,7 +100,7 @@ const columns : TableColumn<Passkey>[] = [
               title: t('pages.passkeys.toast.delete.error.title'),
               description: t('pages.passkeys.toast.delete.error.description', { name: row.original.name }),
               color: 'error',
-              icon: 'i-tabler-x',
+              icon: ICONS.status.cross,
               duration: undefined
             })
           }
@@ -144,7 +145,7 @@ const expanded = ref({})
                     ID: {{ row.original.id }}
                   </UBadge>
                 </div>
-                <UBadge color="info" variant="subtle" icon="i-tabler-key">
+                <UBadge color="info" variant="subtle" :icon="ICONS.auth.key">
                   {{ row.original.key_type?.toLocaleUpperCase() }}
                 </UBadge>
               </div>
@@ -157,7 +158,7 @@ const expanded = ref({})
                 <div class="flex flex-col gap-1">
                   <span class="text-xs text-muted font-medium">{{ t('entity.passkey.key_content') }}</span>
                   <span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-                    <UIcon name="i-tabler-lock" class="text-muted size-4" />
+                    <UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
                     <span class="font-mono text-xs">
                       ••••••••••••••••••••••••••••<br />
                       ••••••••••••••••••••••••••••
@@ -168,7 +169,7 @@ const expanded = ref({})
                 <div class="flex flex-col gap-1 col-span-2">
                   <span class="text-xs text-muted font-medium">{{ t('entity.passkey.fingerprint') }}</span>
                   <span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-                    <UIcon name="i-tabler-fingerprint" class="text-muted size-4" />
+                    <UIcon :name="ICONS.auth.fingerprint" class="text-muted size-4" />
                     {{ row.original.fingerprint }}
                   </span>
                 </div>
@@ -179,13 +180,13 @@ const expanded = ref({})
                   </span>
                   <span class="text-sm text-foreground flex items-center gap-2">
                     <template v-if="row.original.passphrase?.startsWith('ENC:')">
-                      <UIcon name="i-tabler-lock" class="text-muted size-4" />
+                      <UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
                       <UBadge variant="subtle" size="sm" color="success" class="font-mono">
                         <span class="font-mono text-xs">•••••••••••</span>
                       </UBadge>
                     </template>
                     <template v-else>
-                      <UIcon name="i-tabler-lock-open" class="text-muted size-4" />
+                      <UIcon :name="ICONS.auth.lockOpen" class="text-muted size-4" />
                       <UBadge variant="subtle" size="sm" color="warning" class="font-mono">
                         <span class="font-mono text-xs">{{ t('common.empty') }}</span>
                       </UBadge>
@@ -198,12 +199,12 @@ const expanded = ref({})
             <template #footer>
               <div class="flex gap-4 items-center justify-between text-xs text-muted">
                 <span class="flex gap-1.5 items-center">
-                  <UIcon name="i-tabler-calendar-plus" class="size-4" />
+                  <UIcon :name="ICONS.calendar.createdAt" class="size-4" />
                   <strong>{{ t('entity.host.created_at') }}:</strong>
                   {{ new Date(row.original.created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}
                 </span>
                 <span class="flex gap-1.5 items-center">
-                  <UIcon name="i-tabler-calendar-time" class="size-4" />
+                  <UIcon :name="ICONS.calendar.updatedAt" class="size-4" />
                   <strong>{{ t('entity.host.updated_at') }}:</strong>
                   {{ new Date(row.original.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}
                 </span>
@@ -215,17 +216,17 @@ const expanded = ref({})
   </div>
   <UEmpty
     v-else
-    icon="i-tabler-key"
+    :icon="getModuleIcon('passkeys')"
     :title="t('pages.passkeys.table.empty.title')"
     :description="t('pages.passkeys.table.empty.description')"
     :actions="[
         {
-          icon: 'i-tabler-plus',
+          icon: ICONS.actions.add,
           label: t('components.navigation.add.passkey.label'),
           to: {name: 'dashboard-passkeys-add'}
         },
         {
-          icon: 'i-tabler-refresh',
+          icon: ICONS.actions.refresh,
           label: t('common.refresh'),
           color: 'neutral',
           variant: 'soft',
