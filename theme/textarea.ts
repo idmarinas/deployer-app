@@ -19,6 +19,7 @@ export default {
 			// Handle de resize estilizado como conector
 			'[&::-webkit-resizer]:bg-transparent',
 		].join(' '),
+		trailing: 'pointer-events-none',
 	},
 	compoundVariants: [
 		{

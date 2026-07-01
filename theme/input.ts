@@ -17,6 +17,7 @@ export default {
 			'focus:[filter:drop-shadow(0_2px_6px_var(--pcb-trace-glow))]',
 			'disabled:opacity-40 disabled:cursor-not-allowed',
 		].join(' '),
+		trailing: 'pointer-events-none',
 	},
 	variants: {
 		size: {
