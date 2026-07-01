@@ -108,6 +108,7 @@ CREATE TABLE projects (
             'symfony',
             'laravel',
             'nextjs',
+            'vuejs',
             'generic'
         )
     ),
