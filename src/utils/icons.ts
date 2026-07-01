@@ -25,6 +25,8 @@
  *   ICONS.actions.delete                   // 'i-tabler-trash'
  */
 
+import { unknown } from 'zod'
+
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
@@ -176,8 +178,10 @@ export const ICONS = {
 		symfony: 'i-tabler-brand-symfony',
 		laravel: 'i-tabler-brand-laravel',
 		nextjs: 'i-tabler-brand-nextjs',
+		vuejs: 'i-tabler-brand-vue',
 		generic: 'i-tabler-code',
 		git: 'i-tabler-brand-git',
+		unknown: 'i-tabler-question-mark',
 	},
 
 	/** Redes sociales (footer del sidebar) */
