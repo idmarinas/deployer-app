@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import ui from '@nuxt/ui/vite'
-import vueRouter from 'vue-router/vite'
+import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import { defineConfig } from 'vite'
+import vueDevTools from 'vite-plugin-vue-devtools'
+import vueRouter from 'vue-router/vite'
 import * as theme from './theme'
 
 const host = process.env.TAURI_DEV_HOST
@@ -106,7 +106,14 @@ export default defineConfig(async () => ({
 	},
 
 	optimizeDeps: {
-		include: ['@tauri-apps/api/window', '@tauri-apps/plugin-dialog', 'vue-router/experimental/pinia-colada', 'zod'],
+		include: [
+			'@tauri-apps/api/window',
+			'@tauri-apps/plugin-dialog',
+			'@iconify/vue',
+			'@vueuse/integrations/useSortable',
+			'vue-router/experimental/pinia-colada',
+			'zod',
+		],
 	},
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
