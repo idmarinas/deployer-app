@@ -184,6 +184,14 @@ export const ICONS = {
 		unknown: 'i-tabler-question-mark',
 	},
 
+	/** Tipos de task (command, script, upload_file, download_file) */
+	taskType: {
+		command: 'i-tabler-terminal-2',
+		script: 'i-tabler-script',
+		upload_file: 'i-tabler-upload',
+		download_file: 'i-tabler-download',
+	},
+
 	/** Redes sociales (footer del sidebar) */
 	social: {
 		x: 'i-tabler-brand-x',
