@@ -59,14 +59,6 @@ const columns: TableColumn<Project>[] = [
 					},
 				}),
 				h(UButton, {
-					icon: ICONS.actions.edit,
-					color: 'info',
-					variant: 'ghost',
-					async onClick() {
-						router.push({ name: 'dashboard-projects-id-edit', params: { id: row.original.id } })
-					},
-				}),
-				h(UButton, {
 					icon: ICONS.actions.delete,
 					color: 'error',
 					variant: 'ghost',
