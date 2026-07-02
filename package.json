@@ -25,7 +25,6 @@
 		"@tauri-apps/plugin-sql": "~2.4.0",
 		"@tauri-apps/plugin-store": "~2.4.3",
 		"@tauri-apps/plugin-window-state": "~2.4.1",
-		"@vueuse/core": "^14.3.0",
 		"drizzle-orm": "^0.45.2",
 		"maska": "^3.2.0",
 		"prettier-plugin-organize-imports": "^4.3.0",
