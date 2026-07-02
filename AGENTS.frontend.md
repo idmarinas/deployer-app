@@ -427,6 +427,41 @@ Para relaciones tipo `project_hosts` (N:M con datos propios: `deploy_order`, `en
 - Alta/baja/actualización llaman a `crud_create_*` / `crud_delete_*` / `crud_update_*` directamente y mutan el array local (`project.value.project_hosts`) en el mismo `then`, sin depender de invalidar caché de `pinia-colada` para refrescar la UI (más inmediato, evita refetch innecesario).
 - `ToggleEnabled.vue` se reutiliza para el campo `enabled` de la relación; como invalida una key de caché fija (`['projects','list']`) pensada para el toggle de proyectos, en este contexto se ignora ese efecto y se escucha su evento `@updated` para mutar el estado local en su lugar.
 
+### Catálogo de Tasks (`pages/dashboard/tasks/`)
+
+Sigue exactamente el mismo patrón CRUD que `hosts` (`useTaskSchema`, `loaders/tasks.ts`, `TaskForm.vue`, `index/add/[id].edit.vue`, toolbar via `useToolbarContentCreate`/`Edit`), con una particularidad a tener en cuenta siempre que se toque:
+
+- La entidad `Task` expone el campo `type: TaskType`, pero `CreateTaskInput`/`UpdateTaskInput` (y por tanto el schema Zod y `TaskForm.vue`) usan la clave `task_type`. Al cargar una task existente en `[id].edit.vue` hay que remapear `type` → `task_type` en el `state` (`const { type, ...rest } = task; state.value = { ...rest, task_type: type }`). Al enviar el formulario no hace falta remapeo inverso, porque los comandos ya esperan `task_type`.
+- El campo `command` de la task solo es obligatorio para `task_type` `command`/`script` (validado con `.refine()` en `useTaskSchema`); para `upload_file`/`download_file` el `command` no se usa — esa configuración (rutas origen/destino) vive en `project_tasks.config` (ver `TaskConfig`/`FileTransferConfig`), porque depende de cada proyecto, no de la task global.
+- `is_global` se fija siempre a `true` al crear desde este catálogo (no se expone en `TaskForm.vue`); si en el futuro se permiten tasks no globales (propias de un proyecto), habrá que revisar este punto.
+- Iconos por `task_type` centralizados en `ICONS.taskType` (`utils/icons.ts`).
+
+Pendiente (no implementado aún): `ProjectTabTasks.vue` (asignar tasks del catálogo a un proyecto con `order_execution`, `condition`, `on_failure`, `config`, overrides de working_dir/retry) y gestión de `task_dependencies`.
+
+### `ProjectTabTasks.vue`: asignación de tasks con ajustes avanzados por asignación
+
+Implementado siguiendo el mismo patrón que `ProjectTabHosts.vue` (orden por drag&drop con `useSortable` de `@vueuse/integrations`, alta/baja siempre disponibles, mutación local del array sin depender de invalidar caché), con una capa extra porque `project_tasks` tiene muchos campos opcionales:
+
+- Cada tarjeta tiene un botón de "ajustes" (icono `ICONS.app.settings`) que despliega un panel plegable con `on_failure`, `condition`, overrides de `local_working_dir`/`remote_working_dir`/`retry_count`/`retry_delay`, y (solo si la task es `upload_file`/`download_file`) los campos `src`/`dest`/`recursive` de `TaskConfig`, serializados a JSON en `project_tasks.config`.
+- El panel usa un `draftSettings` local (no dirty-tracking campo a campo): al abrirlo se rellena desde el `ProjectTask` + `JSON.parse(config)`, y al guardar se envía el objeto completo de ajustes vía `crud_update_project_task` (más simple que trackear cada campo suelto, aceptable porque son pocos campos y de baja frecuencia de cambio).
+- `taskInfo(taskId)` resuelve el `task_type` desde `useTaskSelectPopulate` (catálogo), necesario para saber si mostrar los campos de `config` de transferencia de archivos.
+- Pendiente: gestión de `task_dependencies` (probablemente mejor en la edición de la Task del catálogo, no aquí, ya que las dependencias son entre tasks, no entre asignaciones a un proyecto concreto).
+
+### `task_dependencies` (`TaskDependencies.vue`, dentro de `tasks/[id].edit.vue`)
+
+Vive en la edición de la Task del catálogo, no en la tab de proyecto, porque las dependencias son entre tasks globales (no entre asignaciones `project_tasks`). Particularidades:
+
+- La **lectura** es un `SELECT` directo vía `useDatabase().select()` (`task_dependencies` no tiene datos cifrados ni comando `crud_list_*` dedicado); las **mutaciones** (alta/baja/cambio de `dependency_type`) sí van por `invoke` a `crud_create_task_dependency` / `crud_update_task_dependency` / `crud_delete_task_dependency`.
+- `UpdateTaskDependencyInput` solo permite cambiar `dependency_type`; para cambiar la task de la que se depende hay que borrar y crear de nuevo (no hay endpoint de "mover").
+- El selector de "añadir dependencia" excluye la propia task (`taskId`) y las tasks de las que ya depende, usando el catálogo de `useTaskSelectPopulate`.
+
+### `ProjectTabVariables.vue`
+
+A diferencia de Hosts/Tasks, `project_variables` no tiene catálogo que asignar: la variable pertenece directamente al proyecto (CRUD simple 1:N, sin tabla de relación). Mismo principio que las demás tabs: no depende de `isEditMode` global, alta/edición/baja siempre disponibles con guardado inmediato y mutación local del array.
+
+- Edición por fila con toggle vista/edición local (patrón similar a `ProjectTabInfo`, pero por item de una lista en vez de para toda la entidad).
+- `is_secret`: el valor llega ya en texto plano desde `crud_get_project` (Rust descifra al leer), pero en la UI se enmascara por defecto (`••••••••`) con un botón de "ojo" para revelar/ocultar client-side — el cifrado real en BD lo gestiona `crud_update_project_variable` según el flag `is_secret`.
+
 ---
 
 ## 8. Loading Screen
