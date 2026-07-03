@@ -2,21 +2,20 @@ import './assets/css/main.css'
 
 import type { CommandResponse } from './types/tauri-types'
 
-import { createApp } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-import { DataLoaderPlugin } from 'vue-router/experimental'
-import { createPinia } from 'pinia'
-import { PiniaColada } from '@pinia/colada'
-import { routes, handleHotUpdate } from 'vue-router/auto-routes'
-import { createHead } from '@unhead/vue/client'
-import { createI18n } from 'vue-i18n'
 import ui from '@nuxt/ui/vue-plugin'
-import { vMaska } from 'maska/vue'
+import { PiniaColada } from '@pinia/colada'
+import { createHead } from '@unhead/vue/client'
+import { createPinia } from 'pinia'
+import { createApp } from 'vue'
+import { createI18n } from 'vue-i18n'
+import { createRouter, createWebHistory } from 'vue-router'
+import { handleHotUpdate, routes } from 'vue-router/auto-routes'
+import { DataLoaderPlugin } from 'vue-router/experimental'
 
 // Tauri related
 import { invoke } from '@tauri-apps/api/core'
 
-import { loadLocaleMessages, loadDatetimeFormat, loadNumberFormat, availableLocales } from './locales/_loader'
+import { availableLocales, loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from './locales/_loader'
 
 import App from './App.vue'
 
@@ -79,7 +78,6 @@ async function bootstrap() {
 		.use(DataLoaderPlugin, { router })
 		.use(router)
 		.use(ui)
-		.directive('maska', vMaska)
 		.mount('#app')
 }
 
