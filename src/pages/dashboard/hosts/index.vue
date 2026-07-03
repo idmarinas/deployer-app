@@ -1,16 +1,16 @@
 <script lang="ts">
-import type { TableColumn } from '@nuxt/ui'
 import type { CommandResponse, Host } from '@/types/tauri-types'
+import type { TableColumn } from '@nuxt/ui'
 
-import { ref, useTemplateRef, resolveComponent, h } from 'vue'
+import { h, ref, resolveComponent, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useToast } from '@nuxt/ui/composables'
 import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
-import { useRouter } from 'vue-router'
 import { useHostListAll } from '@/loaders/hosts'
 import { ICONS, getModuleIcon } from '@/utils/icons'
+import { useToast } from '@nuxt/ui/composables'
+import { useRouter } from 'vue-router'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
@@ -286,7 +286,7 @@ const expanded = ref({})
 			},
 			{
 				icon: ICONS.actions.refresh,
-				label: t('common.refresh'),
+				label: t('common.actions.refresh'),
 				color: 'neutral',
 				variant: 'soft',
 				onClick: () => reload(),
