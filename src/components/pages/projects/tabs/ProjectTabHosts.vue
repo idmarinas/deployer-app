@@ -86,7 +86,6 @@ useSortable(sortableContainer, project.value.project_hosts, {
 	},
 })
 
-const hosts = computed(() => project.value.project_hosts)
 const assignedIds = computed(() => new Set((project.value.project_hosts as ProjectHost[]).map(ph => ph.host_id)))
 
 function startAdd() {
@@ -237,12 +236,9 @@ function canDeployInHost(ph: ProjectHostRow) {
 				:id="projectHost.id"
 				@updated="
 					(value: boolean) => {
-						hosts[index].enabled = value
-
-						project = {
-							...project,
-							project_hosts: hosts,
-						}
+						const updatedHosts = [...project.project_hosts]
+						updatedHosts[index].enabled = value
+						project = { ...project, project_hosts: updatedHosts }
 					}
 				"
 			/>
