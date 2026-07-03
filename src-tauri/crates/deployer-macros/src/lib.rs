@@ -3,9 +3,12 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Lit, Meta};
+use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Field, Fields, Lit, Meta};
 
-#[proc_macro_derive(DbEntity, attributes(db_table, db_encrypt, db_conditional_encrypt))]
+#[proc_macro_derive(
+    DbEntity,
+    attributes(db_table, db_encrypt, db_conditional_encrypt, db_rename)
+)]
 pub fn derive_db_entity(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
@@ -95,21 +98,36 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
     }
 
     // Generar los arrays estáticos para encrypted_fields y conditional_encrypted_fields
+    // NOTA: usan el nombre de CAMPO RUST (no la columna renombrada), porque
+    // `apply_encryption`/`apply_decryption` operan sobre el resultado de
+    // `to_fields()`/`to_fields_all()`, que ya usa el nombre de columna DB
+    // renombrado (ver `get_db_rename` más abajo) — por tanto estos arrays
+    // también deben usar el nombre de columna DB para que coincidan.
     let encrypted_fields_tokens = encrypted_fields.iter().map(|(field, expose)| {
-        quote! { (#field, #expose) }
+        let db_name = fields
+            .iter()
+            .find(|f| f.ident.as_ref().unwrap().to_string() == *field)
+            .and_then(get_db_rename)
+            .unwrap_or_else(|| field.clone());
+        quote! { (#db_name, #expose) }
     });
 
     let conditional_encrypted_fields_tokens =
         conditional_encrypted_fields.iter().map(|(field, cond)| {
-            quote! { (#field, #cond) }
+            let db_name = fields
+                .iter()
+                .find(|f| f.ident.as_ref().unwrap().to_string() == *field)
+                .and_then(get_db_rename)
+                .unwrap_or_else(|| field.clone());
+            quote! { (#db_name, #cond) }
         });
 
     // 4. Generar from_row
     let from_row_fields = fields.iter().map(|field| {
         let f_ident = &field.ident;
-        let f_name = f_ident.as_ref().unwrap().to_string();
+        let f_db_name = db_column_name(field);
         quote! {
-            #f_ident: row.try_get(#f_name).map_err(|e| e.to_string())?
+            #f_ident: row.try_get(#f_db_name).map_err(|e| e.to_string())?
         }
     });
 
@@ -124,35 +142,35 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
         })
         .map(|field| {
             let f_ident = &field.ident;
-            let f_name = f_ident.as_ref().unwrap().to_string();
+            let f_db_name = db_column_name(field);
             let expect_msg = format!(
                 "Error al serializar el campo `{}` a serde_json::Value",
-                f_name
+                f_db_name
             );
             quote! {
-                (#f_name.into(), serde_json::to_value(&self.#f_ident).expect(#expect_msg))
+                (#f_db_name.into(), serde_json::to_value(&self.#f_ident).expect(#expect_msg))
             }
         });
 
     // 6. Generar to_fields_all (todos los campos)
     let to_fields_all_mappings = fields.iter().map(|field| {
         let f_ident = &field.ident;
-        let f_name = f_ident.as_ref().unwrap().to_string();
+        let f_db_name = db_column_name(field);
         let expect_msg = format!(
             "Error al serializar el campo `{}` a serde_json::Value",
-            f_name
+            f_db_name
         );
         quote! {
-            (#f_name.into(), serde_json::to_value(&self.#f_ident).expect(#expect_msg))
+            (#f_db_name.into(), serde_json::to_value(&self.#f_ident).expect(#expect_msg))
         }
     });
 
     // 7. Generar from_fields
     let from_fields_mappings = fields.iter().map(|field| {
         let f_ident = &field.ident;
-        let f_name = f_ident.as_ref().unwrap().to_string();
+        let f_db_name = db_column_name(field);
         quote! {
-            #f_ident: map.get(#f_name)
+            #f_ident: map.get(#f_db_name)
                 .cloned()
                 .and_then(|v| serde_json::from_value(v).ok())
                 .unwrap_or_default()
@@ -229,4 +247,30 @@ fn get_table_name(
             struct_ident
         ),
     ))
+}
+
+/// Busca #[db_rename("columna")] en los atributos de un campo.
+///
+/// Permite que el nombre del campo Rust difiera del nombre de la columna en
+/// SQLite (por ejemplo, `task_type` en Rust -> columna `type`, ya que `type`
+/// es palabra reservada en Rust y no puede usarse como identificador sin
+/// `r#type`). Devuelve `None` si el campo no tiene el atributo, en cuyo caso
+/// se usa el nombre del campo Rust tal cual como nombre de columna.
+fn get_db_rename(field: &Field) -> Option<String> {
+    for attr in &field.attrs {
+        if attr.path().is_ident("db_rename") {
+            if let Meta::List(meta_list) = &attr.meta {
+                if let Ok(Lit::Str(lit_str)) = meta_list.parse_args::<Lit>() {
+                    return Some(lit_str.value());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Nombre de columna DB efectivo de un campo: el de `#[db_rename("...")]` si
+/// existe, o si no el nombre del campo Rust tal cual.
+fn db_column_name(field: &Field) -> String {
+    get_db_rename(field).unwrap_or_else(|| field.ident.as_ref().unwrap().to_string())
 }

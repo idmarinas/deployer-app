@@ -48,6 +48,7 @@ pub struct Task {
     pub name: String,
     pub description: Option<String>,
     #[serde(rename = "type")]
+    #[db_rename("type")]
     pub task_type: TaskType,
     /// Comando a ejecutar (o contenido del script si task_type = Script).
     /// Para UploadFile / DownloadFile este campo no se usa; la configuración

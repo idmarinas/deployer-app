@@ -33,7 +33,7 @@ pub async fn crud_update_task(
     }
     if let Some(task_type) = input.task_type {
         fields.push((
-            "task_type".to_string(),
+            "type".to_string(),
             serde_json::to_value(task_type).unwrap_or(Value::Null),
         ));
     }
