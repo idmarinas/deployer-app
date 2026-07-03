@@ -210,14 +210,14 @@ function canDeployInHost(ph: ProjectHostRow) {
 				<UIcon name="i-tabler-grip-vertical" class="size-5" />
 			</span>
 			<UBadge color="neutral" variant="subtle" class="font-mono shrink-0">
-				{{ (projectHost.deploy_order || 0) + 1 }}
+				{{ index + 1 }}
 			</UBadge>
 
 			<div class="min-w-0 flex-1 flex gap-2 items-center">
 				<UBadge
 					:color="projectHost.host.enabled ? 'success' : 'error'"
 					variant="outline"
-					:icon="projectHost.host.enabled ? 'i-tabler-server' : 'i-tabler-server-off'"
+					:icon="projectHost.host.enabled ? getModuleIcon('hosts', 'singular') : getModuleIcon('hosts', 'off')"
 				/>
 				<div>
 					<p class="truncate text-sm font-medium">
