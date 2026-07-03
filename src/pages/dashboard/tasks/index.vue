@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useTaskListAll } from '@/loaders/tasks'
-import { ICONS, getModuleIcon } from '@/utils/icons'
+import { ICONS } from '@/utils/icons'
 import { useToast } from '@nuxt/ui/composables'
 import { useRouter } from 'vue-router'
 
@@ -23,7 +23,7 @@ definePage({
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const toast = useToast()
 const confirmDialog = useConfirmDialog()
 const router = useRouter()
