@@ -1,13 +1,11 @@
 import { useDatabase } from '@/composables/useDatabase'
 
 import { useDeployerSettingsQuery } from './queries/deployerSettings'
-import { useDeploymentHistoryQuery } from './queries/deploymentHistory'
 
 export function useQuery() {
 	const { db: database } = useDatabase()
 
 	const deployerSettingsQuery = useDeployerSettingsQuery()
-	const deploymentHistoryQuery = useDeploymentHistoryQuery()
 
 	async function count(table: string, where: string): Promise<number> {
 		return database
@@ -22,8 +20,6 @@ export function useQuery() {
 	return {
 		// Deployer Settings
 		...deployerSettingsQuery,
-		// Deployment History
-		...deploymentHistoryQuery,
 
 		// Common
 		count,
