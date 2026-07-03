@@ -181,5 +181,5 @@ const expanded = ref({})
 		:add-route="{ name: 'dashboard-projects-add' }"
 		:reload-fn="reload"
 	/>
-	<UError v-else />
+	<GeneralError v-else />
 </template>
