@@ -120,6 +120,15 @@ El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera aut
 | `#[db_encrypt]` | Campo | Cifra siempre el campo. `expose = false` por defecto. |
 | `#[db_encrypt(expose = true)]` | Campo | Cifra siempre; descifra y expone el valor al frontend al leer. |
 | `#[db_conditional_encrypt(condition = "campo")]` | Campo | Cifra solo si `campo` es `true` en la misma fila. |
+| `#[db_rename("columna")]` | Campo | El campo Rust usa un nombre de columna SQLite distinto. Imprescindible cuando el nombre natural de columna es palabra reservada de Rust (ej. `type`) y el campo se llama `task_type`/`r#type` en el struct. |
+
+### CRÍTICO: sin `#[db_rename]`, el nombre de columna SIEMPRE es el nombre del campo Rust
+
+`from_row()`, `to_fields()`, `to_fields_all()` y `from_fields()` generados por el macro usan **literalmente el identificador del campo Rust** como nombre de columna SQL (vía `field.try_get("nombre_campo")` y como clave en el `INSERT`/`UPDATE` dinámico de `db::insert`/`db::update_fields`). Si el nombre de campo Rust no coincide exactamente con el nombre de columna real de la migración, falla en **create, update Y read** (no solo en el punto donde se notó el error) porque todas esas operaciones pasan por el mismo `DbEntity`.
+
+Caso real (sesión de julio 2026): `Task.task_type` tenía `#[serde(rename = "type")]` (para que el JSON/TypeScript expusiera el campo como `type`), pero **eso es solo un rename de serialización**, no de columna DB — son mecanismos completamente independientes. El macro siguía generando `row.try_get("task_type")` y `INSERT INTO tasks (task_type, ...)`, mientras la columna real (migración) se llama `type`. Síntoma: crear una task fallaba con "no such column: task_type". Fix: añadir soporte a `#[db_rename("columna")]` en el macro y aplicarlo en el campo (`#[db_rename("type")] pub task_type: TaskType`), **además** de corregir a mano cualquier lugar que construya `Vec<(String, Value)>` manualmente para un `UPDATE` parcial (ej. `crud_update_task.rs` tenía `"task_type".to_string()` hardcodeado en vez de `"type".to_string()` — el macro no puede arreglar ese código manual, hay que revisarlo caso a caso).
+
+**Regla al añadir un campo cuyo nombre Rust deseado choca con una palabra reservada, o simplemente quieres que difiera del nombre de columna:** usar siempre `#[db_rename("columna_real")]` junto al campo, y grep del nombre de columna literal (`"columna_real".to_string()`) en cualquier comando `crud_update_*` que construya el `Vec<(String, Value)>` a mano en vez de vía `to_fields()`.
 
 ### Métodos generados
 
