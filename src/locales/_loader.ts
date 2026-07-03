@@ -64,7 +64,13 @@ function normalizeKey(path: string): string {
 function setDeep(obj: Record<string, unknown>, parts: string[], value: unknown): void {
     const key = parts[0]
     if (parts.length === 1) {
-        obj[key] = value
+        if (typeof obj[key] === 'object' && obj[key] !== null && typeof value === 'object' && value !== null) {
+            Object.assign(obj[key], value)
+        } else if (typeof value === 'object' && value !== null) {
+            obj[key] = { ...value }
+        } else {
+            obj[key] = value
+        }
         return
     }
     if (!obj[key] || typeof obj[key] !== 'object') {
