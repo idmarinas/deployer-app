@@ -210,6 +210,8 @@ export const ICONS = {
 		adjustments: 'i-tabler-adjustments',
 		history: 'i-tabler-history',
 		infoCircle: 'i-tabler-info-circle',
+		lock: 'i-tabler-lock',
+		lockOpen: 'i-tabler-lock-open',
 	},
 } as const
 
