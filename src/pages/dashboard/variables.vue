@@ -12,7 +12,7 @@ const { toolbarContent } = useDashboardToolbarProvider('global_variables')
 <template>
 	<UDashboardPanel id="variables">
 		<template #header>
-			<UDashboardNavbar icon="i-tabler-variable" :title="t('pages.variables.title')">
+			<UDashboardNavbar icon="i-tabler-variable" :title="t('pages.global_variables.title')">
 				<template #leading>
 					<UDashboardSidebarCollapse />
 				</template>
