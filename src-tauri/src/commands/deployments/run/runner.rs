@@ -323,9 +323,18 @@ async fn execute_with_retry(
             TaskType::UploadFile => {
                 if let Some(TaskConfig::UploadFile(ref cfg)) = task.config {
                     let resolved = crate::commands::projects::tasks::types::FileTransferConfig {
-                        src: snapshot.interpolate(&cfg.src),
-                        dest: snapshot.interpolate(&cfg.dest),
-                        recursive: cfg.recursive,
+                        paths: cfg
+                            .paths
+                            .iter()
+                            .map(|p| crate::commands::projects::tasks::types::PathMapping {
+                                src: snapshot.interpolate(&p.src),
+                                dest: snapshot.interpolate(&p.dest),
+                                recursive: p.recursive,
+                                exclude: p.exclude.clone(),
+                                chmod: p.chmod.clone(),
+                            })
+                            .collect(),
+                        overwrite: cfg.overwrite,
                     };
                     sftp_executor::upload_file(ssh_session, task, execution_id, &resolved, channel)
                         .await
@@ -337,9 +346,18 @@ async fn execute_with_retry(
             TaskType::DownloadFile => {
                 if let Some(TaskConfig::DownloadFile(ref cfg)) = task.config {
                     let resolved = crate::commands::projects::tasks::types::FileTransferConfig {
-                        src: snapshot.interpolate(&cfg.src),
-                        dest: snapshot.interpolate(&cfg.dest),
-                        recursive: cfg.recursive,
+                        paths: cfg
+                            .paths
+                            .iter()
+                            .map(|p| crate::commands::projects::tasks::types::PathMapping {
+                                src: snapshot.interpolate(&p.src),
+                                dest: snapshot.interpolate(&p.dest),
+                                recursive: p.recursive,
+                                exclude: p.exclude.clone(),
+                                chmod: p.chmod.clone(),
+                            })
+                            .collect(),
+                        overwrite: cfg.overwrite,
                     };
                     sftp_executor::download_file(
                         ssh_session,

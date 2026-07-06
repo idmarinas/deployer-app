@@ -9,11 +9,16 @@ use crate::commands::Patch;
 // en project_tasks.config
 // ============================================================================
 
-/// Configuración de transferencia de archivo (Upload o Download).
-/// Las rutas soportan interpolación de variables {{variable}}.
+/// Un mapeo individual origen -> destino dentro de una transferencia de
+/// archivos. Una `FileTransferConfig` contiene una lista de estos, lo que
+/// permite representar con la misma estructura:
+/// - 1 archivo suelto -> `paths` con 1 elemento, `recursive: false`.
+/// - Varios archivos sueltos -> `paths` con N elementos (cada uno su propio
+///   src/dest, ya que pueden ir a destinos distintos).
+/// - 1 directorio completo -> `paths` con 1 elemento, `recursive: true`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
-pub struct FileTransferConfig {
+pub struct PathMapping {
     /// Ruta de origen.
     /// - UploadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
     /// - DownloadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
@@ -22,9 +27,37 @@ pub struct FileTransferConfig {
     /// - UploadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
     /// - DownloadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
     pub dest: String,
-    /// Si true, transfiere directorios de forma recursiva. Por defecto false.
+    /// Si true, transfiere `src` como directorio de forma recursiva. Por defecto false.
     #[serde(default)]
     pub recursive: bool,
+    /// Patrones a excluir (solo aplica si `recursive` es true). Soporta `*` y
+    /// `?` como comodines simples (ej. "node_modules", ".git", "*.log").
+    /// Se compara contra el nombre de cada entrada (archivo o directorio),
+    /// no contra la ruta completa.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
+    /// Permisos octales a aplicar tras la transferencia (ej. "755", "644").
+    /// Solo tiene efecto en el lado remoto (chmod vía SFTP); en descargas se
+    /// ignora para el archivo local (no hay chmod portable Windows/Unix).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chmod: Option<String>,
+}
+
+/// Configuración de transferencia de archivo (Upload o Download).
+/// Las rutas soportan interpolación de variables {{variable}}.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct FileTransferConfig {
+    pub paths: Vec<PathMapping>,
+    /// Si false, se omite la transferencia de un archivo si el destino ya
+    /// existe (no aplica a directorios recursivos, donde siempre se
+    /// sobrescribe archivo a archivo). Por defecto true.
+    #[serde(default = "default_true")]
+    pub overwrite: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Configuración serializada en project_tasks.config.

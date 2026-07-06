@@ -19,7 +19,10 @@ pub struct SftpResult {
     pub output_db: String,
 }
 
-/// Sube un archivo o directorio del PC local al servidor remoto.
+/// Sube uno o varios archivos, o un directorio completo, del PC local al
+/// servidor remoto. `config.paths` puede tener 1 elemento (archivo suelto o
+/// directorio con recursive:true) o N elementos (varios archivos/directorios
+/// en la misma task, cada uno con su propio origen/destino).
 ///
 /// Patrón correcto russh-sftp 2.x:
 ///   1. `channel_open_session()` sobre el Handle
@@ -34,9 +37,6 @@ pub async fn upload_file(
 ) -> Result<SftpResult, String> {
     session.ensure_connected().await?;
 
-    let src_path = resolve_local_path(&config.src, task.local_working_dir.as_deref());
-    let dest_path = resolve_remote_path(&config.dest, task.remote_working_dir.as_deref());
-
     let start = Instant::now();
     let mut output_lines: Vec<String> = Vec::new();
     let mut bytes_transferred: u64 = 0;
@@ -44,30 +44,40 @@ pub async fn upload_file(
 
     let sftp = open_sftp_session(session).await?;
 
-    if config.recursive && src_path.is_dir() {
-        upload_recursive(
-            &sftp,
-            &src_path,
-            &dest_path,
-            execution_id,
-            channel,
-            &mut bytes_transferred,
-            &mut files_transferred,
-            &mut output_lines,
-        )
-        .await?;
-    } else {
-        upload_single_file(
-            &sftp,
-            &src_path,
-            &dest_path,
-            execution_id,
-            channel,
-            &mut bytes_transferred,
-            &mut files_transferred,
-            &mut output_lines,
-        )
-        .await?;
+    for mapping in &config.paths {
+        let src_path = resolve_local_path(&mapping.src, task.local_working_dir.as_deref());
+        let dest_path = resolve_remote_path(&mapping.dest, task.remote_working_dir.as_deref());
+
+        if mapping.recursive && src_path.is_dir() {
+            upload_recursive(
+                &sftp,
+                &src_path,
+                &dest_path,
+                execution_id,
+                channel,
+                config.overwrite,
+                mapping.exclude.as_deref(),
+                mapping.chmod.as_deref(),
+                &mut bytes_transferred,
+                &mut files_transferred,
+                &mut output_lines,
+            )
+            .await?;
+        } else {
+            upload_single_file(
+                &sftp,
+                &src_path,
+                &dest_path,
+                execution_id,
+                channel,
+                config.overwrite,
+                mapping.chmod.as_deref(),
+                &mut bytes_transferred,
+                &mut files_transferred,
+                &mut output_lines,
+            )
+            .await?;
+        }
     }
 
     let duration_seconds = start.elapsed().as_secs() as i64;
@@ -81,7 +91,8 @@ pub async fn upload_file(
     })
 }
 
-/// Descarga un archivo del servidor remoto al PC local.
+/// Descarga uno o varios archivos, o un directorio completo, del servidor
+/// remoto al PC local. Ver `upload_file` para la semántica de `config.paths`.
 pub async fn download_file(
     session: &mut SshSession,
     task: &ResolvedTask,
@@ -91,9 +102,6 @@ pub async fn download_file(
 ) -> Result<SftpResult, String> {
     session.ensure_connected().await?;
 
-    let src_path = resolve_remote_path(&config.src, task.remote_working_dir.as_deref());
-    let dest_path = resolve_local_path(&config.dest, task.local_working_dir.as_deref());
-
     let start = Instant::now();
     let mut output_lines: Vec<String> = Vec::new();
     let mut bytes_transferred: u64 = 0;
@@ -101,17 +109,39 @@ pub async fn download_file(
 
     let sftp = open_sftp_session(session).await?;
 
-    download_single_file(
-        &sftp,
-        src_path.to_str().unwrap_or(""),
-        &dest_path,
-        execution_id,
-        channel,
-        &mut bytes_transferred,
-        &mut files_transferred,
-        &mut output_lines,
-    )
-    .await?;
+    for mapping in &config.paths {
+        let src_path = resolve_remote_path(&mapping.src, task.remote_working_dir.as_deref());
+        let dest_path = resolve_local_path(&mapping.dest, task.local_working_dir.as_deref());
+
+        if mapping.recursive {
+            download_recursive(
+                &sftp,
+                &src_path,
+                &dest_path,
+                execution_id,
+                channel,
+                config.overwrite,
+                mapping.exclude.as_deref(),
+                &mut bytes_transferred,
+                &mut files_transferred,
+                &mut output_lines,
+            )
+            .await?;
+        } else {
+            download_single_file(
+                &sftp,
+                src_path.to_str().unwrap_or(""),
+                &dest_path,
+                execution_id,
+                channel,
+                config.overwrite,
+                &mut bytes_transferred,
+                &mut files_transferred,
+                &mut output_lines,
+            )
+            .await?;
+        }
+    }
 
     let duration_seconds = start.elapsed().as_secs() as i64;
     let output_db = output_lines.join("\n");
@@ -169,18 +199,69 @@ fn resolve_remote_path(path: &str, working_dir: Option<&str>) -> PathBuf {
     }
 }
 
+/// Aplica `chmod` (permisos octales, ej. "755") al archivo remoto recién
+/// subido. No es fatal si falla (el servidor puede no soportarlo, o el
+/// usuario SSH no tener permisos): se registra como aviso en el output y se
+/// continúa con la transferencia.
+///
+/// NOTA para Iván: si `cargo check` falla aquí porque `set_metadata`/`FileAttributes`
+/// no existen con esa firma exacta en russh-sftp 2.0.6, pégame el error del
+/// compilador y lo ajusto — no pude verificar la firma exacta offline.
+async fn apply_chmod(
+    sftp: &russh_sftp::client::SftpSession,
+    remote_path: &str,
+    chmod: &str,
+    output_lines: &mut Vec<String>,
+) {
+    let mode = match u32::from_str_radix(chmod, 8) {
+        Ok(m) => m,
+        Err(_) => {
+            output_lines.push(format!(
+                "⚠ chmod '{}' inválido para '{}' (se esperaba octal, ej. 755)",
+                chmod, remote_path
+            ));
+            return;
+        }
+    };
+
+    let attrs = russh_sftp::protocol::FileAttributes {
+        permissions: Some(mode),
+        ..Default::default()
+    };
+
+    if let Err(e) = sftp.set_metadata(remote_path, attrs).await {
+        output_lines.push(format!(
+            "⚠ No se pudo aplicar chmod {} a '{}': {}",
+            chmod, remote_path, e
+        ));
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn upload_single_file(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
     dest: &PathBuf,
     execution_id: i64,
     channel: &Channel<ProgressEvent>,
+    overwrite: bool,
+    chmod: Option<&str>,
     bytes_transferred: &mut u64,
     files_transferred: &mut u32,
     output_lines: &mut Vec<String>,
 ) -> Result<(), String> {
     let src_str = src.to_string_lossy();
     let dest_str = dest.to_string_lossy();
+
+    if !overwrite && sftp.metadata(dest_str.as_ref()).await.is_ok() {
+        let msg = format!("↷ Omitido (ya existe, overwrite=false): {}", dest_str);
+        output_lines.push(msg.clone());
+        let _ = channel.send(ProgressEvent::OutputChunk {
+            execution_id,
+            chunk: format!("{}\n", msg),
+        });
+        return Ok(());
+    }
 
     let msg = format!("Subiendo: {} → {}", src_str, dest_str);
     output_lines.push(msg.clone());
@@ -216,6 +297,10 @@ async fn upload_single_file(
         .await
         .map_err(|e| format!("Error al hacer flush SFTP: {}", e))?;
 
+    if let Some(mode) = chmod {
+        apply_chmod(sftp, dest_str.as_ref(), mode, output_lines).await;
+    }
+
     *bytes_transferred += file_size;
     *files_transferred += 1;
 
@@ -229,12 +314,16 @@ async fn upload_single_file(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn upload_recursive(
     sftp: &russh_sftp::client::SftpSession,
     src_dir: &Path,
     dest_dir: &PathBuf,
     execution_id: i64,
     channel: &Channel<ProgressEvent>,
+    overwrite: bool,
+    exclude: Option<&[String]>,
+    chmod: Option<&str>,
     bytes_transferred: &mut u64,
     files_transferred: &mut u32,
     output_lines: &mut Vec<String>,
@@ -250,6 +339,14 @@ async fn upload_recursive(
     {
         let entry_path = entry.path();
         let file_name = entry.file_name();
+        let file_name_str = file_name.to_string_lossy();
+
+        if let Some(patterns) = exclude {
+            if super::glob::matches_any(patterns, &file_name_str) {
+                continue;
+            }
+        }
+
         let dest_entry = dest_dir.join(&file_name);
 
         if entry_path.is_dir() {
@@ -261,6 +358,9 @@ async fn upload_recursive(
                 &dest_entry,
                 execution_id,
                 channel,
+                overwrite,
+                exclude,
+                chmod,
                 bytes_transferred,
                 files_transferred,
                 output_lines,
@@ -273,6 +373,8 @@ async fn upload_recursive(
                 &dest_entry,
                 execution_id,
                 channel,
+                overwrite,
+                chmod,
                 bytes_transferred,
                 files_transferred,
                 output_lines,
@@ -284,17 +386,29 @@ async fn upload_recursive(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn download_single_file(
     sftp: &russh_sftp::client::SftpSession,
     src: &str,
     dest: &PathBuf,
     execution_id: i64,
     channel: &Channel<ProgressEvent>,
+    overwrite: bool,
     bytes_transferred: &mut u64,
     files_transferred: &mut u32,
     output_lines: &mut Vec<String>,
 ) -> Result<(), String> {
     let dest_str = dest.to_string_lossy();
+
+    if !overwrite && dest.exists() {
+        let msg = format!("↷ Omitido (ya existe, overwrite=false): {}", dest_str);
+        output_lines.push(msg.clone());
+        let _ = channel.send(ProgressEvent::OutputChunk {
+            execution_id,
+            chunk: format!("{}\n", msg),
+        });
+        return Ok(());
+    }
 
     let msg = format!("Descargando: {} → {}", src, dest_str);
     output_lines.push(msg.clone());
@@ -340,6 +454,87 @@ async fn download_single_file(
         execution_id,
         chunk: format!("{}\n", done_msg),
     });
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn download_recursive(
+    sftp: &russh_sftp::client::SftpSession,
+    src_dir: &Path,
+    dest_dir: &PathBuf,
+    execution_id: i64,
+    channel: &Channel<ProgressEvent>,
+    overwrite: bool,
+    exclude: Option<&[String]>,
+    bytes_transferred: &mut u64,
+    files_transferred: &mut u32,
+    output_lines: &mut Vec<String>,
+) -> Result<(), String> {
+    // NOTA para Iván: la descarga recursiva de directorios es funcionalidad
+    // NUEVA (antes solo existía download_single_file). `sftp.read_dir(path)`
+    // y los métodos `.file_name()`/`.file_type().is_dir()` sobre cada entrada
+    // están basados en la API típica `std::fs`-like de russh-sftp, pero no he
+    // podido verificar la firma exacta de `DirEntry` en 2.0.6 sin compilar.
+    // Si `cargo check` falla aquí, pásame el error y lo ajusto (puede que
+    // `file_type()` devuelva otra cosa, o que haya que usar `entry.metadata()`
+    // en su lugar).
+    let src_str = src_dir.to_string_lossy().to_string();
+
+    let entries = sftp
+        .read_dir(&src_str)
+        .await
+        .map_err(|e| format!("Error al leer directorio remoto '{}': {}", src_str, e))?;
+
+    tokio::fs::create_dir_all(dest_dir)
+        .await
+        .map_err(|e| format!("Error al crear directorio local '{}': {}", dest_dir.display(), e))?;
+
+    for entry in entries {
+        let file_name = entry.file_name();
+        if file_name == "." || file_name == ".." {
+            continue;
+        }
+
+        if let Some(patterns) = exclude {
+            if super::glob::matches_any(patterns, &file_name) {
+                continue;
+            }
+        }
+
+        let entry_src = src_dir.join(&file_name);
+        let entry_dest = dest_dir.join(&file_name);
+        let is_dir = entry.file_type().is_dir();
+
+        if is_dir {
+            Box::pin(download_recursive(
+                sftp,
+                &entry_src,
+                &entry_dest,
+                execution_id,
+                channel,
+                overwrite,
+                exclude,
+                bytes_transferred,
+                files_transferred,
+                output_lines,
+            ))
+            .await?;
+        } else {
+            download_single_file(
+                sftp,
+                entry_src.to_str().unwrap_or(""),
+                &entry_dest,
+                execution_id,
+                channel,
+                overwrite,
+                bytes_transferred,
+                files_transferred,
+                output_lines,
+            )
+            .await?;
+        }
+    }
 
     Ok(())
 }
