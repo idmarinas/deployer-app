@@ -58,9 +58,7 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/tasks'
       | '/dashboard/tasks/[...path]'
       | '/dashboard/variables'
-      | '/dashboard/variables/'
       | '/dashboard/variables/[...path]'
-      | '/dashboard/variables/add'
       | 'dashboard-deployments-id-edit'
       | 'dashboard-home'
       | 'dashboard-hosts'
@@ -77,6 +75,8 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-tasks'
       | 'dashboard-tasks-add'
       | 'dashboard-tasks-id-edit'
+      | 'dashboard-variables'
+      | 'dashboard-variables-add'
       | 'dashboard-variables-id-edit'
     >,
     'dashboard-home': RouteRecordInfo<
@@ -310,13 +310,13 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/variables',
       Record<never, never>,
       Record<never, never>,
-      | '/dashboard/variables/'
       | '/dashboard/variables/[...path]'
-      | '/dashboard/variables/add'
+      | 'dashboard-variables'
+      | 'dashboard-variables-add'
       | 'dashboard-variables-id-edit'
     >,
-    '/dashboard/variables/': RouteRecordInfo<
-      '/dashboard/variables/',
+    'dashboard-variables': RouteRecordInfo<
+      'dashboard-variables',
       '/dashboard/variables',
       Record<never, never>,
       Record<never, never>,
@@ -336,8 +336,8 @@ declare module 'vue-router/auto-routes' {
       { id: ParamValue<false> },
       | never
     >,
-    '/dashboard/variables/add': RouteRecordInfo<
-      '/dashboard/variables/add',
+    'dashboard-variables-add': RouteRecordInfo<
+      'dashboard-variables-add',
       '/dashboard/variables/add',
       Record<never, never>,
       Record<never, never>,
@@ -412,9 +412,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/tasks'
         | '/dashboard/tasks/[...path]'
         | '/dashboard/variables'
-        | '/dashboard/variables/'
         | '/dashboard/variables/[...path]'
-        | '/dashboard/variables/add'
         | 'dashboard-deployments-id-edit'
         | 'dashboard-home'
         | 'dashboard-hosts'
@@ -431,6 +429,8 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-tasks'
         | 'dashboard-tasks-add'
         | 'dashboard-tasks-id-edit'
+        | 'dashboard-variables'
+        | 'dashboard-variables-add'
         | 'dashboard-variables-id-edit'
       views:
         | 'default'
@@ -701,9 +701,9 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/variables.vue': {
       routes:
         | '/dashboard/variables'
-        | '/dashboard/variables/'
         | '/dashboard/variables/[...path]'
-        | '/dashboard/variables/add'
+        | 'dashboard-variables'
+        | 'dashboard-variables-add'
         | 'dashboard-variables-id-edit'
       views:
         | 'default'
@@ -712,7 +712,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/variables/index.vue': {
       routes:
-        | '/dashboard/variables/'
+        | 'dashboard-variables'
       views:
         | never
       pathParamNames:
@@ -736,7 +736,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/variables/add.vue': {
       routes:
-        | '/dashboard/variables/add'
+        | 'dashboard-variables-add'
       views:
         | never
       pathParamNames:
