@@ -335,10 +335,30 @@ Variables de sistema disponibles:
 
 Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile` y `DownloadFile`.
 
+`FileTransferConfig` usa una lista de `PathMapping` (`paths`) en vez de un único `src`/`dest`, para representar con la misma estructura 1 archivo, varios archivos sueltos, o un directorio completo:
+
 ```json
-{ "type": "upload_file", "src": "{{local_working_dir}}/dist", "dest": "{{remote_working_dir}}/public", "recursive": true }
-{ "type": "download_file", "src": "{{remote_working_dir}}/storage/logs/app.log", "dest": "{{local_working_dir}}/.deployer/logs/" }
+{
+  "type": "upload_file",
+  "overwrite": true,
+  "paths": [
+    { "src": "{{local_working_dir}}/dist", "dest": "{{remote_working_dir}}/public", "recursive": true, "exclude": ["*.map", ".git"], "chmod": "755" },
+    { "src": "{{local_working_dir}}/.env.production", "dest": "{{remote_working_dir}}/.env", "recursive": false, "chmod": "600" }
+  ]
+}
 ```
+
+- `paths`: lista de mapeos; 1 elemento = archivo suelto o directorio (`recursive: true`); N elementos = varios archivos/directorios en la misma task, cada uno con su propio origen/destino.
+- `overwrite` (a nivel de `FileTransferConfig`, no por mapeo): si `false`, se omite un archivo si el destino ya existe. Por defecto `true`. En directorios recursivos aplica archivo a archivo dentro del árbol.
+- `exclude` (por mapeo, solo relevante si `recursive: true`): patrones glob simples (`*`, `?`) comparados contra el **nombre** de cada entrada, no la ruta completa (ver `run/glob.rs`, sin dependencias externas).
+- `chmod` (por mapeo): permisos octales (ej. `"755"`, `"600"`) aplicados tras subir el archivo al servidor remoto. Solo tiene efecto en `UploadFile` (no hay chmod portable para el lado local Windows/Unix en descargas).
+- Tipos Rust: `PathMapping` y `FileTransferConfig` en `commands/projects/tasks/types.rs`.
+
+**Pendiente de verificar por Iván (`cargo check`):** dos piezas de `sftp_executor.rs` usan API de `russh-sftp` 2.0.6 que no pude confirmar offline al escribirlas (sin acceso al código fuente exacto del crate):
+- `apply_chmod()`: usa `sftp.set_metadata(path, russh_sftp::protocol::FileAttributes { permissions: Some(mode), ..Default::default() })`.
+- `download_recursive()`: usa `sftp.read_dir(path)` y asume que cada entrada tiene `.file_name()` y `.file_type().is_dir()`.
+
+Si `cargo check` falla en alguno de los dos puntos, pegar el error de compilación para ajustar la firma exacta.
 
 ### Herencia de campos (project_task > project)
 
