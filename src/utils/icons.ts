@@ -29,7 +29,7 @@
 // Tipos
 // ---------------------------------------------------------------------------
 
-export type ModuleName = 'hosts' | 'projects' | 'deployments' | 'variables' | 'passkeys' | 'tasks'
+export type ModuleName = 'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks'
 
 export type ModuleIconVariant = 'plural' | 'singular' | 'off'
 
@@ -63,6 +63,11 @@ export const MODULE_ICONS: Record<ModuleName, ModuleIconSet> = {
 		off: 'i-tabler-send-off',
 	},
 	variables: {
+		plural: 'i-tabler-variable',
+		singular: 'i-tabler-variable',
+		off: 'i-tabler-variable-off',
+	},
+	global_variables: {
 		plural: 'i-tabler-variable',
 		singular: 'i-tabler-variable',
 		off: 'i-tabler-variable-off',
