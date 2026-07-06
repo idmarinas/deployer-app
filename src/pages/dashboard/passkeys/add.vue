@@ -1,19 +1,19 @@
 <script lang="ts">
-import type { Form, FormSubmitEvent } from '@nuxt/ui'
+import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { CommandResponse, CreatePasskeyInput } from '@/types/tauri-types'
-import type { ExtraButton } from '@/composables/useToolbarContent'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
-import { ref, useTemplateRef, onMounted, onBeforeUnmount, watch, h, resolveComponent } from 'vue'
+import { h, onBeforeUnmount, onMounted, ref, resolveComponent, useTemplateRef, watch } from 'vue'
 
-import { useQueryCache } from '@pinia/colada'
 import { useToast } from '@nuxt/ui/composables/useToast'
-import { useRouter } from 'vue-router'
+import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
-import { useToolbarContentCreate } from '@/composables/useToolbarContent'
+import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
+import { useToolbarContentCreate } from '@/composables/useToolbarContent'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
@@ -47,13 +47,14 @@ const disabledPassword = ref(false)
 const form = useTemplateRef<Form<PasskeySchema>>('form')
 const isLoading = ref(false)
 
-const toolbarButtons: ExtraButton[] = [
+const toolbarButtons: PositionedButton[] = [
 	{
 		id: 'generate-passkey',
-		position: 'after-submit',
+		action: 'after',
+		targetId: 'submit',
 		vnode: () =>
 			h(UButton, {
-				label: t('components.form.generate.passkey'),
+				label: t('form.generate.passkey'),
 				variant: 'outline',
 				color: 'info',
 				icon: 'i-tabler-password-fingerprint',
