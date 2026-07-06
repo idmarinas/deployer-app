@@ -27,11 +27,7 @@
  * Mantener esta lista junto a las migraciones SQL: si una migración nueva
  * añade una columna BOOLEAN, añadir su nombre aquí también.
  */
-const BOOLEAN_KEYS = new Set<string>([
-  'enabled',
-  'isSecret',
-  'isGlobal'
-])
+const BOOLEAN_KEYS = new Set<string>(['enabled', 'is_secret', 'is_global'])
 
 /**
  * Decide cómo transformar un valor de columna concreto.
@@ -39,15 +35,15 @@ const BOOLEAN_KEYS = new Set<string>([
  * - Resto: null -> undefined; el resto de valores se devuelven sin tocar.
  */
 function normalizeValue(key: string, value: unknown): unknown {
-  if (BOOLEAN_KEYS.has(key)) {
-    return value === 1 || value === '1' || value === true
-  }
+	if (BOOLEAN_KEYS.has(key)) {
+		return value === 1 || value === '1' || value === true
+	}
 
-  if (value === null) {
-    return undefined
-  }
+	if (value === null) {
+		return undefined
+	}
 
-  return value
+	return value
 }
 
 /**
@@ -55,13 +51,13 @@ function normalizeValue(key: string, value: unknown): unknown {
  * Útil cuando ya sabes que el resultado no tiene relaciones anidadas.
  */
 export function normalizeRow<T extends Record<string, unknown>>(row: T): T {
-  const result: Record<string, unknown> = {}
+	const result: Record<string, unknown> = {}
 
-  for (const [key, value] of Object.entries(row)) {
-    result[key] = normalizeValue(key, value)
-  }
+	for (const [key, value] of Object.entries(row)) {
+		result[key] = normalizeValue(key, value)
+	}
 
-  return result as T
+	return result as T
 }
 
 /**
@@ -75,23 +71,23 @@ export function normalizeRow<T extends Record<string, unknown>>(row: T): T {
  *   return row ? (normalizeDeep(row) as ProjectRow) : undefined
  */
 export function normalizeDeep<T>(value: T): T {
-  if (value === null) {
-    return undefined as T
-  }
+	if (value === null) {
+		return undefined as T
+	}
 
-  if (Array.isArray(value)) {
-    return value.map((item) => normalizeDeep(item)) as T
-  }
+	if (Array.isArray(value)) {
+		return value.map(item => normalizeDeep(item)) as T
+	}
 
-  if (typeof value === 'object' && !(value instanceof Date)) {
-    const result: Record<string, unknown> = {}
+	if (typeof value === 'object' && !(value instanceof Date)) {
+		const result: Record<string, unknown> = {}
 
-    for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
-      result[key] = normalizeValue(key, normalizeDeep(raw))
-    }
+		for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+			result[key] = normalizeValue(key, normalizeDeep(raw))
+		}
 
-    return result as T
-  }
+		return result as T
+	}
 
-  return value
+	return value
 }
