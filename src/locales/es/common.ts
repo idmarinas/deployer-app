@@ -41,6 +41,8 @@ export default {
 	common: {
 		none: 'Ninguno',
 		username: 'Usuario',
+		yes: 'Sí',
+		no: 'No',
 	},
 
 	back: {
