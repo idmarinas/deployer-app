@@ -10,10 +10,16 @@
 	reactividad; una consulta de recarga completa también lo hace, pero de
 	forma mucho más lenta y perceptible que reasignar con los datos que ya
 	tenemos en memoria + el registro puntual que acabamos de crear/tocar.
+
+	El panel de ajustes avanzados de tasks de tipo upload_file/download_file
+	edita `TaskConfig::UploadFile/DownloadFile` (FileTransferConfig), que usa
+	una lista `paths: PathMapping[]` en vez de un único src/dest — soporta así
+	1 archivo, varios archivos sueltos, o un directorio completo con la misma
+	estructura (ver AGENTS.backend.md, sección TaskConfig).
 -->
 <script lang="ts">
 import type { ProjectRow, ProjectTaskRow } from '@/composables/queries/projects'
-import type { CommandResponse, TaskConfig } from '@/types/tauri-types'
+import type { CommandResponse } from '@/types/tauri-types'
 import type { Ref } from 'vue'
 
 import { useSortable } from '@vueuse/integrations/useSortable'
@@ -28,6 +34,14 @@ import { getModuleIcon, ICONS } from '@/utils/icons'
 
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
+
+interface DraftPathMapping {
+	src: string
+	dest: string
+	recursive: boolean
+	exclude: string // input de texto, patrones separados por coma
+	chmod: string
+}
 </script>
 
 <script setup lang="ts">
@@ -168,7 +182,29 @@ async function removeTask(projectTask: ProjectTaskRow) {
 
 const expandedId = ref<number | null>(null)
 const isSavingSettings = ref(false)
-const draftSettings = ref<Record<string, any>>({})
+const draftSettings = ref<{
+	on_failure: string
+	condition: string
+	local_working_dir: string
+	remote_working_dir: string
+	retry_count: number | null
+	retry_delay: number | null
+	overwrite: boolean
+	paths: DraftPathMapping[]
+}>({
+	on_failure: 'stop',
+	condition: '',
+	local_working_dir: '',
+	remote_working_dir: '',
+	retry_count: null,
+	retry_delay: null,
+	overwrite: true,
+	paths: [],
+})
+
+function emptyPathMapping(): DraftPathMapping {
+	return { src: '', dest: '', recursive: false, exclude: '', chmod: '' }
+}
 
 function toggleSettings(projectTask: ProjectTaskRow) {
 	if (expandedId.value === projectTask.id) {
@@ -176,7 +212,10 @@ function toggleSettings(projectTask: ProjectTaskRow) {
 		return
 	}
 
-	let fileConfig: Partial<TaskConfig & { src: string; dest: string; recursive: boolean }> = {}
+	let fileConfig: {
+		paths?: Array<{ src: string; dest: string; recursive?: boolean; exclude?: string[]; chmod?: string }>
+		overwrite?: boolean
+	} = {}
 
 	if (projectTask.config) {
 		try {
@@ -193,17 +232,38 @@ function toggleSettings(projectTask: ProjectTaskRow) {
 		remote_working_dir: projectTask.remote_working_dir ?? '',
 		retry_count: projectTask.retry_count,
 		retry_delay: projectTask.retry_delay,
-		config_src: fileConfig.src ?? '',
-		config_dest: fileConfig.dest ?? '',
-		config_recursive: fileConfig.recursive ?? false,
+		overwrite: fileConfig.overwrite ?? true,
+		paths: fileConfig.paths?.length
+			? fileConfig.paths.map(p => ({
+					src: p.src ?? '',
+					dest: p.dest ?? '',
+					recursive: p.recursive ?? false,
+					exclude: (p.exclude ?? []).join(', '),
+					chmod: p.chmod ?? '',
+				}))
+			: [emptyPathMapping()],
 	}
 
 	expandedId.value = projectTask.id
 }
 
+function addPathMapping() {
+	draftSettings.value.paths.push(emptyPathMapping())
+}
+
+function removePathMapping(index: number) {
+	if (draftSettings.value.paths.length <= 1) return
+	draftSettings.value.paths.splice(index, 1)
+}
+
 async function pickLocalDir() {
 	const dir = await open({ multiple: false, directory: true })
 	if (dir) draftSettings.value.local_working_dir = dir
+}
+
+async function pickLocalPathForMapping(index: number, target: 'src' | 'dest') {
+	const picked = await open({ multiple: false, directory: draftSettings.value.paths[index].recursive })
+	if (picked) draftSettings.value.paths[index][target] = picked
 }
 
 async function saveSettings(projectTask: ProjectTaskRow) {
@@ -215,11 +275,11 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 		local_working_dir: draftSettings.value.local_working_dir?.trim() || null,
 		remote_working_dir: draftSettings.value.remote_working_dir?.trim() || null,
 		retry_count:
-			draftSettings.value.retry_count === '' || draftSettings.value.retry_count === undefined
+			draftSettings.value.retry_count === null || (draftSettings.value.retry_count as any) === ''
 				? null
 				: draftSettings.value.retry_count,
 		retry_delay:
-			draftSettings.value.retry_delay === '' || draftSettings.value.retry_delay === undefined
+			draftSettings.value.retry_delay === null || (draftSettings.value.retry_delay as any) === ''
 				? null
 				: draftSettings.value.retry_delay,
 	}
@@ -227,9 +287,21 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 	if (isFileTransferTask(projectTask)) {
 		input.config = JSON.stringify({
 			type: projectTask.task.type,
-			src: draftSettings.value.config_src,
-			dest: draftSettings.value.config_dest,
-			recursive: !!draftSettings.value.config_recursive,
+			overwrite: draftSettings.value.overwrite,
+			paths: draftSettings.value.paths
+				.filter(p => p.src.trim() && p.dest.trim())
+				.map(p => ({
+					src: p.src.trim(),
+					dest: p.dest.trim(),
+					recursive: p.recursive,
+					exclude: p.exclude.trim()
+						? p.exclude
+								.split(',')
+								.map(s => s.trim())
+								.filter(Boolean)
+						: undefined,
+					chmod: p.chmod.trim() || undefined,
+				})),
 		})
 	}
 
@@ -349,83 +421,169 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 
 			<div
 				v-if="expandedId === projectTask.id"
-				class="grid grid-cols-1 gap-4 border-t border-accented pt-3 md:grid-cols-2"
+				class="flex flex-col gap-4 border-t border-accented pt-3"
 			>
-				<UFormField :label="t('pages.projects.tasks.settings.on_failure.label')">
-					<USelect
-						v-model="draftSettings.on_failure"
-						value-key="value"
-						:items="[
-							{ label: t('pages.projects.tasks.settings.on_failure.select.stop'), value: 'stop' },
-							{ label: t('pages.projects.tasks.settings.on_failure.select.continue'), value: 'continue' },
-							{ label: t('pages.projects.tasks.settings.on_failure.select.retry'), value: 'retry' },
-						]"
-						class="w-full"
-					/>
-				</UFormField>
-
-				<UFormField :label="t('pages.projects.tasks.settings.condition.label')" :hint="t('form.shared.hint.optional')">
-					<UInput
-						v-model="draftSettings.condition"
-						class="w-full font-mono"
-						placeholder="ej: {{variable}} == 'value'"
-					/>
-				</UFormField>
-
-				<UFormField
-					:label="t('pages.projects.tasks.settings.local_working_dir.label')"
-					:hint="t('form.shared.hint.optional')"
-				>
-					<UFieldGroup class="w-full">
-						<UInput
-							v-model="draftSettings.local_working_dir"
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+					<UFormField :label="t('pages.projects.tasks.settings.on_failure.label')">
+						<USelect
+							v-model="draftSettings.on_failure"
+							value-key="value"
+							:items="[
+								{ label: t('pages.projects.tasks.settings.on_failure.select.stop'), value: 'stop' },
+								{ label: t('pages.projects.tasks.settings.on_failure.select.continue'), value: 'continue' },
+								{ label: t('pages.projects.tasks.settings.on_failure.select.retry'), value: 'retry' },
+							]"
 							class="w-full"
-							:placeholder="project.local_working_dir || undefined"
 						/>
-						<UButton :icon="ICONS.actions.folder" @click="pickLocalDir" />
-					</UFieldGroup>
-				</UFormField>
-
-				<UFormField
-					:label="t('pages.projects.tasks.settings.remote_working_dir.label')"
-					:hint="t('form.shared.hint.optional')"
-				>
-					<UInput
-						v-model="draftSettings.remote_working_dir"
-						class="w-full"
-						:placeholder="project.remote_working_dir || undefined"
-					/>
-				</UFormField>
-
-				<UFormField
-					:label="t('pages.projects.tasks.settings.retry_count.label')"
-					:hint="t('form.shared.hint.optional')"
-				>
-					<UInputNumber v-model="draftSettings.retry_count" class="w-full" :min="0" :max="20" />
-				</UFormField>
-
-				<UFormField
-					:label="t('pages.projects.tasks.settings.retry_delay.label')"
-					:hint="t('form.shared.hint.optional')"
-				>
-					<UInputNumber v-model="draftSettings.retry_delay" class="w-full" :min="0" :max="3600" />
-				</UFormField>
-
-				<template v-if="isFileTransferTask(projectTask)">
-					<UFormField :label="t('pages.projects.tasks.settings.config_src.label')" required>
-						<UInput v-model="draftSettings.config_src" class="w-full" />
 					</UFormField>
-					<UFormField :label="t('pages.projects.tasks.settings.config_dest.label')" required>
-						<UInput v-model="draftSettings.config_dest" class="w-full" />
-					</UFormField>
-					<UCheckbox
-						v-model="draftSettings.config_recursive"
-						:label="t('pages.projects.tasks.settings.config_recursive.label')"
-						class="md:col-span-2"
-					/>
-				</template>
 
-				<div class="flex justify-end gap-2 md:col-span-2">
+					<UFormField :label="t('pages.projects.tasks.settings.condition.label')" :hint="t('form.shared.hint.optional')">
+						<UInput
+							v-model="draftSettings.condition"
+							class="w-full font-mono"
+							placeholder="ej: {{variable}} == 'value'"
+						/>
+					</UFormField>
+
+					<UFormField
+						:label="t('pages.projects.tasks.settings.local_working_dir.label')"
+						:hint="t('form.shared.hint.optional')"
+					>
+						<UFieldGroup class="w-full">
+							<UInput
+								v-model="draftSettings.local_working_dir"
+								class="w-full"
+								:placeholder="project.local_working_dir || undefined"
+							/>
+							<UButton :icon="ICONS.actions.folder" @click="pickLocalDir" />
+						</UFieldGroup>
+					</UFormField>
+
+					<UFormField
+						:label="t('pages.projects.tasks.settings.remote_working_dir.label')"
+						:hint="t('form.shared.hint.optional')"
+					>
+						<UInput
+							v-model="draftSettings.remote_working_dir"
+							class="w-full"
+							:placeholder="project.remote_working_dir || undefined"
+						/>
+					</UFormField>
+
+					<UFormField
+						:label="t('pages.projects.tasks.settings.retry_count.label')"
+						:hint="t('form.shared.hint.optional')"
+					>
+						<UInputNumber v-model="draftSettings.retry_count" class="w-full" :min="0" :max="20" />
+					</UFormField>
+
+					<UFormField
+						:label="t('pages.projects.tasks.settings.retry_delay.label')"
+						:hint="t('form.shared.hint.optional')"
+					>
+						<UInputNumber v-model="draftSettings.retry_delay" class="w-full" :min="0" :max="3600" />
+					</UFormField>
+				</div>
+
+				<!-- Configuración de transferencia de archivos: solo upload_file / download_file -->
+				<div v-if="isFileTransferTask(projectTask)" class="flex flex-col gap-3 border-t border-accented pt-3">
+					<div class="flex items-center justify-between">
+						<h4 class="text-sm font-medium">{{ t('pages.projects.tasks.settings.file_transfer.title') }}</h4>
+						<UCheckbox
+							v-model="draftSettings.overwrite"
+							:label="t('pages.projects.tasks.settings.overwrite.label')"
+						/>
+					</div>
+
+					<div
+						v-for="(pathMapping, pIndex) in draftSettings.paths"
+						:key="pIndex"
+						class="flex flex-col gap-3 rounded-lg border border-accented p-3"
+					>
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-muted">
+								{{ t('pages.projects.tasks.settings.paths.item_title', { n: pIndex + 1 }) }}
+							</span>
+							<UButton
+								v-if="draftSettings.paths.length > 1"
+								:icon="ICONS.actions.delete"
+								size="xs"
+								color="error"
+								variant="ghost"
+								@click="removePathMapping(pIndex)"
+							/>
+						</div>
+
+						<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+							<UFormField :label="t('pages.projects.tasks.settings.paths.src.label')" required>
+								<UFieldGroup class="w-full">
+									<UInput v-model="pathMapping.src" class="w-full font-mono" />
+									<UButton
+										v-if="projectTask.task.type === 'upload_file'"
+										:icon="ICONS.actions.folder"
+										@click="pickLocalPathForMapping(pIndex, 'src')"
+									/>
+								</UFieldGroup>
+							</UFormField>
+
+							<UFormField :label="t('pages.projects.tasks.settings.paths.dest.label')" required>
+								<UFieldGroup class="w-full">
+									<UInput v-model="pathMapping.dest" class="w-full font-mono" />
+									<UButton
+										v-if="projectTask.task.type === 'download_file'"
+										:icon="ICONS.actions.folder"
+										@click="pickLocalPathForMapping(pIndex, 'dest')"
+									/>
+								</UFieldGroup>
+							</UFormField>
+
+							<UFormField
+								:label="t('pages.projects.tasks.settings.paths.exclude.label')"
+								:hint="t('form.shared.hint.optional')"
+								class="md:col-span-2"
+							>
+								<UInput
+									v-model="pathMapping.exclude"
+									class="w-full font-mono"
+									:disabled="!pathMapping.recursive"
+									placeholder="node_modules, .git, *.log"
+								/>
+							</UFormField>
+
+							<UFormField
+								:label="t('pages.projects.tasks.settings.paths.chmod.label')"
+								:hint="t('form.shared.hint.optional')"
+							>
+								<UInput
+									v-model="pathMapping.chmod"
+									class="w-full font-mono"
+									maxlength="4"
+									placeholder="755"
+									:disabled="projectTask.task.type !== 'upload_file'"
+								/>
+							</UFormField>
+
+							<UCheckbox
+								v-model="pathMapping.recursive"
+								:label="t('pages.projects.tasks.settings.paths.recursive.label')"
+								class="self-center"
+							/>
+						</div>
+					</div>
+
+					<UButton
+						:icon="ICONS.actions.add"
+						size="sm"
+						color="neutral"
+						variant="soft"
+						class="self-start"
+						@click="addPathMapping"
+					>
+						{{ t('pages.projects.tasks.settings.paths.add.label') }}
+					</UButton>
+				</div>
+
+				<div class="flex justify-end gap-2">
 					<UButton
 						:icon="ICONS.actions.close"
 						color="neutral"
