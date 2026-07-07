@@ -62,14 +62,32 @@ export default {
 			retry_delay: {
 				label: 'Espera entre reintentos (sobrescribe la tarea)',
 			},
-			config_src: {
-				label: 'Ruta de origen',
+			file_transfer: {
+				title: 'Transferencia de archivos',
 			},
-			config_dest: {
-				label: 'Ruta de destino',
+			overwrite: {
+				label: 'Sobrescribir si ya existe',
 			},
-			config_recursive: {
-				label: 'Transferir de forma recursiva (directorios)',
+			paths: {
+				item_title: 'Ruta {n}',
+				add: {
+					label: 'Añadir ruta',
+				},
+				src: {
+					label: 'Origen',
+				},
+				dest: {
+					label: 'Destino',
+				},
+				recursive: {
+					label: 'Directorio completo (recursivo)',
+				},
+				exclude: {
+					label: 'Excluir (patrones separados por coma, solo si es directorio)',
+				},
+				chmod: {
+					label: 'Permisos tras subir (chmod, ej. 755)',
+				},
 			},
 		},
 		empty: {
