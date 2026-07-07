@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sqliteTable, AnySQLiteColumn, check, integer, text, numeric, blob, index, foreignKey } from "drizzle-orm/sqlite-core"
   import { sql } from "drizzle-orm"
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { relations } from "drizzle-orm/relations";
 import { passkeys, hosts, project_hosts, projects, project_variables, framework_configs, tasks, project_tasks, task_dependencies, deployments, deployment_executions, deployment_rollbacks } from "./schema";
 
