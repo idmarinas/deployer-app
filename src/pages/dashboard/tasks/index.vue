@@ -1,18 +1,13 @@
 <script lang="ts">
-import type { CommandResponse, Task } from '@/types/tauri-types'
+import type { Task } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h, ref, resolveComponent, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useTaskListAll } from '@/loaders/tasks'
 import { ICONS } from '@/utils/icons'
-import { useToast } from '@nuxt/ui/composables'
-import { useRouter } from 'vue-router'
-
-import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -20,16 +15,16 @@ definePage({
 	name: 'dashboard-tasks',
 })
 
-const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 
 const { t } = useI18n()
-const toast = useToast()
-const confirmDialog = useConfirmDialog()
-const router = useRouter()
-const { tableColumnExpand, tableColumnEnabled } = useTableColumns<Task>()
-
 const { data: tasks, isLoading, reload } = useTaskListAll()
+
+const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Task>({
+	moduleName: 'tasks',
+	singularName: 'task',
+	onReload: reload,
+})
 
 const taskTypeLabels: Record<string, string> = {
 	command: t('form.tasks.task_type.select.command'),
@@ -65,65 +60,7 @@ const columns: TableColumn<Task>[] = [
 		cell: ({ row }) => `${row.getValue('timeout')}s`,
 	},
 	tableColumnEnabled,
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) =>
-			h('div', { class: 'flex gap-2 justify-end' }, [
-				h(UButton, {
-					icon: ICONS.actions.edit,
-					color: 'info',
-					variant: 'ghost',
-					async onClick() {
-						router.push({ name: 'dashboard-tasks-id-edit', params: { id: row.original.id as number } })
-					},
-				}),
-				h(UButton, {
-					icon: ICONS.actions.delete,
-					color: 'error',
-					variant: 'ghost',
-					async onClick() {
-						const result = await confirmDialog({
-							type: 'cancel_delete',
-							title: t('common.delete.label'),
-							description: t('common.delete.description', { name: row.original.name }),
-						})
-
-						if (result) {
-							const notice = toast.add({
-								title: t('pages.tasks.toast.delete.loading.title'),
-								description: t('pages.tasks.toast.delete.loading.description', { name: row.original.name }),
-								color: 'warning',
-								icon: ICONS.actions.delete,
-								duration: 0,
-							})
-
-							const deleteResult = await invoke<CommandResponse>('crud_delete_task', { id: row.original.id })
-
-							if (deleteResult.success) {
-								toast.update(notice.id, {
-									title: t('pages.tasks.toast.delete.success.title'),
-									description: t('pages.tasks.toast.delete.success.description', { name: row.original.name }),
-									color: 'success',
-									icon: ICONS.status.check,
-									duration: undefined,
-								})
-							} else {
-								toast.update(notice.id, {
-									title: t('pages.tasks.toast.delete.error.title'),
-									description: t('pages.tasks.toast.delete.error.description', { name: row.original.name }),
-									color: 'error',
-									icon: ICONS.status.cross,
-									duration: undefined,
-								})
-							}
-
-							await reload()
-						}
-					},
-				}),
-			]),
-	},
+	tableColumnActions(),
 ]
 
 const table = useTemplateRef('table')
