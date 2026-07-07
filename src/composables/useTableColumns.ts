@@ -1,16 +1,31 @@
+import type { CommandResponse } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h } from 'vue'
 
+import { useConfirmDialog } from '@/composables/useDialog'
+import { invoke } from '@tauri-apps/api/core'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import UBadge from '@nuxt/ui/components/Badge.vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 
+import { usePositionedButtons, type PositionedButton } from '@/composables/usePositionedButtons'
 import { ICONS } from '@/utils/icons'
+import useToaster from './useToaster'
 
-export function useTableColumns<T>() {
+export interface TableColumnsOptions {
+	moduleName?: string
+	singularName?: string
+	onReload?: () => Promise<void> | void
+}
+
+export function useTableColumns<T>(options?: TableColumnsOptions) {
 	const { t } = useI18n()
+	const router = useRouter()
+	const toaster = useToaster()
+	const confirmDialog = useConfirmDialog()
 
 	const expandColumn: TableColumn<T> = {
 		id: 'expand',
@@ -38,8 +53,107 @@ export function useTableColumns<T>() {
 		},
 	}
 
+	const { resolveButtons } = usePositionedButtons()
+
+	const actionsColumn = (extraButtons: (row: any) => PositionedButton[] = () => []): TableColumn<T> => ({
+		id: 'actions',
+		enableHiding: false,
+		cell: ({ row }) => {
+			const defaultButtons: PositionedButton[] = []
+
+			if (options?.moduleName && options?.singularName) {
+				defaultButtons.push({
+					id: 'edit',
+					vnode: () =>
+						h(UButton, {
+							icon: ICONS.actions.edit,
+							color: 'info',
+							variant: 'ghost',
+							onClick() {
+								router.push({
+									name: `dashboard-${options.moduleName}-id-edit` as any,
+									params: { id: (row.original as any).id },
+								})
+							},
+						}),
+				})
+
+				defaultButtons.push({
+					id: 'delete',
+					vnode: () =>
+						h(UButton, {
+							icon: ICONS.actions.delete,
+							color: 'error',
+							variant: 'ghost',
+							async onClick() {
+								const result = await confirmDialog({
+									type: 'cancel_delete',
+									title: t('common.delete.label'),
+									description: t('common.delete.description', { name: (row.original as any).name }),
+								})
+
+								if (result) {
+									const notice = toaster.warning(
+										t(`pages.${options.moduleName}.toast.delete.loading.title`),
+										t(`pages.${options.moduleName}.toast.delete.loading.description`, {
+											name: (row.original as any).name,
+										}),
+										{
+											icon: ICONS.actions.delete,
+											duration: 0,
+										},
+									)
+
+									const deleteResult = await invoke<CommandResponse>(`crud_delete_${options.singularName}`, {
+										id: (row.original as any).id,
+									})
+
+									if (deleteResult.success) {
+										toaster.toast.update(
+											notice.id,
+											toaster.success(
+												t(`pages.${options.moduleName}.toast.delete.success.title`),
+												t(`pages.${options.moduleName}.toast.delete.success.description`, {
+													name: (row.original as any).name,
+												}),
+												{
+													id: notice.id,
+													duration: undefined,
+												},
+											),
+										)
+									} else {
+										toaster.toast.update(
+											notice.id,
+											toaster.error(
+												t(`pages.${options.moduleName}.toast.delete.error.title`),
+												t(`pages.${options.moduleName}.toast.delete.error.description`, {
+													name: (row.original as any).name,
+												}),
+												{
+													id: notice.id,
+													duration: undefined,
+												},
+											),
+										)
+									}
+
+									if (options.onReload) {
+										await options.onReload()
+									}
+								}
+							},
+						}),
+				})
+			}
+
+			return h('div', { class: 'flex gap-2 justify-end' }, resolveButtons(defaultButtons, extraButtons(row)))
+		},
+	})
+
 	return {
 		tableColumnExpand: expandColumn,
 		tableColumnEnabled: enabledColumn,
+		tableColumnActions: actionsColumn,
 	}
 }
