@@ -19,7 +19,7 @@
 
 - **Idioma:** siempre español.
 - **No modificar:** archivos `.dist`, carpetas `.dist/`, `node_modules/`, `vendor/`, `var/`.
-- **Archivos autogenerados (no editar):** `drizzle/schema.ts`, `drizzle/relations.ts`, `src/lib/schema.ts`, `src/lib/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`.
+- **Archivos autogenerados (no editar):** `drizzle/` (completo, excepto `README.md`), `src/lib/schema.ts`, `src/lib/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`.
 - **`src/constants/dbTables.ts`** está obsoleto (`.unused`). No importarlo.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
 - **Antes de crear comando `crud_get_*`/`crud_list_*`:** si la tabla no tiene campos cifrados, usar Drizzle.
