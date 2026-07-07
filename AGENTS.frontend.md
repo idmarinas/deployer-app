@@ -16,8 +16,6 @@ src/
 ├── components/          <- Componentes reutilizables de UI
 ├── composables/         <- Lógica reactiva reutilizable de Vue
 │   └── queries/         <- Composables de acceso a datos, organizados por dominio
-├── constants/           <- Constantes globales
-│   └── dbTables.ts      <- Nombres de tablas SQLite (DB_TABLES)
 ├── pages/               <- Vistas de la aplicación
 └── utils/               <- Funciones puras sin reactividad de Vue
 
@@ -249,7 +247,23 @@ Al añadir o modificar cualquier theme file, verificar:
 
 ### Composables de datos (`useQuery.ts`)
 
-- `useQuery.ts` es el barrel único de **lecturas**: reexporta todos los composables de `src/composables/queries/*.ts` (lecturas vía Drizzle Relational Queries, `db.query.*`, para tablas sin campos cifrados) agrupados por dominio (`useQuery().projects`, `useQuery().variables`...), más utilidades transversales de solo lectura como `count()` (usado por los schemas Zod para validar unicidad — ej. `useHostSchema` comprobando que no exista otro `name` igual). **Siempre se consume a través de `useQuery()`**, nunca importando `useProjectQuery`/`useVariablesQuery`/etc. directamente desde `queries/`.
+- `useQuery.ts` es el barrel único de **lecturas**: reexporta todos los composables de `src/composables/queries/*.ts` (lecturas vía Drizzle Relational Queries, `db.query.*`, para tablas sin campos cifrados) agrupados por dominio (`useQuery().projects`, `useQuery().variables`...). **Siempre se consume a través de `useQuery()`**, nunca importando `useProjectQuery`/`useVariablesQuery`/etc. directamente desde `queries/`.
+- La validación de unicidad de los schemas Zod (`composables/schemas/*.ts`) usa `countWhere(table, condition)` de `composables/queries/shared.ts` directamente (no pasa por `useQuery()`, porque no es un composable con estado reactivo, es una función utilitaria de una sola llamada). Construye la condición con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/lib/schema` — nunca SQL manual interpolado (histórico: hasta julio 2026 se usaba `useQuery().count(tableNameString, whereStringSQL)` con nombres de tabla de `constants/dbTables.ts`; se eliminó por dos motivos: (1) interpolar el valor del usuario en un string SQL crudo era una inyección SQL real, no solo un problema de estilo; (2) usaba una conexión SQLite distinta — `@tauri-apps/plugin-sql` directo — a la del resto de queries del frontend, que pasan por el proxy Drizzle de `lib/db.ts`). `constants/dbTables.ts` quedó sin consumidores y se marcó `.unused` pendiente de borrado manual.
+
+  ```ts
+  // composables/schemas/hosts.ts
+  import { and, eq, ne } from 'drizzle-orm'
+  import { countWhere } from '@/composables/queries/shared'
+  import { hosts } from '@/lib/schema'
+
+  .refine(async (value) => {
+    const condition = hostId
+      ? and(eq(hosts.name, value), ne(hosts.id, hostId))!
+      : eq(hosts.name, value)
+    const exist = await countWhere(hosts, condition)
+    return exist <= 0
+  }, t('validation.hosts.name.not_unique'))
+  ```
 - Agrupados por dominio (no en un único objeto plano) porque varios composables de `queries/` comparten nombre de método (ej. `projects.findAll()` y `variables.findAll()`) — fusionarlos sin espacio de nombres provocaría que uno pise al otro. Al añadir un composable nuevo en `queries/`, reexportarlo en `useQuery.ts` bajo su propia clave de dominio.
 - Los **tipos** que exportan los archivos de `queries/` (ej. `ProjectRow`, `ProjectHostRow`, `ProjectTaskRow` de `queries/projects.ts`) se siguen importando **directamente** desde el archivo de dominio (`import type { ProjectRow } from '@/composables/queries/projects'`) — `useQuery.ts` reexporta valores (el resultado de llamar a cada composable), no tipos.
 - **Ninguna escritura (CRUD) vive en un composable de `queries/` ni en `useQuery.ts`.** Los `invoke('crud_create_*' | 'crud_update_*' | 'crud_delete_*' | 'set_*', ...)` se llaman siempre directamente en el sitio de uso (página, composable de página como `useDatabaseSetup.ts`/`useMigrations.ts`, o `useTableColumns.ts` para las acciones de tabla) — nunca a través de un wrapper intermedio. Precedente: `deployer_settings` empezó con un wrapper `useDeployerSettingsQuery()` en `queries/deployerSettings.ts` que solo delegaba en `invoke('set_deployer_settings', ...)`; se eliminó (sesión de julio 2026) por no aportar nada sobre la llamada directa y romper la convención. Si aparece otra tabla clave-valor o de ajustes en bloque, seguir el patrón de `invoke` directo, no repetir el wrapper.
@@ -261,19 +275,6 @@ Al añadir o modificar cualquier theme file, verificar:
 
 - El acceso directo a SQLite (vía `tauri-plugin-sql`) solo es válido para tablas **sin campos cifrados**.
 - Las tablas con campos sensibles (`hosts`, `passkeys`) deben usar los comandos Tauri CRUD.
-
-### Constantes de tablas
-
-Los nombres de tablas están centralizados en `src/constants/dbTables.ts`:
-
-```ts
-export const DB_TABLES = {
-	DEPLOYER_SETTINGS: 'deployer_settings',
-	// ...
-} as const
-```
-
-Nunca escribir el nombre de una tabla como string literal fuera de este archivo.
 
 ---
 
