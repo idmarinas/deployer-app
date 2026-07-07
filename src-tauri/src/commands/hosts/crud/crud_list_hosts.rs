@@ -26,9 +26,6 @@ pub async fn crud_list_hosts(
 
     match db::fetch_all::<Host>(&pool, cache, &key).await {
         Ok(hosts) => Ok(CommandResponse::ok(hosts, "hosts.success.listed")),
-        Err(e) => Ok(CommandResponse::err(
-            "hosts.errors.list_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("hosts", "list_failed", e)),
     }
 }

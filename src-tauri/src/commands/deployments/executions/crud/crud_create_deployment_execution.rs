@@ -30,9 +30,6 @@ pub async fn crud_create_deployment_execution(
 
     match db::insert::<DeploymentExecution>(&pool, &execution, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "deployment_executions.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "deployment_executions.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("deployment_executions", "create_failed", e)),
     }
 }

@@ -67,7 +67,30 @@ pub async fn crud_update_global_variable(
         fields.push(("value".to_string(), Value::String(value)));
         fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
     } else if let Some(is_secret) = input.is_secret {
-        fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+        match sqlx::query_scalar::<_, String>(
+            "SELECT value FROM global_variables WHERE id = ?1",
+        )
+        .bind(id)
+        .fetch_optional(&pool)
+        .await
+        {
+            Ok(Some(current_value)) => {
+                fields.push(("value".to_string(), Value::String(current_value)));
+                fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+            }
+            Ok(None) => {
+                return Ok(CommandResponse::err(
+                    "global_variables.errors.not_found",
+                    HashMap::from([("id".to_string(), id.to_string())]),
+                ))
+            }
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "global_variables.errors.fetch_failed",
+                    HashMap::from([("reason".to_string(), e.to_string())]),
+                ))
+            }
+        }
     }
 
     if let Some(v) = input.description.to_field_value() {
@@ -80,9 +103,6 @@ pub async fn crud_update_global_variable(
             "global_variables.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "global_variables.errors.update_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("global_variables", "update_failed", e)),
     }
 }

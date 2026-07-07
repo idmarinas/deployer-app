@@ -28,9 +28,6 @@ pub async fn crud_create_passkey(
 
     match db::insert::<Passkey>(&pool, &passkey, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "passkeys.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "passkeys.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("passkeys", "create_failed", e)),
     }
 }

@@ -28,9 +28,6 @@ pub async fn crud_create_task(
 
     match db::insert::<Task>(&pool, &task, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "tasks.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "tasks.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("tasks", "create_failed", e)),
     }
 }

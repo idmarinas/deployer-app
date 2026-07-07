@@ -25,9 +25,6 @@ pub async fn crud_list_tasks(
 
     match db::fetch_all::<Task>(&pool, cache, &key).await {
         Ok(tasks) => Ok(CommandResponse::ok(tasks, "tasks.success.listed")),
-        Err(e) => Ok(CommandResponse::err(
-            "tasks.errors.list_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("tasks", "list_failed", e)),
     }
 }

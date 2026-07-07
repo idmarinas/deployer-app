@@ -30,9 +30,6 @@ pub async fn crud_get_global_variable(
             "global_variables.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "global_variables.errors.fetch_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("global_variables", "fetch_failed", e)),
     }
 }

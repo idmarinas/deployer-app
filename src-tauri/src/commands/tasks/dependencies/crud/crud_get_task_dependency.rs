@@ -30,9 +30,6 @@ pub async fn crud_get_task_dependency(
             "task_dependencies.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "task_dependencies.errors.fetch_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("task_dependencies", "fetch_failed", e)),
     }
 }

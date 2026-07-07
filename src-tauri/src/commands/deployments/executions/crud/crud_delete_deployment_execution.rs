@@ -30,9 +30,6 @@ pub async fn crud_delete_deployment_execution(
             "deployment_executions.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "deployment_executions.errors.delete_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("deployment_executions", "delete_failed", e)),
     }
 }

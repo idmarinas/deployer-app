@@ -28,9 +28,6 @@ pub async fn crud_create_global_variable(
 
     match db::insert::<GlobalVariable>(&pool, &variable, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "global_variables.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "global_variables.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("global_variables", "create_failed", e)),
     }
 }

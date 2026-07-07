@@ -34,10 +34,7 @@ pub async fn crud_update_task_dependency(
             ))
         }
         Err(e) => {
-            return Ok(CommandResponse::err(
-                "task_dependencies.errors.fetch_failed",
-                HashMap::from([("reason".to_string(), e)]),
-            ))
+            return Ok(db::error_to_response("task_dependencies", "fetch_failed", e))
         }
         Ok(Some(_)) => {}
     };
@@ -56,12 +53,9 @@ pub async fn crud_update_task_dependency(
         .bind(id)
         .execute(&pool)
         .await
-        .map_err(|e| format!("Error al actualizar task_dependency {}: {}", id, e))
+        .map_err(|e| db::format_sqlx_error(&e, TaskDependency::table_name(), Some(id)))
     {
         Ok(_) => Ok(CommandResponse::ok_empty("task_dependencies.success.updated")),
-        Err(e) => Ok(CommandResponse::err(
-            "task_dependencies.errors.update_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("task_dependencies", "update_failed", e)),
     }
 }

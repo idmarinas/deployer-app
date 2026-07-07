@@ -1,13 +1,9 @@
-use sqlx::SqlitePool;
-use std::collections::HashMap;
+use crate::commands::helpers::open_pool;
+use crate::commands::CommandResponse;
+use crate::params;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
-
-use super::path_to_sqlite_url;
-use crate::commands::store::get_database_path_internal;
-use crate::commands::CommandResponse;
-use crate::params;
 
 /// Valida la integridad y estructura de la base de datos SQLite en la ruta indicada.
 /// Comprueba la integridad física, las tablas requeridas y los datos iniciales.
@@ -17,29 +13,14 @@ use crate::params;
 pub async fn validate_sqlite_database(app: AppHandle) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
-    // Obtener la ruta del store
-    let path = match get_database_path_internal(app) {
-        Ok(Some(p)) => p,
-        Ok(None) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err("database.errors.no_database_path", HashMap::new());
-        }
-        Err(e) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err("database.errors.store_error", params!("reason" => e));
-        }
-    };
-
-    let url = path_to_sqlite_url(&path);
-
     // 1. Crear pool de conexión
-    let pool = match SqlitePool::connect(&url).await {
-        Ok(p) => p,
+    let (pool, path) = match open_pool(&app).await {
+        Ok((p, path)) => (p, path),
         Err(e) => {
             sleep_until(deadline).await;
             return CommandResponse::err(
                 "database.errors.initialization_failed",
-                params!("path" => path, "reason" => e.to_string()),
+                params!("reason" => e),
             );
         }
     };

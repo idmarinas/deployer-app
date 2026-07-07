@@ -61,9 +61,6 @@ pub async fn crud_update_project(
             "projects.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "projects.errors.update_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("projects", "update_failed", e)),
     }
 }

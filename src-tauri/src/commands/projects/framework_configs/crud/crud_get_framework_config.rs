@@ -30,9 +30,6 @@ pub async fn crud_get_framework_config(
             "framework_configs.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "framework_configs.errors.fetch_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("framework_configs", "fetch_failed", e)),
     }
 }

@@ -1,14 +1,14 @@
 use russh::client;
 use russh::keys::{PrivateKey, PrivateKeyWithHashAlg};
-use sqlx::{sqlite::SqliteConnectOptions, Row, SqlitePool};
+use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::timeout;
 
 use crate::commands::database::path_to_sqlite_url;
+use crate::commands::helpers::configured_sqlite_options;
 use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::params;
@@ -189,8 +189,7 @@ pub async fn test_connection(
 async fn fetch_host_data(db_path: &str, host_id: i64) -> Result<Option<HostData>, String> {
     let url = path_to_sqlite_url(db_path);
 
-    let options = SqliteConnectOptions::from_str(&url)
-        .map_err(|e| e.to_string())?
+    let options = configured_sqlite_options(&url)?
         .read_only(true);
 
     let pool = SqlitePool::connect_with(options)

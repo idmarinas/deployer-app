@@ -28,9 +28,6 @@ pub async fn crud_create_task_dependency(
 
     match db::insert::<TaskDependency>(&pool, &dependency, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "task_dependencies.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "task_dependencies.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("task_dependencies", "create_failed", e)),
     }
 }

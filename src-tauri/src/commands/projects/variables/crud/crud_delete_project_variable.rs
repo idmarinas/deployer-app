@@ -30,9 +30,6 @@ pub async fn crud_delete_project_variable(
             "project_variables.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "project_variables.errors.delete_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("project_variables", "delete_failed", e)),
     }
 }

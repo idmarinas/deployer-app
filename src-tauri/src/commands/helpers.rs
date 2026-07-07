@@ -7,6 +7,26 @@ use crate::commands::store::get_database_path_internal;
 use crate::crypto;
 use crate::db::EncryptionConfigCache;
 
+/// Configuración base compartida para todas las conexiones SQLite del proyecto.
+/// Aplica `PRAGMA foreign_keys = ON` y cualquier otra opción global futura.
+/// Usa esta función siempre que necesites crear un `SqliteConnectOptions`.
+pub fn configured_sqlite_options(url: &str) -> Result<SqliteConnectOptions, String> {
+    SqliteConnectOptions::from_str(url)
+        .map_err(|e| e.to_string())
+        .map(|o| o.foreign_keys(true))
+}
+
+/// Crea un pool SQLite con la configuración estándar del proyecto.
+/// Todas las conexiones del pool tienen `PRAGMA foreign_keys = ON`.
+/// Para opciones adicionales (ej. `.read_only(true)`), usa
+/// `configured_sqlite_options` y luego `SqlitePool::connect_with`.
+pub async fn create_configured_pool(url: &str) -> Result<SqlitePool, String> {
+    let options = configured_sqlite_options(url)?;
+    SqlitePool::connect_with(options)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Obtiene la ruta de la BD desde el store y crea un pool de conexiones SQLite.
 pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> {
     let path = get_database_path_internal(app.clone())
@@ -14,10 +34,7 @@ pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> 
         .ok_or_else(|| "No se ha configurado la ruta de la base de datos".to_string())?;
 
     let url = path_to_sqlite_url(&path);
-    let options = SqliteConnectOptions::from_str(&url).map_err(|e| e.to_string())?;
-    let pool = SqlitePool::connect_with(options)
-        .await
-        .map_err(|e| e.to_string())?;
+    let pool = create_configured_pool(&url).await?;
 
     Ok((pool, path))
 }

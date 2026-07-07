@@ -30,9 +30,6 @@ pub async fn crud_create_deployment_rollback(
 
     match db::insert::<DeploymentRollback>(&pool, &rollback, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "deployment_rollbacks.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "deployment_rollbacks.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("deployment_rollbacks", "create_failed", e)),
     }
 }

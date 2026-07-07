@@ -1,9 +1,82 @@
 use serde_json::Value;
-use sqlx::{query::Query, sqlite::SqliteArguments, SqlitePool};
+use sqlx::{
+    error::ErrorKind,
+    query::Query,
+    sqlite::SqliteArguments,
+    SqlitePool,
+};
+use std::collections::HashMap;
 
 use super::cache::EncryptionConfigCache;
 use super::entity::DbEntity;
 use crate::crypto;
+use crate::commands::CommandResponse;
+
+// ============================================================================
+// Formateo estructurado de errores SQLite
+// ============================================================================
+
+/// Formatea un error sqlx con prefijo estructurado para que el caller pueda
+/// identificar el tipo de violación y elegir la clave i18n adecuada.
+///
+/// Formato: `KIND|detail|mensaje`
+pub fn format_sqlx_error(err: &sqlx::Error, table: &str, id: Option<i64>) -> String {
+    let (kind, detail) = match err.as_database_error() {
+        Some(db_err) => match db_err.kind() {
+            ErrorKind::UniqueViolation => ("UNIQUE", db_err.constraint().unwrap_or("")),
+            ErrorKind::ForeignKeyViolation => ("FK", db_err.constraint().unwrap_or("")),
+            ErrorKind::NotNullViolation => ("NOTNULL", db_err.constraint().unwrap_or("")),
+            ErrorKind::CheckViolation => ("CHECK", db_err.constraint().unwrap_or("")),
+            _ => ("OTHER", ""),
+        },
+        None => ("OTHER", ""),
+    };
+    let id_part = id.map_or(String::new(), |i| format!(" con id {}", i));
+    format!(
+        "{}|{}|Error en {}:{}: {}",
+        kind,
+        detail,
+        table,
+        id_part,
+        err
+    )
+}
+
+/// Convierte un error estructurado (formateado por `format_sqlx_error`) en un
+/// `CommandResponse` con la clave i18n adecuada según el tipo de violación.
+///
+/// `entity` es el prefijo de las claves de traducción (ej. "hosts").
+/// `operation` es el subfijo por defecto (ej. "create_failed") cuando no se
+/// reconoce el tipo de error.
+pub fn error_to_response<T>(
+    entity: &str,
+    operation: &str,
+    err: String,
+) -> CommandResponse<T> {
+    let mut parts = err.splitn(3, '|');
+    let kind = parts.next().unwrap_or("OTHER");
+    let _detail = parts.next().unwrap_or("");
+    let message = parts.next().unwrap_or(&err);
+
+    match kind {
+        "UNIQUE" => CommandResponse::err(
+            &format!("{}.errors.duplicate", entity),
+            HashMap::from([("reason".to_string(), message.to_string())]),
+        ),
+        "FK" => CommandResponse::err(
+            &format!("{}.errors.referenced_not_found", entity),
+            HashMap::from([("reason".to_string(), message.to_string())]),
+        ),
+        "NOTNULL" => CommandResponse::err(
+            &format!("{}.errors.required_field", entity),
+            HashMap::new(),
+        ),
+        _ => CommandResponse::err(
+            &format!("{}.errors.{}", entity, operation),
+            HashMap::from([("reason".to_string(), err)]),
+        ),
+    }
+}
 
 // ============================================================================
 // Funciones de cifrado/descifrado sobre campos de una entidad
@@ -48,12 +121,15 @@ pub async fn apply_encryption<E: DbEntity>(
                         .unwrap_or(false)
                 });
 
-        if should_encrypt_static || should_encrypt_db || should_encrypt_conditional {
-            if let Value::String(ref plaintext) = field_value.clone() {
-                if plaintext.is_empty() {
-                    continue;
+        let should_encrypt = should_encrypt_static || should_encrypt_db || should_encrypt_conditional;
+
+        if let Value::String(ref val) = field_value.clone() {
+            if crypto::is_encrypted(val) {
+                if !should_encrypt {
+                    *field_value = Value::String(crypto::decrypt(val, key)?);
                 }
-                *field_value = Value::String(crypto::encrypt(plaintext, key)?);
+            } else if should_encrypt && !val.is_empty() {
+                *field_value = Value::String(crypto::encrypt(val, key)?);
             }
         }
     }
@@ -139,7 +215,7 @@ pub async fn insert<E: DbEntity>(
     let result = query
         .execute(pool)
         .await
-        .map_err(|e| format!("Error al insertar en {}: {}", E::table_name(), e))?;
+        .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
 
     Ok(result.last_insert_rowid())
 }
@@ -170,14 +246,7 @@ pub async fn update_fields<E: DbEntity>(
             .bind(id)
             .fetch_optional(pool)
             .await
-            .map_err(|e| {
-                format!(
-                    "Error al comprobar existencia en {} con id {}: {}",
-                    E::table_name(),
-                    id,
-                    e
-                )
-            })?
+            .map_err(|e| format_sqlx_error(&e, E::table_name(), Some(id)))?
             .is_some();
         return Ok(exists);
     }
@@ -204,12 +273,7 @@ pub async fn update_fields<E: DbEntity>(
     query = query.bind(id);
 
     let result = query.execute(pool).await.map_err(|e| {
-        format!(
-            "Error al actualizar {} con id {}: {}",
-            E::table_name(),
-            id,
-            e
-        )
+        format_sqlx_error(&e, E::table_name(), Some(id))
     })?;
 
     Ok(result.rows_affected() > 0)
@@ -228,7 +292,7 @@ pub async fn fetch_one<E: DbEntity>(
         .bind(id)
         .fetch_optional(pool)
         .await
-        .map_err(|e| format!("Error al obtener {} con id {}: {}", E::table_name(), id, e))?;
+        .map_err(|e| format_sqlx_error(&e, E::table_name(), Some(id)))?;
 
     match row {
         None => Ok(None),
@@ -253,7 +317,7 @@ pub async fn fetch_all<E: DbEntity>(
     let rows = sqlx::query(&sql)
         .fetch_all(pool)
         .await
-        .map_err(|e| format!("Error al listar {}: {}", E::table_name(), e))?;
+        .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
 
     let mut results = Vec::new();
     for row in rows {
@@ -275,7 +339,7 @@ pub async fn delete(pool: &SqlitePool, table: &str, id: i64) -> Result<bool, Str
         .bind(id)
         .execute(pool)
         .await
-        .map_err(|e| format!("Error al eliminar de {} con id {}: {}", table, id, e))?;
+        .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
 
     Ok(result.rows_affected() > 0)
 }

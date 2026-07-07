@@ -28,9 +28,6 @@ pub async fn crud_create_framework_config(
 
     match db::insert::<FrameworkConfig>(&pool, &config, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "framework_configs.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "framework_configs.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("framework_configs", "create_failed", e)),
     }
 }

@@ -25,9 +25,6 @@ pub async fn crud_list_global_variables(
 
     match db::fetch_all::<GlobalVariable>(&pool, cache, &key).await {
         Ok(variables) => Ok(CommandResponse::ok(variables, "global_variables.success.listed")),
-        Err(e) => Ok(CommandResponse::err(
-            "global_variables.errors.list_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("global_variables", "list_failed", e)),
     }
 }

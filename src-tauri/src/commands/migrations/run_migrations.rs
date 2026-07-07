@@ -1,8 +1,6 @@
-use crate::commands::store::get_database_path_internal;
+use crate::commands::helpers::open_pool;
 use crate::commands::CommandResponse;
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
@@ -24,39 +22,13 @@ macro_rules! params {
 pub async fn run_migrations(app: AppHandle) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
-    // Obtener la ruta del store
-    let path = match get_database_path_internal(app) {
-        Ok(Some(p)) => p,
-        Ok(None) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err("migrations.errors.no_database_path", HashMap::new());
-        }
-        Err(e) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err("migrations.errors.store_error", params!("reason" => e));
-        }
-    };
-
-    let url = format!("sqlite://{}", path);
-
-    let options = match SqliteConnectOptions::from_str(&url) {
-        Ok(o) => o,
-        Err(e) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err(
-                "migrations.errors.invalid_url",
-                params!("path" => path, "reason" => e.to_string()),
-            );
-        }
-    };
-
-    let pool = match SqlitePool::connect_with(options).await {
-        Ok(p) => p,
+    let (pool, _path) = match open_pool(&app).await {
+        Ok((p, path)) => (p, path),
         Err(e) => {
             sleep_until(deadline).await;
             return CommandResponse::err(
                 "migrations.errors.connection_failed",
-                params!("path" => path, "reason" => e.to_string()),
+                params!("reason" => e),
             );
         }
     };

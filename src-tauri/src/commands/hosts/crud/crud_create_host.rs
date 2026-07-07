@@ -28,9 +28,6 @@ pub async fn crud_create_host(
 
     match db::insert::<Host>(&pool, &host, cache, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "hosts.success.created")),
-        Err(e) => Ok(CommandResponse::err(
-            "hosts.errors.create_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("hosts", "create_failed", e)),
     }
 }

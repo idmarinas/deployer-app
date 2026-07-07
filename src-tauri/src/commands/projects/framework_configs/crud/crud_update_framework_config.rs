@@ -63,7 +63,30 @@ pub async fn crud_update_framework_config(
         fields.push(("value".to_string(), Value::String(value)));
         fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
     } else if let Some(is_secret) = input.is_secret {
-        fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+        match sqlx::query_scalar::<_, String>(
+            "SELECT value FROM framework_configs WHERE id = ?1",
+        )
+        .bind(id)
+        .fetch_optional(&pool)
+        .await
+        {
+            Ok(Some(current_value)) => {
+                fields.push(("value".to_string(), Value::String(current_value)));
+                fields.push(("is_secret".to_string(), Value::Bool(is_secret)));
+            }
+            Ok(None) => {
+                return Ok(CommandResponse::err(
+                    "framework_configs.errors.not_found",
+                    HashMap::from([("id".to_string(), id.to_string())]),
+                ))
+            }
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "framework_configs.errors.fetch_failed",
+                    HashMap::from([("reason".to_string(), e.to_string())]),
+                ))
+            }
+        }
     }
 
     if let Some(data_type) = input.data_type {
@@ -82,9 +105,6 @@ pub async fn crud_update_framework_config(
             "framework_configs.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "framework_configs.errors.update_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("framework_configs", "update_failed", e)),
     }
 }

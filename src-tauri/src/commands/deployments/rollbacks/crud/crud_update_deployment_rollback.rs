@@ -56,9 +56,6 @@ pub async fn crud_update_deployment_rollback(
             "deployment_rollbacks.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "deployment_rollbacks.errors.update_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("deployment_rollbacks", "update_failed", e)),
     }
 }

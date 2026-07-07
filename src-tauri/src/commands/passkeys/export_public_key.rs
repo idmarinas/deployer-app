@@ -2,8 +2,7 @@ use russh::client;
 use russh::keys::{PrivateKey, PrivateKeyWithHashAlg};
 use russh::Channel;
 use serde::Deserialize;
-use sqlx::{sqlite::SqliteConnectOptions, Row, SqlitePool};
-use std::str::FromStr;
+use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::AppHandle;
@@ -12,6 +11,7 @@ use tokio::time::timeout;
 use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
+use crate::commands::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::AuthType;
 use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::store::get_database_path_internal;
@@ -509,9 +509,7 @@ async fn fetch_passkey_data(db_path: &str, passkey_id: i64) -> Result<Option<Pas
 /// Abre un pool SQLite en modo lectura.
 async fn open_pool(db_path: &str) -> Result<SqlitePool, String> {
     let url = path_to_sqlite_url(db_path);
-    let options = SqliteConnectOptions::from_str(&url)
-        .map_err(|e| e.to_string())?
-        .read_only(true);
+    let options = configured_sqlite_options(&url)?.read_only(true);
     SqlitePool::connect_with(options)
         .await
         .map_err(|e| e.to_string())

@@ -30,9 +30,6 @@ pub async fn crud_delete_project(
             "projects.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "projects.errors.delete_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("projects", "delete_failed", e)),
     }
 }

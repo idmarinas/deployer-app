@@ -31,9 +31,6 @@ pub async fn crud_get_host(
             "hosts.errors.not_found",
             HashMap::from([("id".to_string(), id.to_string())]),
         )),
-        Err(e) => Ok(CommandResponse::err(
-            "hosts.errors.fetch_failed",
-            HashMap::from([("reason".to_string(), e)]),
-        )),
+        Err(e) => Ok(db::error_to_response("hosts", "fetch_failed", e)),
     }
 }
