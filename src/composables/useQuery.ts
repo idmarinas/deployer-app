@@ -1,5 +1,5 @@
+import { useVariablesQuery } from '@/composables/queries/global_variables'
 import { useProjectQuery } from '@/composables/queries/projects'
-import { useVariablesQuery } from '@/composables/queries/variables'
 import { useDatabase } from '@/composables/useDatabase'
 
 export function useQuery() {
