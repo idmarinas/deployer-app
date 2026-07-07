@@ -1,5 +1,5 @@
 <script lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 </script>
 <script setup lang="ts">
@@ -82,7 +82,11 @@ const text = computed(() => {
 						:aria-pressed="show"
 						aria-controls="password"
 						:disabled="disabled"
-						@click="show = !show"
+						@click="
+							() => {
+								show = !show
+							}
+						"
 					/>
 				</template>
 			</UInput>
@@ -116,9 +120,7 @@ const text = computed(() => {
 						<span class="sr-only">
 							-
 							{{
-								req.met
-									? t('form.shared.password.strength.req.meet')
-									: t('form.shared.password.strength.req.not_meet')
+								req.met ? t('form.shared.password.strength.req.meet') : t('form.shared.password.strength.req.not_meet')
 							}}
 						</span>
 					</span>
