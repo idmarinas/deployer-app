@@ -7,13 +7,13 @@ import { useI18n } from 'vue-i18n'
 
 import { useDatabase } from '@/composables/useDatabase'
 import { useDeployerShortcuts } from '@/composables/useDeployer'
-import { useQuery } from '@/composables/useQuery'
 import { registerExternalLinks } from '@/utils/externalLinks'
+import { invoke } from '@tauri-apps/api/core'
+import { CommandResponse } from './types/tauri-types'
 
 const colorMode = useColorMode()
 const { locale } = useI18n()
 const { load } = useDatabase()
-const { saveDeployerSetting } = useQuery()
 const { shortcuts } = useDeployerShortcuts()
 
 const themeColor = computed(() => (colorMode.value === 'dark' ? '#18181b' : '#ffffff'))
@@ -35,7 +35,10 @@ onMounted(() => {
 })
 
 watch(colorMode, async newColor => {
-	await saveDeployerSetting('theme_color', newColor)
+	await invoke<CommandResponse>('set_deployer_setting', {
+		key: 'theme_color',
+		value: newColor,
+	})
 })
 
 // Definir shortcuts globales
