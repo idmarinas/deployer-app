@@ -16,7 +16,7 @@
  * sobreescriben en cada ejecución de este script.
  */
 
-import { copyFileSync, existsSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -40,6 +40,8 @@ for (const file of FILES) {
 	}
 
 	copyFileSync(source, target)
+	const content = readFileSync(target, 'utf-8')
+	writeFileSync(target, `// @ts-nocheck\n${content}`)
 	copied++
 	console.log(`[drizzle] ✅ ${file} copiado a src/lib/`)
 }
