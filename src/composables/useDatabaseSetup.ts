@@ -1,13 +1,12 @@
 import type { CommandResponse } from '../types/tauri-types'
 
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { StepperItem } from '@nuxt/ui'
 import { useColorMode } from '@vueuse/core'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 // Composables
-import { useDatabase } from './useDatabase'
 
 // Tauri related imports
 import { invoke } from '@tauri-apps/api/core'
@@ -25,7 +24,6 @@ export function useDatabaseSetup() {
 	const router = useRouter()
 	const { locale, t } = useI18n()
 	const colorMode = useColorMode()
-	const { load } = useDatabase()
 
 	const currentStep = ref<string | undefined>(undefined)
 	const steps = ref<StepItem[]>([])
@@ -119,8 +117,6 @@ export function useDatabaseSetup() {
 				description: t('pages.setup.steps.description.idle.seed'),
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
-					await load()
-
 					return invoke<CommandResponse>('set_deployer_settings', {
 						settings: {
 							locale: locale.value,
