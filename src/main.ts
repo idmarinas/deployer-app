@@ -40,7 +40,7 @@ const i18n = createI18n({
 	availableLocales,
 	messages: {
 		[DEFAULT_LOCALE]: messages,
-	},
+	} as any,
 	datetimeFormats: {
 		[DEFAULT_LOCALE]: datetimeFormat ?? {},
 	},

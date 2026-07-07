@@ -43,7 +43,7 @@ export function useLocale() {
             ])
 
             if (!loadedLocales.has(newLocale)) {
-                setLocaleMessage(newLocale, messages!)
+                setLocaleMessage(newLocale, messages! as any)
 
                 if (datetimeFormat) setDateTimeFormat(newLocale, datetimeFormat)
                 if (numberFormat) setNumberFormat(newLocale, numberFormat)
