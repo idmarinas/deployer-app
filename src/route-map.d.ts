@@ -44,8 +44,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       Record<never, never>,
       | '/dashboard/[...path]'
-      | '/dashboard/app/'
-      | '/dashboard/app/settings'
       | '/dashboard/deployments'
       | '/dashboard/deployments/'
       | '/dashboard/deployments/[...path]'
@@ -59,6 +57,7 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/tasks/[...path]'
       | '/dashboard/variables'
       | '/dashboard/variables/[...path]'
+      | 'dashboard-app-settings'
       | 'dashboard-deployments-id-edit'
       | 'dashboard-global_variables'
       | 'dashboard-global_variables-add'
@@ -93,15 +92,8 @@ declare module 'vue-router/auto-routes' {
       { path: ParamValue<false> },
       | never
     >,
-    '/dashboard/app/': RouteRecordInfo<
-      '/dashboard/app/',
-      '/dashboard/app',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/app/settings': RouteRecordInfo<
-      '/dashboard/app/settings',
+    'dashboard-app-settings': RouteRecordInfo<
+      'dashboard-app-settings',
       '/dashboard/app/settings',
       Record<never, never>,
       Record<never, never>,
@@ -398,8 +390,6 @@ declare module 'vue-router/auto-routes' {
       routes:
         | '/dashboard'
         | '/dashboard/[...path]'
-        | '/dashboard/app/'
-        | '/dashboard/app/settings'
         | '/dashboard/deployments'
         | '/dashboard/deployments/'
         | '/dashboard/deployments/[...path]'
@@ -413,6 +403,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/tasks/[...path]'
         | '/dashboard/variables'
         | '/dashboard/variables/[...path]'
+        | 'dashboard-app-settings'
         | 'dashboard-deployments-id-edit'
         | 'dashboard-global_variables'
         | 'dashboard-global_variables-add'
@@ -453,17 +444,9 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | 'path'
     }
-    'src/pages/dashboard/app/index.vue': {
-      routes:
-        | '/dashboard/app/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
     'src/pages/dashboard/app/settings.vue': {
       routes:
-        | '/dashboard/app/settings'
+        | 'dashboard-app-settings'
       views:
         | never
       pathParamNames:
