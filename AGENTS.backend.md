@@ -230,7 +230,7 @@ match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
 ### Estado de la migración
 
 - ✅ Migradas a `Patch<T>` + `db::update_fields`: `projects`, `hosts`, `passkeys`, `global_variables`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`, `project_hosts`, `deployments`, `deployment_executions`, `deployment_rollbacks`.
-- `task_dependencies` no existe aún como entidad (solo mencionado como futuro), no aplica todavía.
+- `task_dependencies` **sí existe** como entidad (CRUD completo implementado en `commands/tasks/dependencies/`), pero no usa `Patch<T>`: su único campo editable (`dependency_type`) es `NOT NULL`, así que `UpdateTaskDependencyInput` usa `DependencyType` directo (sin `Option`/`Patch`).
 - Nota especial: `global_variables.value`, `project_variables.value` y `framework_configs.value` tienen `#[db_conditional_encrypt(condition = "is_secret")]`. Si se actualiza `value` sin enviar `is_secret` en el mismo `input`, el comando consulta el `is_secret` actual en BD antes de construir `fields`, para que `apply_encryption` evalúe bien la condición (que solo mira el `Vec<(String, Value)>` que se le pasa, no el resto de la fila).
 
 ---

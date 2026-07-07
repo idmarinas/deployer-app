@@ -55,6 +55,7 @@ DeployerApp tiene una identidad visual inspirada en placas de circuito impreso (
 ### Paleta y colores semánticos
 
 Paleta custom registrada en `main.css` bajo `@theme static` con el prefijo `deployer-`:
+
 - `deployer-primary` → Azul eléctrico (#0a8dff)
 - `deployer-secondary` → Morado neón (#821aff)
 - `deployer-success` → Verde azulado (#00c8a3)
@@ -82,6 +83,7 @@ colors: {
 ### Tokens semánticos Nuxt UI (`--ui-*`) declarados en `main.css`
 
 En `main.css` se declaran en `:root` (modo claro) y se sobreescriben en `.dark` (modo oscuro):
+
 - `--ui-bg`, `--ui-bg-elevated`, `--ui-bg-accented`, `--ui-bg-inverted`
 - `--ui-border`, `--ui-border-accented`, `--ui-border-inverted`
 - `--ui-text`, `--ui-text-dimmed`, `--ui-text-muted`, `--ui-text-toned`, `--ui-text-highlighted`, `--ui-text-inverted`
@@ -98,24 +100,24 @@ Variables propias PCB: `--pcb-trace`, `--pcb-trace-glow`, `--pcb-pad`, `--pcb-bo
 
 ### Utilidades CSS reutilizables (definidas en `main.css`)
 
-| Clase | Uso |
-|---|---|
-| `.pcb-clip-br` | Esquina inferior-derecha recortada — botones (no-square), inputs |
-| `.pcb-clip-badge` / `.pcb-clip-badge-alt` | Esquinas opuestas recortadas — badges tipo chip SMD |
-| `.pcb-clip-card` | Las 4 esquinas recortadas — cards, modals |
-| `.pcb-clip-hex` | Hexágono achatado — indicadores de estado |
-| `.pcb-shadow-xs/sm/md/lg` | Glow de marca vía `filter: drop-shadow(...)` — **obligatorio con `pcb-clip-*`** |
-| `.pcb-shadow-neutral` | Sombra neutra vía `drop-shadow` — cards/elementos sin énfasis de color |
-| `.pcb-shadow-hover-md` | Variante hover de glow |
-| `.pcb-trace-top` / `.pcb-trace-bottom` | Línea de traza energizada en borde sup/inf |
-| `.pcb-trace-left` | Indicador lateral degradado fijo azul→morado |
-| `.pcb-trace-left-current` | Igual pero usa `currentColor` — para alert, toast (fijar con `text-{color}-*`) |
-| `.pcb-corners` | Nodos circulares en esquinas — cards, modals |
-| `.pcb-pad` | Pad de soldadura circular inline |
-| `.pcb-animate-pulse` | Pulso de energía en hover — botones solid |
-| `.pcb-animate-flow` | Flujo de gradiente — progress |
-| `.pcb-animate-blink` | Parpadeo LED — **solo uso explícito y puntual** |
-| `.font-pcb` | Aplica JetBrains Mono |
+| Clase                                     | Uso                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| `.pcb-clip-br`                            | Esquina inferior-derecha recortada — botones (no-square), inputs                |
+| `.pcb-clip-badge` / `.pcb-clip-badge-alt` | Esquinas opuestas recortadas — badges tipo chip SMD                             |
+| `.pcb-clip-card`                          | Las 4 esquinas recortadas — cards, modals                                       |
+| `.pcb-clip-hex`                           | Hexágono achatado — indicadores de estado                                       |
+| `.pcb-shadow-xs/sm/md/lg`                 | Glow de marca vía `filter: drop-shadow(...)` — **obligatorio con `pcb-clip-*`** |
+| `.pcb-shadow-neutral`                     | Sombra neutra vía `drop-shadow` — cards/elementos sin énfasis de color          |
+| `.pcb-shadow-hover-md`                    | Variante hover de glow                                                          |
+| `.pcb-trace-top` / `.pcb-trace-bottom`    | Línea de traza energizada en borde sup/inf                                      |
+| `.pcb-trace-left`                         | Indicador lateral degradado fijo azul→morado                                    |
+| `.pcb-trace-left-current`                 | Igual pero usa `currentColor` — para alert, toast (fijar con `text-{color}-*`)  |
+| `.pcb-corners`                            | Nodos circulares en esquinas — cards, modals                                    |
+| `.pcb-pad`                                | Pad de soldadura circular inline                                                |
+| `.pcb-animate-pulse`                      | Pulso de energía en hover — botones solid                                       |
+| `.pcb-animate-flow`                       | Flujo de gradiente — progress                                                   |
+| `.pcb-animate-blink`                      | Parpadeo LED — **solo uso explícito y puntual**                                 |
+| `.font-pcb`                               | Aplica JetBrains Mono                                                           |
 
 ### ⚠️ Regla crítica: `box-shadow` NO es compatible con `clip-path`
 
@@ -198,38 +200,37 @@ ui({
 
 ### Concepto visual por componente
 
-| Componente | Tratamiento PCB |
-|---|---|
-| `button` | Esquina inf-derecha recortada (solo no-square), pulso en hover solid, `drop-shadow` |
-| `badge` | Esquinas opuestas tipo chip SMD, fuente mono, `drop-shadow` |
-| `input` / `textarea` / `select` | Esquina inf-izquierda recortada, glow `drop-shadow` en focus |
-| `checkbox` | Pad de soldadura cuadrado, degradado de marca al marcar |
-| `switch` | Track como pista de circuito, thumb como pad deslizante |
-| `card` / `modal` | 4 esquinas recortadas + nodos (`pcb-corners`), traza en header/footer, `drop-shadow` |
-| `tabs` | Indicador activo como puente conductor deslizante |
-| `progress` | Pista con anillo, relleno con flujo animado |
-| `separator` | Línea de traza con degradado, label en mono |
-| `tooltip` | Panel tipo "readout" técnico, fuente mono |
-| `alert` | Traza lateral izquierda (`pcb-trace-left`) |
-| `toast` | Fondo tintado + traza lateral (`pcb-trace-left-current`) + borde — distinguible sin icono |
-| `navigationMenu` | Item activo con traza lateral izquierda |
-| `dashboardNavbar` / `dashboardSidebar` | Traza energizada en separación header/footer |
-| `table` | Cabecera sticky, nodo PCB en primera columna, filas iluminadas en hover |
-| `dropdownMenu` / `contextMenu` | Panel readout, item resaltado con borde-traza izquierdo |
+| Componente                             | Tratamiento PCB                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `button`                               | Esquina inf-derecha recortada (solo no-square), pulso en hover solid, `drop-shadow`       |
+| `badge`                                | Esquinas opuestas tipo chip SMD, fuente mono, `drop-shadow`                               |
+| `input` / `textarea` / `select`        | Esquina inf-izquierda recortada, glow `drop-shadow` en focus                              |
+| `checkbox`                             | Pad de soldadura cuadrado, degradado de marca al marcar                                   |
+| `switch`                               | Track como pista de circuito, thumb como pad deslizante                                   |
+| `card` / `modal`                       | 4 esquinas recortadas + nodos (`pcb-corners`), traza en header/footer, `drop-shadow`      |
+| `tabs`                                 | Indicador activo como puente conductor deslizante                                         |
+| `progress`                             | Pista con anillo, relleno con flujo animado                                               |
+| `separator`                            | Línea de traza con degradado, label en mono                                               |
+| `tooltip`                              | Panel tipo "readout" técnico, fuente mono                                                 |
+| `alert`                                | Traza lateral izquierda (`pcb-trace-left`)                                                |
+| `toast`                                | Fondo tintado + traza lateral (`pcb-trace-left-current`) + borde — distinguible sin icono |
+| `navigationMenu`                       | Item activo con traza lateral izquierda                                                   |
+| `dashboardNavbar` / `dashboardSidebar` | Traza energizada en separación header/footer                                              |
+| `table`                                | Cabecera sticky, nodo PCB en primera columna, filas iluminadas en hover                   |
+| `dropdownMenu` / `contextMenu`         | Panel readout, item resaltado con borde-traza izquierdo                                   |
 
 ### Estructura de un archivo de tema — checklist
 
 ```ts
 export default {
-  slots: { base: '...' },
-  variants: { /* solo si el componente necesita condicionar pcb-clip-* por variant */ },
-  compoundVariants: [
-    { color: 'primary', variant: 'solid', class: '...' },
-  ],
+	slots: { base: '...' },
+	variants: {/* solo si el componente necesita condicionar pcb-clip-* por variant */},
+	compoundVariants: [{ color: 'primary', variant: 'solid', class: '...' }],
 }
 ```
 
 Al añadir o modificar cualquier theme file, verificar:
+
 - ✅ Sin hexadecimales hardcodeados — solo clases semánticas o tokens `--ui-*`
 - ✅ Slots con `pcb-clip-*` usan `drop-shadow`, nunca `shadow-[...]`
 - ✅ No hay dos reglas de `filter` en el mismo selector
@@ -264,8 +265,8 @@ Los nombres de tablas están centralizados en `src/constants/dbTables.ts`:
 
 ```ts
 export const DB_TABLES = {
-  DEPLOYER_SETTINGS: 'deployer_settings',
-  // ...
+	DEPLOYER_SETTINGS: 'deployer_settings',
+	// ...
 } as const
 ```
 
@@ -290,10 +291,10 @@ Un set `{ plural, singular, off }` por cada módulo (`hosts`, `projects`, `deplo
 - `off` — icono del elemento inactivo/deshabilitado (errores 404 de entidad, switches).
 
 ```ts
-getModuleIcon('hosts')                    // 'i-tabler-cloud-network' (plural, por defecto)
-getModuleIcon('hosts', 'singular')        // 'i-tabler-server'
-getModuleIcon('hosts', 'off')              // 'i-tabler-server-off'
-getModuleIcon('hosts', 'singular', true)   // 'tabler:server' (formato Iconify, para <Icon /> de @iconify/vue)
+getModuleIcon('hosts') // 'i-tabler-cloud-network' (plural, por defecto)
+getModuleIcon('hosts', 'singular') // 'i-tabler-server'
+getModuleIcon('hosts', 'off') // 'i-tabler-server-off'
+getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, para <Icon /> de @iconify/vue)
 ```
 
 `getModuleSwitchIcons(moduleName, isIconify?)` devuelve `{ uncheckedIcon, checkedIcon }` listo para `USwitch`/`UToggle` (usa `off`/`singular`).
@@ -348,8 +349,8 @@ Los tipos del backend se generan automáticamente mediante `ts-rs` en `tauri-typ
   import type { LocaleMessageValue } from 'vue-i18n'
 
   export default {
-    active: 'Activo',
-    confirm: { label: 'Confirmar', delete: 'Eliminar' },
+  	active: 'Activo',
+  	confirm: { label: 'Confirmar', delete: 'Eliminar' },
   } satisfies LocaleMessageValue
   ```
 
@@ -369,7 +370,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 const result = await invoke<CommandResponse<T>>('crud_get_project', { id: 1 })
 if (result.success) {
-  // result.data
+	// result.data
 }
 ```
 
@@ -380,10 +381,10 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { ProgressEvent } from '@/tauri-types'
 
 const channel = new Channel<ProgressEvent>()
-channel.onmessage = (event) => {
-  // deployment_started | task_pending | task_started |
-  // output_chunk | task_retrying | task_finished |
-  // task_skipped | deployment_finished | fatal_error
+channel.onmessage = event => {
+	// deployment_started | task_pending | task_started |
+	// output_chunk | task_retrying | task_finished |
+	// task_skipped | deployment_finished | fatal_error
 }
 
 await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
@@ -391,17 +392,17 @@ await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 
 ### Eventos del runner
 
-| Evento | Campos clave |
-|--------|-------------|
-| `deployment_started` | `deployment_id`, `total_tasks` |
-| `task_pending` | `execution_id`, `task_name`, `order` |
-| `task_started` | `execution_id`, `task_name` |
-| `output_chunk` | `execution_id`, `chunk` |
-| `task_retrying` | `execution_id`, `attempt`, `max_attempts`, `delay_secs` |
-| `task_finished` | `execution_id`, `task_name`, `status`, `exit_code`, `duration_seconds` |
-| `task_skipped` | `execution_id`, `task_name`, `reason` |
-| `deployment_finished` | `deployment_id`, `status`, `duration_seconds` |
-| `fatal_error` | `message` |
+| Evento                | Campos clave                                                           |
+| --------------------- | ---------------------------------------------------------------------- |
+| `deployment_started`  | `deployment_id`, `total_tasks`                                         |
+| `task_pending`        | `execution_id`, `task_name`, `order`                                   |
+| `task_started`        | `execution_id`, `task_name`                                            |
+| `output_chunk`        | `execution_id`, `chunk`                                                |
+| `task_retrying`       | `execution_id`, `attempt`, `max_attempts`, `delay_secs`                |
+| `task_finished`       | `execution_id`, `task_name`, `status`, `exit_code`, `duration_seconds` |
+| `task_skipped`        | `execution_id`, `task_name`, `reason`                                  |
+| `deployment_finished` | `deployment_id`, `status`, `duration_seconds`                          |
+| `fatal_error`         | `message`                                                              |
 
 ---
 
@@ -422,6 +423,7 @@ Referencia de implementación: `ProjectTabInfo.vue` + `ProjectViewEditForm.vue` 
 ### Tabs de relaciones N:M (ej. `ProjectTabHosts.vue`)
 
 Para relaciones tipo `project_hosts` (N:M con datos propios: `deploy_order`, `enabled`), la tab **no** depende del `isEditMode` global de la pantalla — alta, orden, activar/desactivar y baja son acciones siempre disponibles con guardado inmediato por acción (no hay un modo "edición" separado):
+
 - Los datos de la relación ya vienen anidados en la entidad padre (`project.project_hosts`, cargados por Drizzle en `useProjectQuery`), no hace falta query aparte.
 - El catálogo de la entidad relacionada (ej. lista de hosts para el selector de alta) se resuelve con los loaders `useXSelectPopulate` ya existentes (ej. `useHostSelectPopulate`).
 - Alta/baja/actualización llaman a `crud_create_*` / `crud_delete_*` / `crud_update_*` directamente y mutan el array local (`project.value.project_hosts`) en el mismo `then`, sin depender de invalidar caché de `pinia-colada` para refrescar la UI (más inmediato, evita refetch innecesario).
@@ -435,8 +437,6 @@ Sigue exactamente el mismo patrón CRUD que `hosts` (`useTaskSchema`, `loaders/t
 - El campo `command` de la task solo es obligatorio para `task_type` `command`/`script` (validado con `.refine()` en `useTaskSchema`); para `upload_file`/`download_file` el `command` no se usa — esa configuración (rutas origen/destino) vive en `project_tasks.config` (ver `TaskConfig`/`FileTransferConfig`), porque depende de cada proyecto, no de la task global.
 - `is_global` se fija siempre a `true` al crear desde este catálogo (no se expone en `TaskForm.vue`); si en el futuro se permiten tasks no globales (propias de un proyecto), habrá que revisar este punto.
 - Iconos por `task_type` centralizados en `ICONS.taskType` (`utils/icons.ts`).
-
-Pendiente (no implementado aún): `ProjectTabTasks.vue` (asignar tasks del catálogo a un proyecto con `order_execution`, `condition`, `on_failure`, `config`, overrides de working_dir/retry) y gestión de `task_dependencies`.
 
 ### `ProjectTabTasks.vue`: asignación de tasks con ajustes avanzados por asignación
 
@@ -477,7 +477,7 @@ A diferencia de Hosts/Tasks, `project_variables` no tiene catálogo que asignar:
 
 **Siempre** importar el submódulo directo: `import { useSortable } from '@vueuse/integrations/useSortable'`. Y añadir `@vueuse/integrations` como dependencia explícita en `package.json` (antes solo estaba `@vueuse/core`, y `@vueuse/integrations` se resolvía por hoisting transitivo, lo cual es frágil).
 
-Además, **siempre** pasar `watchElement: true` en las opciones cuando el contenedor esté dentro de un `v-if` que depende de datos asíncronos (ej. `v-if="localHosts.length"` con datos de un loader de `pinia-colada`). Por defecto `watchElement` es `false` y `useSortable` solo intenta enlazar Sortable.js **una vez** en `onMounted`; si en ese primer render el elemento aún no existe en el DOM (datos no cargados todavía), Sortable.js nunca se inicializa y el drag & drop queda muerto sin ningún error en consola. Con `watchElement: true`, `useSortable` monta un `watch` reactivo sobre el elemento y lo enlaza en cuanto aparece.
+Además, **siempre** pasar `watchElement: true` en las opciones cuando el contenedor esté dentro de un `v-if` que depende de datos asíncronos (ej. `v-if="localHosts.length"` con datos de un loader de `pinia-colada`). Por defecto `watchElement` es `false` y `useSortable` solo intenta enlazar Sortable.js **una vez** en `onMounted`; si en ese primer render el elemento aún no existe en el DOM (datos no cargados todavía), Sortable.js nunca se inicializa y el drag & drop queda muerto sin ningún error en consola. Con `watchElement: true`, `useSortable` monta un `watch` reactivo sobre el elemento y lo enlaza en cuanto aparece.
 
 **No usar la API `{ start, stop, option }` que devuelve `useSortable()` para configurar `handle`/`onUpdate` después de la llamada.** La instancia real de Sortable.js se crea dentro de un `onMounted` interno (asíncrono respecto al `<script setup>`), así que si llamas a `option('handle', ...)` justo después de `useSortable()`, la instancia todavía no existe y la llamada no hace nada (se pierde en silencio, sin error). **Siempre** pasar `handle`, `animation`, `onUpdate`, etc. como tercer argumento (objeto de opciones) directamente en la llamada a `useSortable(el, list, { handle: '.handle', onUpdate: ... })`. Tampoco llamar a `stop()` manualmente en un `onMounted` propio del componente: si se registra después del `onMounted` interno de `useSortable` (que es lo normal, al llamarse después en el `<script setup>`), destruye la instancia justo después de crearla.
 

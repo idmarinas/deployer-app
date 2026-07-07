@@ -25,9 +25,9 @@ Es fundamental respetar el stack tecnológico elegido:
 | Capa | Tecnología |
 |------|-----------|
 | **Frontend** | Vue.js 3 + TypeScript + [Nuxt UI v4](https://ui.nuxt.com/) (como librería, **no** como meta-framework) |
-| **Enrutamiento** | Vue Router directamente (no el enrutamiento basado en archivos de Nuxt) |
+| **Enrutamiento** | Basado en archivos (`src/pages/`), vía `vue-router/vite` (unplugin-vue-router) — **no** es el sistema de rutas de Nuxt, pero sí genera rutas automáticamente desde la estructura de carpetas |
 | **Estilos** | Tailwind CSS v4 (integrado en Nuxt UI) |
-| **Estado** | Pinia |
+| **Estado** | `@pinia/colada` (cache/queries de datos de servidor). **No se usa Pinia como store de estado de app** |
 | **Backend** | Rust + [Tauri 2](https://tauri.app/) |
 | **Base de Datos** | SQLite gestionada desde el backend en Rust |
 | **Lecturas ad-hoc** | Drizzle ORM (modo proxy) desde el frontend, vía comando `query_raw` |
