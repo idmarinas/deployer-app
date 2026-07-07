@@ -60,6 +60,9 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/variables'
       | '/dashboard/variables/[...path]'
       | 'dashboard-deployments-id-edit'
+      | 'dashboard-global_variables'
+      | 'dashboard-global_variables-add'
+      | 'dashboard-global_variables-id-edit'
       | 'dashboard-home'
       | 'dashboard-hosts'
       | 'dashboard-hosts-add'
@@ -75,9 +78,6 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-tasks'
       | 'dashboard-tasks-add'
       | 'dashboard-tasks-id-edit'
-      | 'dashboard-variables'
-      | 'dashboard-variables-add'
-      | 'dashboard-variables-id-edit'
     >,
     'dashboard-home': RouteRecordInfo<
       'dashboard-home',
@@ -311,12 +311,12 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       Record<never, never>,
       | '/dashboard/variables/[...path]'
-      | 'dashboard-variables'
-      | 'dashboard-variables-add'
-      | 'dashboard-variables-id-edit'
+      | 'dashboard-global_variables'
+      | 'dashboard-global_variables-add'
+      | 'dashboard-global_variables-id-edit'
     >,
-    'dashboard-variables': RouteRecordInfo<
-      'dashboard-variables',
+    'dashboard-global_variables': RouteRecordInfo<
+      'dashboard-global_variables',
       '/dashboard/variables',
       Record<never, never>,
       Record<never, never>,
@@ -329,15 +329,15 @@ declare module 'vue-router/auto-routes' {
       { path: ParamValue<false> },
       | never
     >,
-    'dashboard-variables-id-edit': RouteRecordInfo<
-      'dashboard-variables-id-edit',
-      '/dashboard/variables/:id(\\d+)/edit',
+    'dashboard-global_variables-id-edit': RouteRecordInfo<
+      'dashboard-global_variables-id-edit',
+      '/dashboard/global_variables/:id(\\d+)/edit',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
       | never
     >,
-    'dashboard-variables-add': RouteRecordInfo<
-      'dashboard-variables-add',
+    'dashboard-global_variables-add': RouteRecordInfo<
+      'dashboard-global_variables-add',
       '/dashboard/variables/add',
       Record<never, never>,
       Record<never, never>,
@@ -414,6 +414,9 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/variables'
         | '/dashboard/variables/[...path]'
         | 'dashboard-deployments-id-edit'
+        | 'dashboard-global_variables'
+        | 'dashboard-global_variables-add'
+        | 'dashboard-global_variables-id-edit'
         | 'dashboard-home'
         | 'dashboard-hosts'
         | 'dashboard-hosts-add'
@@ -429,9 +432,6 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-tasks'
         | 'dashboard-tasks-add'
         | 'dashboard-tasks-id-edit'
-        | 'dashboard-variables'
-        | 'dashboard-variables-add'
-        | 'dashboard-variables-id-edit'
       views:
         | 'default'
       pathParamNames:
@@ -702,9 +702,9 @@ declare module 'vue-router/auto-routes' {
       routes:
         | '/dashboard/variables'
         | '/dashboard/variables/[...path]'
-        | 'dashboard-variables'
-        | 'dashboard-variables-add'
-        | 'dashboard-variables-id-edit'
+        | 'dashboard-global_variables'
+        | 'dashboard-global_variables-add'
+        | 'dashboard-global_variables-id-edit'
       views:
         | 'default'
       pathParamNames:
@@ -712,7 +712,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/variables/index.vue': {
       routes:
-        | 'dashboard-variables'
+        | 'dashboard-global_variables'
       views:
         | never
       pathParamNames:
@@ -728,7 +728,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/variables/[id].edit.vue': {
       routes:
-        | 'dashboard-variables-id-edit'
+        | 'dashboard-global_variables-id-edit'
       views:
         | never
       pathParamNames:
@@ -736,7 +736,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/variables/add.vue': {
       routes:
-        | 'dashboard-variables-add'
+        | 'dashboard-global_variables-add'
       views:
         | never
       pathParamNames:
