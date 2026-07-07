@@ -88,8 +88,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 							async onClick() {
 								const result = await confirmDialog({
 									type: 'cancel_delete',
-									title: t('common.delete.label'),
-									description: t('common.delete.description', { name: (row.original as any).name }),
+									title: t('common.confirm.delete.label'),
+									description: t('common.confirm.delete.description', { name: (row.original as any).name }),
 								})
 
 								if (result) {
