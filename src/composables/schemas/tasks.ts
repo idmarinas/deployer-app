@@ -1,11 +1,11 @@
+import { and, eq, ne } from 'drizzle-orm'
 import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
-import { useQuery } from '@/composables/useQuery'
-import { DB_TABLES } from '@/constants/dbTables'
+import { countWhere } from '@/composables/queries/shared'
+import { tasks } from '@/lib/schema'
 
 export function useTaskSchema(taskId?: number) {
   const { t } = useI18n()
-  const { count } = useQuery()
 
   const taskSchema = z.object({
     name: z.string(t('validation.tasks.name.required'))
@@ -13,11 +13,10 @@ export function useTaskSchema(taskId?: number) {
       .min(3, t('validation.tasks.name.min'))
       .max(120, t('validation.tasks.name.max'))
       .refine(async (value) => {
-        let query = `name = '${value}'`
-        if (taskId) {
-          query += ` AND id != ${taskId}`
-        }
-        const exist = await count(DB_TABLES.TASKS, query)
+        const condition = taskId
+          ? and(eq(tasks.name, value), ne(tasks.id, taskId))!
+          : eq(tasks.name, value)
+        const exist = await countWhere(tasks, condition)
         return exist <= 0
       }, t('validation.tasks.name.not_unique')
       ),

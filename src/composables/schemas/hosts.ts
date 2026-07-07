@@ -1,11 +1,11 @@
+import { and, eq, ne } from 'drizzle-orm'
 import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
-import { useQuery } from '@/composables/useQuery'
-import { DB_TABLES } from '@/constants/dbTables'
+import { countWhere } from '@/composables/queries/shared'
+import { hosts } from '@/lib/schema'
 
 export function useHostSchema(hostId?: number) {
   const { t } = useI18n()
-  const { count } = useQuery()
 
   const hostSchema = z.object({
     name: z.string(t('validation.hosts.name.required'))
@@ -13,11 +13,10 @@ export function useHostSchema(hostId?: number) {
       .min(3, t('validation.hosts.name.min'))
       .max(120, t('validation.hosts.name.max'))
       .refine(async (value) => {
-        let query = `name = '${value}'`
-        if (hostId) {
-          query += ` AND id != ${hostId}`
-        }
-        const exist = await count(DB_TABLES.HOSTS, query)
+        const condition = hostId
+          ? and(eq(hosts.name, value), ne(hosts.id, hostId))!
+          : eq(hosts.name, value)
+        const exist = await countWhere(hosts, condition)
         return exist <= 0
       }, t('validation.hosts.name.not_unique')
       ),

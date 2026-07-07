@@ -1,11 +1,11 @@
+import { and, eq, ne } from 'drizzle-orm'
 import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
-import { useQuery } from '@/composables/useQuery'
-import { DB_TABLES } from '@/constants/dbTables'
+import { countWhere } from '@/composables/queries/shared'
+import { passkeys } from '@/lib/schema'
 
 export function usePasskeySchema(passkeyId?: number) {
   const { t } = useI18n()
-  const { count } = useQuery()
 
   const passkeySchema = z.object({
     name: z.string(t('validation.passkeys.name.required'))
@@ -13,11 +13,10 @@ export function usePasskeySchema(passkeyId?: number) {
       .min(3, t('validation.passkeys.name.min'))
       .max(120, t('validation.passkeys.name.max'))
       .refine(async (value) => {
-        let query = `name = '${value}'`
-        if (passkeyId) {
-          query += ` AND id != ${passkeyId}`
-        }
-        const exist = await count(DB_TABLES.PASSKEYS, query)
+        const condition = passkeyId
+          ? and(eq(passkeys.name, value), ne(passkeys.id, passkeyId))!
+          : eq(passkeys.name, value)
+        const exist = await countWhere(passkeys, condition)
         return exist <= 0
       }, t('validation.passkeys.name.not_unique')
       ),
