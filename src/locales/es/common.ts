@@ -29,7 +29,7 @@ export default {
 	confirm: {
 		delete: {
 			label: 'Eliminar',
-			description: '¿Estás seguro de que quieres eliminar {name}?',
+			description: '¿Estás seguro de que quieres eliminar "{name}"?',
 		},
 	},
 
