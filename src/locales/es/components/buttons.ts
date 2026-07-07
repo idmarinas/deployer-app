@@ -33,7 +33,7 @@ export default {
 			description: 'Añadir un nuevo servidor en el que se pueden desplegar proyectos.',
 		},
 	},
-	variables: {
+	global_variables: {
 		add: {
 			label: 'Añadir variable global',
 			description: 'Añadir una nueva variable global que se puede reutilizar.',
