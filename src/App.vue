@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, watch } from 'vue'
+import * as locales from '@nuxt/ui/locale'
 import { useHead } from '@unhead/vue'
 import { useColorMode } from '@vueuse/core'
+import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import * as locales from '@nuxt/ui/locale'
 
-import { registerExternalLinks } from '@/utils/externalLinks'
 import { useDatabase } from '@/composables/useDatabase'
-import { useQuery } from '@/composables/useQuery'
 import { useDeployerShortcuts } from '@/composables/useDeployer'
+import { useQuery } from '@/composables/useQuery'
+import { registerExternalLinks } from '@/utils/externalLinks'
 
 const colorMode = useColorMode()
 const { locale } = useI18n()
@@ -16,28 +16,26 @@ const { load } = useDatabase()
 const { saveDeployerSetting } = useQuery()
 const { shortcuts } = useDeployerShortcuts()
 
-const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
+const themeColor = computed(() => (colorMode.value === 'dark' ? '#18181b' : '#ffffff'))
 
 useHead({
-  htmlAttrs: {
-    lang: locale,
-  },
-  meta: [
-    { name: 'theme-color', content: themeColor }
-  ]
+	htmlAttrs: {
+		lang: locale,
+	},
+	meta: [{ name: 'theme-color', content: themeColor }],
 })
 
 onBeforeMount(async () => {
-  await load()
+	await load()
 })
 
 onMounted(() => {
-  registerExternalLinks()
-  document.getElementById('style-splashscreen')?.remove()
+	registerExternalLinks()
+	document.getElementById('style-splashscreen')?.remove()
 })
 
-watch(colorMode, async (newColor) => {
-  await saveDeployerSetting('theme_color', newColor)
+watch(colorMode, async newColor => {
+	await saveDeployerSetting('theme_color', newColor)
 })
 
 // Definir shortcuts globales
@@ -45,11 +43,16 @@ defineShortcuts(shortcuts)
 </script>
 
 <template>
-  <Suspense>
-    <UApp :locale="locales[locale as keyof typeof locales]" :toaster="{ position: 'top-center' }">
-      <UTheme :props="{ navigationMenu: { orientation: 'vertical', tooltip: true, popover: true } }">
-        <RouterView />
-      </UTheme>
-    </UApp>
-  </Suspense>
+	<Suspense>
+		<UApp :locale="locales[locale as keyof typeof locales]" :toaster="{ position: 'top-center' }">
+			<UTheme
+				:props="{
+					navigationMenu: { orientation: 'vertical', tooltip: true, popover: true },
+					tooltip: { delayDuration: 0 },
+				}"
+			>
+				<RouterView />
+			</UTheme>
+		</UApp>
+	</Suspense>
 </template>
