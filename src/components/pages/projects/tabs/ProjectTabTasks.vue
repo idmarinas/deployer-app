@@ -26,8 +26,8 @@ import { useSortable } from '@vueuse/integrations/useSortable'
 import { computed, inject, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useProjectQuery } from '@/composables/queries/projects'
 import { useConfirmDialog } from '@/composables/useDialog'
+import { useQuery } from '@/composables/useQuery'
 import useToaster from '@/composables/useToaster'
 import { useTaskSelectPopulate } from '@/loaders/tasks'
 import { getModuleIcon, ICONS } from '@/utils/icons'
@@ -136,8 +136,8 @@ async function confirmAdd() {
 	})
 
 	if (result.success && result.data) {
-		const { findProjectTaskById } = useProjectQuery()
-		const newProjectTask = await findProjectTaskById(result.data)
+		const { projects } = useQuery()
+		const newProjectTask = await projects.findProjectTaskById(result.data)
 
 		project.value = {
 			...project.value,

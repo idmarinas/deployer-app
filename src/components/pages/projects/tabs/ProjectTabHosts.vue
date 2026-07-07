@@ -15,8 +15,8 @@ import { useSortable } from '@vueuse/integrations/useSortable'
 import { computed, inject, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useProjectQuery } from '@/composables/queries/projects'
 import { useConfirmDialog } from '@/composables/useDialog'
+import { useQuery } from '@/composables/useQuery'
 import useToaster from '@/composables/useToaster'
 import { getModuleIcon, ICONS } from '@/utils/icons'
 
@@ -112,8 +112,8 @@ async function confirmAdd() {
 	})
 
 	if (result.success && result.data) {
-		const { findProjectHostById } = useProjectQuery()
-		const newProjectHost = await findProjectHostById(result.data)
+		const { projects } = useQuery()
+		const newProjectHost = await projects.findProjectHostById(result.data)
 
 		project.value = {
 			...project.value,

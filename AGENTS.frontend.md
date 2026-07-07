@@ -249,8 +249,11 @@ Al añadir o modificar cualquier theme file, verificar:
 
 ### Composables de datos (`useQuery.ts`)
 
-- `useQuery.ts` es un barrel file que re-exporta desde archivos de dominio en `src/composables/queries/`.
-- Los métodos de escritura tienen dos variantes:
+- `useQuery.ts` es el barrel único de **lecturas**: reexporta todos los composables de `src/composables/queries/*.ts` (lecturas vía Drizzle Relational Queries, `db.query.*`, para tablas sin campos cifrados) agrupados por dominio (`useQuery().projects`, `useQuery().variables`...), más utilidades transversales de solo lectura como `count()` (usado por los schemas Zod para validar unicidad — ej. `useHostSchema` comprobando que no exista otro `name` igual). **Siempre se consume a través de `useQuery()`**, nunca importando `useProjectQuery`/`useVariablesQuery`/etc. directamente desde `queries/`.
+- Agrupados por dominio (no en un único objeto plano) porque varios composables de `queries/` comparten nombre de método (ej. `projects.findAll()` y `variables.findAll()`) — fusionarlos sin espacio de nombres provocaría que uno pise al otro. Al añadir un composable nuevo en `queries/`, reexportarlo en `useQuery.ts` bajo su propia clave de dominio.
+- Los **tipos** que exportan los archivos de `queries/` (ej. `ProjectRow`, `ProjectHostRow`, `ProjectTaskRow` de `queries/projects.ts`) se siguen importando **directamente** desde el archivo de dominio (`import type { ProjectRow } from '@/composables/queries/projects'`) — `useQuery.ts` reexporta valores (el resultado de llamar a cada composable), no tipos.
+- **Ninguna escritura (CRUD) vive en un composable de `queries/` ni en `useQuery.ts`.** Los `invoke('crud_create_*' | 'crud_update_*' | 'crud_delete_*' | 'set_*', ...)` se llaman siempre directamente en el sitio de uso (página, composable de página como `useDatabaseSetup.ts`/`useMigrations.ts`, o `useTableColumns.ts` para las acciones de tabla) — nunca a través de un wrapper intermedio. Precedente: `deployer_settings` empezó con un wrapper `useDeployerSettingsQuery()` en `queries/deployerSettings.ts` que solo delegaba en `invoke('set_deployer_settings', ...)`; se eliminó (sesión de julio 2026) por no aportar nada sobre la llamada directa y romper la convención. Si aparece otra tabla clave-valor o de ajustes en bloque, seguir el patrón de `invoke` directo, no repetir el wrapper.
+- Los métodos de escritura, cuando existan como helpers (no CRUD, ej. futuras utilidades de `useDatabase.ts`), tienen dos variantes:
   - Variante segura: devuelve `null` en caso de error.
   - Variante `OrThrow`: lanza excepción — **siempre usada dentro de `transaction()`**.
 

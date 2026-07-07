@@ -1,11 +1,9 @@
+import { useProjectQuery } from '@/composables/queries/projects'
+import { useVariablesQuery } from '@/composables/queries/variables'
 import { useDatabase } from '@/composables/useDatabase'
-
-import { useDeployerSettingsQuery } from './queries/deployerSettings'
 
 export function useQuery() {
 	const { db: database } = useDatabase()
-
-	const deployerSettingsQuery = useDeployerSettingsQuery()
 
 	async function count(table: string, where: string): Promise<number> {
 		return database
@@ -18,8 +16,11 @@ export function useQuery() {
 	}
 
 	return {
-		// Deployer Settings
-		...deployerSettingsQuery,
+		// Projects (Drizzle Relational Queries)
+		projects: useProjectQuery(),
+
+		// Global Variables (Drizzle Relational Queries)
+		globalVariables: useVariablesQuery(),
 
 		// Common
 		count,

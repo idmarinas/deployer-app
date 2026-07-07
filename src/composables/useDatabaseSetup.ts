@@ -8,7 +8,6 @@ import { useColorMode } from '@vueuse/core'
 
 // Composables
 import { useDatabase } from './useDatabase'
-import { useQuery } from './useQuery'
 
 // Tauri related imports
 import { invoke } from '@tauri-apps/api/core'
@@ -120,20 +119,14 @@ export function useDatabaseSetup() {
 				description: t('pages.setup.steps.description.idle.seed'),
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
-					const { saveDeployerSettings } = useQuery()
 					await load()
 
-					await saveDeployerSettings({
-						locale: locale.value,
-						theme_color: colorMode.value,
+					return invoke<CommandResponse>('set_deployer_settings', {
+						settings: {
+							locale: locale.value,
+							theme_color: colorMode.value,
+						},
 					})
-
-					return {
-						success: true,
-						data: null,
-						message_key: 'pages.setup.toast.success.seed',
-						message_params: {},
-					}
 				},
 			},
 			{
