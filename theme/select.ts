@@ -1,13 +1,6 @@
 // theme/select.ts
-// Mismo lenguaje visual que input/textarea. El dropdown se trata como un
-// "panel de readout" con separadores tipo traza entre items.
-//
-// IMPORTANTE: "base" lleva un clip-path (esquina recortada) → el glow de
-// focus usa `filter: drop-shadow(...)`. El slot "content" (dropdown) NO
-// lleva clip-path, así que su `shadow-2xl` normal es correcto y se mantiene.
-//
-// IMPORTANTE: `disabled:pointer-events-none` evita que el `hover:` de borde
-// se dispare cuando el select está deshabilitado.
+// Estilo "Command Module": selector de modo/pipeline con esquina recortada,
+// bisel interior, dot-grid de panel, y dropdown como "panel de readout".
 export default {
 	slots: {
 		root: 'relative w-full',
@@ -16,16 +9,19 @@ export default {
 			'bg-(--ui-bg-elevated) text-(--ui-text-highlighted)',
 			'border border-(--ui-border) placeholder:text-(--ui-text-dimmed)',
 			'transition-all duration-200 font-pcb text-sm',
+			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.04)]',
+			'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.02)_1px,transparent_0)] bg-[size:20px_20px]',
 			'focus:outline-none focus:border-primary-500',
 			'focus:[filter:drop-shadow(0_2px_6px_var(--pcb-trace-glow))]',
 			'hover:border-(--ui-border-accented)',
 			'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none',
 			'w-full',
 		].join(' '),
-		// Dropdown del select — panel tipo readout (sin clip-path, shadow normal)
 		content: [
-			'rounded-md border border-(--ui-border) bg-(--ui-bg-elevated)/95 backdrop-blur-xl shadow-2xl',
-			'ring-1 ring-primary-500/10 overflow-hidden',
+			'rounded-md border border-(--ui-border) bg-(--ui-bg-elevated)/95 backdrop-blur-xl',
+			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.06),0_4px_24px_rgba(0,0,0,0.25)]',
+			'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.03)_1px,transparent_0)] bg-[size:20px_20px]',
+			'overflow-hidden',
 		].join(' '),
 		item: [
 			'text-sm font-pcb text-(--ui-text-toned) px-3 py-2',

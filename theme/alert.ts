@@ -1,7 +1,6 @@
 // theme/alert.ts
-// Estilo PCB: traza lateral izquierda energizada (pcb-trace-left) en variantes
-// no-solid, simulando una línea de alimentación de la alerta. Solid mantiene
-// el degradado de marca a pantalla completa.
+// Estilo "Command Module": alerta de sistema con traza lateral energizada
+// en variantes no-solid. Solid mantiene el degradado de marca.
 export default {
 	slots: {
 		root: 'relative overflow-hidden w-full rounded-md p-4 flex gap-2.5 border',
@@ -10,7 +9,6 @@ export default {
 		description: 'text-sm opacity-80',
 	},
 	compoundVariants: [
-		// ─── PRIMARY ──────────────────────────────────────────────────────────
 		{
 			color: 'primary',
 			variant: 'solid',
@@ -39,7 +37,6 @@ export default {
 				root: 'pcb-trace-left bg-primary-500/8 border-primary-500/25 text-primary-700 dark:text-primary-300',
 			},
 		},
-		// ─── SUCCESS ──────────────────────────────────────────────────────────
 		{
 			color: 'success',
 			variant: 'solid',
@@ -68,7 +65,6 @@ export default {
 				root: 'pcb-trace-left bg-success-500/8 border-success-500/25 text-success-700 dark:text-success-300',
 			},
 		},
-		// ─── WARNING ──────────────────────────────────────────────────────────
 		{
 			color: 'warning',
 			variant: 'solid',
@@ -97,7 +93,6 @@ export default {
 				root: 'pcb-trace-left bg-warning-500/8 border-warning-500/25 text-warning-700 dark:text-warning-300',
 			},
 		},
-		// ─── ERROR ────────────────────────────────────────────────────────────
 		{
 			color: 'error',
 			variant: 'solid',
@@ -126,7 +121,6 @@ export default {
 				root: 'pcb-trace-left bg-error-500/8 border-error-500/25 text-error-700 dark:text-error-300',
 			},
 		},
-		// ─── INFO ─────────────────────────────────────────────────────────────
 		{
 			color: 'info',
 			variant: 'solid',
@@ -155,7 +149,6 @@ export default {
 				root: 'pcb-trace-left bg-info-500/8 border-info-500/25 text-info-700 dark:text-info-300',
 			},
 		},
-		// ─── NEUTRAL ──────────────────────────────────────────────────────────
 		{
 			color: 'neutral',
 			variant: 'solid',

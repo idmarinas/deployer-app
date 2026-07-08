@@ -1,10 +1,6 @@
 // theme/textarea.ts
-// Mismo lenguaje visual que input.ts: esquina inferior-izquierda recortada
-// + traza activa en focus. El handle de resize se decora como "conector".
-//
-// IMPORTANTE: "base" lleva un clip-path (esquina recortada), por lo que el
-// glow de focus usa `filter: drop-shadow(...)` en vez de `shadow-[...]`,
-// que no respeta el recorte y deja ver una esquina recta.
+// Estilo "Command Module": panel de entrada de datos con esquina recortada,
+// bisel interior, dot-grid de instrumentos, y traza activa en focus.
 export default {
 	slots: {
 		root: 'relative',
@@ -13,10 +9,11 @@ export default {
 			'bg-(--ui-bg-elevated) text-(--ui-text-highlighted)',
 			'border border-(--ui-border) placeholder:text-(--ui-text-dimmed)',
 			'transition-all duration-200 font-pcb',
+			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.04)]',
+			'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.02)_1px,transparent_0)] bg-[size:20px_20px]',
 			'focus:outline-none focus:border-primary-500',
 			'focus:[filter:drop-shadow(0_2px_6px_var(--pcb-trace-glow))]',
 			'disabled:opacity-40 disabled:cursor-not-allowed',
-			// Handle de resize estilizado como conector
 			'[&::-webkit-resizer]:bg-transparent',
 		].join(' '),
 		trailing: 'pointer-events-none',

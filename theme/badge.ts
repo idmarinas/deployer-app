@@ -1,25 +1,16 @@
-// theme/badge.ts
-// Estilo PCB: esquinas recortadas tipo chip/componente SMD, borde segmentado,
-// fuente mono para aspecto de etiqueta técnica de circuito impreso.
-//
-// IMPORTANTE: el slot "base" lleva `pcb-clip-badge` (clip-path), por lo que el
-// glow de las variantes "solid" usa `filter: drop-shadow(...)` en vez de
-// `shadow-[...]` (box-shadow no respeta el recorte y se ve una esquina recta).
-//
-// NOTA sobre `.pcb-animate-blink`: NO se aplica por defecto en ningún color/
-// variante. Es una clase de uso explícito y puntual — añadirla manualmente
-// (`class="pcb-animate-blink"`) solo cuando se quiera señalar un estado que
-// requiere atención inmediata (p. ej. una alerta sin confirmar).
+// LED de estado — Command Module.
+// Sólido: LED activo con glow + shadow interno para efecto "componente físico".
+// Outline: solo aro silkscreen (componente sin encender).
+// El clip-path pcb-clip-badge da la silueta de SMD.
 export default {
 	slots: {
 		base: 'pcb-clip-badge font-pcb font-medium tracking-wider uppercase relative',
 	},
 	compoundVariants: [
-		// ─── PRIMARY ──────────────────────────────────────────────────────────
 		{
 			color: 'primary',
 			variant: 'solid',
-			class: 'bg-primary-500 text-white [filter:drop-shadow(0_0_6px_rgba(10,141,255,0.4))]',
+			class: 'bg-primary-500 text-white [filter:drop-shadow(0_0_8px_rgba(10,141,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
 		},
 		{
 			color: 'primary',
@@ -36,11 +27,10 @@ export default {
 			variant: 'subtle',
 			class: 'bg-primary-500/10 text-primary-600 dark:text-primary-400 ring-1 ring-inset ring-primary-500/25',
 		},
-		// ─── SECONDARY ────────────────────────────────────────────────────────
 		{
 			color: 'secondary',
 			variant: 'solid',
-			class: 'bg-secondary-500 text-white [filter:drop-shadow(0_0_6px_rgba(130,26,255,0.4))]',
+			class: 'bg-secondary-500 text-white [filter:drop-shadow(0_0_8px_rgba(130,26,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
 		},
 		{
 			color: 'secondary',
@@ -57,11 +47,10 @@ export default {
 			variant: 'subtle',
 			class: 'bg-secondary-500/10 text-secondary-600 dark:text-secondary-400 ring-1 ring-inset ring-secondary-500/25',
 		},
-		// ─── SUCCESS ──────────────────────────────────────────────────────────
 		{
 			color: 'success',
 			variant: 'solid',
-			class: 'bg-success-500 text-neutral-950 [filter:drop-shadow(0_0_6px_rgba(0,200,163,0.4))]',
+			class: 'bg-success-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(0,200,163,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
 		},
 		{
 			color: 'success',
@@ -74,15 +63,9 @@ export default {
 			class: 'bg-success-500/10 text-success-600 dark:text-success-400',
 		},
 		{
-			color: 'success',
-			variant: 'subtle',
-			class: 'bg-success-500/10 text-success-600 dark:text-success-400 ring-1 ring-inset ring-success-500/25',
-		},
-		// ─── INFO ─────────────────────────────────────────────────────────────
-		{
 			color: 'info',
 			variant: 'solid',
-			class: 'bg-info-500 text-neutral-950 [filter:drop-shadow(0_0_6px_rgba(0,199,255,0.4))]',
+			class: 'bg-info-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(0,199,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
 		},
 		{
 			color: 'info',
@@ -94,11 +77,10 @@ export default {
 			variant: 'soft',
 			class: 'bg-info-500/10 text-info-600 dark:text-info-400',
 		},
-		// ─── WARNING ──────────────────────────────────────────────────────────
 		{
 			color: 'warning',
 			variant: 'solid',
-			class: 'bg-warning-500 text-neutral-950 [filter:drop-shadow(0_0_6px_rgba(230,178,0,0.4))]',
+			class: 'bg-warning-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(230,178,0,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
 		},
 		{
 			color: 'warning',
@@ -110,13 +92,10 @@ export default {
 			variant: 'soft',
 			class: 'bg-warning-500/10 text-warning-600 dark:text-warning-400',
 		},
-		// ─── ERROR ────────────────────────────────────────────────────────────
 		{
 			color: 'error',
 			variant: 'solid',
-			// Sin pcb-animate-blink por defecto — añadir manualmente cuando se
-			// quiera marcar atención inmediata: <UBadge class="pcb-animate-blink" />
-			class: 'bg-error-500 text-white [filter:drop-shadow(0_0_6px_rgba(255,10,85,0.4))]',
+			class: 'bg-error-500 text-white [filter:drop-shadow(0_0_8px_rgba(255,10,85,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
 		},
 		{
 			color: 'error',
@@ -128,11 +107,10 @@ export default {
 			variant: 'soft',
 			class: 'bg-error-500/10 text-error-600 dark:text-error-400',
 		},
-		// ─── NEUTRAL ──────────────────────────────────────────────────────────
 		{
 			color: 'neutral',
 			variant: 'solid',
-			class: 'bg-neutral-700 text-white',
+			class: 'bg-neutral-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_4px_rgba(0,0,0,0.2)]',
 		},
 		{
 			color: 'neutral',

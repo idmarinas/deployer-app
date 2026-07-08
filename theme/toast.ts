@@ -1,13 +1,19 @@
-// theme/toast.ts
-// Estilo PCB: "señal recibida". Cada color semántico se distingue por SÍ MISMO
-// (fondo tintado + traza lateral + borde), sin depender del icono para
-// diferenciarse — antes solo cambiaba el borde al 30% de opacidad, que es
-// insuficiente sin icono.
+// Señal de sistema — Command Module.
+// Notificación tipo "comms received" con traza lateral,
+// bisel, y L-bracket decorativo. Cada color semántico
+// se distingue por fondo tintado + borde + glow.
 export default {
 	slots: {
 		root: [
-			'relative overflow-hidden rounded-md border p-4 shadow-lg backdrop-blur-md',
+			'relative overflow-hidden rounded-md border p-4 backdrop-blur-md',
 			'bg-(--ui-bg-elevated)/95',
+			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.04)]',
+			// L-bracket top-left
+			'before:absolute before:top-[4px] before:left-[4px]',
+			'before:size-[8px]',
+			'before:border-t-2 before:border-l-2',
+			'before:border-t-primary-500/30 before:border-l-primary-500/30',
+			'before:rounded-tl-[1px]',
 		].join(' '),
 		title: 'text-sm font-semibold font-pcb text-(--ui-text-highlighted)',
 		description: 'text-sm text-(--ui-text-dimmed) mt-0.5',
