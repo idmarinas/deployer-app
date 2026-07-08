@@ -41,6 +41,7 @@ export default {
 	common: {
 		none: 'Ninguno',
 		username: 'Usuario',
+		encrypted: 'Encriptado',
 		yes: 'Sí',
 		no: 'No',
 	},
