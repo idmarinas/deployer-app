@@ -8,8 +8,27 @@ use crate::commands::helpers::open_pool;
 use crate::commands::CommandResponse;
 
 /// Columnas del sistema que se excluyen automáticamente de la configuración
-/// (ID primario, claves foráneas * _id, y timestamps de auditoría).
-const SYS_COLUMNS: &[&str] = &["id", "created_at", "updated_at", "started_at", "finished_at", "enabled"];
+/// (ID primario, claves foráneas * _id, timestamps de auditoría,
+/// y valores numéricos operacionales no sensibles).
+const SYS_COLUMNS: &[&str] = &[
+    "id",
+    "created_at",
+    "updated_at",
+    "started_at",
+    "finished_at",
+    "enabled",
+    // Valores numéricos operacionales (nunca contienen datos sensibles)
+    "port",
+    "timeout",
+    "retry_count",
+    "retry_delay",
+    "deploy_order",
+    "order_execution",
+    "build",
+    "duration_seconds",
+    "exit_code",
+    "retry_attempt",
+];
 
 /// Tablas internas que se excluyen de la configuración.
 const EXCLUDED_TABLES: &[&str] = &[

@@ -2,12 +2,12 @@ use serde_json::Value;
 use sqlx::{
     error::ErrorKind,
     query::Query,
-    sqlite::SqliteArguments,
-    SqlitePool,
+    sqlite::{SqliteArguments, SqliteRow},
+    Row, SqlitePool,
 };
 use std::collections::HashMap;
 
-use super::cache::EncryptionConfigCache;
+use super::cache::{EncryptionConfigCache, FieldEncryptionConfig};
 use super::entity::DbEntity;
 use crate::crypto;
 use crate::commands::CommandResponse;
@@ -78,6 +78,70 @@ pub fn error_to_response<T>(
     }
 }
 
+/// Determina si un campo está cifrado por cualquiera de los mecanismos
+/// (estático, dinámico o condicional).
+fn is_field_encrypted<E: DbEntity>(
+    table: &str,
+    field_name: &str,
+    config: &HashMap<(String, String), FieldEncryptionConfig>,
+) -> bool {
+    let static_enc = E::encrypted_fields().iter().any(|(f, _)| *f == field_name);
+    let dynamic_enc = config
+        .get(&(table.to_string(), field_name.to_string()))
+        .map(|c| c.encrypt)
+        .unwrap_or(false);
+    let conditional_enc = E::conditional_encrypted_fields()
+        .iter()
+        .any(|(f, _)| *f == field_name);
+    static_enc || dynamic_enc || conditional_enc
+}
+
+/// Sobrescribe en `fields` los valores de campos cifrados con el valor TEXT
+/// original de la fila SQL. Esto es necesario porque `from_row` convierte
+/// columnas INTEGER a i64, perdiendo el texto cifrado `"ENC:..."`.
+fn override_encrypted_fields_from_row<E: DbEntity>(
+    fields: &mut Vec<(String, Value)>,
+    row: &SqliteRow,
+    config: &HashMap<(String, String), FieldEncryptionConfig>,
+) -> Result<(), String> {
+    let table = E::table_name();
+    for (field_name, value) in fields.iter_mut() {
+        if !is_field_encrypted::<E>(table, field_name, config) {
+            continue;
+        }
+        // Si from_row ya produjo un string, no hace falta sobreescribir
+        if value.is_string() {
+            continue;
+        }
+        // Intentar obtener el valor TEXT crudo desde la fila SQL
+        if let Ok(raw) = row.try_get::<Option<String>, _>(field_name.as_str()) {
+            if let Some(s) = raw {
+                *value = Value::String(s);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Tras descifrar, convierte valores string de campos cifrados de vuelta
+/// al tipo numérico esperado por la entidad (ej. `"22"` → `Value::Number(22)`).
+fn coerce_decrypted_values<E: DbEntity>(
+    fields: &mut Vec<(String, Value)>,
+    config: &HashMap<(String, String), FieldEncryptionConfig>,
+) {
+    let table = E::table_name();
+    for (field_name, value) in fields.iter_mut() {
+        if !is_field_encrypted::<E>(table, field_name, config) {
+            continue;
+        }
+        if let Value::String(s) = value {
+            if let Ok(n) = s.parse::<i64>() {
+                *value = Value::Number(n.into());
+            }
+        }
+    }
+}
+
 // ============================================================================
 // Funciones de cifrado/descifrado sobre campos de una entidad
 // ============================================================================
@@ -123,14 +187,23 @@ pub async fn apply_encryption<E: DbEntity>(
 
         let should_encrypt = should_encrypt_static || should_encrypt_db || should_encrypt_conditional;
 
-        if let Value::String(ref val) = field_value.clone() {
-            if crypto::is_encrypted(val) {
-                if !should_encrypt {
-                    *field_value = Value::String(crypto::decrypt(val, key)?);
+        match field_value.clone() {
+            Value::String(ref val) => {
+                if crypto::is_encrypted(val) {
+                    if !should_encrypt {
+                        *field_value = Value::String(crypto::decrypt(val, key)?);
+                    }
+                } else if should_encrypt && !val.is_empty() {
+                    *field_value = Value::String(crypto::encrypt(val, key)?);
                 }
-            } else if should_encrypt && !val.is_empty() {
-                *field_value = Value::String(crypto::encrypt(val, key)?);
             }
+            Value::Number(ref n) => {
+                if should_encrypt {
+                    let s = n.to_string();
+                    *field_value = Value::String(crypto::encrypt(&s, key)?);
+                }
+            }
+            _ => {}
         }
     }
 
@@ -297,9 +370,12 @@ pub async fn fetch_one<E: DbEntity>(
     match row {
         None => Ok(None),
         Some(r) => {
+            let config = cache.get(pool).await?;
             let mut entity = E::from_row(&r)?;
             let mut fields = entity.to_fields_all();
+            override_encrypted_fields_from_row::<E>(&mut fields, &r, &config)?;
             apply_decryption::<E>(&mut fields, cache, pool, key).await?;
+            coerce_decrypted_values::<E>(&mut fields, &config);
             entity = E::from_fields(fields)?;
             Ok(Some(entity))
         }
@@ -319,11 +395,14 @@ pub async fn fetch_all<E: DbEntity>(
         .await
         .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
 
+    let config = cache.get(pool).await?;
     let mut results = Vec::new();
-    for row in rows {
-        let mut entity = E::from_row(&row)?;
+    for row in &rows {
+        let mut entity = E::from_row(row)?;
         let mut fields = entity.to_fields_all();
+        override_encrypted_fields_from_row::<E>(&mut fields, row, &config)?;
         apply_decryption::<E>(&mut fields, cache, pool, key).await?;
+        coerce_decrypted_values::<E>(&mut fields, &config);
         entity = E::from_fields(fields)?;
         results.push(entity);
     }

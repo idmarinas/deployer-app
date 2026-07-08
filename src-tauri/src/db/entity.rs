@@ -69,4 +69,7 @@ pub trait DbEntity: Sized + Serialize + Send + Unpin {
     /// Reconstruye la entidad desde un mapa de pares `(nombre_campo, valor)`.
     /// Se usa tras aplicar descifrado para actualizar los campos en memoria.
     fn from_fields(fields: Vec<(String, serde_json::Value)>) -> Result<Self, String>;
+
+    /// Extrae los nombres de columna de la entidad en orden de aparición.
+    fn column_names() -> Vec<&'static str>;
 }

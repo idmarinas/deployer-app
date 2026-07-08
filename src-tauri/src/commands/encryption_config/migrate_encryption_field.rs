@@ -38,7 +38,10 @@ pub async fn migrate_encryption_field(
         let id: i64 = row.get("id");
         let value: String = match row.try_get::<String, _>(field_name.as_str()) {
             Ok(v) => v,
-            Err(_) => continue,
+            Err(_) => match row.try_get::<i64, _>(field_name.as_str()) {
+                Ok(n) => n.to_string(),
+                Err(_) => continue,
+            },
         };
 
         let new_value = if encrypt {

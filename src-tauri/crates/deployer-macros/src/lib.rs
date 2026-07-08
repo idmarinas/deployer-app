@@ -177,6 +177,9 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
         }
     });
 
+    // 8. Nombres de columna DB en orden (usado por extract_row)
+    let db_column_names = fields.iter().map(db_column_name);
+
     let expanded = quote! {
         impl crate::db::DbEntity for #name {
             fn table_name() -> &'static str {
@@ -216,6 +219,10 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
                 Ok(#name {
                     #(#from_fields_mappings),*
                 })
+            }
+
+            fn column_names() -> Vec<&'static str> {
+                vec![#(#db_column_names),*]
             }
         }
     };
