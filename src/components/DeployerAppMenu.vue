@@ -44,7 +44,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
 		{
 			label: t('components.deployerAppMenu.settings'),
 			icon: ICONS.app.settings,
-			to: { name: 'dashboard-app-settings' },
+			to: { name: 'dashboard-app' },
 		},
 		{
 			label: 'Restablecer ventana',
