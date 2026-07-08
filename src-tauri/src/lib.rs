@@ -10,6 +10,7 @@ use commands::deployer_settings::{
     delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
     set_deployer_settings,
 };
+use commands::encryption_config::{list_encryption_config, update_encryption_config};
 use commands::deployments::{
     crud_create_deployment, crud_delete_deployment, crud_get_deployment, crud_list_deployments,
     crud_update_deployment,
@@ -125,6 +126,9 @@ pub fn run() {
             crud_get_project_variable,
             crud_list_project_variables,
             crud_delete_project_variable,
+            // Encryption Config
+            list_encryption_config,
+            update_encryption_config,
             // Deployer Settings
             get_deployer_setting,
             set_deployer_setting,

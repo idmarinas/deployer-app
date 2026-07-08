@@ -51,6 +51,28 @@ export type DeploymentRollback = { id: number, deployment_id: number, rolled_bac
 
 export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
+export type EncryptionConfig = { table_name: string, field_name: string, 
+/**
+ * Valor actual de `encrypt` en la tabla `encryption_config` (o false si no existe fila).
+ */
+encrypt: boolean, 
+/**
+ * Valor actual de `expose` en la tabla `encryption_config` (o false si no existe fila).
+ */
+expose: boolean, 
+/**
+ * El campo tiene cifrado estático vía proc-macro `#[db_encrypt]` — no se puede desactivar.
+ */
+static_encrypt: boolean, 
+/**
+ * El campo tiene exposición estática vía proc-macro `#[db_encrypt(expose = …)]`.
+ */
+static_expose: boolean, 
+/**
+ * El campo tiene cifrado condicional vía `#[db_conditional_encrypt]`.
+ */
+static_encrypt_conditional: boolean, };
+
 export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
 export type ExportPublicKeyAction = "add" | "remove";
@@ -79,23 +101,13 @@ temp_username: string | null, temp_password: string | null, };
  * Configuración de transferencia de archivo (Upload o Download).
  * Las rutas soportan interpolación de variables {{variable}}.
  */
-export type FileTransferConfig = { 
+export type FileTransferConfig = { paths: Array<PathMapping>, 
 /**
- * Ruta de origen.
- * - UploadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
- * - DownloadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
+ * Si false, se omite la transferencia de un archivo si el destino ya
+ * existe (no aplica a directorios recursivos, donde siempre se
+ * sobrescribe archivo a archivo). Por defecto true.
  */
-src: string, 
-/**
- * Ruta de destino.
- * - UploadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
- * - DownloadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
- */
-dest: string, 
-/**
- * Si true, transfiere directorios de forma recursiva. Por defecto false.
- */
-recursive: boolean, };
+overwrite: boolean, };
 
 export type Framework = "symfony" | "laravel" | "nextjs" | "generic";
 
@@ -150,6 +162,46 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 export type OnFailure = "stop" | "continue" | "retry";
 
 export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
+
+/**
+ * Un mapeo individual origen -> destino dentro de una transferencia de
+ * archivos. Una `FileTransferConfig` contiene una lista de estos, lo que
+ * permite representar con la misma estructura:
+ * - 1 archivo suelto -> `paths` con 1 elemento, `recursive: false`.
+ * - Varios archivos sueltos -> `paths` con N elementos (cada uno su propio
+ *   src/dest, ya que pueden ir a destinos distintos).
+ * - 1 directorio completo -> `paths` con 1 elemento, `recursive: true`.
+ */
+export type PathMapping = { 
+/**
+ * Ruta de origen.
+ * - UploadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
+ * - DownloadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
+ */
+src: string, 
+/**
+ * Ruta de destino.
+ * - UploadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
+ * - DownloadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
+ */
+dest: string, 
+/**
+ * Si true, transfiere `src` como directorio de forma recursiva. Por defecto false.
+ */
+recursive: boolean, 
+/**
+ * Patrones a excluir (solo aplica si `recursive` es true). Soporta `*` y
+ * `?` como comodines simples (ej. "node_modules", ".git", "*.log").
+ * Se compara contra el nombre de cada entrada (archivo o directorio),
+ * no contra la ruta completa.
+ */
+exclude?: Array<string> | null, 
+/**
+ * Permisos octales a aplicar tras la transferencia (ej. "755", "644").
+ * Solo tiene efecto en el lado remoto (chmod vía SFTP); en descargas se
+ * ignora para el archivo local (no hay chmod portable Windows/Unix).
+ */
+chmod?: string | null, };
 
 export type ProgressEvent = { "event": "deployment_started", deployment_id: number, total_tasks: number, } | { "event": "task_pending", execution_id: number, task_name: string, order: number, } | { "event": "task_started", execution_id: number, task_name: string, } | { "event": "output_chunk", execution_id: number, chunk: string, } | { "event": "task_retrying", execution_id: number, attempt: number, max_attempts: number, delay_secs: number, } | { "event": "task_finished", execution_id: number, task_name: string, status: ExecutionStatus, exit_code: number | null, duration_seconds: number, } | { "event": "task_skipped", execution_id: number, task_name: string, reason: string, } | { "event": "deployment_finished", deployment_id: number, status: DeploymentStatus, duration_seconds: number, } | { "event": "fatal_error", message: string, };
 
