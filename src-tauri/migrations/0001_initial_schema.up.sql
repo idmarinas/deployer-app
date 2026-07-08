@@ -87,6 +87,14 @@ CREATE TABLE global_variables (
     name TEXT NOT NULL CONSTRAINT global_variables_uq_name UNIQUE,
     value TEXT NOT NULL,
     is_secret BOOLEAN NOT NULL DEFAULT 0,
+    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT global_variables_chk_data_type CHECK (
+        data_type IN (
+            'string',
+            'integer',
+            'boolean',
+            'json'
+        )
+    ),
     description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -156,6 +164,14 @@ CREATE TABLE project_variables (
     name TEXT NOT NULL,
     value TEXT NOT NULL,
     is_secret BOOLEAN NOT NULL DEFAULT 0,
+    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT project_variables_chk_data_type CHECK (
+        data_type IN (
+            'string',
+            'integer',
+            'boolean',
+            'json'
+        )
+    ),
     description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
