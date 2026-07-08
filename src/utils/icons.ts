@@ -212,6 +212,8 @@ export const ICONS = {
 		infoCircle: 'i-tabler-info-circle',
 		lock: 'i-tabler-lock',
 		lockOpen: 'i-tabler-lock-open',
+		encrypt: 'i-tabler-key',
+		empty: 'i-tabler-circle-dashed',
 	},
 } as const
 
