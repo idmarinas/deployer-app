@@ -12,11 +12,6 @@ const schema = { ...tablesSchema, ...relationsSchema }
  * Drizzle genera el SQL en el frontend y lo delega al comando Rust `query_raw`,
  * que lo ejecuta sobre el SQLite local del usuario.
  *
- * Limitaciones intencionadas:
- * - Solo lectura (SELECT). Las escrituras siguen pasando por comandos CRUD específicos.
- * - Los campos cifrados NO se descifran. Este cliente es para tablas sin datos sensibles
- *   o para lecturas donde solo se necesitan metadatos.
- *
  * Se pasa el schema completo (tablas + relaciones de relations.ts) para poder usar
  * el Relational Queries API: `db.query.projects.findFirst({ with: { hosts: true } })`.
  * Esto evita el problema de productos cartesianos al combinar varios leftJoin 1:N
