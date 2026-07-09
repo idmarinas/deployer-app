@@ -2,17 +2,17 @@
 import type { CommandResponse, Host } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, ref, resolveComponent, useTemplateRef } from 'vue'
+import { h, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useHostListAll } from '@/loaders/hosts'
-import { ICONS, getModuleIcon } from '@/utils/icons'
+import { ICONS } from '@/utils/icons'
 import { useToast } from '@nuxt/ui/composables'
-import { useRouter } from 'vue-router'
 
 import { invoke } from '@tauri-apps/api/core'
+
+import ViewValue from '@/components/ViewValue.vue'
 </script>
 
 <script setup lang="ts">
@@ -23,13 +23,15 @@ definePage({
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 
-const { t, locale } = useI18n()
-const toast = useToast()
-const confirmDialog = useConfirmDialog()
-const router = useRouter()
-const { tableColumnExpand, tableColumnEnabled } = useTableColumns<Host>()
+const { data: items, isLoading, status, reload } = useHostListAll()
 
-const { data: hosts, isLoading, reload } = useHostListAll()
+const { t } = useI18n()
+const toast = useToast()
+const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Host>({
+	moduleName: 'hosts',
+	singularName: 'host',
+	onReload: reload,
+})
 
 const columns: TableColumn<Host>[] = [
 	tableColumnExpand,
@@ -40,14 +42,17 @@ const columns: TableColumn<Host>[] = [
 	{
 		accessorKey: 'name',
 		header: t('pages.hosts.table.columns.name'),
+		cell: ({ row }) => h(ViewValue, { value: row.getValue('name') as string }),
 	},
 	{
 		accessorKey: 'host',
 		header: t('pages.hosts.table.columns.ip'),
+		cell: ({ row }) => h(ViewValue, { value: row.getValue('host') as string }),
 	},
 	{
 		accessorKey: 'port',
 		header: t('pages.hosts.table.columns.port'),
+		cell: ({ row }) => h(ViewValue, { value: row.getValue('port') as number }),
 	},
 	{
 		accessorKey: 'auth_type',
@@ -64,19 +69,12 @@ const columns: TableColumn<Host>[] = [
 		},
 	},
 	tableColumnEnabled,
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) =>
-			h('div', { class: 'flex gap-2 justify-end' }, [
-				h(UButton, {
-					icon: ICONS.actions.edit,
-					color: 'info',
-					variant: 'ghost',
-					async onClick() {
-						router.push({ name: 'dashboard-hosts-id-edit', params: { id: row.original.id as number } })
-					},
-				}),
+	tableColumnActions(row => [
+		{
+			id: 'test-conection',
+			action: 'after',
+			targetId: 'edit',
+			vnode: () =>
 				h(UButton, {
 					icon: ICONS.server.plug,
 					variant: 'ghost',
@@ -96,7 +94,9 @@ const columns: TableColumn<Host>[] = [
 						if (result.success) {
 							toast.add({
 								title: t('pages.hosts.toast.test_connection.success.title'),
-								description: t('pages.hosts.toast.test_connection.success.description', { name: row.original.name }),
+								description: t('pages.hosts.toast.test_connection.success.description', {
+									name: row.original.name,
+								}),
 								color: 'success',
 								icon: ICONS.status.check,
 								duration: undefined,
@@ -112,185 +112,74 @@ const columns: TableColumn<Host>[] = [
 						}
 					},
 				}),
-				h(UButton, {
-					icon: ICONS.actions.delete,
-					color: 'error',
-					variant: 'ghost',
-					async onClick() {
-						const result = await confirmDialog({
-							type: 'cancel_delete',
-							title: t('common.delete.label'),
-							description: t('common.delete.description', { name: row.original.name }),
-						})
-
-						if (result) {
-							const notice = toast.add({
-								title: t('pages.hosts.toast.delete.loading.title'),
-								description: t('pages.hosts.toast.delete.loading.description', { name: row.original.name }),
-								color: 'warning',
-								icon: ICONS.actions.delete,
-								duration: 0,
-							})
-
-							const result = await invoke<CommandResponse>('crud_delete_host', { id: row.original.id })
-
-							if (result.success) {
-								toast.update(notice.id, {
-									title: t('pages.hosts.toast.delete.success.title'),
-									description: t('pages.hosts.toast.delete.success.description', { name: row.original.name }),
-									color: 'success',
-									icon: ICONS.status.check,
-									duration: undefined,
-								})
-							} else {
-								toast.update(notice.id, {
-									title: t('pages.hosts.toast.delete.error.title'),
-									description: t('pages.hosts.toast.delete.error.description', { name: row.original.name }),
-									color: 'error',
-									icon: ICONS.status.cross,
-									duration: undefined,
-								})
-							}
-
-							await reload()
-						}
-					},
-				}),
-			]),
-	},
+		},
+	]),
 ]
-
-const table = useTemplateRef('table')
-const columnVisibility = ref({})
-const globalFilter = ref('')
-const expanded = ref({})
 </script>
 
 <template>
-	<div v-if="isLoading || hosts.length > 0" class="flex flex-col flex-1 w-full">
-		<div class="flex py-3.5 border-b border-accented justify-between">
-			<GlobalFilter v-model="globalFilter" />
-			<ToogleColumVisibility :table-api="table?.tableApi" />
-		</div>
+	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+		<template #expanded="{ row }">
+			<ItemCard
+				:id="row.original.id"
+				:name="row.original.name"
+				:description="row.original.description"
+				:created_at="row.original.created_at"
+				:updated_at="row.original.updated_at"
+			>
+				<!-- Grid de detalles -->
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
+						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+							<UIcon :name="ICONS.server.server" class="text-muted size-4" />
+							<ViewValue :value="row.original.host" :only-text="true" />
+						</span>
+					</div>
 
-		<UTable
-			ref="table"
-			sticky
-			:loading="isLoading"
-			v-model:expanded="expanded"
-			v-model:global-filter="globalFilter"
-			v-model:column-visibility="columnVisibility"
-			:data="hosts"
-			:columns="columns"
-			:ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }"
-		>
-			<template #expanded="{ row }">
-				<UCard :description="row.original.description || undefined">
-					<template #title>
-						<div class="flex items-center justify-between">
-							<div class="flex gap-3 items-center">
-								<UChip :color="row.original.enabled ? 'success' : 'neutral'" size="md">
-									<span class="text-lg font-semibold">{{ row.original.name }}</span>
-								</UChip>
-								<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ row.original.id }} </UBadge>
-							</div>
-							<UBadge
-								:color="row.original.auth_type === 'password' ? 'neutral' : 'info'"
-								variant="subtle"
-								:icon="row.original.auth_type === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key"
-							>
-								{{ t(`entity.host.${row.original.auth_type || 'auth_type'}`) }}
-							</UBadge>
-						</div>
-					</template>
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
+						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+							<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
+							<ViewValue :value="row.original.port" :only-text="true" />
+						</span>
+					</div>
 
-					<template #default>
-						<!-- Grid de detalles -->
-						<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.server.server" class="text-muted size-4" />
-									{{ row.original.host }}
-								</span>
-							</div>
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
+						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+							<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
+							<ViewValue :value="row.original.username" :only-text="true" />
+						</span>
+					</div>
 
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
-									{{ row.original.port }}
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
-									{{ row.original.username || '-' }}
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">
-									{{ row.original.auth_type === 'password' ? t('entity.host.password') : t('entity.host.key_id') }}
-								</span>
-								<span class="text-sm text-foreground flex items-center gap-1.5">
-									<template v-if="row.original.auth_type === 'password'">
-										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-										<span class="font-mono text-xs">••••••••</span>
-									</template>
-									<template v-else>
-										<UIcon :name="ICONS.auth.key" class="text-muted size-4" />
-										<UBadge variant="subtle" size="sm" color="info" class="font-mono">
-											ID: {{ row.original.key_id || '-' }}
-										</UBadge>
-									</template>
-								</span>
-							</div>
-						</div>
-					</template>
-
-					<template #footer>
-						<div class="flex gap-4 items-center justify-between text-xs text-muted">
-							<span class="flex gap-1.5 items-center">
-								<UIcon :name="ICONS.calendar.createdAt" class="size-4" />
-								<strong>{{ t('entity.host.created_at') }}:</strong>
-								{{
-									new Date(row.original.created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
-								}}
-							</span>
-							<span class="flex gap-1.5 items-center">
-								<UIcon :name="ICONS.calendar.updatedAt" class="size-4" />
-								<strong>{{ t('entity.host.updated_at') }}:</strong>
-								{{
-									new Date(row.original.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
-								}}
-							</span>
-						</div>
-					</template>
-				</UCard>
-			</template>
-		</UTable>
-	</div>
-	<UEmpty
-		v-else
-		:icon="getModuleIcon('hosts')"
-		:title="t('pages.hosts.table.empty.title')"
-		:description="t('pages.hosts.table.empty.description')"
-		:actions="[
-			{
-				icon: ICONS.actions.add,
-				label: t('components.navigation.add.host.label'),
-				to: { name: 'dashboard-hosts-add' },
-			},
-			{
-				icon: ICONS.actions.refresh,
-				label: t('common.actions.refresh'),
-				color: 'neutral',
-				variant: 'soft',
-				onClick: () => reload(),
-			},
-		]"
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">
+							{{ row.original.auth_type === 'password' ? t('entity.host.password') : t('entity.host.key_id') }}
+						</span>
+						<span class="text-sm text-foreground flex items-center gap-1.5">
+							<template v-if="row.original.auth_type === 'password'">
+								<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+								<span class="font-mono text-xs">••••••••</span>
+							</template>
+							<template v-else>
+								<UIcon :name="ICONS.auth.key" class="text-muted size-4" />
+								<UBadge variant="subtle" size="sm" color="info" class="font-mono">
+									ID: {{ row.original.key_id || '-' }}
+								</UBadge>
+							</template>
+						</span>
+					</div>
+				</div>
+			</ItemCard>
+		</template>
+	</ListTable>
+	<EmptyList
+		v-else-if="!isLoading && status === 'success' && items.length === 0"
+		module="hosts"
+		:add-route="{ name: 'dashboard-hosts-add' }"
+		:reload-fn="reload"
 	/>
+	<Loading v-else-if="isLoading" what="host" plural />
+	<GeneralError v-else />
 </template>
