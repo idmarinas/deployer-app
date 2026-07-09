@@ -1,60 +1,53 @@
-import type { CommandResponse, Host } from '@/types/tauri-types'
+import type { Host } from '@/types/tauri-types'
 
-import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
-import { invoke } from '@tauri-apps/api/core'
-import { asc } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { normalizeDeep } from '@/lib/normalize'
 import { hosts } from '@/lib/schema'
+import { asc, eq } from 'drizzle-orm'
+import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
+
+export interface HostSelectItem {
+	id: number
+	label: string
+	username: string
+	enabled: boolean
+}
 
 export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
-  key: to => ['hosts', `host-${to.params.id}`],
-  async query(to) {
-    const id = Number.parseInt(to.params.id)
-    const result = await invoke<CommandResponse<Host>>('crud_get_host', { id })
-
-    if (!result.success || !result.data) {
-      throw new Error('not-found')
-    }
-
-    return result.data as Host
-  }
+	key: to => ['hosts', `host-${to.params.id}`],
+	query: async to =>
+		db
+			.select()
+			.from(hosts)
+			.where(eq(hosts.id, Number.parseInt(to.params.id)))
+			.limit(1)
+			.then(data => normalizeDeep(data)[0] as unknown as Host)
+			.catch(() => undefined),
 })
 
 export const useHostListAll = defineColadaLoader('dashboard-hosts', {
-  key: () => ['hosts', 'all'],
-  async query() {
-    const result = await invoke<CommandResponse<Host[]>>('crud_list_hosts')
-
-    if (!result.success || !result.data) {
-      throw new Error('not-found')
-    }
-
-    return result.data || [] as Host[]
-  }
+	key: () => ['hosts', 'all'],
+	query: async () =>
+		await db
+			.select()
+			.from(hosts)
+			.orderBy(asc(hosts.name))
+			.then(data => normalizeDeep(data) as unknown as Host[])
+			.catch(() => [] as Host[]),
 })
 
-export interface HostSelectItem {
-  id: number
-  label: string
-  username: string
-  enabled: boolean
-}
-
 export const useHostSelectPopulate = defineColadaLoader({
-  key: () => ['hosts', 'select', 'populate'],
-  async query() {
-    try {
-      return await db
-        .select({
-          id: hosts.id,
-          label: hosts.name,
-          username: hosts.username,
-          enabled: hosts.enabled,
-        })
-        .from(hosts)
-        .orderBy(asc(hosts.name))
-    } catch {
-      return [] as HostSelectItem[]
-    }
-  }
+	key: () => ['hosts', 'select', 'populate'],
+	query: async () =>
+		await db
+			.select({
+				id: hosts.id,
+				label: hosts.name,
+				username: hosts.username,
+				enabled: hosts.enabled,
+			})
+			.from(hosts)
+			.orderBy(asc(hosts.name))
+			.then(data => normalizeDeep(data) as unknown as HostSelectItem[])
+			.catch(() => [] as HostSelectItem[]),
 })
