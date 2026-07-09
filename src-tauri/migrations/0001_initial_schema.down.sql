@@ -18,8 +18,6 @@ DROP TRIGGER IF EXISTS hosts_trg_set_updated_at;
 
 DROP TRIGGER IF EXISTS passkeys_trg_set_updated_at;
 
-DROP TABLE IF EXISTS encryption_config;
-
 DROP TABLE IF EXISTS deployment_rollbacks;
 
 DROP TABLE IF EXISTS deployment_executions;

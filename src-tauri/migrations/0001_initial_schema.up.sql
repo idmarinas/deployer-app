@@ -14,32 +14,6 @@ CREATE TABLE deployer_settings (
 );
 
 -- ============================================================================
--- ENCRYPTION CONFIG
--- Configura qué campos de cada tabla se cifran y si se exponen al frontend.
--- encrypt = 1 → el valor se cifra al guardar en SQLite
--- expose  = 1 → el valor se descifra antes de enviarse al frontend
--- ============================================================================
-
-CREATE TABLE encryption_config (
-    id INTEGER CONSTRAINT encryption_config_pk PRIMARY KEY AUTOINCREMENT,
-    table_name TEXT NOT NULL,
-    field_name TEXT NOT NULL,
-    encrypt BOOLEAN NOT NULL DEFAULT 0,
-    expose BOOLEAN NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT encryption_config_uq UNIQUE (table_name, field_name)
-);
-
-CREATE INDEX encryption_config_idx_table_name ON encryption_config (table_name);
-
--- Configuración inicial de campos sensibles
-INSERT INTO encryption_config (table_name, field_name, encrypt, expose)
-VALUES ('hosts', 'password', 1, 0),
-       ('passkeys', 'key_content', 1, 0),
-       ('passkeys', 'passphrase', 1, 0);
-
--- ============================================================================
 -- PASSKEYS (SSH Keys)
 -- ============================================================================
 
@@ -413,13 +387,6 @@ AFTER UPDATE ON deployer_settings
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE deployer_settings SET updated_at = CURRENT_TIMESTAMP WHERE key = OLD.key;
-END;
-
-CREATE TRIGGER encryption_config_trg_set_updated_at
-AFTER UPDATE ON encryption_config
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE encryption_config SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 CREATE TRIGGER passkeys_trg_set_updated_at
