@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::tasks::helpers::open_crypto_context;
 use crate::commands::tasks::types::Task;
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Obtiene una tarea por su `id`.
 #[tauri::command]
 pub async fn crud_get_task(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
 ) -> Result<CommandResponse<Task>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -24,7 +22,7 @@ pub async fn crud_get_task(
         }
     };
 
-    match db::fetch_one::<Task>(&pool, id, cache, &key).await {
+    match db::fetch_one::<Task>(&pool, id, &key).await {
         Ok(Some(task)) => Ok(CommandResponse::ok(task, "tasks.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "tasks.errors.not_found",

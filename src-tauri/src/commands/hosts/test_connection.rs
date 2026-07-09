@@ -16,8 +16,7 @@ use crate::params;
 use crate::commands::hosts::helpers::open_crypto_context;
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
-use crate::db::EncryptionConfigCache;
-use tauri::State;
+
 
 /// Timeout por defecto para la conexión SSH (en segundos)
 const CONNECTION_TIMEOUT_SECS: u64 = 10;
@@ -67,11 +66,10 @@ impl client::Handler for SshClientHandler {
 #[tauri::command]
 pub async fn test_connection(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     host_id: i64,
 ) -> Result<CommandResponse<()>, String> {
     // 1. Abrir contexto de cifrado (obtiene la clave maestra)
-    let (_pool, _cache, key) = match open_crypto_context(&app, &cache).await {
+    let (_pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(

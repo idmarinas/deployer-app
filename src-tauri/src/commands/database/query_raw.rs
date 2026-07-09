@@ -16,31 +16,32 @@ use crate::params;
 ///   que el SELECT (requerido por el modo proxy de Drizzle, que mapea por posición,
 ///   no por nombre de clave — un HashMap/objeto no garantizaría el orden).
 ///
-/// Este comando NO descifra campos cifrados. Está pensado para tablas sin datos
-/// sensibles o para lecturas donde el frontend solo necesita metadatos.
+/// NOTA: Los valores cifrados se devuelven tal cual (ENC:...). El frontend nunca
+/// recibe datos descifrados.
 #[tauri::command]
 pub async fn query_raw(
     app: AppHandle,
     sql: String,
     params: Option<Vec<Value>>,
-) -> CommandResponse<Vec<Vec<Value>>> {
+) -> Result<CommandResponse<Vec<Vec<Value>>>, String> {
+
     // Validar que sea un SELECT
     let trimmed = sql.trim().to_lowercase();
     if !trimmed.starts_with("select") {
         let preview: String = sql.chars().take(80).collect();
-        return CommandResponse::err(
+        return Ok(CommandResponse::err(
             "database.errors.query_raw_not_select",
             params!("sql" => preview),
-        );
+        ));
     }
 
     let (pool, _) = match open_pool(&app).await {
         Ok(v) => v,
         Err(e) => {
-            return CommandResponse::err(
+            return Ok(CommandResponse::err(
                 "database.errors.query_raw_open_pool_failed",
                 params!("reason" => e),
-            )
+            ))
         }
     };
 
@@ -70,10 +71,10 @@ pub async fn query_raw(
     let rows = match query.fetch_all(&pool).await {
         Ok(r) => r,
         Err(e) => {
-            return CommandResponse::err(
+            return Ok(CommandResponse::err(
                 "database.errors.query_raw_execution_failed",
                 params!("reason" => e.to_string()),
-            )
+            ))
         }
     };
 
@@ -91,7 +92,7 @@ pub async fn query_raw(
         result.push(values);
     }
 
-    CommandResponse::ok(result, "database.success.query_raw_executed")
+    Ok(CommandResponse::ok(result, "database.success.query_raw_executed"))
 }
 
 /// Decodifica el valor de una columna SQLite sin fiarse de `type_info()`.

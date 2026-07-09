@@ -7,7 +7,6 @@ use sqlx::{
 };
 use std::collections::HashMap;
 
-use super::cache::{EncryptionConfigCache, FieldEncryptionConfig};
 use super::entity::DbEntity;
 use crate::crypto;
 use crate::commands::CommandResponse;
@@ -78,22 +77,15 @@ pub fn error_to_response<T>(
     }
 }
 
-/// Determina si un campo está cifrado por cualquiera de los mecanismos
-/// (estático, dinámico o condicional).
+/// Determina si un campo está cifrado por mecanismo estático o condicional.
 fn is_field_encrypted<E: DbEntity>(
-    table: &str,
     field_name: &str,
-    config: &HashMap<(String, String), FieldEncryptionConfig>,
 ) -> bool {
-    let static_enc = E::encrypted_fields().iter().any(|(f, _)| *f == field_name);
-    let dynamic_enc = config
-        .get(&(table.to_string(), field_name.to_string()))
-        .map(|c| c.encrypt)
-        .unwrap_or(false);
+    let static_enc = E::encrypted_fields().iter().any(|f| *f == field_name);
     let conditional_enc = E::conditional_encrypted_fields()
         .iter()
         .any(|(f, _)| *f == field_name);
-    static_enc || dynamic_enc || conditional_enc
+    static_enc || conditional_enc
 }
 
 /// Sobrescribe en `fields` los valores de campos cifrados con el valor TEXT
@@ -102,11 +94,9 @@ fn is_field_encrypted<E: DbEntity>(
 fn override_encrypted_fields_from_row<E: DbEntity>(
     fields: &mut Vec<(String, Value)>,
     row: &SqliteRow,
-    config: &HashMap<(String, String), FieldEncryptionConfig>,
 ) -> Result<(), String> {
-    let table = E::table_name();
     for (field_name, value) in fields.iter_mut() {
-        if !is_field_encrypted::<E>(table, field_name, config) {
+        if !is_field_encrypted::<E>(field_name) {
             continue;
         }
         // Si from_row ya produjo un string, no hace falta sobreescribir
@@ -127,11 +117,9 @@ fn override_encrypted_fields_from_row<E: DbEntity>(
 /// al tipo numérico esperado por la entidad (ej. `"22"` → `Value::Number(22)`).
 fn coerce_decrypted_values<E: DbEntity>(
     fields: &mut Vec<(String, Value)>,
-    config: &HashMap<(String, String), FieldEncryptionConfig>,
 ) {
-    let table = E::table_name();
     for (field_name, value) in fields.iter_mut() {
-        if !is_field_encrypted::<E>(table, field_name, config) {
+        if !is_field_encrypted::<E>(field_name) {
             continue;
         }
         if let Value::String(s) = value {
@@ -149,13 +137,8 @@ fn coerce_decrypted_values<E: DbEntity>(
 /// Aplica cifrado a los campos de un mapa de valores antes de INSERT/UPDATE.
 pub async fn apply_encryption<E: DbEntity>(
     fields: &mut Vec<(String, Value)>,
-    cache: &EncryptionConfigCache,
-    pool: &SqlitePool,
     key: &[u8],
 ) -> Result<(), String> {
-    let config = cache.get(pool).await?;
-    let table = E::table_name();
-
     // Mapa auxiliar para leer campos condición (is_secret, etc.)
     let values_map: std::collections::HashMap<String, Value> = fields.iter().cloned().collect();
 
@@ -163,13 +146,7 @@ pub async fn apply_encryption<E: DbEntity>(
         let field_str = field_name.as_str();
 
         // Cifrado estático (declarado en encrypted_fields del trait)
-        let should_encrypt_static = E::encrypted_fields().iter().any(|(f, _)| *f == field_str);
-
-        // Cifrado dinámico (leído de encryption_config en SQLite)
-        let should_encrypt_db = config
-            .get(&(table.to_string(), field_name.clone()))
-            .map(|c| c.encrypt)
-            .unwrap_or(false);
+        let should_encrypt_static = E::encrypted_fields().iter().any(|f| *f == field_str);
 
         // Cifrado condicional (depende del valor de otro campo en la misma fila)
         let should_encrypt_conditional =
@@ -185,7 +162,7 @@ pub async fn apply_encryption<E: DbEntity>(
                         .unwrap_or(false)
                 });
 
-        let should_encrypt = should_encrypt_static || should_encrypt_db || should_encrypt_conditional;
+        let should_encrypt = should_encrypt_static || should_encrypt_conditional;
 
         match field_value.clone() {
             Value::String(ref val) => {
@@ -210,16 +187,12 @@ pub async fn apply_encryption<E: DbEntity>(
     Ok(())
 }
 
-/// Aplica descifrado a los campos de un mapa de valores tras SELECT.
+/// Aplica descifrado SOLO a campos condicionales (uso interno: interpolador).
+/// Campos estáticos (encrypted_fields) nunca se descifran aquí.
 pub async fn apply_decryption<E: DbEntity>(
     fields: &mut Vec<(String, Value)>,
-    cache: &EncryptionConfigCache,
-    pool: &SqlitePool,
     key: &[u8],
 ) -> Result<(), String> {
-    let config = cache.get(pool).await?;
-    let table = E::table_name();
-
     for (field_name, field_value) in fields.iter_mut() {
         let field_str = field_name.as_str();
 
@@ -228,25 +201,12 @@ pub async fn apply_decryption<E: DbEntity>(
                 continue;
             }
 
-            // expose en encrypted_fields estático
-            let expose_static = E::encrypted_fields()
-                .iter()
-                .find(|(f, _)| *f == field_str)
-                .map(|(_, expose)| *expose)
-                .unwrap_or(false);
-
-            // expose en encryption_config (SQLite)
-            let expose_db = config
-                .get(&(table.to_string(), field_name.clone()))
-                .map(|c| c.expose)
-                .unwrap_or(false);
-
-            // Los campos condicionales siempre se exponen al leer
-            let expose_conditional = E::conditional_encrypted_fields()
+            // Solo campos condicionales se descifran (is_secret-based, para el interpolador)
+            let is_conditional = E::conditional_encrypted_fields()
                 .iter()
                 .any(|(value_field, _)| *value_field == field_str);
 
-            if expose_static || expose_db || expose_conditional {
+            if is_conditional {
                 *field_value = Value::String(crypto::decrypt(encrypted, key)?);
             }
         }
@@ -264,11 +224,10 @@ pub async fn apply_decryption<E: DbEntity>(
 pub async fn insert<E: DbEntity>(
     pool: &SqlitePool,
     entity: &E,
-    cache: &EncryptionConfigCache,
     key: &[u8],
 ) -> Result<i64, String> {
     let mut fields = entity.to_fields();
-    apply_encryption::<E>(&mut fields, cache, pool, key).await?;
+    apply_encryption::<E>(&mut fields, key).await?;
 
     let columns: Vec<String> = fields.iter().map(|(k, _)| k.clone()).collect();
     let placeholders: Vec<String> = (1..=columns.len()).map(|i| format!("?{}", i)).collect();
@@ -310,7 +269,6 @@ pub async fn update_fields<E: DbEntity>(
     pool: &SqlitePool,
     id: i64,
     mut fields: Vec<(String, Value)>,
-    cache: &EncryptionConfigCache,
     key: &[u8],
 ) -> Result<bool, String> {
     if fields.is_empty() {
@@ -324,7 +282,7 @@ pub async fn update_fields<E: DbEntity>(
         return Ok(exists);
     }
 
-    apply_encryption::<E>(&mut fields, cache, pool, key).await?;
+    apply_encryption::<E>(&mut fields, key).await?;
 
     let set_clause: Vec<String> = fields
         .iter()
@@ -356,7 +314,6 @@ pub async fn update_fields<E: DbEntity>(
 pub async fn fetch_one<E: DbEntity>(
     pool: &SqlitePool,
     id: i64,
-    cache: &EncryptionConfigCache,
     key: &[u8],
 ) -> Result<Option<E>, String> {
     let sql = format!("SELECT * FROM {} WHERE id = ?1", E::table_name());
@@ -370,12 +327,11 @@ pub async fn fetch_one<E: DbEntity>(
     match row {
         None => Ok(None),
         Some(r) => {
-            let config = cache.get(pool).await?;
             let mut entity = E::from_row(&r)?;
             let mut fields = entity.to_fields_all();
-            override_encrypted_fields_from_row::<E>(&mut fields, &r, &config)?;
-            apply_decryption::<E>(&mut fields, cache, pool, key).await?;
-            coerce_decrypted_values::<E>(&mut fields, &config);
+            override_encrypted_fields_from_row::<E>(&mut fields, &r)?;
+            apply_decryption::<E>(&mut fields, key).await?;
+            coerce_decrypted_values::<E>(&mut fields);
             entity = E::from_fields(fields)?;
             Ok(Some(entity))
         }
@@ -385,7 +341,6 @@ pub async fn fetch_one<E: DbEntity>(
 /// Obtiene todas las filas de la tabla.
 pub async fn fetch_all<E: DbEntity>(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
 ) -> Result<Vec<E>, String> {
     let sql = format!("SELECT * FROM {}", E::table_name());
@@ -395,14 +350,13 @@ pub async fn fetch_all<E: DbEntity>(
         .await
         .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
 
-    let config = cache.get(pool).await?;
     let mut results = Vec::new();
     for row in &rows {
         let mut entity = E::from_row(row)?;
         let mut fields = entity.to_fields_all();
-        override_encrypted_fields_from_row::<E>(&mut fields, row, &config)?;
-        apply_decryption::<E>(&mut fields, cache, pool, key).await?;
-        coerce_decrypted_values::<E>(&mut fields, &config);
+        override_encrypted_fields_from_row::<E>(&mut fields, row)?;
+        apply_decryption::<E>(&mut fields, key).await?;
+        coerce_decrypted_values::<E>(&mut fields);
         entity = E::from_fields(fields)?;
         results.push(entity);
     }

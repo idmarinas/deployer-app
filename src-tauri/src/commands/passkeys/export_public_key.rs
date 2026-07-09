@@ -6,7 +6,6 @@ use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::AppHandle;
-use tauri::State;
 use tokio::time::timeout;
 use ts_rs::TS;
 
@@ -17,7 +16,7 @@ use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::crypto;
-use crate::db::EncryptionConfigCache;
+
 use crate::params;
 
 /// Timeout para operaciones SSH (en segundos)
@@ -97,11 +96,10 @@ impl client::Handler for SshClientHandler {
 #[tauri::command]
 pub async fn export_public_key(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     input: ExportPublicKeyInput,
 ) -> Result<CommandResponse<()>, String> {
     // 1. Contexto de cifrado
-    let (_pool, _cache, master_key) = match open_crypto_context(&app, &cache).await {
+    let (_pool, master_key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(

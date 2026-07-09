@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::tasks::helpers::open_crypto_context;
 use crate::commands::projects::tasks::types::{CreateProjectTaskInput, ProjectTask};
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Asocia una tarea a un proyecto con su orden de ejecución.
 #[tauri::command]
 pub async fn crud_create_project_task(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     input: CreateProjectTaskInput,
 ) -> Result<CommandResponse<i64>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -26,7 +24,7 @@ pub async fn crud_create_project_task(
 
     let project_task = input.into_project_task();
 
-    match db::insert::<ProjectTask>(&pool, &project_task, cache, &key).await {
+    match db::insert::<ProjectTask>(&pool, &project_task, &key).await {
         Ok(id) => Ok(CommandResponse::ok(id, "project_tasks.success.created")),
         Err(e) => Ok(db::error_to_response("project_tasks", "create_failed", e)),
     }

@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::helpers::open_crypto_context;
 use crate::commands::projects::types::{Project, UpdateProjectInput};
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza un proyecto existente por su `id`.
 ///
@@ -17,11 +16,10 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_update_project(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdateProjectInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -55,7 +53,7 @@ pub async fn crud_update_project(
         fields.push(("remote_working_dir".to_string(), v));
     }
 
-    match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
+    match db::update_fields::<Project>(&pool, id, fields, &key).await {
         Ok(true) => Ok(CommandResponse::ok_empty("projects.success.updated")),
         Ok(false) => Ok(CommandResponse::err(
             "projects.errors.not_found",

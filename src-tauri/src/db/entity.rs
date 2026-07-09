@@ -18,8 +18,8 @@ use sqlx::sqlite::SqliteRow;
 /// impl DbEntity for Host {
 ///     fn table_name() -> &'static str { "hosts" }
 ///
-///     fn encrypted_fields() -> &'static [(&'static str, bool)] {
-///         &[("password", false)]
+///     fn encrypted_fields() -> &'static [&'static str] {
+///         &["password"]
 ///     }
 ///
 ///     fn from_row(row: &SqliteRow) -> Result<Self, String> { ... }
@@ -31,13 +31,9 @@ pub trait DbEntity: Sized + Serialize + Send + Unpin {
     fn table_name() -> &'static str;
 
     /// Campos que siempre se cifran al guardar.
-    ///
-    /// Cada entrada es `(nombre_campo, expose)`:
-    /// - `expose = true`  → se descifra al leer y se envía en texto plano al frontend.
-    /// - `expose = false` → se devuelve cifrado tal cual (el frontend no lo necesita legible).
-    ///
+    /// El frontend nunca recibe estos campos descifrados.
     /// Por defecto ningún campo se cifra.
-    fn encrypted_fields() -> &'static [(&'static str, bool)] {
+    fn encrypted_fields() -> &'static [&'static str] {
         &[]
     }
 
@@ -70,6 +66,4 @@ pub trait DbEntity: Sized + Serialize + Send + Unpin {
     /// Se usa tras aplicar descifrado para actualizar los campos en memoria.
     fn from_fields(fields: Vec<(String, serde_json::Value)>) -> Result<Self, String>;
 
-    /// Extrae los nombres de columna de la entidad en orden de aparición.
-    fn column_names() -> Vec<&'static str>;
 }

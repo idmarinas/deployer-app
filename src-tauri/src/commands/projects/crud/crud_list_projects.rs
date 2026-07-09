@@ -1,19 +1,17 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::helpers::open_crypto_context;
 use crate::commands::projects::types::Project;
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Lista todos los proyectos.
 #[tauri::command]
 pub async fn crud_list_projects(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
 ) -> Result<CommandResponse<Vec<Project>>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -23,7 +21,7 @@ pub async fn crud_list_projects(
         }
     };
 
-    match db::fetch_all::<Project>(&pool, cache, &key).await {
+    match db::fetch_all::<Project>(&pool, &key).await {
         Ok(projects) => Ok(CommandResponse::ok(projects, "projects.success.listed")),
         Err(e) => Ok(db::error_to_response("projects", "list_failed", e)),
     }

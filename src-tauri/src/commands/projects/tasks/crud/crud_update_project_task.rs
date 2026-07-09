@@ -1,22 +1,20 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::tasks::helpers::open_crypto_context;
 use crate::commands::projects::tasks::types::{ProjectTask, UpdateProjectTaskInput};
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza los campos mutables de una asociación proyecto-tarea.
 #[tauri::command]
 pub async fn crud_update_project_task(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdateProjectTaskInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -59,7 +57,7 @@ pub async fn crud_update_project_task(
         fields.push(("retry_delay".to_string(), v));
     }
 
-    match db::update_fields::<ProjectTask>(&pool, id, fields, cache, &key).await {
+    match db::update_fields::<ProjectTask>(&pool, id, fields, &key).await {
         Ok(true) => Ok(CommandResponse::ok_empty("project_tasks.success.updated")),
         Ok(false) => Ok(CommandResponse::err(
             "project_tasks.errors.not_found",

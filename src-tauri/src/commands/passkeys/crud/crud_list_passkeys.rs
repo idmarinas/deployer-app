@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::passkeys::types::Passkey;
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Lista todas las passkeys.
 /// Los campos con `expose = true` se devuelven descifrados.
@@ -14,9 +13,8 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_list_passkeys(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
 ) -> Result<CommandResponse<Vec<Passkey>>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -26,7 +24,7 @@ pub async fn crud_list_passkeys(
         }
     };
 
-    match db::fetch_all::<Passkey>(&pool, cache, &key).await {
+    match db::fetch_all::<Passkey>(&pool, &key).await {
         Ok(passkeys) => Ok(CommandResponse::ok(passkeys, "passkeys.success.listed")),
         Err(e) => Ok(db::error_to_response("passkeys", "list_failed", e)),
     }

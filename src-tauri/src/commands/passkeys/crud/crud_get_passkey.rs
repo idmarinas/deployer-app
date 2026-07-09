@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::passkeys::types::Passkey;
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Obtiene una passkey por su `id`.
 /// Los campos con `expose = true` se devuelven descifrados.
@@ -14,10 +13,9 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_get_passkey(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
 ) -> Result<CommandResponse<Passkey>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -27,7 +25,7 @@ pub async fn crud_get_passkey(
         }
     };
 
-    match db::fetch_one::<Passkey>(&pool, id, cache, &key).await {
+    match db::fetch_one::<Passkey>(&pool, id, &key).await {
         Ok(Some(passkey)) => Ok(CommandResponse::ok(passkey, "passkeys.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "passkeys.errors.not_found",

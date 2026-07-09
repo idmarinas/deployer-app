@@ -7,12 +7,11 @@ pub mod ssh_executor;
 pub mod types;
 
 use tauri::ipc::Channel;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle};
 
 use crate::commands::helpers::open_pool;
 use crate::commands::helpers::get_master_key;
 use crate::commands::CommandResponse;
-use crate::db::EncryptionConfigCache;
 
 use types::{ProgressEvent, RunDeploymentInput};
 
@@ -28,7 +27,6 @@ use types::{ProgressEvent, RunDeploymentInput};
 #[tauri::command]
 pub async fn run_deployment(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     input: RunDeploymentInput,
     channel: Channel<ProgressEvent>,
 ) -> Result<CommandResponse<()>, String> {
@@ -52,7 +50,7 @@ pub async fn run_deployment(
         }
     };
 
-    match runner::run(pool, &cache, key, input, channel).await {
+    match runner::run(pool, key, input, channel).await {
         Ok(()) => Ok(CommandResponse::ok_empty("deployments.success.run_completed")),
         Err(e) => Ok(CommandResponse::err(
             "deployments.errors.run_failed",

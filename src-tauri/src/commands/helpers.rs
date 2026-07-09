@@ -5,8 +5,6 @@ use tauri::AppHandle;
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::store::get_database_path_internal;
 use crate::crypto;
-use crate::db::EncryptionConfigCache;
-
 /// Configuración base compartida para todas las conexiones SQLite del proyecto.
 /// Aplica `PRAGMA foreign_keys = ON` y cualquier otra opción global futura.
 /// Usa esta función siempre que necesites crear un `SqliteConnectOptions`.
@@ -44,15 +42,13 @@ pub fn get_master_key() -> Result<Vec<u8>, String> {
     crypto::get_or_create_master_key()
 }
 
-/// Agrupa las tres dependencias necesarias para operaciones con cifrado:
-/// pool de SQLite, caché de configuración de cifrado y clave maestra.
+/// Agrupa pool SQLite y clave maestra para operaciones con cifrado.
 ///
 /// Usado por todos los módulos de comandos que gestionan entidades con campos cifrados.
-pub async fn open_crypto_context<'a>(
+pub async fn open_crypto_context(
     app: &AppHandle,
-    cache: &'a EncryptionConfigCache,
-) -> Result<(SqlitePool, &'a EncryptionConfigCache, Vec<u8>), String> {
+) -> Result<(SqlitePool, Vec<u8>), String> {
     let (pool, _) = open_pool(app).await?;
     let key = get_master_key()?;
-    Ok((pool, cache, key))
+    Ok((pool, key))
 }

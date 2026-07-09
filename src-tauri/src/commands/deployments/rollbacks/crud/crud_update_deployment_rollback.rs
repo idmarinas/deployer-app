@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::deployments::rollbacks::helpers::open_crypto_context;
 use crate::commands::deployments::rollbacks::types::{
     DeploymentRollback, UpdateDeploymentRollbackInput,
 };
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza el estado y campos de ciclo de vida de un rollback.
 ///
@@ -17,11 +16,10 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_update_deployment_rollback(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdateDeploymentRollbackInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -46,7 +44,7 @@ pub async fn crud_update_deployment_rollback(
         fields.push(("finished_at".to_string(), v));
     }
 
-    match db::update_fields::<DeploymentRollback>(&pool, id, fields, cache, &key)
+    match db::update_fields::<DeploymentRollback>(&pool, id, fields, &key)
         .await
     {
         Ok(true) => Ok(CommandResponse::ok_empty(

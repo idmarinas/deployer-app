@@ -4,14 +4,13 @@ use russh::keys::ssh_key::{Algorithm, EcdsaCurve, HashAlg, LineEnding};
 use russh::keys::PrivateKey;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
-use tauri::State;
 use ts_rs::TS;
 
 use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::passkeys::types::KeyType;
 use crate::commands::CommandResponse;
 use crate::crypto;
-use crate::db::EncryptionConfigCache;
+
 use crate::params;
 
 // ---------------------------------------------------------------------------
@@ -64,11 +63,10 @@ pub struct GeneratedPasskey {
 #[tauri::command]
 pub async fn generate_passkey(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     input: GeneratePasskeyInput,
 ) -> Result<CommandResponse<GeneratedPasskey>, String> {
     // 1. Obtener la clave maestra (necesaria para pre-cifrar la passphrase)
-    let (_pool, _cache, master_key) = match open_crypto_context(&app, &cache).await {
+    let (_pool, master_key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(

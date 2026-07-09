@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::deployments::executions::helpers::open_crypto_context;
 use crate::commands::deployments::executions::types::{
     DeploymentExecution, UpdateDeploymentExecutionInput,
 };
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza el estado y campos de ciclo de vida de una ejecución.
 ///
@@ -17,11 +16,10 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_update_deployment_execution(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdateDeploymentExecutionInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -61,7 +59,7 @@ pub async fn crud_update_deployment_execution(
         fields.push(("duration_seconds".to_string(), v));
     }
 
-    match db::update_fields::<DeploymentExecution>(&pool, id, fields, cache, &key)
+    match db::update_fields::<DeploymentExecution>(&pool, id, fields, &key)
         .await
     {
         Ok(true) => Ok(CommandResponse::ok_empty(

@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::passkeys::helpers::open_crypto_context;
 use crate::commands::passkeys::types::{Passkey, UpdatePasskeyInput};
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza una passkey existente por su `id`.
 ///
@@ -16,11 +15,10 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_update_passkey(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdatePasskeyInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -51,7 +49,7 @@ pub async fn crud_update_passkey(
         fields.push(("description".to_string(), v));
     }
 
-    match db::update_fields::<Passkey>(&pool, id, fields, cache, &key).await {
+    match db::update_fields::<Passkey>(&pool, id, fields, &key).await {
         Ok(true) => Ok(CommandResponse::ok_empty("passkeys.success.updated")),
         Ok(false) => Ok(CommandResponse::err(
             "passkeys.errors.not_found",

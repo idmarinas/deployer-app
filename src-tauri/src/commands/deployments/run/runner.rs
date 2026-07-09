@@ -7,7 +7,7 @@ use crate::commands::deployments::types::{Deployment, DeploymentStatus};
 use crate::commands::hosts::types::Host;
 use crate::commands::projects::tasks::types::{OnFailure, TaskConfig};
 use crate::commands::tasks::types::TaskType;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db;
 
 use super::interpolator::{build_snapshot, evaluate_condition};
 use super::session::{decrypt_host_credentials, SshSession};
@@ -21,7 +21,6 @@ use super::types::{ProgressEvent, ResolvedTask, RunDeploymentInput, VariableSnap
 
 pub async fn run(
     pool: SqlitePool,
-    cache: &EncryptionConfigCache,
     key: Vec<u8>,
     input: RunDeploymentInput,
     channel: Channel<ProgressEvent>,
@@ -30,7 +29,7 @@ pub async fn run(
     let max_reconnect = input.ssh_reconnect_attempts.unwrap_or(3);
 
     // ── 1. Cargar deployment ─────────────────────────────────────────────────
-    let deployment = load_deployment(&pool, cache, &key, deployment_id).await?;
+    let deployment = load_deployment(&pool, &key, deployment_id).await?;
 
     match deployment.status {
         DeploymentStatus::Running => {
@@ -48,14 +47,14 @@ pub async fn run(
     }
 
     // ── 2. Cargar proyecto ───────────────────────────────────────────────────
-    let project = load_project(&pool, cache, &key, deployment.project_id).await?;
+    let project = load_project(&pool, &key, deployment.project_id).await?;
 
     // ── 3. Cargar host activo del proyecto ───────────────────────────────────
     let (host, key_content, passphrase) =
         load_project_host(&pool, deployment.project_id).await?;
 
     // ── 4. Construir snapshot de variables ───────────────────────────────────
-    let snapshot = build_snapshot(&pool, cache, &key, &deployment, &project, &host).await?;
+    let snapshot = build_snapshot(&pool, &key, &deployment, &project, &host).await?;
 
     // ── 5. Cargar y resolver project_tasks ───────────────────────────────────
     let resolved_tasks = load_resolved_tasks(&pool, &snapshot, deployment.project_id).await?;
@@ -111,7 +110,6 @@ pub async fn run(
         if stop_requested {
             skip_task(
                 &pool,
-                cache,
                 &key,
                 deployment_id,
                 host.id,
@@ -129,7 +127,6 @@ pub async fn run(
             if !evaluate_condition(condition, &snapshot) {
                 skip_task(
                     &pool,
-                    cache,
                     &key,
                     deployment_id,
                     host.id,
@@ -145,7 +142,7 @@ pub async fn run(
 
         // Obtener o crear execution
         let execution_id =
-            get_or_create_execution(&pool, cache, &key, deployment_id, host.id, task).await?;
+            get_or_create_execution(&pool, &key, deployment_id, host.id, task).await?;
 
         // Si ya está en success (reanudación), saltarla
         if is_execution_success(&pool, execution_id).await? {
@@ -169,8 +166,6 @@ pub async fn run(
             task,
             execution_id,
             &pool,
-            cache,
-            &key,
             &channel,
             &snapshot,
         )
@@ -271,8 +266,6 @@ async fn execute_with_retry(
     task: &ResolvedTask,
     execution_id: i64,
     pool: &SqlitePool,
-    _cache: &EncryptionConfigCache,
-    _key: &[u8],
     channel: &Channel<ProgressEvent>,
     snapshot: &VariableSnapshot,
 ) -> Result<i64, String> {
@@ -431,23 +424,21 @@ async fn execute_with_retry(
 
 async fn load_deployment(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
     id: i64,
 ) -> Result<Deployment, String> {
-    db::fetch_one::<Deployment>(pool, id, cache, key)
+    db::fetch_one::<Deployment>(pool, id, key)
         .await?
         .ok_or_else(|| format!("Deployment {} no encontrado", id))
 }
 
 async fn load_project(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
     project_id: i64,
 ) -> Result<crate::commands::projects::types::Project, String> {
     use crate::commands::projects::types::Project;
-    db::fetch_one::<Project>(pool, project_id, cache, key)
+    db::fetch_one::<Project>(pool, project_id, key)
         .await?
         .ok_or_else(|| format!("Proyecto {} no encontrado", project_id))
 }
@@ -648,7 +639,6 @@ async fn is_execution_success(pool: &SqlitePool, execution_id: i64) -> Result<bo
 
 async fn get_or_create_execution(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
     deployment_id: i64,
     host_id: i64,
@@ -689,7 +679,7 @@ async fn get_or_create_execution(
         created_at: String::new(),
     };
 
-    db::insert::<DeploymentExecution>(pool, &execution, cache, key)
+    db::insert::<DeploymentExecution>(pool, &execution, key)
         .await
         .map_err(|e| format!("Error al crear execution: {}", e))
 }
@@ -781,7 +771,6 @@ async fn update_deployment_status(
 /// Crea o recupera una execution y la marca como Skipped.
 async fn skip_task(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
     deployment_id: i64,
     host_id: i64,
@@ -791,7 +780,7 @@ async fn skip_task(
     channel: &Channel<ProgressEvent>,
 ) {
     if let Ok(execution_id) =
-        get_or_create_execution(pool, cache, key, deployment_id, host_id, task).await
+        get_or_create_execution(pool, key, deployment_id, host_id, task).await
     {
         update_execution(
             pool,

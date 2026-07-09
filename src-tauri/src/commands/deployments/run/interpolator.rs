@@ -6,7 +6,7 @@ use crate::commands::global_variables::types::GlobalVariable;
 use crate::commands::hosts::types::Host;
 use crate::commands::projects::types::Project;
 use crate::commands::projects::variables::types::ProjectVariable;
-use crate::db::{self, DbEntity, EncryptionConfigCache};
+use crate::db::{self, DbEntity};
 
 use super::types::VariableSnapshot;
 
@@ -21,7 +21,6 @@ use super::types::VariableSnapshot;
 /// nunca se envían al frontend directamente).
 pub async fn build_snapshot(
     pool: &SqlitePool,
-    cache: &EncryptionConfigCache,
     key: &[u8],
     deployment: &Deployment,
     project: &Project,
@@ -60,7 +59,7 @@ pub async fn build_snapshot(
             .map_err(|e| format!("Error al leer global_variable: {}", e))?;
 
         let mut fields = entity.to_fields_all();
-        db::apply_decryption::<GlobalVariable>(&mut fields, cache, pool, key)
+        db::apply_decryption::<GlobalVariable>(&mut fields, key)
             .await
             .map_err(|e| format!("Error al descifrar global_variable: {}", e))?;
 
@@ -87,7 +86,7 @@ pub async fn build_snapshot(
             .map_err(|e| format!("Error al leer project_variable: {}", e))?;
 
         let mut fields = entity.to_fields_all();
-        db::apply_decryption::<ProjectVariable>(&mut fields, cache, pool, key)
+        db::apply_decryption::<ProjectVariable>(&mut fields, key)
             .await
             .map_err(|e| format!("Error al descifrar project_variable: {}", e))?;
 

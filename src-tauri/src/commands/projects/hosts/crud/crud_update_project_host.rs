@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use serde_json::Value;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::hosts::helpers::open_crypto_context;
 use crate::commands::projects::hosts::types::{ProjectHost, UpdateProjectHostInput};
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Actualiza los campos mutables de una asociación proyecto-host.
 ///
@@ -15,11 +14,10 @@ use crate::db::{self, EncryptionConfigCache};
 #[tauri::command]
 pub async fn crud_update_project_host(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
     input: UpdateProjectHostInput,
 ) -> Result<CommandResponse<()>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -38,7 +36,7 @@ pub async fn crud_update_project_host(
         fields.push(("deploy_order".to_string(), v));
     }
 
-    match db::update_fields::<ProjectHost>(&pool, id, fields, cache, &key).await {
+    match db::update_fields::<ProjectHost>(&pool, id, fields, &key).await {
         Ok(true) => Ok(CommandResponse::ok_empty("project_hosts.success.updated")),
         Ok(false) => Ok(CommandResponse::err(
             "project_hosts.errors.not_found",

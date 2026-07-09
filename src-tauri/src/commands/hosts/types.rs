@@ -55,9 +55,9 @@ pub struct Host {
     pub port: i64,
     pub username: String,
     pub auth_type: AuthType,
-    /// Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
+    /// Cifrado siempre. El frontend nunca recibe este valor descifrado;
     /// solo la usa Rust internamente para SSH.
-    #[db_encrypt(expose = false)]
+    #[db_encrypt]
     pub password: Option<String>,
     pub key_id: Option<i64>,
     pub description: Option<String>,

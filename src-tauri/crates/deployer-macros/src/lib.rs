@@ -41,8 +41,8 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
         }
     };
 
-    // 2. Extraer campos cifrados: #[db_encrypt] o #[db_encrypt(expose = true/false)]
-    let mut encrypted_fields: Vec<(String, bool)> = Vec::new();
+    // 2. Extraer campos cifrados: #[db_encrypt]
+    let mut encrypted_fields: Vec<String> = Vec::new();
 
     // 3. Extraer campos condicionalmente cifrados: #[db_conditional_encrypt(condition = "campo")]
     let mut conditional_encrypted_fields: Vec<(String, String)> = Vec::new();
@@ -52,21 +52,7 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
 
         for attr in &field.attrs {
             if attr.path().is_ident("db_encrypt") {
-                let mut expose = false;
-                if let Meta::List(meta_list) = &attr.meta {
-                    let _ = meta_list.parse_nested_meta(|meta| {
-                        if meta.path.is_ident("expose") {
-                            let value: Expr = meta.value()?.parse()?;
-                            if let Expr::Lit(expr_lit) = value {
-                                if let Lit::Bool(lit_bool) = expr_lit.lit {
-                                    expose = lit_bool.value;
-                                }
-                            }
-                        }
-                        Ok(())
-                    });
-                }
-                encrypted_fields.push((field_name.clone(), expose));
+                encrypted_fields.push(field_name.clone());
             } else if attr.path().is_ident("db_conditional_encrypt") {
                 // Sintaxis: #[db_conditional_encrypt(condition = "campo_condicion")]
                 if let Meta::List(meta_list) = &attr.meta {
@@ -103,13 +89,13 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
     // `to_fields()`/`to_fields_all()`, que ya usa el nombre de columna DB
     // renombrado (ver `get_db_rename` más abajo) — por tanto estos arrays
     // también deben usar el nombre de columna DB para que coincidan.
-    let encrypted_fields_tokens = encrypted_fields.iter().map(|(field, expose)| {
+    let encrypted_fields_tokens = encrypted_fields.iter().map(|field| {
         let db_name = fields
             .iter()
             .find(|f| f.ident.as_ref().unwrap().to_string() == *field)
             .and_then(get_db_rename)
             .unwrap_or_else(|| field.clone());
-        quote! { (#db_name, #expose) }
+        quote! { #db_name }
     });
 
     let conditional_encrypted_fields_tokens =
@@ -177,16 +163,13 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
         }
     });
 
-    // 8. Nombres de columna DB en orden (usado por extract_row)
-    let db_column_names = fields.iter().map(db_column_name);
-
     let expanded = quote! {
         impl crate::db::DbEntity for #name {
             fn table_name() -> &'static str {
                 #table_name
             }
 
-            fn encrypted_fields() -> &'static [(&'static str, bool)] {
+            fn encrypted_fields() -> &'static [&'static str] {
                 &[#(#encrypted_fields_tokens),*]
             }
 
@@ -219,10 +202,6 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
                 Ok(#name {
                     #(#from_fields_mappings),*
                 })
-            }
-
-            fn column_names() -> Vec<&'static str> {
-                vec![#(#db_column_names),*]
             }
         }
     };

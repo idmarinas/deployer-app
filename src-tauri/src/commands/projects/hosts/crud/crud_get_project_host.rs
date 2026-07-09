@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use tauri::State;
 
 use crate::commands::projects::hosts::helpers::open_crypto_context;
 use crate::commands::projects::hosts::types::ProjectHost;
 use crate::commands::CommandResponse;
-use crate::db::{self, EncryptionConfigCache};
+use crate::db::{self};
 
 /// Obtiene la asociación proyecto-host por su `id`.
 #[tauri::command]
 pub async fn crud_get_project_host(
     app: AppHandle,
-    cache: State<'_, EncryptionConfigCache>,
     id: i64,
 ) -> Result<CommandResponse<ProjectHost>, String> {
-    let (pool, cache, key) = match open_crypto_context(&app, &cache).await {
+    let (pool, key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -24,7 +22,7 @@ pub async fn crud_get_project_host(
         }
     };
 
-    match db::fetch_one::<ProjectHost>(&pool, id, cache, &key).await {
+    match db::fetch_one::<ProjectHost>(&pool, id, &key).await {
         Ok(Some(ph)) => Ok(CommandResponse::ok(ph, "project_hosts.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "project_hosts.errors.not_found",
