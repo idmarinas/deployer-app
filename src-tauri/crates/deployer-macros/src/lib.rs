@@ -1,7 +1,7 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use proc_macro2::Span;
+use proc_macro2::{Delimiter, Group, Ident, Span, TokenTree};
 use quote::quote;
 use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Field, Fields, Lit, Meta};
 
@@ -256,7 +256,92 @@ fn get_db_rename(field: &Field) -> Option<String> {
 }
 
 /// Nombre de columna DB efectivo de un campo: el de `#[db_rename("...")]` si
-/// existe, o si no el nombre del campo Rust tal cual.
+/// existe, o si no el nombre del campo Rust tal cual como nombre de columna.
 fn db_column_name(field: &Field) -> String {
     get_db_rename(field).unwrap_or_else(|| field.ident.as_ref().unwrap().to_string())
+}
+
+// ===========================================================================
+// ident_concat! — reemplazo de paste::paste! para concatenación de identifiers
+// Sintaxis: ident_concat! { [<prefijo _ sufijo>] }
+// ===========================================================================
+
+/// Proc macro que reemplaza `[<a _ b _ c>]` por el identifier `a_b_c`.
+/// Sustituto de `paste::paste!` solo para la parte de concatenación de identifiers.
+#[proc_macro]
+pub fn ident_concat(input: TokenStream) -> TokenStream {
+    let input: proc_macro2::TokenStream = input.into();
+    let output = process_tokens(&input);
+    output.into()
+}
+
+fn process_tokens(stream: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    let mut output = proc_macro2::TokenStream::new();
+
+    for tree in stream.clone() {
+        match tree {
+            TokenTree::Group(group) => {
+                if group.delimiter() == Delimiter::Bracket {
+                    let inner: Vec<TokenTree> = group.stream().into_iter().collect();
+                    if let Some(ident) = try_parse_bracket(&inner) {
+                        output.extend(std::iter::once(TokenTree::Ident(ident)));
+                    } else {
+                        let processed = process_tokens(&group.stream());
+                        let mut g = Group::new(group.delimiter(), processed);
+                        g.set_span(group.span());
+                        output.extend(std::iter::once(TokenTree::Group(g)));
+                    }
+                } else {
+                    let processed = process_tokens(&group.stream());
+                    let mut g = Group::new(group.delimiter(), processed);
+                    g.set_span(group.span());
+                    output.extend(std::iter::once(TokenTree::Group(g)));
+                }
+            }
+            other => {
+                output.extend(std::iter::once(other));
+            }
+        }
+    }
+
+    output
+}
+
+/// Intenta parsear `[< ... >]` dentro de un bracket group.
+/// Devuelve el identifier concatenado si el patrón coincide.
+fn try_parse_bracket(tokens: &[TokenTree]) -> Option<Ident> {
+    if tokens.len() < 2 {
+        return None;
+    }
+
+    // Primer token debe ser '<'
+    match &tokens[0] {
+        TokenTree::Punct(p) if p.as_char() == '<' => {}
+        _ => return None,
+    }
+
+    // Último token debe ser '>'
+    match tokens.last().unwrap() {
+        TokenTree::Punct(p) if p.as_char() == '>' => {}
+        _ => return None,
+    }
+
+    // Tokens del medio: concatenar identifiers con underscores
+    let middle = &tokens[1..tokens.len() - 1];
+    let mut result = String::new();
+
+    for token in middle {
+        match token {
+            TokenTree::Ident(ident) => result.push_str(&ident.to_string()),
+            TokenTree::Punct(p) if p.as_char() == '_' => result.push('_'),
+            TokenTree::Literal(lit) => result.push_str(&lit.to_string()),
+            _ => {}
+        }
+    }
+
+    if result.is_empty() {
+        return None;
+    }
+
+    Some(Ident::new(&result, Span::call_site()))
 }

@@ -47,6 +47,10 @@ pub fn format_sqlx_error(err: &sqlx::Error, table: &str, id: Option<i64>) -> Str
 /// `entity` es el prefijo de las claves de traducción (ej. "hosts").
 /// `operation` es el subfijo por defecto (ej. "create_failed") cuando no se
 /// reconoce el tipo de error.
+///
+/// También maneja errores de `resolve_conditional_fields`:
+/// - `NOT_FOUND|{table}|...` → `{entity}.errors.not_found`
+/// - `TRANSITION_DENIED|{field}|...` → `{entity}.errors.transition_denied`
 pub fn error_to_response<T>(
     entity: &str,
     operation: &str,
@@ -54,7 +58,7 @@ pub fn error_to_response<T>(
 ) -> CommandResponse<T> {
     let mut parts = err.splitn(3, '|');
     let kind = parts.next().unwrap_or("OTHER");
-    let _detail = parts.next().unwrap_or("");
+    let detail = parts.next().unwrap_or("");
     let message = parts.next().unwrap_or(&err);
 
     match kind {
@@ -69,6 +73,14 @@ pub fn error_to_response<T>(
         "NOTNULL" => CommandResponse::err(
             &format!("{}.errors.required_field", entity),
             HashMap::new(),
+        ),
+        "NOT_FOUND" => CommandResponse::err(
+            &format!("{}.errors.not_found", entity),
+            HashMap::from([("id".to_string(), detail.to_string())]),
+        ),
+        "TRANSITION_DENIED" => CommandResponse::err(
+            &format!("{}.errors.transition_denied", entity),
+            HashMap::from([("reason".to_string(), message.to_string())]),
         ),
         _ => CommandResponse::err(
             &format!("{}.errors.{}", entity, operation),
@@ -434,6 +446,128 @@ pub async fn fetch_all_frontend<E: DbEntity>(
         .fetch_all(pool)
         .await
         .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
+
+    let mut results = Vec::new();
+    for row in &rows {
+        let mut entity = E::from_row(row)?;
+        let mut fields = entity.to_fields_all();
+        override_encrypted_fields_from_row::<E>(&mut fields, row)?;
+        apply_sentinel_fields::<E>(&mut fields);
+        coerce_decrypted_values::<E>(&mut fields);
+        entity = E::from_fields(fields)?;
+        results.push(entity);
+    }
+
+    Ok(results)
+}
+
+/// Resuelve campos de actualización para entidades con cifrado condicional
+/// (is_secret). Maneja 3 casos:
+///
+/// 1. `new_value` Some + `new_condition` Some → usa ambos directamente.
+/// 2. `new_value` Some + `new_condition` None → consulta `condition_field` actual.
+/// 3. `new_value` None + `new_condition` Some → consulta `value_field` actual cifrado
+///    y **valida que `condition_field` no cambie de `true` a `false`** (prohibido).
+/// 4. Ambos None → devuelve vec vacío (sin cambios en estos campos).
+pub async fn resolve_conditional_fields(
+    pool: &SqlitePool,
+    id: i64,
+    table: &str,
+    value_field: &str,
+    condition_field: &str,
+    new_value: Option<String>,
+    new_condition: Option<bool>,
+) -> Result<Vec<(String, Value)>, String> {
+    let mut fields: Vec<(String, Value)> = Vec::new();
+
+    match (new_value, new_condition) {
+        (Some(value), Some(cond)) => {
+            fields.push((value_field.to_string(), Value::String(value)));
+            fields.push((condition_field.to_string(), Value::Bool(cond)));
+        }
+        (Some(value), None) => {
+            let current_cond = sqlx::query_scalar::<_, bool>(&format!(
+                "SELECT {} FROM {} WHERE id = ?1",
+                condition_field, table
+            ))
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
+
+            match current_cond {
+                Some(cond) => {
+                    fields.push((value_field.to_string(), Value::String(value)));
+                    fields.push((condition_field.to_string(), Value::Bool(cond)));
+                }
+                None => {
+                    return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
+                }
+            }
+        }
+        (None, Some(cond)) => {
+            // Validar: is_secret no puede cambiar de true a false
+            let current_cond = sqlx::query_scalar::<_, bool>(&format!(
+                "SELECT {} FROM {} WHERE id = ?1",
+                condition_field, table
+            ))
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
+
+            match current_cond {
+                Some(true) if !cond => {
+                    return Err(format!(
+                        "TRANSITION_DENIED|{}|No se puede cambiar {} de true a false en {} con id {}",
+                        condition_field, condition_field, table, id
+                    ));
+                }
+                Some(_) => {
+                    let current_value = sqlx::query_scalar::<_, String>(&format!(
+                        "SELECT {} FROM {} WHERE id = ?1",
+                        value_field, table
+                    ))
+                    .bind(id)
+                    .fetch_optional(pool)
+                    .await
+                    .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
+
+                    match current_value {
+                        Some(val) => {
+                            fields.push((value_field.to_string(), Value::String(val)));
+                            fields.push((condition_field.to_string(), Value::Bool(cond)));
+                        }
+                        None => {
+                            return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
+                        }
+                    }
+                }
+                None => {
+                    return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
+                }
+            }
+        }
+        (None, None) => {}
+    }
+
+    Ok(fields)
+}
+
+/// Similar a `fetch_all_frontend` pero con una cláusula WHERE adicional
+/// (ej. `WHERE project_id = ?1`) cuyos parámetros se bindean como
+/// `serde_json::Value`.
+pub async fn fetch_all_where_frontend<E: DbEntity>(
+    pool: &SqlitePool,
+    sql: &str,
+    param_value: &Value,
+) -> Result<Vec<E>, String> {
+    let mut query = sqlx::query(sql);
+    query = bind_value(query, param_value);
+
+    let rows = query.fetch_all(pool).await.map_err(|e| {
+        format_sqlx_error(&e, E::table_name(), None)
+    })?;
 
     let mut results = Vec::new();
     for row in &rows {

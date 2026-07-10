@@ -4,6 +4,7 @@ pub mod deployments;
 pub mod global_variables;
 pub mod helpers;
 pub mod hosts;
+pub mod macros;
 pub mod migrations;
 pub mod passkeys;
 pub mod patch;
