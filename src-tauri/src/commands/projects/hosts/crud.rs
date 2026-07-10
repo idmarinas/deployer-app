@@ -1,6 +1,5 @@
 use serde_json::Value;
 
-use crate::commands::Patch;
 use crate::commands::projects::hosts::types::{
     CreateProjectHostInput, ProjectHost, UpdateProjectHostInput,
 };

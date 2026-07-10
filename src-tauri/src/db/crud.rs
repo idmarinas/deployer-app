@@ -216,15 +216,6 @@ fn apply_sentinel_fields<E: DbEntity>(fields: &mut Vec<(String, Value)>) {
     }
 }
 
-/// Versión pública de `apply_sentinel_fields` que opera a nivel de entidad.
-/// Reemplaza todo valor cifrado (`ENC:...`) de la entidad con `BLANK_VALUE`.
-pub fn apply_sentinel<E: DbEntity>(entity: &mut E) -> Result<(), String> {
-    let mut fields = entity.to_fields_all();
-    apply_sentinel_fields::<E>(&mut fields);
-    *entity = E::from_fields(fields)?;
-    Ok(())
-}
-
 /// Aplica descifrado SOLO a campos condicionales (uso interno: interpolador).
 /// Campos estáticos (encrypted_fields) nunca se descifran aquí.
 pub async fn apply_decryption<E: DbEntity>(

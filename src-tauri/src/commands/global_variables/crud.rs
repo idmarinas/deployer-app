@@ -3,7 +3,6 @@ use serde_json::Value;
 use crate::commands::global_variables::types::{
     CreateGlobalVariableInput, GlobalVariable, UpdateGlobalVariableInput,
 };
-use crate::commands::Patch;
 use crate::crud_commands;
 
 fn build_global_variable_update(input: &UpdateGlobalVariableInput, fields: &mut Vec<(String, Value)>) {

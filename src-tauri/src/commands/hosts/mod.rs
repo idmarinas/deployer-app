@@ -1,5 +1,4 @@
 pub mod crud;
-pub mod helpers;
 pub mod test_connection;
 pub mod types;
 

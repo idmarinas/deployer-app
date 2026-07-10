@@ -3,7 +3,6 @@ use serde_json::Value;
 use crate::commands::deployments::rollbacks::types::{
     CreateDeploymentRollbackInput, DeploymentRollback, UpdateDeploymentRollbackInput,
 };
-use crate::commands::Patch;
 use crate::crud_commands;
 
 fn build_deployment_rollback_update(input: &UpdateDeploymentRollbackInput, fields: &mut Vec<(String, Value)>) {

@@ -3,7 +3,6 @@ use serde_json::Value;
 use crate::commands::deployments::types::{
     CreateDeploymentInput, Deployment, UpdateDeploymentInput,
 };
-use crate::commands::Patch;
 use crate::crud_commands;
 
 fn build_deployment_update(input: &UpdateDeploymentInput, fields: &mut Vec<(String, Value)>) {

@@ -1,6 +1,5 @@
 use serde_json::Value;
 
-use crate::commands::Patch;
 use crate::commands::projects::types::{CreateProjectInput, Project, UpdateProjectInput};
 use crate::crud_commands;
 

@@ -12,7 +12,7 @@ use ts_rs::TS;
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::AuthType;
-use crate::commands::passkeys::helpers::open_crypto_context;
+use crate::commands::helpers::open_crypto_context;
 use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::crypto;

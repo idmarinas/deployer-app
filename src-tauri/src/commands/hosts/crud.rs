@@ -1,7 +1,6 @@
 use serde_json::Value;
 
 use crate::commands::hosts::types::{CreateHostInput, Host, UpdateHostInput};
-use crate::commands::Patch;
 use crate::crud_commands;
 
 fn build_host_update(input: &UpdateHostInput, fields: &mut Vec<(String, Value)>) {

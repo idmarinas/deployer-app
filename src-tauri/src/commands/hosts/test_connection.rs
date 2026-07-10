@@ -13,7 +13,7 @@ use crate::commands::store::get_database_path_internal;
 use crate::commands::CommandResponse;
 use crate::params;
 
-use crate::commands::hosts::helpers::open_crypto_context;
+use crate::commands::helpers::open_crypto_context;
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 

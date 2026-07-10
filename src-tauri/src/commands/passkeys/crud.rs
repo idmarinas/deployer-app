@@ -1,7 +1,6 @@
 use serde_json::Value;
 
 use crate::commands::passkeys::types::{CreatePasskeyInput, Passkey, UpdatePasskeyInput};
-use crate::commands::Patch;
 use crate::crud_commands;
 
 fn build_passkey_update(input: &UpdatePasskeyInput, fields: &mut Vec<(String, Value)>) {

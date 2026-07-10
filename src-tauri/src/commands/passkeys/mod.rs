@@ -1,7 +1,6 @@
 pub mod crud;
 pub mod export_public_key;
 pub mod generate_passkey;
-pub mod helpers;
 pub mod types;
 
 pub use crud::{

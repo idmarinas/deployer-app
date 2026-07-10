@@ -1,7 +1,6 @@
 use serde_json::Value;
 
 use crate::commands::tasks::types::{CreateTaskInput, Task, UpdateTaskInput};
-use crate::commands::Patch;
 use crate::crud_commands;
 
 /// Construye los fields para una actualización parcial de Task.

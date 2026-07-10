@@ -463,7 +463,7 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     $filter_col: $filter_ty,
                 ) -> Result<CommandResponse<Vec<$entity>>, String> {
-                    let (pool, key) = match open_crypto_context(&app).await {
+                    let (pool, _) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
                             return Ok(CommandResponse::err(
@@ -624,7 +624,7 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     $filter_col: $filter_ty,
                 ) -> Result<CommandResponse<Vec<$entity>>, String> {
-                    let (pool, key) = match open_crypto_context(&app).await {
+                    let (pool, _) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
                             return Ok(CommandResponse::err(
