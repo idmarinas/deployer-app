@@ -16,8 +16,8 @@ use crate::params;
 ///   que el SELECT (requerido por el modo proxy de Drizzle, que mapea por posición,
 ///   no por nombre de clave — un HashMap/objeto no garantizaría el orden).
 ///
-/// NOTA: Los valores cifrados se devuelven tal cual (ENC:...). El frontend nunca
-/// recibe datos descifrados.
+/// NOTA: Los valores cifrados se reemplazan por `BLANK_VALUE` para que el
+/// frontend nunca reciba datos cifrados ni descifrados.
 #[tauri::command]
 pub async fn query_raw(
     app: AppHandle,
@@ -132,6 +132,9 @@ fn decode_column_value(row: &sqlx::sqlite::SqliteRow, ordinal: usize) -> Value {
         return Value::Bool(v);
     }
     if let Ok(v) = row.try_get::<String, _>(ordinal) {
+        if v.starts_with(crate::crypto::keyring::ENCRYPTED_PREFIX) {
+            return Value::String(crate::crypto::BLANK_VALUE.to_string());
+        }
         return Value::String(v);
     }
 

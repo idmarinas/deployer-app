@@ -22,7 +22,7 @@ pub async fn crud_list_hosts(
         }
     };
 
-    match db::fetch_all::<Host>(&pool, &key).await {
+    match db::fetch_all_frontend::<Host>(&pool, &key).await {
         Ok(hosts) => Ok(CommandResponse::ok(hosts, "hosts.success.listed")),
         Err(e) => Ok(db::error_to_response("hosts", "list_failed", e)),
     }

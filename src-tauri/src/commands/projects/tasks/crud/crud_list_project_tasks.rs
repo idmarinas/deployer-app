@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::projects::tasks::helpers::open_crypto_context;
 use crate::commands::projects::tasks::types::ProjectTask;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todas las tareas asociadas a un proyecto dado su `project_id`,
 /// ordenadas por `order_execution`.
@@ -44,7 +44,11 @@ pub async fn crud_list_project_tasks(
 
     let results: Vec<ProjectTask> = match rows
         .into_iter()
-        .map(|row| ProjectTask::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<ProjectTask, String> {
+            let mut entity = ProjectTask::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

@@ -28,22 +28,6 @@ export const deployer_settings = sqliteTable("deployer_settings", {
 	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
 ]);
 
-export const encryption_config = sqliteTable("encryption_config", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	table_name: text().notNull(),
-	field_name: text().notNull(),
-	encrypt: numeric().notNull(),
-	expose: numeric().notNull(),
-	created_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-},
-(table) => [
-	index("encryption_config_idx_table_name").on(table.table_name),
-	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
-	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
-	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
-]);
-
 export const passkeys = sqliteTable("passkeys", {
 	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull(),

@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::projects::framework_configs::helpers::open_crypto_context;
 use crate::commands::projects::framework_configs::types::FrameworkConfig;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todas las configuraciones de framework de un proyecto dado su `project_id`.
 #[tauri::command]
@@ -43,7 +43,11 @@ pub async fn crud_list_framework_configs(
 
     let results: Vec<FrameworkConfig> = match rows
         .into_iter()
-        .map(|row| FrameworkConfig::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<FrameworkConfig, String> {
+            let mut entity = FrameworkConfig::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

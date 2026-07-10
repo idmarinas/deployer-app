@@ -22,7 +22,7 @@ pub async fn crud_get_task_dependency(
         }
     };
 
-    match db::fetch_one::<TaskDependency>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<TaskDependency>(&pool, id, &key).await {
         Ok(Some(dep)) => Ok(CommandResponse::ok(dep, "task_dependencies.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "task_dependencies.errors.not_found",

@@ -22,7 +22,7 @@ pub async fn crud_get_global_variable(
         }
     };
 
-    match db::fetch_one::<GlobalVariable>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<GlobalVariable>(&pool, id, &key).await {
         Ok(Some(variable)) => Ok(CommandResponse::ok(variable, "global_variables.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "global_variables.errors.not_found",

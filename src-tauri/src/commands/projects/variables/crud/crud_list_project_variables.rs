@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::projects::variables::helpers::open_crypto_context;
 use crate::commands::projects::variables::types::ProjectVariable;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todas las variables de un proyecto dado su `project_id`.
 #[tauri::command]
@@ -43,7 +43,11 @@ pub async fn crud_list_project_variables(
 
     let results: Vec<ProjectVariable> = match rows
         .into_iter()
-        .map(|row| ProjectVariable::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<ProjectVariable, String> {
+            let mut entity = ProjectVariable::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

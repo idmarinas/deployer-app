@@ -22,7 +22,7 @@ pub async fn crud_get_project_variable(
         }
     };
 
-    match db::fetch_one::<ProjectVariable>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<ProjectVariable>(&pool, id, &key).await {
         Ok(Some(variable)) => Ok(CommandResponse::ok(variable, "project_variables.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "project_variables.errors.not_found",

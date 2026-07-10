@@ -22,7 +22,7 @@ pub async fn crud_get_project_host(
         }
     };
 
-    match db::fetch_one::<ProjectHost>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<ProjectHost>(&pool, id, &key).await {
         Ok(Some(ph)) => Ok(CommandResponse::ok(ph, "project_hosts.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "project_hosts.errors.not_found",

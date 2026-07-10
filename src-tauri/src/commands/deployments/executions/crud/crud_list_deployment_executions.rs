@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::deployments::executions::helpers::open_crypto_context;
 use crate::commands::deployments::executions::types::DeploymentExecution;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todas las ejecuciones de un deployment dado su `deployment_id`,
 /// ordenadas por `created_at` ascendente (orden de ejecución).
@@ -44,7 +44,11 @@ pub async fn crud_list_deployment_executions(
 
     let results: Vec<DeploymentExecution> = match rows
         .into_iter()
-        .map(|row| DeploymentExecution::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<DeploymentExecution, String> {
+            let mut entity = DeploymentExecution::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

@@ -24,7 +24,7 @@ pub async fn crud_update_task_dependency(
     };
 
     // Verificamos que existe antes de actualizar.
-    match db::fetch_one::<TaskDependency>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<TaskDependency>(&pool, id, &key).await {
         Ok(None) => {
             return Ok(CommandResponse::err(
                 "task_dependencies.errors.not_found",

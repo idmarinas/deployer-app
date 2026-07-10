@@ -24,7 +24,7 @@ pub async fn crud_list_passkeys(
         }
     };
 
-    match db::fetch_all::<Passkey>(&pool, &key).await {
+    match db::fetch_all_frontend::<Passkey>(&pool, &key).await {
         Ok(passkeys) => Ok(CommandResponse::ok(passkeys, "passkeys.success.listed")),
         Err(e) => Ok(db::error_to_response("passkeys", "list_failed", e)),
     }

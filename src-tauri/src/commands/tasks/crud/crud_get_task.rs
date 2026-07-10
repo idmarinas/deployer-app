@@ -22,7 +22,7 @@ pub async fn crud_get_task(
         }
     };
 
-    match db::fetch_one::<Task>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<Task>(&pool, id, &key).await {
         Ok(Some(task)) => Ok(CommandResponse::ok(task, "tasks.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "tasks.errors.not_found",

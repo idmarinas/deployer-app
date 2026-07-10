@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::deployments::helpers::open_crypto_context;
 use crate::commands::deployments::types::Deployment;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todos los deployments de un proyecto dado su `project_id`,
 /// ordenados por `created_at` descendente (más reciente primero).
@@ -44,7 +44,11 @@ pub async fn crud_list_deployments(
 
     let results: Vec<Deployment> = match rows
         .into_iter()
-        .map(|row| Deployment::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<Deployment, String> {
+            let mut entity = Deployment::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

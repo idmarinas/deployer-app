@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::projects::hosts::helpers::open_crypto_context;
 use crate::commands::projects::hosts::types::ProjectHost;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todas las asociaciones host de un proyecto dado su `project_id`.
 #[tauri::command]
@@ -43,7 +43,11 @@ pub async fn crud_list_project_hosts(
 
     let results: Vec<ProjectHost> = match rows
         .into_iter()
-        .map(|row| ProjectHost::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<ProjectHost, String> {
+            let mut entity = ProjectHost::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

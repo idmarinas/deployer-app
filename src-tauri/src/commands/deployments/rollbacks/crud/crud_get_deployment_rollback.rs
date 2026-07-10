@@ -22,7 +22,7 @@ pub async fn crud_get_deployment_rollback(
         }
     };
 
-    match db::fetch_one::<DeploymentRollback>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<DeploymentRollback>(&pool, id, &key).await {
         Ok(Some(r)) => Ok(CommandResponse::ok(r, "deployment_rollbacks.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "deployment_rollbacks.errors.not_found",

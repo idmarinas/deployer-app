@@ -22,7 +22,7 @@ pub async fn crud_get_framework_config(
         }
     };
 
-    match db::fetch_one::<FrameworkConfig>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<FrameworkConfig>(&pool, id, &key).await {
         Ok(Some(fc)) => Ok(CommandResponse::ok(fc, "framework_configs.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "framework_configs.errors.not_found",

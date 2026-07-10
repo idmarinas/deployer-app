@@ -25,7 +25,7 @@ pub async fn crud_get_passkey(
         }
     };
 
-    match db::fetch_one::<Passkey>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<Passkey>(&pool, id, &key).await {
         Ok(Some(passkey)) => Ok(CommandResponse::ok(passkey, "passkeys.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "passkeys.errors.not_found",

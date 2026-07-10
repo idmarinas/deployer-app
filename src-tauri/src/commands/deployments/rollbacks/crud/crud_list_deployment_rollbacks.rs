@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use crate::commands::deployments::rollbacks::helpers::open_crypto_context;
 use crate::commands::deployments::rollbacks::types::DeploymentRollback;
 use crate::commands::CommandResponse;
-use crate::db::DbEntity;
+use crate::db::{self, DbEntity};
 
 /// Lista todos los rollbacks de un deployment dado su `deployment_id`,
 /// ordenados por `created_at` descendente.
@@ -44,7 +44,11 @@ pub async fn crud_list_deployment_rollbacks(
 
     let results: Vec<DeploymentRollback> = match rows
         .into_iter()
-        .map(|row| DeploymentRollback::from_row(&row).map_err(|e| e.to_string()))
+        .map(|row| -> Result<DeploymentRollback, String> {
+            let mut entity = DeploymentRollback::from_row(&row).map_err(|e| e.to_string())?;
+            db::apply_sentinel(&mut entity).map_err(|e| e.to_string())?;
+            Ok(entity)
+        })
         .collect::<Result<Vec<_>, _>>()
     {
         Ok(r) => r,

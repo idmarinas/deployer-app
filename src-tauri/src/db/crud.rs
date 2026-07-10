@@ -187,6 +187,32 @@ pub async fn apply_encryption<E: DbEntity>(
     Ok(())
 }
 
+/// Reemplaza con `BLANK_VALUE` cualquier valor de campo cifrado que aún
+/// tenga el prefijo `ENC:`. NO descifra nada. Opera sobre fields (pares
+/// nombre/valor).
+fn apply_sentinel_fields<E: DbEntity>(fields: &mut Vec<(String, Value)>) {
+    for (field_name, value) in fields.iter_mut() {
+        let field_str = field_name.as_str();
+        if !is_field_encrypted::<E>(field_str) {
+            continue;
+        }
+        if let Value::String(s) = value {
+            if crypto::is_encrypted(s) {
+                *value = Value::String(crypto::BLANK_VALUE.to_string());
+            }
+        }
+    }
+}
+
+/// Versión pública de `apply_sentinel_fields` que opera a nivel de entidad.
+/// Reemplaza todo valor cifrado (`ENC:...`) de la entidad con `BLANK_VALUE`.
+pub fn apply_sentinel<E: DbEntity>(entity: &mut E) -> Result<(), String> {
+    let mut fields = entity.to_fields_all();
+    apply_sentinel_fields::<E>(&mut fields);
+    *entity = E::from_fields(fields)?;
+    Ok(())
+}
+
 /// Aplica descifrado SOLO a campos condicionales (uso interno: interpolador).
 /// Campos estáticos (encrypted_fields) nunca se descifran aquí.
 pub async fn apply_decryption<E: DbEntity>(
@@ -339,6 +365,7 @@ pub async fn fetch_one<E: DbEntity>(
 }
 
 /// Obtiene todas las filas de la tabla.
+#[allow(dead_code)]
 pub async fn fetch_all<E: DbEntity>(
     pool: &SqlitePool,
     key: &[u8],
@@ -356,6 +383,64 @@ pub async fn fetch_all<E: DbEntity>(
         let mut fields = entity.to_fields_all();
         override_encrypted_fields_from_row::<E>(&mut fields, row)?;
         apply_decryption::<E>(&mut fields, key).await?;
+        coerce_decrypted_values::<E>(&mut fields);
+        entity = E::from_fields(fields)?;
+        results.push(entity);
+    }
+
+    Ok(results)
+}
+
+/// Igual que `fetch_one` pero reemplaza los valores cifrados con `BLANK_VALUE`
+/// antes de devolver la entidad. Para uso en comandos CRUD que devuelven datos
+/// al frontend.
+pub async fn fetch_one_frontend<E: DbEntity>(
+    pool: &SqlitePool,
+    id: i64,
+    _key: &[u8],
+) -> Result<Option<E>, String> {
+    let sql = format!("SELECT * FROM {} WHERE id = ?1", E::table_name());
+
+    let row = sqlx::query(&sql)
+        .bind(id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format_sqlx_error(&e, E::table_name(), Some(id)))?;
+
+    match row {
+        None => Ok(None),
+        Some(r) => {
+            let mut entity = E::from_row(&r)?;
+            let mut fields = entity.to_fields_all();
+            override_encrypted_fields_from_row::<E>(&mut fields, &r)?;
+            apply_sentinel_fields::<E>(&mut fields);
+            coerce_decrypted_values::<E>(&mut fields);
+            entity = E::from_fields(fields)?;
+            Ok(Some(entity))
+        }
+    }
+}
+
+/// Igual que `fetch_all` pero reemplaza los valores cifrados con `BLANK_VALUE`
+/// antes de devolver las entidades. Para uso en comandos CRUD que devuelven
+/// datos al frontend.
+pub async fn fetch_all_frontend<E: DbEntity>(
+    pool: &SqlitePool,
+    _key: &[u8],
+) -> Result<Vec<E>, String> {
+    let sql = format!("SELECT * FROM {}", E::table_name());
+
+    let rows = sqlx::query(&sql)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| format_sqlx_error(&e, E::table_name(), None))?;
+
+    let mut results = Vec::new();
+    for row in &rows {
+        let mut entity = E::from_row(row)?;
+        let mut fields = entity.to_fields_all();
+        override_encrypted_fields_from_row::<E>(&mut fields, row)?;
+        apply_sentinel_fields::<E>(&mut fields);
         coerce_decrypted_values::<E>(&mut fields);
         entity = E::from_fields(fields)?;
         results.push(entity);

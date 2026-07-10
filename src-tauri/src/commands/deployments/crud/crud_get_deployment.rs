@@ -22,7 +22,7 @@ pub async fn crud_get_deployment(
         }
     };
 
-    match db::fetch_one::<Deployment>(&pool, id, &key).await {
+    match db::fetch_one_frontend::<Deployment>(&pool, id, &key).await {
         Ok(Some(d)) => Ok(CommandResponse::ok(d, "deployments.success.fetched")),
         Ok(None) => Ok(CommandResponse::err(
             "deployments.errors.not_found",
