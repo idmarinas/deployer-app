@@ -425,8 +425,10 @@ Si la condición no puede parsearse, se ejecuta la task (safe default).
 |-------|---------|--------|--------|
 | `rand` | `0.10` | No bajar | Requiere feature `sys_rng` para `OsRng`. `SysRng` implementa `CryptoRng` directamente — no necesita `UnwrapErr`. |
 | `rand_core` | `0.10` | Alineado con `rand` | `rand 0.10` requiere `rand_core 0.10`; declarar `0.6` causaría conflictos de traits. |
-| `keyring` | `3` | No subir a `4+` | En `v4` el enum `Error` es `#[non_exhaustive]`. |
-| `russh` | `0.61` | — | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum; sin `connection_timeout`. |
-| `russh-sftp` | `2.0.6` | — | Patrón correcto: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`. El método `request_subsystem` está en el **Channel**, no en el Handle. |
+| `keyring` | `4.1` | — | `v1` (default) re-exporta `Entry`/`Error` en raíz. `Error` es `#[non_exhaustive]` — siempre usar catch-all en match. Feature `v1` incluye `windows-native-keyring-store` automáticamente en Windows. Datos v3 compatibles. |
+| `russh` | `0.62` | — | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum. Solo se usa lado **cliente** (`client::Handler`); el breaking change de 0.62 en `channel_open_*` (server-side) no aplica. |
+| `russh-sftp` | `2.3` | — | `ReadDir` auto-filtra `.`/`..`. Patrón: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`. |
+| `aes-gcm` | `0.11` | — | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`. |
 | `chrono` | `0.4` | — | Timestamps RFC3339 para `started_at`/`finished_at`. |
 | `sqlx` | `0.8.6` | — | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`. |
+| `deployer-macros` | local | — | Proc-macro crate del workspace. Provee `ident_concat!` (reemplaza `paste`) y `DbEntity` derive. |
