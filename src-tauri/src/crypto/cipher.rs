@@ -23,10 +23,10 @@ pub fn encrypt(plaintext: &str, key: &[u8]) -> Result<String, String> {
     SysRng
         .try_fill_bytes(&mut nonce_bytes)
         .map_err(|e| format!("Error al generar nonce: {}", e))?;
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(nonce, plaintext.as_bytes())
+        .encrypt(&nonce, plaintext.as_bytes())
         .map_err(|e| format!("Error al cifrar: {}", e))?;
 
     let mut combined = nonce_bytes.to_vec();
@@ -53,13 +53,13 @@ pub fn decrypt(ciphertext: &str, key: &[u8]) -> Result<String, String> {
     }
 
     let (nonce_bytes, encrypted_data) = combined.split_at(12);
-    let nonce = Nonce::from_slice(nonce_bytes);
+    let nonce = Nonce::from(<[u8; 12]>::try_from(nonce_bytes).unwrap());
 
     let cipher = Aes256Gcm::new_from_slice(key)
         .map_err(|e| format!("Error al inicializar el cifrado: {}", e))?;
 
     let plaintext_bytes = cipher
-        .decrypt(nonce, encrypted_data)
+        .decrypt(&nonce, encrypted_data)
         .map_err(|_| "Error al descifrar: clave incorrecta o datos corruptos".to_string())?;
 
     String::from_utf8(plaintext_bytes)
