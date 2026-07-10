@@ -23,11 +23,6 @@ pub struct SftpResult {
 /// servidor remoto. `config.paths` puede tener 1 elemento (archivo suelto o
 /// directorio con recursive:true) o N elementos (varios archivos/directorios
 /// en la misma task, cada uno con su propio origen/destino).
-///
-/// Patrón correcto russh-sftp 2.x:
-///   1. `channel_open_session()` sobre el Handle
-///   2. `channel.request_subsystem(true, "sftp")` sobre el Channel
-///   3. `SftpSession::new(channel.into_stream())`
 pub async fn upload_file(
     session: &mut SshSession,
     task: &ResolvedTask,
@@ -156,8 +151,7 @@ pub async fn download_file(
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
 
-/// Abre una sesión SFTP usando el patrón correcto de russh-sftp 2.x:
-///   channel_open_session → request_subsystem("sftp") → SftpSession::new(channel.into_stream())
+/// Abre una sesión SFTP: channel_open_session → request_subsystem("sftp") → SftpSession::new
 async fn open_sftp_session(
     session: &mut SshSession,
 ) -> Result<russh_sftp::client::SftpSession, String> {
@@ -203,10 +197,6 @@ fn resolve_remote_path(path: &str, working_dir: Option<&str>) -> PathBuf {
 /// subido. No es fatal si falla (el servidor puede no soportarlo, o el
 /// usuario SSH no tener permisos): se registra como aviso en el output y se
 /// continúa con la transferencia.
-///
-/// NOTA para Iván: si `cargo check` falla aquí porque `set_metadata`/`FileAttributes`
-/// no existen con esa firma exacta en russh-sftp 2.0.6, pégame el error del
-/// compilador y lo ajusto — no pude verificar la firma exacta offline.
 async fn apply_chmod(
     sftp: &russh_sftp::client::SftpSession,
     remote_path: &str,
@@ -471,14 +461,6 @@ async fn download_recursive(
     files_transferred: &mut u32,
     output_lines: &mut Vec<String>,
 ) -> Result<(), String> {
-    // NOTA para Iván: la descarga recursiva de directorios es funcionalidad
-    // NUEVA (antes solo existía download_single_file). `sftp.read_dir(path)`
-    // y los métodos `.file_name()`/`.file_type().is_dir()` sobre cada entrada
-    // están basados en la API típica `std::fs`-like de russh-sftp, pero no he
-    // podido verificar la firma exacta de `DirEntry` en 2.0.6 sin compilar.
-    // Si `cargo check` falla aquí, pásame el error y lo ajusto (puede que
-    // `file_type()` devuelva otra cosa, o que haya que usar `entry.metadata()`
-    // en su lugar).
     let src_str = src_dir.to_string_lossy().to_string();
 
     let entries = sftp
@@ -492,9 +474,6 @@ async fn download_recursive(
 
     for entry in entries {
         let file_name = entry.file_name();
-        if file_name == "." || file_name == ".." {
-            continue;
-        }
 
         if let Some(patterns) = exclude {
             if super::glob::matches_any(patterns, &file_name) {
