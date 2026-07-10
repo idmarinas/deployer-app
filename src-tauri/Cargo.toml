@@ -45,6 +45,7 @@ chrono = { version = "0.4.45", features = ["serde"] }
 aes-gcm = "0.10.3"
 keyring = { version = "3.6.3", features = ["windows-native"] }
 base64 = "0.22.1"
+paste = "1.0"
 rand = { version = "0.10.2", default-features = false, features = ["sys_rng"] }
 rand_core = { version = "0.10.1" }
 hex = "0.4.3"
