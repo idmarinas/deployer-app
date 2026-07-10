@@ -51,28 +51,6 @@ export type DeploymentRollback = { id: number, deployment_id: number, rolled_bac
 
 export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
-export type EncryptionConfig = { table_name: string, field_name: string, 
-/**
- * Valor actual de `encrypt` en la tabla `encryption_config` (o false si no existe fila).
- */
-encrypt: boolean, 
-/**
- * Valor actual de `expose` en la tabla `encryption_config` (o false si no existe fila).
- */
-expose: boolean, 
-/**
- * El campo tiene cifrado estático vía proc-macro `#[db_encrypt]` — no se puede desactivar.
- */
-static_encrypt: boolean, 
-/**
- * El campo tiene exposición estática vía proc-macro `#[db_encrypt(expose = …)]`.
- */
-static_expose: boolean, 
-/**
- * El campo tiene cifrado condicional vía `#[db_conditional_encrypt]`.
- */
-static_encrypt_conditional: boolean, };
-
 export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
 export type ExportPublicKeyAction = "add" | "remove";
@@ -152,7 +130,7 @@ export type GlobalVariable = { id: number, name: string, value: string, is_secre
 
 export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
 /**
- * Cifrado siempre. `expose = false`: el frontend no necesita leerla en texto plano;
+ * Cifrado siempre. El frontend nunca recibe este valor descifrado;
  * solo la usa Rust internamente para SSH.
  */
 password: string | null, key_id: number | null, description: string | null, enabled: boolean, created_at: string, updated_at: string, };
