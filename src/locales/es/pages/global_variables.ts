@@ -5,6 +5,7 @@ export default {
 	table: {
 		columns: {
 			name: 'Nombre',
+			slug: 'Slug',
 			is_secret: 'Es secreta',
 			value: 'Valor',
 		},

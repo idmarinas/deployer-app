@@ -104,6 +104,9 @@ export default {
 			name: {
 				label: 'Nombre',
 			},
+			slug: {
+				label: 'Slug',
+			},
 			value: {
 				label: 'Valor',
 			},
@@ -116,7 +119,7 @@ export default {
 		},
 		empty: {
 			title: 'Sin variables',
-			description: 'Añade variables que podrás usar en tus tareas con {{variable}}.',
+			description: () => 'Añade variables que podrás usar en tus tareas con {{variable}}.',
 		},
 	},
 } satisfies LocaleMessageValue

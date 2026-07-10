@@ -7,7 +7,11 @@ export default {
 	},
 	name: {
 		label: 'Nombre',
-		help: 'Nombre único que identificará a la variable. Se usará como clave en los entornos.',
+		help: 'Nombre visual para identificar la variable en la interfaz.',
+	},
+	slug: {
+		label: 'Slug',
+		help: () => 'Identificador único para usar en la interpolación, ej. {{slug}}.',
 	},
 	value: {
 		label: 'Valor',
