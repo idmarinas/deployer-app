@@ -11,6 +11,7 @@ pub struct ProjectVariable {
     pub id: i64,
     pub project_id: i64,
     pub name: String,
+    pub slug: String,
     #[db_conditional_encrypt(condition = "is_secret")]
     pub value: String,
     pub is_secret: bool,
@@ -24,6 +25,7 @@ pub struct ProjectVariable {
 pub struct CreateProjectVariableInput {
     pub project_id: i64,
     pub name: String,
+    pub slug: String,
     pub value: String,
     pub is_secret: Option<bool>,
     pub description: Option<String>,
@@ -35,6 +37,7 @@ impl CreateProjectVariableInput {
             id: 0,
             project_id: self.project_id,
             name: self.name,
+            slug: self.slug,
             value: self.value,
             is_secret: self.is_secret.unwrap_or(false),
             description: self.description,
@@ -49,6 +52,8 @@ impl CreateProjectVariableInput {
 pub struct UpdateProjectVariableInput {
     #[ts(optional)]
     pub name: Option<String>,
+    #[ts(optional)]
+    pub slug: Option<String>,
     #[ts(optional)]
     pub value: Option<String>,
     #[ts(optional)]

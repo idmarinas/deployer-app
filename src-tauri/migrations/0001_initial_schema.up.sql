@@ -59,6 +59,7 @@ CREATE INDEX hosts_idx_key_id ON hosts (key_id);
 CREATE TABLE global_variables (
     id INTEGER CONSTRAINT global_variables_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT global_variables_uq_name UNIQUE,
+    slug TEXT NOT NULL DEFAULT '',
     value TEXT NOT NULL,
     is_secret BOOLEAN NOT NULL DEFAULT 0,
     data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT global_variables_chk_data_type CHECK (
@@ -75,6 +76,8 @@ CREATE TABLE global_variables (
 );
 
 CREATE INDEX global_variables_idx_name ON global_variables (name);
+CREATE UNIQUE INDEX global_variables_uq_slug ON global_variables (slug);
+CREATE INDEX global_variables_idx_slug ON global_variables (slug);
 
 -- ============================================================================
 -- PROJECTS
@@ -136,6 +139,7 @@ CREATE TABLE project_variables (
     id INTEGER CONSTRAINT project_variables_pk PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL CONSTRAINT project_variables_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    slug TEXT NOT NULL DEFAULT '',
     value TEXT NOT NULL,
     is_secret BOOLEAN NOT NULL DEFAULT 0,
     data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT project_variables_chk_data_type CHECK (
@@ -155,6 +159,8 @@ CREATE TABLE project_variables (
 CREATE INDEX project_variables_idx_project_id ON project_variables (project_id);
 
 CREATE INDEX project_variables_idx_name ON project_variables (name);
+CREATE UNIQUE INDEX project_variables_uq_project_id_slug ON project_variables (project_id, slug);
+CREATE INDEX project_variables_idx_slug ON project_variables (slug);
 
 -- ============================================================================
 -- FRAMEWORK_CONFIGS (Generic, flexible configuration)

@@ -66,7 +66,7 @@ pub async fn build_snapshot(
         entity = GlobalVariable::from_fields(fields)
             .map_err(|e| format!("Error al reconstruir global_variable: {}", e))?;
 
-        vars.insert(entity.name.clone(), entity.value.clone());
+        vars.insert(entity.slug.clone(), entity.value.clone());
     }
 
     // ── 3. Variables de proyecto (mayor precedencia) ─────────────────────────
@@ -93,7 +93,7 @@ pub async fn build_snapshot(
         entity = ProjectVariable::from_fields(fields)
             .map_err(|e| format!("Error al reconstruir project_variable: {}", e))?;
 
-        vars.insert(entity.name.clone(), entity.value.clone());
+        vars.insert(entity.slug.clone(), entity.value.clone());
     }
 
     Ok(VariableSnapshot::new(vars))

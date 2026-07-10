@@ -9,6 +9,9 @@ fn build_project_variable_update(input: &UpdateProjectVariableInput, fields: &mu
     if let Some(ref name) = input.name {
         fields.push(("name".to_string(), Value::String(name.clone())));
     }
+    if let Some(ref slug) = input.slug {
+        fields.push(("slug".to_string(), Value::String(slug.clone())));
+    }
     if let Some(v) = input.description.to_field_value() {
         fields.push(("description".to_string(), v));
     }

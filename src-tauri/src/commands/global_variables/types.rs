@@ -10,6 +10,7 @@ use crate::commands::Patch;
 pub struct GlobalVariable {
     pub id: i64,
     pub name: String,
+    pub slug: String,
     #[db_conditional_encrypt(condition = "is_secret")]
     pub value: String,
     pub is_secret: bool,
@@ -22,6 +23,7 @@ pub struct GlobalVariable {
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct CreateGlobalVariableInput {
     pub name: String,
+    pub slug: String,
     pub value: String,
     pub is_secret: Option<bool>,
     pub description: Option<String>,
@@ -32,6 +34,7 @@ impl CreateGlobalVariableInput {
         GlobalVariable {
             id: 0,
             name: self.name,
+            slug: self.slug,
             value: self.value,
             is_secret: self.is_secret.unwrap_or(false),
             description: self.description,
@@ -46,6 +49,8 @@ impl CreateGlobalVariableInput {
 pub struct UpdateGlobalVariableInput {
     #[ts(optional)]
     pub name: Option<String>,
+    #[ts(optional)]
+    pub slug: Option<String>,
     #[ts(optional)]
     pub value: Option<String>,
     #[ts(optional)]

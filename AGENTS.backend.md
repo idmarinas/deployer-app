@@ -315,6 +315,10 @@ await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 
 ### Interpolación de variables (`{{variable}}`)
 
+Las tablas `global_variables` y `project_variables` tienen dos campos de identificación:
+- **`name`**: nombre visual para la interfaz (no se usa en interpolación).
+- **`slug`**: identificador para interpolación en `{{slug}}`. Es único (global en `global_variables`, por proyecto en `project_variables`). Validado en frontend con regex `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+
 Precedencia (mayor sobreescribe):
 1. Variables de proyecto (`project_variables`)
 2. Variables globales (`global_variables`)

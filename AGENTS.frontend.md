@@ -474,6 +474,7 @@ A diferencia de Hosts/Tasks, `project_variables` no tiene catálogo que asignar:
 
 - Edición por fila con toggle vista/edición local (patrón similar a `ProjectTabInfo`, pero por item de una lista en vez de para toda la entidad).
 - `is_secret`: el valor llega ya en texto plano desde `crud_get_project` (Rust descifra al leer), pero en la UI se enmascara por defecto (`••••••••`) con un botón de "ojo" para revelar/ocultar client-side — el cifrado real en BD lo gestiona `crud_update_project_variable` según el flag `is_secret`.
+- Cada variable tiene `name` (visual) y `slug` (para interpolación `{{slug}}`). El slug es único por proyecto. La vista muestra `slug` como texto principal y `name` como paréntesis.
 
 ### `@vueuse/integrations` (`useSortable`): importar SIEMPRE el submódulo directo
 
