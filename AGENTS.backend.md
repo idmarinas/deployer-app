@@ -105,6 +105,8 @@ El frontend solo debe llamar al comando plural (incluso para guardar un único a
 | `deployment_executions` | `status`, `exit_code`, `output`, `retry_attempt` |
 | `hosts` | `auth_type`, `password` (cifrado), `key_id` |
 | `passkeys` | `key_content` (cifrado), `passphrase` (cifrado) |
+| `framework_configs` | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional. |
+| `task_dependencies` | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
 
 ---
 

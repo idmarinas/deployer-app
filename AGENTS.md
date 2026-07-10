@@ -15,6 +15,14 @@
 | TS | `~6.0.3` — strict, `noUnusedLocals`, `noUnusedParameters` |
 | Vite | `^8.1.3` — puerto fijo **1420** (strictPort) |
 
+## Propósito del Backend
+
+- **Escrituras** (INSERT/UPDATE/DELETE) y operaciones transaccionales.
+- **Cifrado/descifrado** transparente de campos sensibles (`hosts`, `passkeys`).
+- **Orquestación SSH/SFTP** para ejecución remota de despliegues.
+- **Generación de claves SSH** y **test de conexión**.
+- **Lecturas SELECT** solo cuando hay cifrado que descifrar o lógica de backend que Drizzle no puede atender; para el resto de SELECTs, el frontend usa Drizzle (vía `query_raw`), que ofrece tipado estático y flexibilidad sin necesidad de comandos Rust dedicados.
+
 ## Reglas
 
 - **Idioma:** siempre español.
