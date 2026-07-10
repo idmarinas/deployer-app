@@ -12,6 +12,8 @@
 9. Cuando se usa un select que permita seleccinar un host, project... permitir el crear uno. Como USelectMenu lo permite en su documentación
 10. Actualizar la pantalla de carga (principal) para que sea igual que el resto de la app
 11. Ajustes de la app, agregar a la tabla campo para determinar si se cargan al inicio o no.
+12. Estudiar rollback automático de despliegues: cuando una task falla con on_failure=stop, el runner se detiene pero no revierte las tasks anteriores que ya se ejecutaron con éxito.
+13. Valorar soporte futuro para BD remota (PostgreSQL/MariaDB) en vez de SQLite local, permitiendo uso multi-instancia/colaborativo.
 
 ```ts
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
