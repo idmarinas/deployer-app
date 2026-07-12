@@ -93,20 +93,20 @@ El frontend solo debe llamar al comando plural (incluso para guardar un único a
 - Archivo: `src-tauri/migrations/0001_initial_schema.up.sql`
 - Mientras la app esté en versión `0.1.0`, se usa un único archivo de migración inicial.
 - A partir de `0.2.0`, usar archivos numerados adicionales.
-- Tras cualquier migración nueva, regenerar `drizzle/schema.ts` siguiendo `drizzle/README.md` (aplicar la migración sobre `drizzle/dev.sqlite` y ejecutar `bun run db:introspect`).
+- Tras cualquier migración nueva, regenerar `drizzle/schema.ts` siguiendo `drizzle/README.md` (aplicar la migración sobre `drizzle/dev.sqlite` y ejecutar `dev:db:generate`).
 
 ### Tablas actuales y campos destacados
 
-| Tabla | Campos destacados |
-|-------|------------------|
-| `projects` | `local_working_dir`, `remote_working_dir` |
-| `tasks` | `type`, `command`, `timeout`, `retry_count`, `retry_delay` (sin `working_dir`) |
-| `project_tasks` | `config` (JSON TaskConfig), `local_working_dir`, `remote_working_dir`, `retry_count`, `retry_delay` |
-| `deployment_executions` | `status`, `exit_code`, `output`, `retry_attempt` |
-| `hosts` | `auth_type`, `password` (cifrado), `key_id` |
-| `passkeys` | `key_content` (cifrado), `passphrase` (cifrado) |
-| `framework_configs` | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional. |
-| `task_dependencies` | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
+| Tabla                   | Campos destacados                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projects`              | `local_working_dir`, `remote_working_dir`                                                                                                              |
+| `tasks`                 | `type`, `command`, `timeout`, `retry_count`, `retry_delay` (sin `working_dir`)                                                                         |
+| `project_tasks`         | `config` (JSON TaskConfig), `local_working_dir`, `remote_working_dir`, `retry_count`, `retry_delay`                                                    |
+| `deployment_executions` | `status`, `exit_code`, `output`, `retry_attempt`                                                                                                       |
+| `hosts`                 | `auth_type`, `password` (cifrado), `key_id`                                                                                                            |
+| `passkeys`              | `key_content` (cifrado), `passphrase` (cifrado)                                                                                                        |
+| `framework_configs`     | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional.          |
+| `task_dependencies`     | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
 
 ---
 
@@ -116,13 +116,13 @@ El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera aut
 
 ### Atributos disponibles
 
-| Atributo | Nivel | Descripción |
-|---|---|---|
-| `#[db_table("nombre")]` | Struct | **Obligatorio.** Nombre de la tabla SQLite. |
-| `#[db_encrypt]` | Campo | Cifra siempre el campo. `expose = false` por defecto. |
-| `#[db_encrypt(expose = true)]` | Campo | Cifra siempre; descifra y expone el valor al frontend al leer. |
-| `#[db_conditional_encrypt(condition = "campo")]` | Campo | Cifra solo si `campo` es `true` en la misma fila. |
-| `#[db_rename("columna")]` | Campo | El campo Rust usa un nombre de columna SQLite distinto. Imprescindible cuando el nombre natural de columna es palabra reservada de Rust (ej. `type`) y el campo se llama `task_type`/`r#type` en el struct. |
+| Atributo                                         | Nivel  | Descripción                                                                                                                                                                                                 |
+| ------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `#[db_table("nombre")]`                          | Struct | **Obligatorio.** Nombre de la tabla SQLite.                                                                                                                                                                 |
+| `#[db_encrypt]`                                  | Campo  | Cifra siempre el campo. `expose = false` por defecto.                                                                                                                                                       |
+| `#[db_encrypt(expose = true)]`                   | Campo  | Cifra siempre; descifra y expone el valor al frontend al leer.                                                                                                                                              |
+| `#[db_conditional_encrypt(condition = "campo")]` | Campo  | Cifra solo si `campo` es `true` en la misma fila.                                                                                                                                                           |
+| `#[db_rename("columna")]`                        | Campo  | El campo Rust usa un nombre de columna SQLite distinto. Imprescindible cuando el nombre natural de columna es palabra reservada de Rust (ej. `type`) y el campo se llama `task_type`/`r#type` en el struct. |
 
 ### CRÍTICO: sin `#[db_rename]`, el nombre de columna SIEMPRE es el nombre del campo Rust
 
@@ -198,9 +198,9 @@ pub struct UpdateProjectInput {
 
 ```ts
 export interface UpdateProjectInput {
-  name?: string
-  description?: string | null
-  enabled?: boolean
+	name?: string
+	description?: string | null
+	enabled?: boolean
 }
 ```
 
@@ -275,11 +275,11 @@ AES-256-GCM con nonce aleatorio de 12 bytes por cada cifrado.
 
 ### Configuración de campos cifrados (`encryption_config`)
 
-| Tabla | Campo | encrypt | expose |
-|-------|-------|---------|--------|
-| `hosts` | `password` | 1 | 0 |
-| `passkeys` | `key_content` | 1 | 0 |
-| `passkeys` | `passphrase` | 1 | 0 |
+| Tabla      | Campo         | encrypt | expose |
+| ---------- | ------------- | ------- | ------ |
+| `hosts`    | `password`    | 1       | 0      |
+| `passkeys` | `key_content` | 1       | 0      |
+| `passkeys` | `passphrase`  | 1       | 0      |
 
 ---
 
@@ -295,47 +295,51 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { ProgressEvent } from '@/tauri-types'
 
 const channel = new Channel<ProgressEvent>()
-channel.onmessage = (event) => { /* actualizar UI */ }
+channel.onmessage = event => {
+	/* actualizar UI */
+}
 await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
 ```
 
 ### Eventos emitidos (`ProgressEvent`)
 
-| Evento | Descripción |
-|--------|-------------|
-| `deployment_started` | Inicio; incluye `total_tasks` |
-| `task_pending` | Task en cola antes de ejecutarse |
-| `task_started` | Task comenzando ejecución |
-| `output_chunk` | Fragmento de output acumulado (~100ms) |
-| `task_retrying` | Task reintentándose; incluye `attempt`, `delay_secs` |
-| `task_finished` | Task finalizada; incluye `status`, `exit_code`, `duration_seconds` |
-| `task_skipped` | Task saltada; incluye `reason` |
-| `deployment_finished` | Deployment finalizado; incluye `status`, `duration_seconds` |
-| `fatal_error` | Error que impide continuar |
+| Evento                | Descripción                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| `deployment_started`  | Inicio; incluye `total_tasks`                                      |
+| `task_pending`        | Task en cola antes de ejecutarse                                   |
+| `task_started`        | Task comenzando ejecución                                          |
+| `output_chunk`        | Fragmento de output acumulado (~100ms)                             |
+| `task_retrying`       | Task reintentándose; incluye `attempt`, `delay_secs`               |
+| `task_finished`       | Task finalizada; incluye `status`, `exit_code`, `duration_seconds` |
+| `task_skipped`        | Task saltada; incluye `reason`                                     |
+| `deployment_finished` | Deployment finalizado; incluye `status`, `duration_seconds`        |
+| `fatal_error`         | Error que impide continuar                                         |
 
 ### Interpolación de variables (`{{variable}}`)
 
 Las tablas `global_variables` y `project_variables` tienen dos campos de identificación:
+
 - **`name`**: nombre visual para la interfaz (no se usa en interpolación).
 - **`slug`**: identificador para interpolación en `{{slug}}`. Es único (global en `global_variables`, por proyecto en `project_variables`). Validado en frontend con regex `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
 
 Precedencia (mayor sobreescribe):
+
 1. Variables de proyecto (`project_variables`)
 2. Variables globales (`global_variables`)
 3. Variables de sistema (inyectadas automáticamente)
 
 Variables de sistema disponibles:
 
-| Variable | Valor |
-|----------|-------|
-| `{{deployment_id}}` | ID del deployment |
-| `{{version}}` | Versión del deployment |
-| `{{tag}}` | Tag del deployment |
-| `{{build}}` | Número de build |
-| `{{host}}` | Hostname/IP del servidor |
-| `{{host_user}}` | Usuario SSH |
+| Variable                 | Valor                           |
+| ------------------------ | ------------------------------- |
+| `{{deployment_id}}`      | ID del deployment               |
+| `{{version}}`            | Versión del deployment          |
+| `{{tag}}`                | Tag del deployment              |
+| `{{build}}`              | Número de build                 |
+| `{{host}}`               | Hostname/IP del servidor        |
+| `{{host_user}}`          | Usuario SSH                     |
 | `{{remote_working_dir}}` | Working dir remoto del proyecto |
-| `{{local_working_dir}}` | Working dir local del proyecto |
+| `{{local_working_dir}}`  | Working dir local del proyecto  |
 
 ### `TaskConfig` — configuración por tipo
 
@@ -345,12 +349,23 @@ Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile`
 
 ```json
 {
-  "type": "upload_file",
-  "overwrite": true,
-  "paths": [
-    { "src": "{{local_working_dir}}/dist", "dest": "{{remote_working_dir}}/public", "recursive": true, "exclude": ["*.map", ".git"], "chmod": "755" },
-    { "src": "{{local_working_dir}}/.env.production", "dest": "{{remote_working_dir}}/.env", "recursive": false, "chmod": "600" }
-  ]
+	"type": "upload_file",
+	"overwrite": true,
+	"paths": [
+		{
+			"src": "{{local_working_dir}}/dist",
+			"dest": "{{remote_working_dir}}/public",
+			"recursive": true,
+			"exclude": ["*.map", ".git"],
+			"chmod": "755"
+		},
+		{
+			"src": "{{local_working_dir}}/.env.production",
+			"dest": "{{remote_working_dir}}/.env",
+			"recursive": false,
+			"chmod": "600"
+		}
+	]
 }
 ```
 
@@ -361,6 +376,7 @@ Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile`
 - Tipos Rust: `PathMapping` y `FileTransferConfig` en `commands/projects/tasks/types.rs`.
 
 **Pendiente de verificar por Iván (`cargo check`):** dos piezas de `sftp_executor.rs` usan API de `russh-sftp` 2.0.6 que no pude confirmar offline al escribirlas (sin acceso al código fuente exacto del crate):
+
 - `apply_chmod()`: usa `sftp.set_metadata(path, russh_sftp::protocol::FileAttributes { permissions: Some(mode), ..Default::default() })`.
 - `download_recursive()`: usa `sftp.read_dir(path)` y asume que cada entrada tiene `.file_name()` y `.file_type().is_dir()`.
 
@@ -368,12 +384,12 @@ Si `cargo check` falla en alguno de los dos puntos, pegar el error de compilaci�
 
 ### Herencia de campos (project_task > project)
 
-| Campo | Fuente prioritaria | Fallback |
-|-------|--------------------|---------|
-| `local_working_dir` | `project_tasks.local_working_dir` | `projects.local_working_dir` |
+| Campo                | Fuente prioritaria                 | Fallback                      |
+| -------------------- | ---------------------------------- | ----------------------------- |
+| `local_working_dir`  | `project_tasks.local_working_dir`  | `projects.local_working_dir`  |
 | `remote_working_dir` | `project_tasks.remote_working_dir` | `projects.remote_working_dir` |
-| `retry_count` | `project_tasks.retry_count` | `tasks.retry_count` |
-| `retry_delay` | `project_tasks.retry_delay` | `tasks.retry_delay` |
+| `retry_count`        | `project_tasks.retry_count`        | `tasks.retry_count`           |
+| `retry_delay`        | `project_tasks.retry_delay`        | `tasks.retry_delay`           |
 
 ### Reanudación automática
 
@@ -425,14 +441,14 @@ Si la condición no puede parsearse, se ejecuta la task (safe default).
 
 ## 7. Dependencias Rust — Notas de Compatibilidad
 
-| Crate | Versión | Límite | Motivo |
-|-------|---------|--------|--------|
-| `rand` | `0.10` | No bajar | Requiere feature `sys_rng` para `OsRng`. `SysRng` implementa `CryptoRng` directamente — no necesita `UnwrapErr`. |
-| `rand_core` | `0.10` | Alineado con `rand` | `rand 0.10` requiere `rand_core 0.10`; declarar `0.6` causaría conflictos de traits. |
-| `keyring` | `4.1` | — | `v1` (default) re-exporta `Entry`/`Error` en raíz. `Error` es `#[non_exhaustive]` — siempre usar catch-all en match. Feature `v1` incluye `windows-native-keyring-store` automáticamente en Windows. Datos v3 compatibles. |
-| `russh` | `0.62` | — | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum. Solo se usa lado **cliente** (`client::Handler`); el breaking change de 0.62 en `channel_open_*` (server-side) no aplica. |
-| `russh-sftp` | `2.3` | — | `ReadDir` auto-filtra `.`/`..`. Patrón: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`. |
-| `aes-gcm` | `0.11` | — | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`. |
-| `chrono` | `0.4` | — | Timestamps RFC3339 para `started_at`/`finished_at`. |
-| `sqlx` | `0.8.6` | — | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`. |
-| `deployer-macros` | local | — | Proc-macro crate del workspace. Provee `ident_concat!` (reemplaza `paste`) y `DbEntity` derive. |
+| Crate             | Versión | Límite              | Motivo                                                                                                                                                                                                                     |
+| ----------------- | ------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rand`            | `0.10`  | No bajar            | Requiere feature `sys_rng` para `OsRng`. `SysRng` implementa `CryptoRng` directamente — no necesita `UnwrapErr`.                                                                                                           |
+| `rand_core`       | `0.10`  | Alineado con `rand` | `rand 0.10` requiere `rand_core 0.10`; declarar `0.6` causaría conflictos de traits.                                                                                                                                       |
+| `keyring`         | `4.1`   | —                   | `v1` (default) re-exporta `Entry`/`Error` en raíz. `Error` es `#[non_exhaustive]` — siempre usar catch-all en match. Feature `v1` incluye `windows-native-keyring-store` automáticamente en Windows. Datos v3 compatibles. |
+| `russh`           | `0.62`  | —                   | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum. Solo se usa lado **cliente** (`client::Handler`); el breaking change de 0.62 en `channel_open_*` (server-side) no aplica.                 |
+| `russh-sftp`      | `2.3`   | —                   | `ReadDir` auto-filtra `.`/`..`. Patrón: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`.                                                                  |
+| `aes-gcm`         | `0.11`  | —                   | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`.                                                   |
+| `chrono`          | `0.4`   | —                   | Timestamps RFC3339 para `started_at`/`finished_at`.                                                                                                                                                                        |
+| `sqlx`            | `0.8.6` | —                   | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`.                                                                                                                                    |
+| `deployer-macros` | local   | —                   | Proc-macro crate del workspace. Provee `ident_concat!` (reemplaza `paste`) y `DbEntity` derive.                                                                                                                            |
