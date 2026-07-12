@@ -36,7 +36,7 @@
 	"devDependencies": {
 		"@libsql/client": "^0.17.4",
 		"@tauri-apps/cli": "^2.11.4",
-		"@types/node": "^25.9.5",
+		"@types/node": "^26.1.1",
 		"@types/sortablejs": "^1.15.9",
 		"@vitejs/plugin-vue": "^6.0.7",
 		"drizzle-kit": "^0.31.10",
