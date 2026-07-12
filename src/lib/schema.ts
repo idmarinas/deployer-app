@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { sqliteTable, AnySQLiteColumn, check, integer, text, numeric, blob, index, foreignKey } from "drizzle-orm/sqlite-core"
+import { sqliteTable, AnySQLiteColumn, check, integer, text, numeric, blob, index, foreignKey, uniqueIndex } from "drizzle-orm/sqlite-core"
   import { sql } from "drizzle-orm"
 
 export const _sqlx_migrations = sqliteTable("_sqlx_migrations", {
@@ -70,6 +70,7 @@ export const hosts = sqliteTable("hosts", {
 export const global_variables = sqliteTable("global_variables", {
 	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull(),
+	slug: text().default("").notNull(),
 	value: text().notNull(),
 	is_secret: numeric().notNull(),
 	data_type: text().default("string").notNull(),
@@ -78,6 +79,8 @@ export const global_variables = sqliteTable("global_variables", {
 	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
+	index("global_variables_idx_slug").on(table.slug),
+	uniqueIndex("global_variables_uq_slug").on(table.slug),
 	index("global_variables_idx_name").on(table.name),
 	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
 	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
@@ -126,6 +129,7 @@ export const project_variables = sqliteTable("project_variables", {
 	id: integer().primaryKey({ autoIncrement: true }),
 	project_id: integer().notNull().references(() => projects.id, { onDelete: "cascade" } ),
 	name: text().notNull(),
+	slug: text().default("").notNull(),
 	value: text().notNull(),
 	is_secret: numeric().notNull(),
 	data_type: text().default("string").notNull(),
@@ -134,6 +138,8 @@ export const project_variables = sqliteTable("project_variables", {
 	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
+	index("project_variables_idx_slug").on(table.slug),
+	uniqueIndex("project_variables_uq_project_id_slug").on(table.project_id, table.slug),
 	index("project_variables_idx_name").on(table.name),
 	index("project_variables_idx_project_id").on(table.project_id),
 	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
