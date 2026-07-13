@@ -7,7 +7,7 @@ export default {
 			name: 'Nombre',
 			slug: 'Slug',
 			is_secret: 'Es secreta',
-			value: 'Valor',
+			data_type: 'Tipo de dato',
 		},
 		empty: {
 			title: 'No se han encontrado variables',

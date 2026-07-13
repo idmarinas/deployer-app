@@ -8,6 +8,8 @@ export default {
 			default: 'recurso | recursos',
 			project: 'proyecto | proyectos',
 			host: 'servidor | servidores',
+			task: 'tarea | tareas',
+			global_variable: 'variable global | variables globales',
 		},
 		text: (ctx: MessageContext) => {
 			return `Cargando ${ctx.linked(`app.loading.what.${ctx.named('what') || 'default'}`)}…`
