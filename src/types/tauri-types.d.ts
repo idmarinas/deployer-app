@@ -16,7 +16,7 @@ export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back
 
 export type CreateFrameworkConfigInput = { project_id: number, framework: Framework, key: string, value: string, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
 
-export type CreateGlobalVariableInput = { name: string, value: string, is_secret: boolean | null, description: string | null, };
+export type CreateGlobalVariableInput = { name: string, slug: string, value: string, is_secret: boolean | null, data_type: string | null, description: string | null, };
 
 export type CreateHostInput = { name: string, host: string, port: number | null, username: string, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
 
@@ -28,7 +28,7 @@ export type CreateProjectInput = { name: string, description: string | null, git
 
 export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
 
-export type CreateProjectVariableInput = { project_id: number, name: string, value: string, is_secret: boolean | null, description: string | null, };
+export type CreateProjectVariableInput = { project_id: number, name: string, slug: string, value: string, is_secret: boolean | null, data_type: string | null, description: string | null, };
 
 export type CreateTaskDependencyInput = { task_id: number, depends_on_task_id: number, dependency_type: DependencyType | null, };
 
@@ -126,7 +126,7 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type GlobalVariable = { id: number, name: string, value: string, is_secret: boolean, description: string | null, created_at: string, updated_at: string, };
+export type GlobalVariable = { id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: string | null, created_at: string, updated_at: string, };
 
 export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
 /**
@@ -219,7 +219,7 @@ retry_count: number | null,
  */
 retry_delay: number | null, created_at: string, updated_at: string, };
 
-export type ProjectVariable = { id: number, project_id: number, name: string, value: string, is_secret: boolean, description: string | null, created_at: string, updated_at: string, };
+export type ProjectVariable = { id: number, project_id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: string | null, created_at: string, updated_at: string, };
 
 export type RunDeploymentInput = { deployment_id: number, 
 /**
@@ -258,7 +258,7 @@ export type UpdateDeploymentRollbackInput = { status?: DeploymentStatus, started
 
 export type UpdateFrameworkConfigInput = { value?: string, is_secret?: boolean, data_type?: DataType, description?: string | null, };
 
-export type UpdateGlobalVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
+export type UpdateGlobalVariableInput = { name?: string, slug?: string, value?: string, is_secret?: boolean, data_type?: string, description?: string | null, };
 
 export type UpdateHostInput = { name?: string, host?: string, port?: number, username?: string, auth_type?: AuthType, 
 /**
@@ -278,7 +278,7 @@ export type UpdateProjectInput = { name?: string, description?: string | null, g
 
 export type UpdateProjectTaskInput = { order_execution?: number, enabled?: boolean, condition?: string | null, on_failure?: OnFailure, config?: string | null, local_working_dir?: string | null, remote_working_dir?: string | null, retry_count?: number | null, retry_delay?: number | null, };
 
-export type UpdateProjectVariableInput = { name?: string, value?: string, is_secret?: boolean, description?: string | null, };
+export type UpdateProjectVariableInput = { name?: string, slug?: string, value?: string, is_secret?: boolean, data_type?: string, description?: string | null, };
 
 export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
 
