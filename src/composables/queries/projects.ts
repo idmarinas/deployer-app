@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/lib/db'
-import { normalizeDeep } from '@/lib/normalize'
 import { project_hosts, project_tasks, projects } from '@/lib/schema'
 import { Host, Project, ProjectHost, ProjectTask, ProjectVariable, Task } from '@/types/tauri-types'
 
@@ -30,17 +29,9 @@ export type ProjectRow = Project & {
  * solo una combinación arbitraria de uno de cada. db.query.findFirst hace
  * varias queries por debajo y anida los resultados correctamente.
  *
- * El resultado se pasa por normalizeDeep antes de devolverlo: Drizzle infiere
- * `enabled`/`is_secret` como string (numeric() en SQLite, sin detección de
- * boolean en introspect) y los campos nullable como `T | null` en vez de
- * `T | undefined`. normalizeDeep corrige ambos en runtime para que el dato
- * real coincida con el tipo `Project`/`ProjectHost`/... de ts-rs.
- *
- * El cast pasa por `unknown` a propósito: normalizeDeep<T> devuelve el mismo
- * tipo T de entrada (el inferido por Drizzle, con enabled: string), así que
- * TypeScript no puede ver que la forma ya coincide con ProjectRow tras la
- * normalización — el `unknown` es la forma explícita de decir "esto ya está
- * garantizado en runtime", no un cast a ciegas.
+ * El cast `as unknown as T` se debe a que el tipo inferido por Drizzle
+ * (con columnas anidadas y relaciones) no coincide estructuralmente con
+ * los tipos de app (`ProjectRow`, etc.) — la forma runtime sí es correcta.
  */
 export function useProjectQuery() {
 	async function find(id: number): Promise<ProjectRow | undefined> {
@@ -82,7 +73,7 @@ export function useProjectQuery() {
 
 			if (!row) return undefined
 
-			return normalizeDeep(row) as unknown as ProjectRow
+			return row as unknown as ProjectRow
 		} catch (e) {
 			console.error('[projects] find error:', e)
 			return undefined
@@ -100,7 +91,7 @@ export function useProjectQuery() {
 				},
 			})
 
-			return rows.map(row => normalizeDeep(row) as unknown as ProjectRow)
+			return rows.map(row => row as unknown as ProjectRow)
 		} catch (e) {
 			console.error('[projects] findAll error:', e)
 			return []
@@ -118,7 +109,7 @@ export function useProjectQuery() {
 
 			if (!row) return undefined
 
-			return normalizeDeep(row) as unknown as ProjectHostRow
+			return row as unknown as ProjectHostRow
 		} catch (e) {
 			console.error('[projects] findProjectHostById error:', e)
 			return undefined
@@ -143,7 +134,7 @@ export function useProjectQuery() {
 
 			if (!row) return undefined
 
-			return normalizeDeep(row) as unknown as ProjectTaskRow
+			return row as unknown as ProjectTaskRow
 		} catch (e) {
 			console.error('[projects] findProjectTaskById error:', e)
 			return undefined

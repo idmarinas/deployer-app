@@ -1,7 +1,6 @@
 import type { Host } from '@/types/tauri-types'
 
 import { db } from '@/lib/db'
-import { normalizeDeep } from '@/lib/normalize'
 import { hosts } from '@/lib/schema'
 import { asc, eq } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
@@ -21,7 +20,7 @@ export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
 			.from(hosts)
 			.where(eq(hosts.id, Number.parseInt(to.params.id)))
 			.limit(1)
-			.then(data => normalizeDeep(data)[0] as unknown as Host)
+			.then(data => data[0] as unknown as Host)
 			.catch(() => undefined),
 })
 
@@ -32,7 +31,7 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
 			.select()
 			.from(hosts)
 			.orderBy(asc(hosts.name))
-			.then(data => normalizeDeep(data) as unknown as Host[])
+			.then(data => data as unknown as Host[])
 			.catch(() => [] as Host[]),
 })
 
@@ -48,6 +47,6 @@ export const useHostSelectPopulate = defineColadaLoader({
 			})
 			.from(hosts)
 			.orderBy(asc(hosts.name))
-			.then(data => normalizeDeep(data) as unknown as HostSelectItem[])
+			.then(data => data as unknown as HostSelectItem[])
 			.catch(() => [] as HostSelectItem[]),
 })

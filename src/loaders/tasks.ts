@@ -1,7 +1,6 @@
 import type { CommandResponse, Task } from '@/types/tauri-types'
 
 import { db } from '@/lib/db'
-import { normalizeDeep } from '@/lib/normalize'
 import { tasks } from '@/lib/schema'
 import { invoke } from '@tauri-apps/api/core'
 import { asc } from 'drizzle-orm'
@@ -28,7 +27,7 @@ export const useTaskListAll = defineColadaLoader('dashboard-tasks', {
 			.select()
 			.from(tasks)
 			.orderBy(asc(tasks.name))
-			.then(data => normalizeDeep(data) as unknown as Task[])
+			.then(data => data as unknown as Task[])
 			.catch(() => []),
 })
 
@@ -52,6 +51,6 @@ export const useTaskSelectPopulate = defineColadaLoader({
 			})
 			.from(tasks)
 			.orderBy(asc(tasks.name))
-			.then(data => normalizeDeep(data) as unknown as TaskSelectItem[])
+			.then(data => data as unknown as TaskSelectItem[])
 			.catch(() => [] as TaskSelectItem[]),
 })
