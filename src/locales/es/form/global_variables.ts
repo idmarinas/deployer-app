@@ -25,4 +25,8 @@ export default {
 		label: 'Es secreta',
 		help: 'Marca esta opción si la variable contiene información sensible (contraseñas, tokens, etc.).',
 	},
+	data_type: {
+		label: 'Tipo de dato',
+		help: 'Tipo de dato que tomará la variable durante el despliegue.',
+	},
 } satisfies LocaleMessageValue
