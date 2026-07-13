@@ -41,6 +41,6 @@ está disponible por separado: `bun run dev:db:introspect`,
 
 **No editar a mano** `drizzle/schema.ts`, `drizzle/relations.ts`,
 `src/lib/schema.ts` ni `src/lib/relations.ts` — los cuatro se sobreescriben
-en cada `bun run dev:db:generate`. Cualquier ajuste de tipos (por ejemplo,
-columnas booleanas mal inferidas como `numeric()`) se gestiona aparte en
-`src/lib/normalize.ts`, que no se toca en este proceso.
+en cada `bun run dev:db:generate`. El script de copia post-procesa las
+columnas booleanas (reemplaza `numeric()` por `integer({ mode: 'boolean' })`)
+para que Drizzle infiera los tipos correctos.
