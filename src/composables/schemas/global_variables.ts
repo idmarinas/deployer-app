@@ -30,6 +30,7 @@ export function useGlobalVariableSchema(globalVariableId?: number) {
 		value: z.string(t('validation.global_variables.value.required')),
 		is_secret: z.boolean().default(false),
 		description: z.string().max(1000, t('validation.global_variables.description.max')).optional(),
+		data_type: z.enum(['string', 'integer', 'boolean', 'json']).default('string' as const),
 	})
 
 	return {
