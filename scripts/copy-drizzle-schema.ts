@@ -14,6 +14,12 @@
  *
  * NO EDITAR src/lib/schema.ts ni src/lib/relations.ts a mano: se
  * sobreescriben en cada ejecución de este script.
+ *
+ * Post-procesado de booleanos: drizzle-kit introspect no detecta columnas
+ * BOOLEAN de SQLite (las mapea a `numeric()` → string en TS). Después de
+ * copiar, este script reemplaza las columnas booleanas conocidas por
+ * `integer({ mode: 'boolean' })` para que Drizzle infiera el tipo correcto
+ * y convierta 0/1 a true/false en runtime.
  */
 
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -28,6 +34,34 @@ const TARGET_DIR = join(ROOT, 'src/lib')
 
 const FILES = ['schema.ts', 'relations.ts']
 
+/**
+ * Nombres de columna BOOLEAN en la BD.
+ * Mantener sincronizado con las migraciones SQL: si una migración nueva
+ * añade una columna BOOLEAN, añadir su nombre aquí.
+ *
+ * Mismos campos que anteriormente estaban en BOOLEAN_KEYS de normalize.ts.
+ */
+const BOOLEAN_COLUMNS = ['enabled', 'is_secret', 'is_global']
+
+/**
+ * Reemplaza definiciones de columnas booleanas:
+ *   `column: numeric().default(1).notNull()` → `column: integer({ mode: 'boolean' }).notNull().default(true)`
+ *   `column: numeric().notNull()`            → `column: integer({ mode: 'boolean' }).notNull()`
+ */
+function fixBooleanColumns(content: string): string {
+	const pattern = new RegExp(
+		`(${BOOLEAN_COLUMNS.join('|')}):\\s*numeric\\(\\)(?:\\.default\\(1\\))?\\.notNull\\(\\)`,
+		'g',
+	)
+
+	return content.replace(pattern, (match, col) => {
+		const hasDefault = match.includes('.default(1)')
+		return hasDefault
+			? `${col}: integer({ mode: 'boolean' }).notNull().default(true)`
+			: `${col}: integer({ mode: 'boolean' }).notNull()`
+	})
+}
+
 let copied = 0
 
 for (const file of FILES) {
@@ -40,7 +74,12 @@ for (const file of FILES) {
 	}
 
 	copyFileSync(source, target)
-	const content = readFileSync(target, 'utf-8')
+	let content = readFileSync(target, 'utf-8')
+
+	if (file === 'schema.ts') {
+		content = fixBooleanColumns(content)
+	}
+
 	writeFileSync(target, `// @ts-nocheck\n${content}`)
 	copied++
 	console.log(`[drizzle] ✅ ${file} copiado a src/lib/`)
