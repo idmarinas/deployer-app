@@ -473,23 +473,59 @@ pub async fn resolve_conditional_fields(
 
     match (new_value, new_condition) {
         (Some(value), Some(cond)) => {
-            fields.push((value_field.to_string(), Value::String(value)));
-            fields.push((condition_field.to_string(), Value::Bool(cond)));
-        }
-        (Some(value), None) => {
-            let current_cond = sqlx::query_scalar::<_, bool>(&format!(
-                "SELECT {} FROM {} WHERE id = ?1",
-                condition_field, table
+            let current = sqlx::query_as::<_, (String, bool)>(&format!(
+                "SELECT {}, {} FROM {} WHERE id = ?1",
+                value_field, condition_field, table
             ))
             .bind(id)
             .fetch_optional(pool)
             .await
             .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
 
-            match current_cond {
-                Some(cond) => {
-                    fields.push((value_field.to_string(), Value::String(value)));
-                    fields.push((condition_field.to_string(), Value::Bool(cond)));
+            match current {
+                Some((db_value, db_cond)) => {
+                    // is_secret: si BD es true, siempre true; si es false, se permite el cambio
+                    let final_cond = if db_cond { true } else { cond };
+
+                    // value: si es BLANK o ENC, preservar el valor cifrado de BD
+                    let final_value =
+                        if crate::crypto::is_blank_value(&value) || crate::crypto::is_encrypted(&value)
+                        {
+                            db_value
+                        } else {
+                            value
+                        };
+
+                    fields.push((value_field.to_string(), Value::String(final_value)));
+                    fields.push((condition_field.to_string(), Value::Bool(final_cond)));
+                }
+                None => {
+                    return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
+                }
+            }
+        }
+        (Some(value), None) => {
+            let current = sqlx::query_as::<_, (String, bool)>(&format!(
+                "SELECT {}, {} FROM {} WHERE id = ?1",
+                value_field, condition_field, table
+            ))
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
+
+            match current {
+                Some((db_value, db_cond)) => {
+                    // value: si es BLANK o ENC, preservar el valor cifrado de BD
+                    let final_value =
+                        if crate::crypto::is_blank_value(&value) || crate::crypto::is_encrypted(&value)
+                        {
+                            db_value
+                        } else {
+                            value
+                        };
+                    fields.push((value_field.to_string(), Value::String(final_value)));
+                    fields.push((condition_field.to_string(), Value::Bool(db_cond)));
                 }
                 None => {
                     return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
@@ -497,42 +533,21 @@ pub async fn resolve_conditional_fields(
             }
         }
         (None, Some(cond)) => {
-            // Validar: is_secret no puede cambiar de true a false
-            let current_cond = sqlx::query_scalar::<_, bool>(&format!(
-                "SELECT {} FROM {} WHERE id = ?1",
-                condition_field, table
+            let current = sqlx::query_as::<_, (String, bool)>(&format!(
+                "SELECT {}, {} FROM {} WHERE id = ?1",
+                value_field, condition_field, table
             ))
             .bind(id)
             .fetch_optional(pool)
             .await
             .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
 
-            match current_cond {
-                Some(true) if !cond => {
-                    return Err(format!(
-                        "TRANSITION_DENIED|{}|No se puede cambiar {} de true a false en {} con id {}",
-                        condition_field, condition_field, table, id
-                    ));
-                }
-                Some(_) => {
-                    let current_value = sqlx::query_scalar::<_, String>(&format!(
-                        "SELECT {} FROM {} WHERE id = ?1",
-                        value_field, table
-                    ))
-                    .bind(id)
-                    .fetch_optional(pool)
-                    .await
-                    .map_err(|e| format_sqlx_error(&e, table, Some(id)))?;
-
-                    match current_value {
-                        Some(val) => {
-                            fields.push((value_field.to_string(), Value::String(val)));
-                            fields.push((condition_field.to_string(), Value::Bool(cond)));
-                        }
-                        None => {
-                            return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
-                        }
-                    }
+            match current {
+                Some((db_value, db_cond)) => {
+                    // is_secret: si BD es true, siempre true; si es false, se permite el cambio
+                    let final_cond = if db_cond { true } else { cond };
+                    fields.push((value_field.to_string(), Value::String(db_value)));
+                    fields.push((condition_field.to_string(), Value::Bool(final_cond)));
                 }
                 None => {
                     return Err(format!("NOT_FOUND|{}|{} con id {}", id, table, id));
