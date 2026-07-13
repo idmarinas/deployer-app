@@ -14,6 +14,7 @@ pub struct GlobalVariable {
     #[db_conditional_encrypt(condition = "is_secret")]
     pub value: String,
     pub is_secret: bool,
+    pub data_type: String,
     pub description: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -26,6 +27,7 @@ pub struct CreateGlobalVariableInput {
     pub slug: String,
     pub value: String,
     pub is_secret: Option<bool>,
+    pub data_type: Option<String>,
     pub description: Option<String>,
 }
 
@@ -37,6 +39,7 @@ impl CreateGlobalVariableInput {
             slug: self.slug,
             value: self.value,
             is_secret: self.is_secret.unwrap_or(false),
+            data_type: self.data_type.unwrap_or_else(|| "string".to_string()),
             description: self.description,
             created_at: String::new(),
             updated_at: String::new(),
@@ -55,6 +58,8 @@ pub struct UpdateGlobalVariableInput {
     pub value: Option<String>,
     #[ts(optional)]
     pub is_secret: Option<bool>,
+    #[ts(optional)]
+    pub data_type: Option<String>,
     #[serde(default)]
     #[ts(optional = nullable)]
     pub description: Patch<String>,
