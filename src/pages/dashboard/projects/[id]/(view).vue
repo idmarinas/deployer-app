@@ -184,7 +184,7 @@ provide('reloadProject', reload)
 				<component :is="useFrameworkBadge(project.framework, { size: undefined })" />
 			</template>
 			<template #description>
-				{{ project.description || t('common.empty.description') }}
+				<DescriptionViewer :value="project.description" :placeholder="t('common.empty.description')" />
 			</template>
 			<template #footer>
 				<div class="flex gap-4 items-center justify-between text-xs text-muted">

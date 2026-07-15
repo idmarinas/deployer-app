@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { useConfirmDialog, useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
 import { ICONS, getModuleIcon } from '@/utils/icons'
+import { isEncryptedValue } from '@/utils/crypto'
 import { useToast } from '@nuxt/ui/composables'
 
 import { invoke } from '@tauri-apps/api/core'
@@ -156,7 +157,7 @@ const expanded = ref({})
 			:ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }"
 		>
 			<template #expanded="{ row }">
-				<UCard :description="row.original.description || undefined">
+				<UCard>
 					<template #title>
 						<div class="flex items-center justify-between">
 							<div class="flex gap-3 items-center">
@@ -167,6 +168,10 @@ const expanded = ref({})
 								{{ row.original.key_type?.toLocaleUpperCase() }}
 							</UBadge>
 						</div>
+					</template>
+
+					<template #description>
+						<DescriptionViewer :value="row.original.description" />
 					</template>
 
 					<template #default>
@@ -196,7 +201,7 @@ const expanded = ref({})
 									{{ t('entity.passkey.passphrase') }}
 								</span>
 								<span class="text-sm text-foreground flex items-center gap-2">
-									<template v-if="row.original.passphrase?.startsWith('ENC:')">
+									<template v-if="row.original.passphrase && isEncryptedValue(row.original.passphrase)">
 										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
 										<UBadge variant="subtle" size="sm" color="success" class="font-mono">
 											<span class="font-mono text-xs">•••••••••••</span>
