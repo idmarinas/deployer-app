@@ -1,6 +1,7 @@
 pub mod database;
 pub mod deployer_settings;
 pub mod deployments;
+pub mod description;
 pub mod global_variables;
 pub mod helpers;
 pub mod hosts;

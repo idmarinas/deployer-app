@@ -80,6 +80,7 @@ macro_rules! crud_commands {
                 use serde_json::Value;
                 use tauri::AppHandle;
                 use $crate::commands::CommandResponse;
+                use $crate::commands::description::ValidateDescription;
                 use $crate::commands::helpers::open_crypto_context;
                 use $crate::db::{self, DbEntity};
 
@@ -89,6 +90,12 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     input: $create_input,
                 ) -> Result<CommandResponse<i64>, String> {
+                    if let Err(e) = input.validate_create() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -157,6 +164,12 @@ macro_rules! crud_commands {
                     id: i64,
                     input: $update_input,
                 ) -> Result<CommandResponse<()>, String> {
+                    if let Err(e) = input.validate_update() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -233,6 +246,7 @@ macro_rules! crud_commands {
                 use serde_json::Value;
                 use tauri::AppHandle;
                 use $crate::commands::CommandResponse;
+                use $crate::commands::description::ValidateDescription;
                 use $crate::commands::helpers::open_crypto_context;
                 use $crate::db::{self, DbEntity};
 
@@ -242,6 +256,12 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     input: $create_input,
                 ) -> Result<CommandResponse<i64>, String> {
+                    if let Err(e) = input.validate_create() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -310,6 +330,12 @@ macro_rules! crud_commands {
                     id: i64,
                     input: $update_input,
                 ) -> Result<CommandResponse<()>, String> {
+                    if let Err(e) = input.validate_update() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -407,6 +433,7 @@ macro_rules! crud_commands {
                 use serde_json::Value;
                 use tauri::AppHandle;
                 use $crate::commands::CommandResponse;
+                use $crate::commands::description::ValidateDescription;
                 use $crate::commands::helpers::open_crypto_context;
                 use $crate::db::{self, DbEntity};
 
@@ -416,6 +443,12 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     input: $create_input,
                 ) -> Result<CommandResponse<i64>, String> {
+                    if let Err(e) = input.validate_create() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -491,6 +524,12 @@ macro_rules! crud_commands {
                     id: i64,
                     input: $update_input,
                 ) -> Result<CommandResponse<()>, String> {
+                    if let Err(e) = input.validate_update() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -568,6 +607,7 @@ macro_rules! crud_commands {
                 use serde_json::Value;
                 use tauri::AppHandle;
                 use $crate::commands::CommandResponse;
+                use $crate::commands::description::ValidateDescription;
                 use $crate::commands::helpers::open_crypto_context;
                 use $crate::db::{self, DbEntity};
 
@@ -577,6 +617,12 @@ macro_rules! crud_commands {
                     app: AppHandle,
                     input: $create_input,
                 ) -> Result<CommandResponse<i64>, String> {
+                    if let Err(e) = input.validate_create() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
@@ -652,6 +698,12 @@ macro_rules! crud_commands {
                     id: i64,
                     input: $update_input,
                 ) -> Result<CommandResponse<()>, String> {
+                    if let Err(e) = input.validate_update() {
+                        return Ok(CommandResponse::err(
+                            concat!($i18n, ".errors.validation_failed"),
+                            HashMap::from([("reason".to_string(), e)]),
+                        ));
+                    }
                     let (pool, key) = match open_crypto_context(&app).await {
                         Ok(ctx) => ctx,
                         Err(e) => {
