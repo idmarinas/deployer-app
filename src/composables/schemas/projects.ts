@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import * as z from 'zod'
 import { countWhere } from '@/composables/queries/shared'
 import { projects } from '@/lib/schema'
+import { descriptionField } from './description'
 
 export function useProjectSchema(projectId?: number) {
 	const { t } = useI18n()
@@ -20,7 +21,7 @@ export function useProjectSchema(projectId?: number) {
 				const exist = await countWhere(projects, condition)
 				return exist <= 0
 			}, t('validation.projects.name.not_unique')),
-		description: z.string().normalize().max(1000, t('validation.projects.description.max')).optional(),
+		description: descriptionField(),
 		git_url: z.url(t('validation.projects.git_url.invalid')).normalize(),
 		local_working_dir: z.string(t('validation.projects.local_working_dir.required')).normalize(),
 		remote_working_dir: z.string(t('validation.projects.remote_working_dir.required')).normalize(),

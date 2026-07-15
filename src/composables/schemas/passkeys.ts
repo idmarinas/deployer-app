@@ -3,6 +3,7 @@ import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
 import { countWhere } from '@/composables/queries/shared'
 import { passkeys } from '@/lib/schema'
+import { descriptionField } from './description'
 
 export function usePasskeySchema(passkeyId?: number) {
   const { t } = useI18n()
@@ -20,7 +21,7 @@ export function usePasskeySchema(passkeyId?: number) {
         return exist <= 0
       }, t('validation.passkeys.name.not_unique')
       ),
-    description: z.string().normalize().max(1000, t('validation.passkeys.description.max')).optional(),
+    description: descriptionField(),
     key_type: z.enum(["rsa", "ed25519", "ecdsa"], t('validation.passkeys.key_type.required')),
     key_content: z.string(t('validation.passkeys.key_content.required')).normalize().nonempty(t('validation.passkeys.key_content.required')),
     passphrase: z.string().normalize().optional(),

@@ -3,6 +3,7 @@ import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
 import { countWhere } from '@/composables/queries/shared'
 import { hosts } from '@/lib/schema'
+import { descriptionField } from './description'
 
 export function useHostSchema(hostId?: number) {
   const { t } = useI18n()
@@ -20,7 +21,7 @@ export function useHostSchema(hostId?: number) {
         return exist <= 0
       }, t('validation.hosts.name.not_unique')
       ),
-    description: z.string().max(1000, t('validation.hosts.description.max')).optional(),
+    description: descriptionField(),
     host: z.xor([z.ipv4(t('validation.hosts.host.ipv4')), z.ipv6(t('validation.hosts.host.ipv6'))], t('validation.hosts.host.required')),
     port: z.number().min(0, t('validation.hosts.port.min')).max(65535, t('validation.hosts.port.max')),
     username: z.string().nonempty(t('validation.hosts.username.required')),

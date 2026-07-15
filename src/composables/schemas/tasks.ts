@@ -3,6 +3,7 @@ import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
 import { countWhere } from '@/composables/queries/shared'
 import { tasks } from '@/lib/schema'
+import { descriptionField } from './description'
 
 export function useTaskSchema(taskId?: number) {
   const { t } = useI18n()
@@ -20,7 +21,7 @@ export function useTaskSchema(taskId?: number) {
         return exist <= 0
       }, t('validation.tasks.name.not_unique')
       ),
-    description: z.string().max(1000, t('validation.tasks.description.max')).optional(),
+    description: descriptionField(),
     task_type: z.enum(['command', 'upload_file', 'download_file', 'script'], t('validation.tasks.task_type.required')),
     command: z.string().max(10000, t('validation.tasks.command.max')).optional(),
     timeout: z.number().min(1, t('validation.tasks.timeout.min')).max(86400, t('validation.tasks.timeout.max')),

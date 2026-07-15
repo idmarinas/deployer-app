@@ -3,6 +3,7 @@ import { global_variables } from '@/lib/schema'
 import { and, eq, ne } from 'drizzle-orm'
 import { useI18n } from 'vue-i18n'
 import * as z from 'zod'
+import { descriptionField } from './description'
 
 export function useGlobalVariableSchema(globalVariableId?: number) {
 	const { t } = useI18n()
@@ -29,7 +30,7 @@ export function useGlobalVariableSchema(globalVariableId?: number) {
 			}, t('validation.global_variables.slug.not_unique')),
 		value: z.string(t('validation.global_variables.value.required')),
 		is_secret: z.boolean().default(false),
-		description: z.string().max(1000, t('validation.global_variables.description.max')).optional(),
+		description: descriptionField(),
 		data_type: z.enum(['string', 'integer', 'boolean', 'json']).default('string' as const),
 	})
 
