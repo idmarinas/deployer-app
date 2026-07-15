@@ -1,6 +1,7 @@
 <script lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BLANK_VALUE } from '@/utils/crypto'
 </script>
 <script setup lang="ts">
 const { t } = useI18n()
@@ -95,7 +96,7 @@ const text = computed(() => {
 		<div
 			v-if="
 				((props.checkStrength && props.optional && password.length > 0) || !props.optional) &&
-				!password.startsWith('ENC:')
+				!password.startsWith('ENC:') && password !== BLANK_VALUE
 			"
 			class="mt-1 space-y-2"
 		>
