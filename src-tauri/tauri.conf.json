@@ -35,7 +35,7 @@
 		"windows": {
 			"nsis": {
 				"installerIcon": "icons/installer.ico",
-				"uninstallerIcon": "icons/uninstaller.icon",
+				"uninstallerIcon": "icons/uninstaller.ico",
 				"installMode": "both",
 				"languages": ["Spanish", "English"]
 			}
