@@ -16,7 +16,7 @@ const { t, locale } = useI18n()
 </script>
 
 <template>
-	<UCard :description="description">
+	<UCard>
 		<template #title>
 			<div class="flex items-center justify-between">
 				<div class="flex gap-3 items-center">
@@ -29,6 +29,10 @@ const { t, locale } = useI18n()
 					<slot name="title-right" />
 				</div>
 			</div>
+		</template>
+
+		<template #description>
+			<DescriptionViewer :value="description" />
 		</template>
 
 		<template #default>
