@@ -49,18 +49,7 @@ const { projectSchema: schema } = useProjectSchema()
 		:help="t('form.projects.description.help')"
 		:hint="t('form.shared.hint.optional')"
 	>
-		<UTextarea
-			v-model="state.description"
-			class="w-full"
-			:ui="{ trailing: 'pointer-events-none' }"
-			:maxlength="schema.shape.description.def.innerType.maxLength || undefined"
-		>
-			<template #trailing>
-				<div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
-					{{ state.description?.length ?? 0 }}/{{ schema.shape.description.def.innerType.maxLength || 0 }}
-				</div>
-			</template>
-		</UTextarea>
+		<DescriptionEditor v-model="state.description" />
 	</UFormField>
 
 	<UFormField

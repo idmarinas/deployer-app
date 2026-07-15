@@ -42,13 +42,7 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
       :help="t('form.hosts.description.help')"
       :hint="t('form.shared.hint.optional')"
     >
-      <UTextarea v-model="state.description" class="w-full" :ui="{ trailing: 'pointer-events-none' }" maxlength="1000">
-        <template #trailing>
-          <div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
-            {{ state.description?.length ?? 0 }}/1000
-          </div>
-        </template>
-      </UTextarea>
+      <DescriptionEditor v-model="state.description" />
     </UFormField>
 
     <UFormField name="host" :label="t('form.hosts.host.label')" :help="t('form.hosts.host.help')" required>

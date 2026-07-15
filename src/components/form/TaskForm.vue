@@ -67,13 +67,7 @@ const needsCommand = computed(() => state.value.task_type === 'command' || state
 		:hint="t('form.shared.hint.optional')"
 		class="md:col-span-2"
 	>
-		<UTextarea v-model="state.description" class="w-full" :ui="{ trailing: 'pointer-events-none' }" maxlength="1000">
-			<template #trailing>
-				<div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
-					{{ state.description?.length ?? 0 }}/1000
-				</div>
-			</template>
-		</UTextarea>
+		<DescriptionEditor v-model="state.description" />
 	</UFormField>
 
 	<UFormField
