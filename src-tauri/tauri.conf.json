@@ -34,7 +34,8 @@
 		"targets": "nsis",
 		"windows": {
 			"nsis": {
-				"installerIcon": "icons/icon.ico",
+				"installerIcon": "icons/installer.ico",
+				"uninstallerIcon": "icons/uninstaller.icon",
 				"installMode": "both",
 				"languages": ["Spanish", "English"]
 			}
