@@ -419,10 +419,7 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 				<UButton :icon="ICONS.actions.delete" color="error" variant="ghost" @click="removeTask(projectTask)" />
 			</div>
 
-			<div
-				v-if="expandedId === projectTask.id"
-				class="flex flex-col gap-4 border-t border-accented pt-3"
-			>
+			<div v-if="expandedId === projectTask.id" class="flex flex-col gap-4 border-t border-accented pt-3">
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<UFormField :label="t('pages.projects.tasks.settings.on_failure.label')">
 						<USelect
@@ -437,7 +434,10 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 						/>
 					</UFormField>
 
-					<UFormField :label="t('pages.projects.tasks.settings.condition.label')" :hint="t('form.shared.hint.optional')">
+					<UFormField
+						:label="t('pages.projects.tasks.settings.condition.label')"
+						:hint="t('form.shared.hint.optional')"
+					>
 						<UInput
 							v-model="draftSettings.condition"
 							class="w-full font-mono"
@@ -489,10 +489,7 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 				<div v-if="isFileTransferTask(projectTask)" class="flex flex-col gap-3 border-t border-accented pt-3">
 					<div class="flex items-center justify-between">
 						<h4 class="text-sm font-medium">{{ t('pages.projects.tasks.settings.file_transfer.title') }}</h4>
-						<UCheckbox
-							v-model="draftSettings.overwrite"
-							:label="t('pages.projects.tasks.settings.overwrite.label')"
-						/>
+						<UCheckbox v-model="draftSettings.overwrite" :label="t('pages.projects.tasks.settings.overwrite.label')" />
 					</div>
 
 					<div
@@ -589,7 +586,11 @@ async function saveSettings(projectTask: ProjectTaskRow) {
 						color="neutral"
 						variant="soft"
 						:disabled="isSavingSettings"
-						@click="() => { expandedId = null }"
+						@click="
+							() => {
+								expandedId = null
+							}
+						"
 					>
 						{{ t('common.actions.cancel') }}
 					</UButton>
