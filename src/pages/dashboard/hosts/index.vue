@@ -12,7 +12,7 @@ import { useToast } from '@nuxt/ui/composables'
 
 import { invoke } from '@tauri-apps/api/core'
 
-import ViewValue from '@/components/ViewValue.vue'
+import ValueViewer from '@/components/view/ValueViewer.vue'
 </script>
 
 <script setup lang="ts">
@@ -42,17 +42,17 @@ const columns: TableColumn<Host>[] = [
 	{
 		accessorKey: 'name',
 		header: t('pages.hosts.table.columns.name'),
-		cell: ({ row }) => h(ViewValue, { value: row.getValue('name') as string }),
+		cell: ({ row }) => h(ValueViewer, { value: row.getValue('name') as string }),
 	},
 	{
 		accessorKey: 'host',
 		header: t('pages.hosts.table.columns.ip'),
-		cell: ({ row }) => h(ViewValue, { value: row.getValue('host') as string }),
+		cell: ({ row }) => h(ValueViewer, { value: row.getValue('host') as string }),
 	},
 	{
 		accessorKey: 'port',
 		header: t('pages.hosts.table.columns.port'),
-		cell: ({ row }) => h(ViewValue, { value: row.getValue('port') as number }),
+		cell: ({ row }) => h(ValueViewer, { value: row.getValue('port') as number }),
 	},
 	{
 		accessorKey: 'auth_type',
@@ -133,7 +133,7 @@ const columns: TableColumn<Host>[] = [
 						<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
 						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
 							<UIcon :name="ICONS.server.server" class="text-muted size-4" />
-							<ViewValue :value="row.original.host" :only-text="true" />
+							<ValueViewer :value="row.original.host" :only-text="true" />
 						</span>
 					</div>
 
@@ -141,7 +141,7 @@ const columns: TableColumn<Host>[] = [
 						<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
 						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
 							<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
-							<ViewValue :value="row.original.port" :only-text="true" />
+							<ValueViewer :value="row.original.port" :only-text="true" />
 						</span>
 					</div>
 
@@ -149,7 +149,7 @@ const columns: TableColumn<Host>[] = [
 						<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
 						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
 							<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
-							<ViewValue :value="row.original.username" :only-text="true" />
+							<ValueViewer :value="row.original.username" :only-text="true" />
 						</span>
 					</div>
 
