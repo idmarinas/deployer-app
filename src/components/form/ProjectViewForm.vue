@@ -1,7 +1,16 @@
 <script lang="ts">
+import type { CommandResponse } from '@/types/tauri-types'
+import type { Ref } from 'vue'
+
+import { computed, inject, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useProjectSchema } from '@/composables/schemas/projects'
+import useToaster from '@/composables/useToaster'
+import { ICONS } from '@/utils/icons'
+
+import { useQueryCache } from '@pinia/colada'
+import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -37,12 +46,11 @@ const { projectSchema: schema } = useProjectSchema(state.value.id)
 	<ViewInputField
 		v-model="state.description"
 		name="description"
-		as="textarea"
-		class="md:col-span-2"
+		as="editor"
 		:label="t('form.projects.description.label')"
 		:help="t('form.projects.description.help')"
 		:hint="t('form.shared.hint.optional')"
-		:maxlength="schema.shape.description.def.innerType.maxLength || undefined"
+		class="md:col-span-2"
 		command="crud_update_project"
 		:id="state.id"
 		:invalidate-key="['projects']"
