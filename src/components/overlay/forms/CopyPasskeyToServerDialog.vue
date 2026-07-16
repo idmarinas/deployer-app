@@ -33,6 +33,7 @@ const state = ref<Partial<ExportPublicKeyInput>>({
 })
 
 const form = useTemplateRef('form-copy-passkey')
+const onlyEnabled = ref(false)
 
 async function onSubmit(event: FormSubmitEvent<Partial<ExportPublicKeyInput>>) {
 	isLoading.value = true
@@ -75,17 +76,27 @@ async function onSubmit(event: FormSubmitEvent<Partial<ExportPublicKeyInput>>) {
 				:state="state as any"
 				:schema="passkeyToServerSchema"
 				:disabled="isLoading"
-				class="flex flex-col gap-4"
 				@submit="onSubmit"
 			>
-				<UFormField
-					name="host_id"
-					:label="t('form.passkeys.server.label')"
-					:help="t('form.passkeys.server.help')"
-					required
-				>
-					<SelectHost v-model="state.host_id" class="w-full" />
-				</UFormField>
+				<div class="flex items-center gap-2">
+					<UFormField
+						name="host_id"
+						:label="t('form.passkeys.server.label')"
+						:help="t('form.passkeys.server.help')"
+						class="flex-1"
+						required
+					>
+						<SelectHost v-model="state.host_id" class="w-full" :only-enabled="onlyEnabled" />
+					</UFormField>
+					<USwitch
+						name="only_enabled"
+						v-model="onlyEnabled"
+						checked-icon="i-tabler-check"
+						unchecked-icon="i-tabler-x"
+						class="w-1/3"
+						:label="t('form.passkeys.server.only_enabled.label')"
+					/>
+				</div>
 			</UForm>
 		</template>
 		<template #footer>
