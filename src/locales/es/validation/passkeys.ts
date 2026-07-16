@@ -20,4 +20,7 @@ export default {
 	description: {
 		max: 'La descripción debe tener menos de 1000 caracteres.',
 	},
+	host: {
+		required: 'Debes seleccionar un servidor',
+	},
 } satisfies LocaleMessageValue
