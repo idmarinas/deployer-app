@@ -2,7 +2,7 @@
 import type { SelectMenuItem } from '@nuxt/ui'
 
 import { useHostSelectPopulate } from '@/loaders/hosts'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 type SelectMenuItemExtends = SelectMenuItem & {
@@ -13,6 +13,7 @@ type SelectMenuItemExtends = SelectMenuItem & {
 </script>
 
 <script setup lang="ts">
+const state = defineModel<number | undefined>()
 const props = withDefaults(
 	defineProps<{
 		ignoreHosts?: Set<number>
@@ -36,10 +37,20 @@ const availableItems = computed(() => {
 
 	return itemsFiltered
 })
+
+watch(
+	() => props.onlyEnabled,
+	() => {
+		if (!availableItems.value.find(item => item.id === state.value)) {
+			state.value = undefined
+		}
+	},
+)
 </script>
 
 <template>
 	<USelectMenu
+		v-model="state"
 		clear
 		value-key="id"
 		:items="availableItems as SelectMenuItemExtends[]"
@@ -57,7 +68,7 @@ const availableItems = computed(() => {
 			/>
 		</template>
 		<template #item-trailing="{ item }">
-			<UBadge color="neutral" variant="outline" icon="i-tabler-user" size="sm">{{ item.username }}</UBadge>
+			<UBadge color="neutral" variant="outline" icon="i-tabler-user" size="sm" :label="item.username" />
 		</template>
 	</USelectMenu>
 </template>
