@@ -40,11 +40,11 @@ export default {
 			'before:absolute before:bottom-0 before:left-6 before:right-6 before:h-px',
 			'before:bg-linear-to-r before:from-primary-500/40 before:via-secondary-500/40 before:to-transparent',
 			// Instrumento porthole de doble anillo
-			'after:absolute after:top-1/2 after:-translate-y-1/2 after:end-6',
-			'after:size-6 after:rounded-full',
-			'after:border-2 after:border-primary-500/25',
-			'after:bg-linear-to-br after:from-primary-500/10 after:to-secondary-500/10',
-			'after:shadow-[inset_0_0_8px_rgba(10,141,255,0.12),0_0_4px_rgba(10,141,255,0.08)]',
+			// 'after:absolute after:top-1/2 after:-translate-y-1/2 after:end-6',
+			// 'after:size-6 after:rounded-full',
+			// 'after:border-2 after:border-primary-500/25',
+			// 'after:bg-linear-to-br after:from-primary-500/10 after:to-secondary-500/10',
+			// 'after:shadow-[inset_0_0_8px_rgba(10,141,255,0.12),0_0_4px_rgba(10,141,255,0.08)]',
 		].join(' '),
 		body: 'px-6 py-5',
 		footer: [
