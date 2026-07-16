@@ -53,6 +53,9 @@ export default {
 		help: 'Huella digital de la clave privada',
 	},
 	server: {
+		only_enabled: {
+			label: 'Solo servidores habilitados',
+		},
 		label: 'Servidor',
 		help: 'Servidor donde se instalará o eliminará la clave de acceso',
 	},
