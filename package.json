@@ -8,6 +8,7 @@
 		"build": "vue-tsc --noEmit && vite build",
 		"preview": "vite preview",
 		"tauri": "tauri",
+		"tauri:dev": "tauri dev -c src-tauri/tauri.conf.json -c src-tauri/tauri.dev.conf.json",
 		"i18n:types": "bun scripts/generate-i18n-schema.ts",
 		"dev:db:introspect": "drizzle-kit introspect --dialect=sqlite --out=./drizzle --url=./drizzle/dev.sqlite --introspect-casing=preserve",
 		"dev:db:create": "sqlx database drop -y -D=sqlite:./drizzle/dev.sqlite && sqlx database create -D=sqlite:./drizzle/dev.sqlite",
