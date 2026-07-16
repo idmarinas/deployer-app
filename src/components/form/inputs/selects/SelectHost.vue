@@ -13,16 +13,28 @@ type SelectMenuItemExtends = SelectMenuItem & {
 </script>
 
 <script setup lang="ts">
-const props = defineProps<{
-	ignoreHosts?: Set<number>
-}>()
+const props = withDefaults(
+	defineProps<{
+		ignoreHosts?: Set<number>
+		onlyEnabled?: boolean
+	}>(),
+	{
+		onlyEnabled: false,
+	},
+)
 
 const { t } = useI18n()
 const { data: items, isLoading } = useHostSelectPopulate()
 
 const availableItems = computed(() => {
 	const ignoreHosts = props.ignoreHosts || new Set([])
-	return ((items.value ?? []) as any[]).filter(host => !ignoreHosts.has(host.id))
+	const itemsFiltered = ((items.value ?? []) as any[]).filter(host => !ignoreHosts.has(host.id))
+
+	if (props.onlyEnabled) {
+		return itemsFiltered.filter(host => host.enabled === true)
+	}
+
+	return itemsFiltered
 })
 </script>
 
