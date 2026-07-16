@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n'
 
 import { SchemaSanitizer } from '@/utils/Tiptap/SchemaSanitizerExtension'
 
-const { t } = useI18n()
+const { t, n } = useI18n()
 
 const props = withDefaults(
 	defineProps<{
@@ -19,8 +19,8 @@ const props = withDefaults(
 		jsonLimit?: number
 	}>(),
 	{
-		jsonSize: undefined,
-		jsonLimit: undefined,
+		jsonSize: 0,
+		jsonLimit: 0,
 	},
 )
 
@@ -236,7 +236,7 @@ const dropdownItems = (editor: Editor): DropdownMenuItem[][] => {
 	]) as DropdownMenuItem[][]
 }
 
-const characterLimit = 1000
+const characterLimit: number = 1000
 const tiptapExtensions = [SchemaSanitizer, CharacterCount.configure({ limit: characterLimit })]
 
 const starterKitOpts: Partial<StarterKitOptions> = {
@@ -267,16 +267,16 @@ const appendToBody = typeof document !== 'undefined' ? () => document.body : und
 		>
 			<span class="flex items-center gap-1.5">
 				<UIcon name="i-tabler-pencil" class="opacity-75" />
-				<span>{{ editor.storage.characterCount.characters() }} / {{ characterLimit }}</span>
+				<span> {{ n(editor.storage.characterCount.characters(), 'n') }} / {{ n(characterLimit, 'n') }} </span>
 				<span class="opacity-75">{{ t('components.editor.counter.chars') }}</span>
 				<span class="text-border">·</span>
-				<span>{{ editor.storage.characterCount.words() }}</span>
+				<span>{{ n(editor.storage.characterCount.words(), 'n') }}</span>
 				<span class="opacity-75">{{ t('components.editor.counter.words') }}</span>
 			</span>
 			<span v-if="jsonLimit" class="flex items-center gap-1.5">
 				<UIcon name="i-tabler-braces" class="opacity-75" />
 				<span :class="jsonSize! > jsonLimit ? 'text-error' : ''">
-					{{ jsonSize?.toLocaleString() }} / {{ jsonLimit.toLocaleString() }}
+					{{ n(jsonSize, 'n') }} / {{ n(jsonLimit, 'n') }}
 				</span>
 				<span class="opacity-75">{{ t('components.editor.counter.json') }}</span>
 			</span>
