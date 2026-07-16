@@ -15,7 +15,7 @@ export interface HostSelectItem {
 export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
 	key: to => ['hosts', `host-${to.params.id}`],
 	query: async to =>
-		db
+		await db
 			.select()
 			.from(hosts)
 			.where(eq(hosts.id, Number.parseInt(to.params.id)))
