@@ -1,18 +1,16 @@
 <script lang="ts">
-import type { CommandResponse, Passkey } from '@/types/tauri-types'
+import type { Passkey } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, ref, resolveComponent, useTemplateRef } from 'vue'
+import { h, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 
-import { useConfirmDialog, useCopyPasskeyToServer } from '@/composables/useDialog'
+import { useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
-import { ICONS, getModuleIcon } from '@/utils/icons'
 import { isEncryptedValue } from '@/utils/crypto'
-import { useToast } from '@nuxt/ui/composables'
+import { ICONS } from '@/utils/icons'
 
-import { invoke } from '@tauri-apps/api/core'
+import { useTableColumns } from '@/composables/useTableColumns'
 </script>
 
 <script setup lang="ts">
@@ -22,31 +20,17 @@ definePage({
 
 const UButton = resolveComponent('UButton')
 
-const confirmDialog = useConfirmDialog()
-const toast = useToast()
-const router = useRouter()
 const { t, locale } = useI18n()
-const { data: passkeys, isLoading, reload } = usePasskeysListAll()
+const { data: items, isLoading, status, reload } = usePasskeysListAll()
+
+const { tableColumnExpand, tableColumnActions } = useTableColumns<Passkey>({
+	moduleName: 'passkeys',
+	singularName: 'passkey',
+	onReload: reload,
+})
 
 const columns: TableColumn<Passkey>[] = [
-	{
-		id: 'expand',
-		enableHiding: false,
-		meta: {
-			class: {
-				td: 'w-5 whitespace-normal',
-			},
-		},
-		cell: ({ row }) =>
-			h(UButton, {
-				color: 'neutral',
-				variant: 'ghost',
-				icon: row.getIsExpanded() ? ICONS.actions.viewOff : ICONS.actions.view,
-				square: true,
-				'aria-label': 'Expand',
-				onClick: () => row.toggleExpanded(),
-			}),
-	},
+	tableColumnExpand,
 	{
 		accessorKey: 'id',
 		header: '#',
@@ -63,19 +47,12 @@ const columns: TableColumn<Passkey>[] = [
 		accessorKey: 'fingerprint',
 		header: t('pages.passkeys.table.columns.fingerprint'),
 	},
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) =>
-			h('div', { class: 'flex gap-2 justify-end' }, [
-				h(UButton, {
-					icon: ICONS.actions.edit,
-					color: 'info',
-					variant: 'ghost',
-					async onClick() {
-						router.push({ name: 'dashboard-passkeys-id-edit', params: { id: row.original.id as number } })
-					},
-				}),
+	tableColumnActions(row => [
+		{
+			id: 'copy-to-server',
+			action: 'before',
+			targetId: 'delete',
+			vnode: () =>
 				h(UButton, {
 					icon: ICONS.server.serverCog,
 					variant: 'ghost',
@@ -85,179 +62,78 @@ const columns: TableColumn<Passkey>[] = [
 						await copyToServer({ passkey: row.original })
 					},
 				}),
-				h(UButton, {
-					icon: ICONS.actions.delete,
-					color: 'error',
-					variant: 'ghost',
-					async onClick() {
-						const result = await confirmDialog({
-							type: 'cancel_delete',
-							title: t('common.delete.label'),
-							description: t('common.delete.description', { name: row.original.name }),
-						})
-
-						if (result) {
-							const notice = toast.add({
-								title: t('pages.passkeys.toast.delete.loading.title'),
-								description: t('pages.passkeys.toast.delete.loading.description', { name: row.original.name }),
-								color: 'warning',
-								icon: ICONS.actions.delete,
-								duration: 0,
-							})
-
-							const result = await invoke<CommandResponse>('crud_delete_passkey', { id: row.original.id })
-
-							if (result.success) {
-								toast.update(notice.id, {
-									title: t('pages.passkeys.toast.delete.success.title'),
-									description: t('pages.passkeys.toast.delete.success.description', { name: row.original.name }),
-									color: 'success',
-									icon: ICONS.status.check,
-									duration: undefined,
-								})
-							} else {
-								toast.update(notice.id, {
-									title: t('pages.passkeys.toast.delete.error.title'),
-									description: t('pages.passkeys.toast.delete.error.description', { name: row.original.name }),
-									color: 'error',
-									icon: ICONS.status.cross,
-									duration: undefined,
-								})
-							}
-
-							await reload()
-						}
-					},
-				}),
-			]),
-	},
+		},
+	]),
 ]
-
-const table = useTemplateRef('table')
-const columnVisibility = ref({})
-const globalFilter = ref('')
-const expanded = ref({})
 </script>
 
 <template>
-	<div v-if="isLoading || passkeys.length > 0" class="flex flex-col flex-1 w-full">
-		<div class="flex py-3.5 border-b border-accented justify-between">
-			<GlobalFilter v-model="globalFilter" />
-			<ToogleColumVisibility :table-api="table?.tableApi" />
-		</div>
-		<UTable
-			v-model:expanded="expanded"
-			v-model:column-visibility="columnVisibility"
-			v-model:global-filter="globalFilter"
-			ref="table"
-			sticky
-			:loading="isLoading"
-			:data="passkeys"
-			:columns="columns"
-			:ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }"
-		>
-			<template #expanded="{ row }">
-				<UCard>
-					<template #title>
-						<div class="flex items-center justify-between">
-							<div class="flex gap-3 items-center">
-								<span class="text-lg font-semibold">{{ row.original.name }}</span>
-								<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ row.original.id }} </UBadge>
-							</div>
-							<UBadge color="info" variant="subtle" :icon="ICONS.auth.key">
-								{{ row.original.key_type?.toLocaleUpperCase() }}
-							</UBadge>
-						</div>
-					</template>
-
-					<template #description>
-						<DescriptionViewer :value="row.original.description" />
-					</template>
-
-					<template #default>
-						<!-- Grid de detalles -->
-						<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.passkey.key_content') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-									<span class="font-mono text-xs">
-										••••••••••••••••••••••••••••<br />
-										••••••••••••••••••••••••••••
-									</span>
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1 col-span-2">
-								<span class="text-xs text-muted font-medium">{{ t('entity.passkey.fingerprint') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.auth.fingerprint" class="text-muted size-4" />
-									{{ row.original.fingerprint }}
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">
-									{{ t('entity.passkey.passphrase') }}
-								</span>
-								<span class="text-sm text-foreground flex items-center gap-2">
-									<template v-if="row.original.passphrase && isEncryptedValue(row.original.passphrase)">
-										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-										<UBadge variant="subtle" size="sm" color="success" class="font-mono">
-											<span class="font-mono text-xs">•••••••••••</span>
-										</UBadge>
-									</template>
-									<template v-else>
-										<UIcon :name="ICONS.auth.lockOpen" class="text-muted size-4" />
-										<UBadge variant="subtle" size="sm" color="warning" class="font-mono">
-											<span class="font-mono text-xs">{{ t('common.empty') }}</span>
-										</UBadge>
-									</template>
-								</span>
-							</div>
-						</div>
-					</template>
-
-					<template #footer>
-						<div class="flex gap-4 items-center justify-between text-xs text-muted">
-							<span class="flex gap-1.5 items-center">
-								<UIcon :name="ICONS.calendar.createdAt" class="size-4" />
-								<strong>{{ t('entity.host.created_at') }}:</strong>
-								{{
-									new Date(row.original.created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
-								}}
+	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+		<template #expanded="{ row }">
+			<ItemCard
+				:id="row.original.id"
+				:name="row.original.name"
+				:description="row.original.description"
+				:updated_at="row.original.updated_at"
+				:created_at="row.original.created_at"
+			>
+				<template #title-right>
+					<UBadge
+						color="info"
+						variant="subtle"
+						:icon="ICONS.auth.key"
+						:label="row.original.key_type.toLocaleUpperCase(locale)"
+					/>
+				</template>
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">{{ t('entity.passkey.key_content') }}</span>
+						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+							<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+							<span class="font-mono text-xs">
+								••••••••••••••••••••••••••••<br />
+								••••••••••••••••••••••••••••
 							</span>
-							<span class="flex gap-1.5 items-center">
-								<UIcon :name="ICONS.calendar.updatedAt" class="size-4" />
-								<strong>{{ t('entity.host.updated_at') }}:</strong>
-								{{
-									new Date(row.original.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
-								}}
-							</span>
-						</div>
-					</template>
-				</UCard>
-			</template>
-		</UTable>
-	</div>
-	<UEmpty
-		v-else
-		:icon="getModuleIcon('passkeys')"
-		:title="t('pages.passkeys.table.empty.title')"
-		:description="t('pages.passkeys.table.empty.description')"
-		:actions="[
-			{
-				icon: ICONS.actions.add,
-				label: t('components.navigation.add.passkey.label'),
-				to: { name: 'dashboard-passkeys-add' },
-			},
-			{
-				icon: ICONS.actions.refresh,
-				label: t('common.actions.refresh'),
-				color: 'neutral',
-				variant: 'soft',
-				onClick: () => reload(),
-			},
-		]"
+						</span>
+					</div>
+
+					<div class="flex flex-col gap-1 col-span-2">
+						<span class="text-xs text-muted font-medium">{{ t('entity.passkey.fingerprint') }}</span>
+						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+							<UIcon :name="ICONS.auth.fingerprint" class="text-muted size-4" />
+							{{ row.original.fingerprint }}
+						</span>
+					</div>
+
+					<div class="flex flex-col gap-1">
+						<span class="text-xs text-muted font-medium">
+							{{ t('entity.passkey.passphrase') }}
+						</span>
+						<span class="text-sm text-foreground flex items-center gap-2">
+							<template v-if="row.original.passphrase && isEncryptedValue(row.original.passphrase)">
+								<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+								<UBadge variant="subtle" size="sm" color="success" class="font-mono">
+									<span class="font-mono text-xs">•••••••••••</span>
+								</UBadge>
+							</template>
+							<template v-else>
+								<UIcon :name="ICONS.auth.lockOpen" class="text-muted size-4" />
+								<UBadge variant="subtle" size="sm" color="warning" class="font-mono">
+									<span class="font-mono text-xs">{{ t('common.empty.label') }}</span>
+								</UBadge>
+							</template>
+						</span>
+					</div>
+				</div>
+			</ItemCard>
+		</template>
+	</ListTable>
+	<EmptyList
+		v-else-if="!isLoading && status === 'success' && items.length === 0"
+		module="passkeys"
+		:reload-fn="reload"
+		:add-route="{ name: 'dashboard-passkeys-add' }"
 	/>
+	<Loading v-else-if="isLoading" what="passkey" plural />
+	<GeneralError v-else />
 </template>
