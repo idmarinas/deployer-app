@@ -9,6 +9,7 @@ export default {
 			project: 'proyecto | proyectos',
 			host: 'servidor | servidores',
 			task: 'tarea | tareas',
+			passkey: 'clave de acceso | claves de acceso',
 			global_variable: 'variable global | variables globales',
 		},
 		text: (ctx: MessageContext) => {
