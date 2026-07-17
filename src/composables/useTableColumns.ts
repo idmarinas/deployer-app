@@ -2,6 +2,7 @@ import type { CommandResponse } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h } from 'vue'
+import { useQueryCache } from '@pinia/colada'
 
 import { useConfirmDialog } from '@/composables/useDialog'
 import { invoke } from '@tauri-apps/api/core'
@@ -26,6 +27,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const confirmDialog = useConfirmDialog()
+  const queryCache = useQueryCache()
 
 	const expandColumn: TableColumn<T> = {
 		id: 'expand',
@@ -43,7 +45,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 
 	const enabledColumn: TableColumn<T> = {
 		accessorKey: 'enabled',
-		header: t('pages.hosts.table.columns.enabled'),
+		header: t('common.status.enabled'),
 		cell({ row }) {
 			const label = row.getValue('enabled') ? t('common.status.active') : t('common.status.inactive')
 			const color = row.getValue('enabled') ? 'success' : 'error'
@@ -94,8 +96,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 
 								if (result) {
 									const notice = toaster.warning(
-										t(`pages.${options.moduleName}.toast.delete.loading.title`),
-										t(`pages.${options.moduleName}.toast.delete.loading.description`, {
+										t(`notifications.${options.moduleName}.delete.loading.title`),
+										t(`notifications.${options.moduleName}.delete.loading.description`, {
 											name: (row.original as any).name,
 										}),
 										{
@@ -112,8 +114,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 										toaster.toast.update(
 											notice.id,
 											toaster.success(
-												t(`pages.${options.moduleName}.toast.delete.success.title`),
-												t(`pages.${options.moduleName}.toast.delete.success.description`, {
+												t(`notifications.${options.moduleName}.delete.success.title`),
+												t(`notifications.${options.moduleName}.delete.success.description`, {
 													name: (row.original as any).name,
 												}),
 												{
@@ -126,8 +128,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 										toaster.toast.update(
 											notice.id,
 											toaster.error(
-												t(`pages.${options.moduleName}.toast.delete.error.title`),
-												t(`pages.${options.moduleName}.toast.delete.error.description`, {
+												t(`notifications.${options.moduleName}.delete.error.title`),
+												t(`notifications.${options.moduleName}.delete.error.description`, {
 													name: (row.original as any).name,
 												}),
 												{
@@ -137,6 +139,10 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 											),
 										)
 									}
+
+                  if (options.moduleName) {
+                    await queryCache.invalidateQueries({key: [options.moduleName]})
+                  }
 
 									if (options.onReload) {
 										await options.onReload()
