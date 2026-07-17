@@ -9,6 +9,11 @@ const localeItems = Object.values(uiLocales).filter(lang => availableLocales.inc
 </script>
 
 <template>
-  <ULocaleSelect :model-value="locale" :locales="localeItems" :loading="isLoading"
-    @update:model-value="setLocale($event)" :disabled="isLoading" />
+	<ULocaleSelect
+		:model-value="locale"
+		:locales="localeItems"
+		:loading="isLoading"
+		@update:model-value="setLocale($event)"
+		:disabled="isLoading"
+	/>
 </template>
