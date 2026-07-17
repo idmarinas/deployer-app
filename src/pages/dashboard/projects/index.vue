@@ -1,19 +1,16 @@
 <script lang="ts">
-import type { CommandResponse, Project } from '@/types/tauri-types'
+import type { Project } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, ref, resolveComponent, useTemplateRef } from 'vue'
+import { h, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useConfirmDialog } from '@/composables/useDialog'
 import { useProjectsList } from '@/loaders/projects'
-import { useToast } from '@nuxt/ui/composables'
 import { useRouter } from 'vue-router'
 
 import { useFrameworkBadge } from '@/composables/useFrameworkBadge'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { ICONS } from '@/utils/icons'
-import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -24,12 +21,14 @@ definePage({
 const UButton = resolveComponent('UButton')
 
 const { t } = useI18n()
-const toast = useToast()
-const confirmDialog = useConfirmDialog()
 const router = useRouter()
-const { tableColumnEnabled } = useTableColumns<Project>()
+const { data: items, isLoading, status, reload } = useProjectsList()
 
-const { data: projects, isLoading, status, reload } = useProjectsList()
+const { tableColumnEnabled, tableColumnActions } = useTableColumns<Project>({
+	moduleName: 'projects',
+	singularName: 'project',
+	onReload: reload,
+})
 
 const columns: TableColumn<Project>[] = [
 	{
@@ -45,11 +44,12 @@ const columns: TableColumn<Project>[] = [
 		header: t('pages.projects.table.columns.git_url'),
 	},
 	tableColumnEnabled,
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) =>
-			h('div', { class: 'flex gap-2 justify-end' }, [
+	tableColumnActions(row => [
+		{
+			id: 'view',
+			action: 'before',
+			targetId: 'delete',
+			vnode: () =>
 				h(UButton, {
 					color: 'neutral',
 					variant: 'ghost',
@@ -58,125 +58,65 @@ const columns: TableColumn<Project>[] = [
 						router.push({ name: 'dashboard-projects-id', params: { id: row.original.id } })
 					},
 				}),
-				h(UButton, {
-					icon: ICONS.actions.delete,
-					color: 'error',
-					variant: 'ghost',
-					async onClick() {
-						const result = await confirmDialog({
-							type: 'cancel_delete',
-							title: t('common.delete.label'),
-							description: t('common.delete.description', { name: row.original.name }),
-						})
-
-						if (result) {
-							const notice = toast.add({
-								title: t('pages.projects.toast.delete.loading.title'),
-								description: t('pages.projects.toast.delete.loading.description', { name: row.original.name }),
-								color: 'warning',
-								icon: ICONS.actions.delete,
-								duration: 0,
-							})
-
-							const result = await invoke<CommandResponse>('crud_delete_project', { id: row.original.id })
-
-							if (result.success) {
-								toast.update(notice.id, {
-									title: t('pages.projects.toast.delete.success.title'),
-									description: t('pages.projects.toast.delete.success.description', { name: row.original.name }),
-									color: 'success',
-									icon: ICONS.status.check,
-									duration: undefined,
-								})
-							} else {
-								toast.update(notice.id, {
-									title: t('pages.projects.toast.delete.error.title'),
-									description: t('pages.projects.toast.delete.error.description', { name: row.original.name }),
-									color: 'error',
-									icon: ICONS.status.cross,
-									duration: undefined,
-								})
-							}
-
-							await reload()
-						}
-					},
-				}),
-			]),
-	},
+		},
+		{
+			id: 'no-edit',
+			action: 'remove',
+			targetId: 'edit',
+		},
+	]),
 ]
-
-const table = useTemplateRef('table')
-const columnVisibility = ref({})
-const globalFilter = ref('')
-const expanded = ref({})
 </script>
 
 <template>
-	<div v-if="!isLoading && status === 'success' && projects.length > 0" class="flex flex-col flex-1 w-full">
-		<div class="flex py-3.5 border-b border-accented justify-between">
-			<GlobalFilter v-model="globalFilter" />
-			<ToogleColumVisibility :table-api="table?.tableApi" />
-		</div>
+	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+		<template #expanded="{ row }">
+			<ItemCard
+				:id="row.original.id"
+				:name="row.original.name"
+				:description="row.original.description || undefined"
+				:created_at="row.original.created_at"
+				:updated_at="row.original.updated_at"
+				:enabled="row.original.enabled"
+			>
+				<template #title-right>
+					<component :is="useFrameworkBadge(row.original.framework, { size: undefined })" />
+				</template>
 
-		<UTable
-			ref="table"
-			sticky
-			v-model:expanded="expanded"
-			v-model:global-filter="globalFilter"
-			v-model:column-visibility="columnVisibility"
-			:data="projects"
-			:columns="columns"
-			:ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }"
-		>
-			<template #expanded="{ row }">
-				<ItemCard
-					:id="row.original.id"
-					:name="row.original.name"
-					:description="row.original.description || undefined"
-					:created_at="row.original.created_at"
-					:updated_at="row.original.updated_at"
-					:enabled="row.original.enabled"
-				>
-					<template #title-right>
-						<component :is="useFrameworkBadge(row.original.framework, { size: undefined })" />
-					</template>
-
-					<template #default>
-						<!-- Grid de detalles -->
-						<div class="grid grid-cols-1 gap-6">
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.project.git_url') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.framework.git" class="text-muted size-4" />
-									{{ row.original.git_url }}
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.project.local_working_dir') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.server.deviceDesktop" class="text-muted size-4" />
-									{{ row.original.local_working_dir }}
-								</span>
-							</div>
-
-							<div class="flex flex-col gap-1">
-								<span class="text-xs text-muted font-medium">{{ t('entity.project.remote_working_dir') }}</span>
-								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-									<UIcon :name="ICONS.server.server" class="text-muted size-4" />
-									{{ row.original.remote_working_dir }}
-								</span>
-							</div>
+				<template #default>
+					<!-- Grid de detalles -->
+					<div class="grid grid-cols-1 gap-6">
+						<div class="flex flex-col gap-1">
+							<span class="text-xs text-muted font-medium">{{ t('entity.project.git_url') }}</span>
+							<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+								<UIcon :name="ICONS.framework.git" class="text-muted size-4" />
+								{{ row.original.git_url }}
+							</span>
 						</div>
-					</template>
-				</ItemCard>
-			</template>
-		</UTable>
-	</div>
+
+						<div class="flex flex-col gap-1">
+							<span class="text-xs text-muted font-medium">{{ t('entity.project.local_working_dir') }}</span>
+							<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+								<UIcon :name="ICONS.server.deviceDesktop" class="text-muted size-4" />
+								{{ row.original.local_working_dir }}
+							</span>
+						</div>
+
+						<div class="flex flex-col gap-1">
+							<span class="text-xs text-muted font-medium">{{ t('entity.project.remote_working_dir') }}</span>
+							<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+								<UIcon :name="ICONS.server.server" class="text-muted size-4" />
+								{{ row.original.remote_working_dir }}
+							</span>
+						</div>
+					</div>
+				</template>
+			</ItemCard>
+		</template>
+	</ListTable>
 	<Loading v-else-if="isLoading" what="project" plural />
 	<EmptyList
-		v-else-if="!isLoading && status === 'success' && projects.length === 0"
+		v-else-if="!isLoading && status === 'success' && items.length === 0"
 		module="projects"
 		:add-route="{ name: 'dashboard-projects-add' }"
 		:reload-fn="reload"
