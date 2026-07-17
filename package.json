@@ -17,8 +17,8 @@
 		"dev:db:generate": "bun run dev:db:create && bun run dev:db:migrate && bun run dev:db:introspect && bun run dev:db:copy-schema"
 	},
 	"dependencies": {
-		"@nuxt/ui": "^4.9.0",
-		"@pinia/colada": "^1.4.0",
+		"@nuxt/ui": "^4.10.0",
+		"@pinia/colada": "^1.4.2",
 		"@tauri-apps/api": "^2.11.1",
 		"@tauri-apps/plugin-dialog": "~2.7.1",
 		"@tauri-apps/plugin-opener": "^2.5.4",
@@ -29,9 +29,9 @@
 		"drizzle-orm": "^0.45.2",
 		"slugify": "^1.6.9",
 		"sortablejs": "^1.15.7",
-		"vue": "^3.5.39",
+		"vue": "^3.5.40",
 		"vue-i18n": "^11.4.6",
-		"vue-router": "^5.1.0",
+		"vue-router": "^5.2.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
@@ -42,9 +42,9 @@
 		"@vitejs/plugin-vue": "^6.0.8",
 		"drizzle-kit": "^0.31.10",
 		"prettier-plugin-organize-imports": "^4.3.0",
-		"tailwindcss": "^4.3.2",
+		"tailwindcss": "^4.3.3",
 		"typescript": "~6.0.3",
-		"vite": "^8.1.4",
+		"vite": "^8.1.5",
 		"vite-plugin-vue-devtools": "^8.1.5",
 		"vue-tsc": "^3.3.7"
 	}
