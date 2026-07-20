@@ -15,6 +15,8 @@
 12. Estudiar rollback automático de despliegues: cuando una task falla con on_failure=stop, el runner se detiene pero no revierte las tasks anteriores que ya se ejecutaron con éxito.
 13. Valorar soporte futuro para BD remota (PostgreSQL/MariaDB) en vez de SQLite local, permitiendo uso multi-instancia/colaborativo.
 14. Posibilidad de actualizar las claves de encriptación. (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
+15. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
+	- También se puede dividir entre lo que es la configuración y mera información.
 
 ```ts
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
