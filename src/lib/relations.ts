@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { relations } from "drizzle-orm/relations";
-import { passkeys, hosts, project_hosts, projects, project_variables, framework_configs, tasks, project_tasks, task_dependencies, deployments, deployment_executions, deployment_rollbacks } from "./schema";
+import { passkeys, hosts, project_hosts, projects, project_variables, framework_configs, tasks, project_tasks, task_dependencies, deployments, deployment_executions, deployment_rollbacks, docker_composes } from "./schema";
 
 export const hostsRelations = relations(hosts, ({one, many}) => ({
 	passkey: one(passkeys, {
@@ -9,6 +9,7 @@ export const hostsRelations = relations(hosts, ({one, many}) => ({
 	}),
 	project_hosts: many(project_hosts),
 	deployment_executions: many(deployment_executions),
+	docker_composes: many(docker_composes),
 }));
 
 export const passkeysRelations = relations(passkeys, ({many}) => ({
@@ -122,5 +123,12 @@ export const deployment_rollbacksRelations = relations(deployment_rollbacks, ({o
 		fields: [deployment_rollbacks.deployment_id],
 		references: [deployments.id],
 		relationName: "deployment_rollbacks_deployment_id_deployments_id"
+	}),
+}));
+
+export const docker_composesRelations = relations(docker_composes, ({one}) => ({
+	host: one(hosts, {
+		fields: [docker_composes.host_id],
+		references: [hosts.id]
 	}),
 }));

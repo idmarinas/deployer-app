@@ -299,3 +299,23 @@ export const deployment_rollbacks = sqliteTable("deployment_rollbacks", {
 	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
 ]);
 
+export const docker_composes = sqliteTable("docker_composes", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	name: text().notNull(),
+	description: text(),
+	compose_content: text().default("").notNull(),
+	host_id: integer().notNull().references(() => hosts.id, { onDelete: "cascade" } ),
+	remote_path: text().default("/opt/docker-compose/docker-compose.yml").notNull(),
+	enabled: integer({ mode: 'boolean' }).notNull().default(true),
+	created_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("docker_composes_idx_enabled").on(table.enabled),
+	index("docker_composes_idx_host_id").on(table.host_id),
+	index("docker_composes_idx_name").on(table.name),
+	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
+	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
+	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
+]);
+
