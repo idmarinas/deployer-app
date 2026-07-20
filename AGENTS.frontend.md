@@ -336,6 +336,7 @@ Los tipos del backend se generan automáticamente mediante `ts-rs` en `tauri-typ
 - Se usa `vue-i18n`.
 - Los mensajes de error del backend llegan como claves i18n con parámetros `HashMap<String, String>`.
 - El backend es agnóstico al idioma — nunca devuelve strings en español directamente.
+- **Todas las claves de traducción deben estar en `snake_case`** (ej. `database.migrationSuccess`, `hosts.name.not_unique`). No usar `camelCase` ni `kebab-case` en claves de mensajes.
 
 ### Carga de mensajes (`src/locales/_loader.ts`)
 
