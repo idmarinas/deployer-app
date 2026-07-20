@@ -29,7 +29,7 @@
 // Tipos
 // ---------------------------------------------------------------------------
 
-export type ModuleName = 'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks'
+export type ModuleName = 'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks' | 'docker_composes'
 
 export type ModuleIconVariant = 'plural' | 'singular' | 'off'
 
@@ -81,6 +81,11 @@ export const MODULE_ICONS: Record<ModuleName, ModuleIconSet> = {
 		plural: 'i-tabler-list-check',
 		singular: 'i-tabler-list-details',
 		off: 'i-tabler-x',
+	},
+	docker_composes: {
+		plural: 'i-tabler-brand-docker',
+		singular: 'i-tabler-brand-docker',
+		off: 'i-tabler-brand-docker',
 	},
 }
 
