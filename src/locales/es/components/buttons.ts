@@ -39,4 +39,10 @@ export default {
 			description: 'Añadir una nueva variable global que se puede reutilizar.',
 		},
 	},
+	docker_composes: {
+		add: {
+			label: 'Añadir docker compose',
+			description: 'Añadir un nuevo docker compose para gestionar contenedores.',
+		},
+	},
 } satisfies LocaleMessageValue

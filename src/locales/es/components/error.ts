@@ -30,6 +30,10 @@ export default {
 			statusMessage: 'Despliegue no encontrado',
 			message: 'No se ha podido encontrar el despiegue que estabas buscando.',
 		},
+		docker_compose: {
+			statusMessage: 'Docker compose no encontrado',
+			message: 'No se ha podido encontrar el docker compose que estabas buscando.',
+		},
 	},
 	unknown: {
 		statusMessage: 'Error desconocido',

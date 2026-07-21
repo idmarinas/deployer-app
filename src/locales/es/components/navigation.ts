@@ -22,6 +22,10 @@ export default {
 			label: 'Añadir variable global',
 			description: 'Añadir una nueva variable global que se puede reutilizar.',
 		},
+		docker_compose: {
+			label: 'Añadir docker compose',
+			description: 'Añadir un nuevo docker compose para gestionar contenedores.',
+		},
 	},
 	toolbar: {
 		list: 'Lista',

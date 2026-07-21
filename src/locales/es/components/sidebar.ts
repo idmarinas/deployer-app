@@ -8,6 +8,7 @@ export default {
 	variables: 'Variables',
 	tasks: 'Tareas',
 	deployments: 'Despliegues',
+	docker_composes: 'Docker Compose',
 	search: {
 		actions: 'Acciones',
 	},
