@@ -25,7 +25,7 @@ export default {
 			'before:opacity-0 before:transition-opacity before:duration-200',
 			'data-[state=checked]:shadow-[0_0_8px_rgba(10,141,255,0.6),0_1px_3px_rgba(0,0,0,0.2)]',
 			'data-[state=checked]:before:opacity-100',
-			'data-[state=checked]:before:text-primary-400',
+			'data-[state=checked]:before:text-primary-50',
 		].join(' '),
 		label: 'text-sm text-(--ui-text-toned) cursor-pointer select-none has-disabled:cursor-not-allowed has-disabled:opacity-60',
 		description: 'text-xs text-dimmed font-pcb',
