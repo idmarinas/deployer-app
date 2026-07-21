@@ -2,4 +2,43 @@ import type { LocaleMessageValue } from 'vue-i18n'
 
 export default {
 	title: 'Ajustes de la aplicación',
+	sections: {
+		appearance: {
+			label: 'Apariencia',
+			description: 'Personaliza la apariencia de la aplicación',
+			theme: 'Tema',
+			language: 'Idioma',
+		},
+		database: {
+			label: 'Base de datos',
+			description: 'Información y gestión de la base de datos',
+			path: 'Ruta del archivo',
+			not_configured: 'No configurada',
+			change: 'Cambiar...',
+			change_success: 'Base de datos actualizada correctamente. La aplicación se recargará.',
+			change_error: 'Error al cambiar la base de datos',
+			total_size: 'Tamaño total',
+			tables: 'Tablas',
+			rows: 'filas',
+			pages: 'Páginas',
+			page_size: 'Tamaño de página',
+			other_tables: 'Otras tablas',
+			migrations: 'Migraciones',
+			migrations_applied: '1 aplicada | {count} aplicadas',
+			migration_version: 'v{version}',
+			migration_success: 'Correcta',
+			migration_failed: 'Fallida',
+		},
+		information: {
+			label: 'Información',
+			version: 'Versión',
+			identifier: 'Identificador',
+			description: 'Descripción',
+			copyright: 'Copyright',
+			publisher: 'Publicador',
+			tauri_version: 'Versión de Tauri',
+			platform: 'Plataforma',
+			architecture: 'Arquitectura',
+		},
+	},
 } satisfies LocaleMessageValue
