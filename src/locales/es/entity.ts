@@ -57,4 +57,13 @@ export default {
 		enabled: 'Habilitada',
 		is_global: 'Global',
 	},
+	docker_compose: {
+		label: 'Docker Compose',
+		name: 'Nombre',
+		description: 'Descripción',
+		compose_content: 'Contenido',
+		host_id: 'Servidor',
+		remote_path: 'Ruta remota',
+		enabled: 'Habilitado',
+	},
 } satisfies LocaleMessageValue
