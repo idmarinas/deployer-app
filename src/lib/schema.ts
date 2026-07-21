@@ -304,7 +304,7 @@ export const docker_composes = sqliteTable("docker_composes", {
 	name: text().notNull(),
 	description: text(),
 	compose_content: text().default("").notNull(),
-	host_id: integer().notNull().references(() => hosts.id, { onDelete: "cascade" } ),
+	host_id: integer().references(() => hosts.id, { onDelete: "cascade" } ),
 	remote_path: text().default("/opt/docker-compose/docker-compose.yml").notNull(),
 	enabled: integer({ mode: 'boolean' }).notNull().default(true),
 	created_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
@@ -314,6 +314,39 @@ export const docker_composes = sqliteTable("docker_composes", {
 	index("docker_composes_idx_enabled").on(table.enabled),
 	index("docker_composes_idx_host_id").on(table.host_id),
 	index("docker_composes_idx_name").on(table.name),
+	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
+	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
+	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
+]);
+
+export const docker_hub_search_cache = sqliteTable("docker_hub_search_cache", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	query: text().notNull(),
+	namespace: text().notNull(),
+	repository: text().notNull(),
+	description: text(),
+	pull_count: integer().default(0).notNull(),
+	star_count: integer().default(0).notNull(),
+	fetched_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("docker_hub_search_cache_idx_query").on(table.query),
+	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
+	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
+	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),
+]);
+
+export const docker_hub_tags_cache = sqliteTable("docker_hub_tags_cache", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	namespace: text().notNull(),
+	repository: text().notNull(),
+	tag_name: text().notNull(),
+	last_updated: text(),
+	full_size: integer().default(0).notNull(),
+	fetched_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("docker_hub_tags_cache_idx_ns_repo").on(table.namespace, table.repository),
 	check("passkeys_chk_key_type", sql`key_type IN ('rsa', 'ed25519', 'ecdsa'`),
 	check("hosts_chk_auth_type", sql`auth_type IN ('password', 'key'`),
 	check("deployments_chk_status", sql`status IN ('pending', 'running', 'success', 'failed'`),

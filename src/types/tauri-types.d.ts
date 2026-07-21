@@ -16,7 +16,7 @@ export type CreateDeploymentInput = { project_id: number, version: string, tag: 
 
 export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back_to_deployment_id: number, reason: string | null, triggered_by: string | null, };
 
-export type CreateDockerComposeInput = { name: string, description: string | null, compose_content: string, host_id: number, remote_path: string | null, enabled: boolean | null, };
+export type CreateDockerComposeInput = { name: string, description: string | null, compose_content: string, host_id: number | null, remote_path: string | null, enabled: boolean | null, };
 
 export type CreateFrameworkConfigInput = { project_id: number, framework: Framework, key: string, value: string, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
 
@@ -57,11 +57,19 @@ export type DeploymentRollback = { id: number, deployment_id: number, rolled_bac
 
 export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
-export type DockerCompose = { id: number, name: string, description: string | null, compose_content: string, host_id: number, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
+export type DockerCompose = { id: number, name: string, description: string | null, compose_content: string, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
 export type DockerComposeService = { name: string, status: string, health: string | null, };
+
+export type DockerHubSearchCache = { id: number, query: string, namespace: string, repository: string, description: string | null, pull_count: number, star_count: number, fetched_at: string, };
+
+export type DockerHubTagsCache = { id: number, namespace: string, repository: string, tag_name: string, last_updated: string | null, full_size: number, fetched_at: string, };
+
+export type DockerHubImageResult = { name: string, description: string, pull_count: number, star_count: number, official: boolean, };
+
+export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, };
 
 export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
