@@ -17,6 +17,8 @@
 		"dev:db:generate": "bun run dev:db:create && bun run dev:db:migrate && bun run dev:db:introspect && bun run dev:db:copy-schema"
 	},
 	"dependencies": {
+		"@iconify-json/cib": "^1.2.3",
+		"@iconify-json/tabler": "^1.2.37",
 		"@nuxt/ui": "^4.10.0",
 		"@pinia/colada": "^1.4.2",
 		"@tauri-apps/api": "^2.11.1",

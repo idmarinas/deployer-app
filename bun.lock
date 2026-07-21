@@ -5,20 +5,22 @@
     "": {
       "name": "deployer-app",
       "dependencies": {
+        "@iconify-json/cib": "^1.2.3",
+        "@iconify-json/tabler": "^1.2.37",
         "@nuxt/ui": "^4.10.0",
         "@pinia/colada": "^1.4.2",
         "@tauri-apps/api": "^2.11.1",
-        "@tauri-apps/plugin-dialog": "~2.7.1",
+        "@tauri-apps/plugin-dialog": "~2.7.2",
         "@tauri-apps/plugin-opener": "^2.5.4",
         "@tauri-apps/plugin-positioner": "~2.3.3",
         "@tauri-apps/plugin-sql": "~2.4.0",
-        "@tauri-apps/plugin-store": "~2.4.3",
+        "@tauri-apps/plugin-store": "~2.4.4",
         "@tauri-apps/plugin-window-state": "~2.4.1",
         "drizzle-orm": "^0.45.2",
         "slugify": "^1.6.9",
         "sortablejs": "^1.15.7",
         "vue": "^3.5.40",
-        "vue-i18n": "^11.4.6",
+        "vue-i18n": "^11.4.7",
         "vue-router": "^5.2.0",
         "yaml": "^2.9.0",
         "zod": "^4.4.3",
@@ -177,6 +179,10 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
     "@floating-ui/vue": ["@floating-ui/vue@1.1.11", "", { "dependencies": { "@floating-ui/dom": "^1.7.6", "@floating-ui/utils": "^0.2.11", "vue-demi": ">=0.13.0" } }, "sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw=="],
+
+    "@iconify-json/cib": ["@iconify-json/cib@1.2.3", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-MMvRXVTHt82z3bYN19JDAjv/X8OBNC/1B3I334SV/1nyhdPeeyvJZVoI1cGuNqYznBjMnWxKPtIhhiVgGQ1CzQ=="],
+
+    "@iconify-json/tabler": ["@iconify-json/tabler@1.2.37", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-tXc0jGhrxec6eTKxMI9We/r3cEItyU5dG8ngDOEKsL36a6+/xwk4sR7PIZROVajzxmvyUBsn659adDIfcswiUw=="],
 
     "@iconify/collections": ["@iconify/collections@1.0.704", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-rwIk2LK/wsfUY5TG3NSncyVuUzLVcYdqehtWEXatkqXpsvcFwvJLePx0CcXv4iaRhL+Y+Lo5uzPRkzVqDvf6Gg=="],
 
