@@ -207,6 +207,7 @@ export const ICONS = {
 		paypal: 'i-tabler-brand-paypal',
 		github: 'i-tabler-brand-github',
 		linkedin: 'i-tabler-brand-linkedin',
+    bitly: 'i-cib-bitly',
 	},
 
 	/** Misceláneos (galería de diseño, pestañas, etc.) */
