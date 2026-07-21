@@ -91,6 +91,11 @@ export default defineConfig(async () => ({
 				dashboardNavbar: theme.dashboardNavbar,
 				dashboardSidebar: theme.dashboardSidebar,
 			},
+			icon: {
+				clientBundle: {
+					scan: true
+				}
+			}
 		}),
 		vueDevTools(),
 	],
@@ -143,7 +148,7 @@ export default defineConfig(async () => ({
 			: undefined,
 		watch: {
 			// 3. tell Vite to ignore watching `src-tauri`
-			ignored: ['**/src-tauri/**'],
+			ignored: ['**/src-tauri/**', '*.sqlite', '*.sqlite*'],
 		},
 	},
 }))
