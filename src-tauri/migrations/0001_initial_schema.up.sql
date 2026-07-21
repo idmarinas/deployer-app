@@ -380,6 +380,26 @@ CREATE INDEX deployment_rollbacks_idx_deployment_id ON deployment_rollbacks (dep
 CREATE INDEX deployment_rollbacks_idx_status ON deployment_rollbacks (status);
 
 -- ============================================================================
+-- DOCKER COMPOSES
+-- ============================================================================
+
+CREATE TABLE docker_composes (
+    id INTEGER CONSTRAINT docker_composes_pk PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CONSTRAINT docker_composes_uq_name UNIQUE,
+    description TEXT,
+    compose_content TEXT NOT NULL DEFAULT '',
+    host_id INTEGER CONSTRAINT docker_composes_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
+    remote_path TEXT NOT NULL DEFAULT '/opt/docker-compose/docker-compose.yml',
+    enabled BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX docker_composes_idx_name ON docker_composes (name);
+CREATE INDEX docker_composes_idx_host_id ON docker_composes (host_id);
+CREATE INDEX docker_composes_idx_enabled ON docker_composes (enabled);
+
+-- ============================================================================
 -- TRIGGERS: actualización automática de `updated_at`
 -- Solo en las tablas que tienen esa columna. El `WHEN NEW.updated_at = OLD.updated_at`
 -- evita una recursión infinita: la propia UPDATE del trigger dispara el trigger de
@@ -457,3 +477,45 @@ WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE project_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
+
+CREATE TRIGGER docker_composes_trg_set_updated_at
+AFTER UPDATE ON docker_composes
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE docker_composes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- ============================================================================
+-- DOCKER HUB CACHE - Búsquedas de imágenes
+-- ============================================================================
+
+CREATE TABLE docker_hub_search_cache (
+    id INTEGER CONSTRAINT docker_hub_search_cache_pk PRIMARY KEY AUTOINCREMENT,
+    query TEXT NOT NULL,
+    namespace TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    description TEXT,
+    pull_count INTEGER NOT NULL DEFAULT 0,
+    star_count INTEGER NOT NULL DEFAULT 0,
+    fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT docker_hub_search_cache_uq_query_ns_repo UNIQUE (query, namespace, repository)
+);
+
+CREATE INDEX docker_hub_search_cache_idx_query ON docker_hub_search_cache (query);
+
+-- ============================================================================
+-- DOCKER HUB CACHE - Tags de imágenes
+-- ============================================================================
+
+CREATE TABLE docker_hub_tags_cache (
+    id INTEGER CONSTRAINT docker_hub_tags_cache_pk PRIMARY KEY AUTOINCREMENT,
+    namespace TEXT NOT NULL,
+    repository TEXT NOT NULL,
+    tag_name TEXT NOT NULL,
+    last_updated TEXT,
+    full_size INTEGER NOT NULL DEFAULT 0,
+    fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT docker_hub_tags_cache_uq_ns_repo_tag UNIQUE (namespace, repository, tag_name)
+);
+
+CREATE INDEX docker_hub_tags_cache_idx_ns_repo ON docker_hub_tags_cache (namespace, repository);
