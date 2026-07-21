@@ -17,19 +17,9 @@
 14. Posibilidad de actualizar las claves de encriptación. (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
 15. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
 	- También se puede dividir entre lo que es la configuración y mera información.
-
-```ts
-import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
-// TODO: Eliminar este botón de prueba
-items.push({
-	label: 'Restablecer ventana',
-	color: 'warning',
-	variant: 'outline',
-	icon: 'i-tabler-window',
-	onClick: async () => {
-		const win = getCurrentWindow()
-		await win.setSize(new LogicalSize(1400, 900))
-		await win.center()
-	},
-})
-```
+16. Comprobar si Nuxt Icon puede descargar los iconos para que no se descarguen desde internet.
+17. Hosts (Servidores) agregar el ponder manejar ciertos aspectos del servidor:
+	- Comprobar si hay actualizaciones
+		- Actualizar el paquete seleccionado o varios.
+	- Comprobar el espacio en disco usado (¿poder liberar espacio?)
+	- Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
