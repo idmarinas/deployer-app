@@ -135,6 +135,7 @@ use super::deployments::rollbacks::types::{CreateDeploymentRollbackInput, Update
 use super::projects::hosts::types::{CreateProjectHostInput, UpdateProjectHostInput};
 use super::projects::tasks::types::{CreateProjectTaskInput, UpdateProjectTaskInput};
 use super::tasks::dependencies::types::{CreateTaskDependencyInput, UpdateTaskDependencyInput};
+use super::docker_composes::types::{CreateDockerComposeInput, UpdateDockerComposeInput};
 
 impl ValidateDescription for CreatePasskeyInput {
     fn validate_create(&self) -> Result<(), String> { validate_description_opt(&self.description) }
@@ -191,3 +192,10 @@ impl ValidateDescription for CreateProjectTaskInput {}
 impl ValidateDescription for UpdateProjectTaskInput {}
 impl ValidateDescription for CreateTaskDependencyInput {}
 impl ValidateDescription for UpdateTaskDependencyInput {}
+
+impl ValidateDescription for CreateDockerComposeInput {
+    fn validate_create(&self) -> Result<(), String> { validate_description_opt(&self.description) }
+}
+impl ValidateDescription for UpdateDockerComposeInput {
+    fn validate_update(&self) -> Result<(), String> { validate_description_patch(&self.description) }
+}

@@ -3,8 +3,8 @@ mod crypto;
 mod db;
 
 use commands::database::{
-    create_database_file, get_database_url, initialize_database, query_raw,
-    validate_sqlite_database,
+    create_database_file, get_app_info, get_database_info, get_database_url,
+    get_migrations_info, initialize_database, query_raw, validate_sqlite_database,
 };
 use commands::deployer_settings::{
     delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
@@ -20,6 +20,15 @@ use commands::deployments::{
     crud_get_deployment_rollback, crud_list_deployment_rollbacks,
     crud_update_deployment_rollback,
     run_deployment,
+};
+use commands::docker_composes::{
+    crud_create_docker_compose, crud_delete_docker_compose, crud_get_docker_compose,
+    crud_list_docker_composes, crud_update_docker_compose,
+    docker_compose_down, docker_compose_logs, docker_compose_ps, docker_compose_pull,
+    docker_compose_restart, docker_compose_up,
+};
+use commands::docker_hub_cache::{
+    get_docker_hub_search_cache, get_docker_hub_tags_cache, cleanup_docker_hub_cache,
 };
 use commands::global_variables::{
     crud_create_global_variable, crud_delete_global_variable, crud_get_global_variable,
@@ -156,6 +165,23 @@ pub fn run() {
             crud_get_global_variable,
             crud_list_global_variables,
             crud_delete_global_variable,
+            // Docker Composes - CRUD
+            crud_create_docker_compose,
+            crud_update_docker_compose,
+            crud_get_docker_compose,
+            crud_list_docker_composes,
+            crud_delete_docker_compose,
+            // Docker Composes - Operaciones
+            docker_compose_up,
+            docker_compose_down,
+            docker_compose_ps,
+            docker_compose_logs,
+            docker_compose_restart,
+            docker_compose_pull,
+            // Docker Hub Cache
+            get_docker_hub_search_cache,
+            get_docker_hub_tags_cache,
+            cleanup_docker_hub_cache,
             // Tasks - CRUD
             crud_create_task,
             crud_update_task,
@@ -178,6 +204,9 @@ pub fn run() {
             create_database_file,
             validate_sqlite_database,
             query_raw,
+            get_app_info,
+            get_database_info,
+            get_migrations_info,
             // Migrations
             run_migrations,
             has_pending_migrations,

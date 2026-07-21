@@ -2,6 +2,8 @@ pub mod database;
 pub mod deployer_settings;
 pub mod deployments;
 pub mod description;
+pub mod docker_composes;
+pub mod docker_hub_cache;
 pub mod global_variables;
 pub mod helpers;
 pub mod hosts;
