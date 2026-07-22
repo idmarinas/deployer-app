@@ -1,5 +1,7 @@
 -- ============================================================================
 -- Migration 1: Initial Database Schema
+-- Módulos: Deployer Settings, Passkeys, Hosts, Docker Composes, Docker Hub Cache
+-- Todas las tablas de la app llevan prefijo deployer_*
 -- ============================================================================
 
 -- ============================================================================
@@ -14,15 +16,15 @@ CREATE TABLE deployer_settings (
 );
 
 -- ============================================================================
--- PASSKEYS (SSH Keys)
+-- DEPLOYER PASSKEYS (SSH Keys)
 -- ============================================================================
 
-CREATE TABLE passkeys (
-    id INTEGER CONSTRAINT passkeys_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT passkeys_uq_name UNIQUE,
+CREATE TABLE deployer_passkeys (
+    id INTEGER CONSTRAINT deployer_passkeys_pk PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CONSTRAINT deployer_passkeys_uq_name UNIQUE,
     key_content TEXT NOT NULL,
     passphrase TEXT,
-    key_type TEXT CONSTRAINT passkeys_chk_key_type CHECK (key_type IN ('rsa', 'ed25519', 'ecdsa')),
+    key_type TEXT CONSTRAINT deployer_passkeys_chk_key_type CHECK (key_type IN ('rsa', 'ed25519', 'ecdsa')),
     fingerprint TEXT,
     description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -30,382 +32,52 @@ CREATE TABLE passkeys (
 );
 
 -- ============================================================================
--- HOSTS
+-- DEPLOYER HOSTS
 -- ============================================================================
 
-CREATE TABLE hosts (
-    id INTEGER CONSTRAINT hosts_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT hosts_uq_name UNIQUE,
+CREATE TABLE deployer_hosts (
+    id INTEGER CONSTRAINT deployer_hosts_pk PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CONSTRAINT deployer_hosts_uq_name UNIQUE,
     host TEXT NOT NULL,
     port INTEGER NOT NULL DEFAULT 22,
     username TEXT NOT NULL DEFAULT '',
-    auth_type TEXT NOT NULL CONSTRAINT hosts_chk_auth_type CHECK (auth_type IN ('password', 'key')),
+    auth_type TEXT NOT NULL CONSTRAINT deployer_hosts_chk_auth_type CHECK (auth_type IN ('password', 'key')),
     password TEXT,
-    key_id INTEGER CONSTRAINT hosts_fk_key_id REFERENCES passkeys (id) ON DELETE SET NULL,
+    key_id INTEGER CONSTRAINT deployer_hosts_fk_key_id REFERENCES deployer_passkeys (id) ON DELETE SET NULL,
     description TEXT,
     enabled BOOLEAN NOT NULL DEFAULT 1,
+    distribution TEXT,
+    system_info TEXT NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX hosts_idx_enabled ON hosts (enabled);
+CREATE INDEX deployer_hosts_idx_enabled ON deployer_hosts (enabled);
 
-CREATE INDEX hosts_idx_key_id ON hosts (key_id);
-
--- ============================================================================
--- GLOBAL VARIABLES
--- ============================================================================
-
-CREATE TABLE global_variables (
-    id INTEGER CONSTRAINT global_variables_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT global_variables_uq_name UNIQUE,
-    slug TEXT NOT NULL DEFAULT '',
-    value TEXT NOT NULL,
-    is_secret BOOLEAN NOT NULL DEFAULT 0,
-    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT global_variables_chk_data_type CHECK (
-        data_type IN (
-            'string',
-            'integer',
-            'boolean',
-            'json'
-        )
-    ),
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX global_variables_idx_name ON global_variables (name);
-CREATE UNIQUE INDEX global_variables_uq_slug ON global_variables (slug);
-CREATE INDEX global_variables_idx_slug ON global_variables (slug);
+CREATE INDEX deployer_hosts_idx_key_id ON deployer_hosts (key_id);
 
 -- ============================================================================
--- PROJECTS
+-- DEPLOYER DOCKER COMPOSES
 -- ============================================================================
 
-CREATE TABLE projects (
-    id INTEGER CONSTRAINT projects_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT projects_uq_name UNIQUE,
-    description TEXT,
-    git_url TEXT,
-    framework TEXT NOT NULL CONSTRAINT projects_chk_framework CHECK (
-        framework IN (
-            'symfony',
-            'laravel',
-            'nextjs',
-            'vuejs',
-            'generic'
-        )
-    ),
-    -- Ruta base del proyecto en el PC local (se usa como working_dir por defecto para tareas locales)
-    local_working_dir TEXT,
-    -- Ruta base del proyecto en el servidor remoto (se usa como working_dir por defecto para tareas remotas)
-    remote_working_dir TEXT,
-    enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX projects_idx_name ON projects (name);
-
-CREATE INDEX projects_idx_enabled ON projects (enabled);
-
--- ============================================================================
--- PROJECT_HOSTS (N:N Relation)
--- ============================================================================
-
-CREATE TABLE project_hosts (
-    id INTEGER CONSTRAINT project_hosts_pk PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL CONSTRAINT project_hosts_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
-    host_id INTEGER NOT NULL CONSTRAINT project_hosts_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
-    deploy_order INTEGER,
-    enabled BOOLEAN NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT project_hosts_uq_project_id_host_id UNIQUE (project_id, host_id)
-);
-
-CREATE INDEX project_hosts_idx_project_id ON project_hosts (project_id);
-
-CREATE INDEX project_hosts_idx_host_id ON project_hosts (host_id);
-
-CREATE INDEX project_hosts_idx_deploy_order ON project_hosts (deploy_order);
-
--- ============================================================================
--- PROJECT_VARIABLES
--- ============================================================================
-
-CREATE TABLE project_variables (
-    id INTEGER CONSTRAINT project_variables_pk PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL CONSTRAINT project_variables_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL DEFAULT '',
-    value TEXT NOT NULL,
-    is_secret BOOLEAN NOT NULL DEFAULT 0,
-    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT project_variables_chk_data_type CHECK (
-        data_type IN (
-            'string',
-            'integer',
-            'boolean',
-            'json'
-        )
-    ),
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT project_variables_uq_project_id_name UNIQUE (project_id, name)
-);
-
-CREATE INDEX project_variables_idx_project_id ON project_variables (project_id);
-
-CREATE INDEX project_variables_idx_name ON project_variables (name);
-CREATE UNIQUE INDEX project_variables_uq_project_id_slug ON project_variables (project_id, slug);
-CREATE INDEX project_variables_idx_slug ON project_variables (slug);
-
--- ============================================================================
--- FRAMEWORK_CONFIGS (Generic, flexible configuration)
--- ============================================================================
-
-CREATE TABLE framework_configs (
-    id INTEGER CONSTRAINT framework_configs_pk PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL CONSTRAINT framework_configs_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
-    framework TEXT NOT NULL,
-    key TEXT NOT NULL,
-    value TEXT NOT NULL,
-    is_secret BOOLEAN NOT NULL DEFAULT 0,
-    data_type TEXT NOT NULL DEFAULT 'string' CONSTRAINT framework_configs_chk_data_type CHECK (
-        data_type IN (
-            'string',
-            'integer',
-            'boolean',
-            'json'
-        )
-    ),
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT framework_configs_uq_project_id_framework_key UNIQUE (project_id, framework, key)
-);
-
-CREATE INDEX framework_configs_idx_project_id ON framework_configs (project_id);
-
-CREATE INDEX framework_configs_idx_framework ON framework_configs (framework);
-
-CREATE INDEX framework_configs_idx_key ON framework_configs (key);
-
--- ============================================================================
--- TASKS
--- Plantillas de tarea globales y reutilizables.
--- working_dir eliminado: el directorio de trabajo se gestiona en project_tasks
--- (heredado del project si la task no lo sobreescribe).
--- retry_delay: segundos de espera entre reintentos (hereda project_tasks si NULL allí).
--- ============================================================================
-
-CREATE TABLE tasks (
-    id INTEGER CONSTRAINT tasks_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT tasks_uq_name UNIQUE,
-    description TEXT,
-    type TEXT NOT NULL CONSTRAINT tasks_chk_type CHECK (
-        type IN (
-            'command',
-            'upload_file',
-            'download_file',
-            'script'
-        )
-    ),
-    command TEXT,
-    timeout INTEGER NOT NULL DEFAULT 300,
-    retry_count INTEGER NOT NULL DEFAULT 0,
-    retry_delay INTEGER NOT NULL DEFAULT 5,
-    enabled BOOLEAN NOT NULL DEFAULT 1,
-    is_global BOOLEAN NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX tasks_idx_name ON tasks (name);
-
-CREATE INDEX tasks_idx_enabled ON tasks (enabled);
-
-CREATE INDEX tasks_idx_is_global ON tasks (is_global);
-
--- ============================================================================
--- PROJECT_TASKS (N:N Relation)
--- Personalización de una task base para un proyecto concreto.
--- config: JSON serializado con la configuración específica del TaskType
---   (ej. UploadFileConfig { src, dest } para upload_file / download_file).
--- local_working_dir: sobreescribe el del proyecto para esta task (nullable).
--- remote_working_dir: sobreescribe el del proyecto para esta task (nullable).
--- retry_count: sobreescribe el de la task base (nullable → hereda tasks.retry_count).
--- retry_delay: sobreescribe el de la task base (nullable → hereda tasks.retry_delay).
--- ============================================================================
-
-CREATE TABLE project_tasks (
-    id INTEGER CONSTRAINT project_tasks_pk PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL CONSTRAINT project_tasks_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
-    task_id INTEGER NOT NULL CONSTRAINT project_tasks_fk_task_id REFERENCES tasks (id) ON DELETE CASCADE,
-    order_execution INTEGER NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT 1,
-    condition TEXT,
-    on_failure TEXT NOT NULL DEFAULT 'stop' CONSTRAINT project_tasks_chk_on_failure CHECK (
-        on_failure IN ('stop', 'continue', 'retry')
-    ),
-    config TEXT,
-    local_working_dir TEXT,
-    remote_working_dir TEXT,
-    retry_count INTEGER,
-    retry_delay INTEGER,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT project_tasks_uq_project_id_task_id_order UNIQUE (project_id, task_id, order_execution)
-);
-
-CREATE INDEX project_tasks_idx_project_id ON project_tasks (project_id);
-
-CREATE INDEX project_tasks_idx_task_id ON project_tasks (task_id);
-
-CREATE INDEX project_tasks_idx_order_execution ON project_tasks (order_execution);
-
--- ============================================================================
--- TASK_DEPENDENCIES
--- ============================================================================
-
-CREATE TABLE task_dependencies (
-    id INTEGER CONSTRAINT task_dependencies_pk PRIMARY KEY AUTOINCREMENT,
-    task_id INTEGER NOT NULL CONSTRAINT task_dependencies_fk_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
-    depends_on_task_id INTEGER NOT NULL CONSTRAINT task_dependencies_fk_depends_on_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
-    dependency_type TEXT NOT NULL DEFAULT 'success' CONSTRAINT task_dependencies_chk_dependency_type CHECK (
-        dependency_type IN (
-            'success',
-            'failure',
-            'always'
-        )
-    ),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT task_dependencies_uq_task_id_depends_on_task_id UNIQUE (task_id, depends_on_task_id)
-);
-
-CREATE INDEX task_dependencies_idx_task_id ON task_dependencies (task_id);
-
-CREATE INDEX task_dependencies_idx_depends_on_task_id ON task_dependencies (depends_on_task_id);
-
--- ============================================================================
--- DEPLOYMENTS
--- ============================================================================
-
-CREATE TABLE deployments (
-    id INTEGER CONSTRAINT deployments_pk PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL CONSTRAINT deployments_fk_project_id REFERENCES projects (id) ON DELETE CASCADE,
-    version TEXT NOT NULL,
-    tag TEXT NOT NULL,
-    build INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployments_chk_status CHECK (status IN ('pending', 'running', 'success', 'failed')),
-    started_at TIMESTAMP,
-    finished_at TIMESTAMP,
-    duration_seconds INTEGER,
-    triggered_by TEXT,
-    notes TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX deployments_idx_project_id ON deployments (project_id);
-
-CREATE INDEX deployments_idx_status ON deployments (status);
-
-CREATE INDEX deployments_idx_version ON deployments (version);
-
-CREATE INDEX deployments_idx_created_at ON deployments (created_at);
-
--- ============================================================================
--- DEPLOYMENT_EXECUTIONS
--- ============================================================================
-
-CREATE TABLE deployment_executions (
-    id INTEGER CONSTRAINT deployment_executions_pk PRIMARY KEY AUTOINCREMENT,
-    deployment_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
-    host_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
-    task_id INTEGER NOT NULL CONSTRAINT deployment_executions_fk_task_id REFERENCES project_tasks (id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployment_executions_chk_status CHECK (
-        status IN (
-            'pending',
-            'running',
-            'success',
-            'failed',
-            'skipped'
-        )
-    ),
-    exit_code INTEGER,
-    output TEXT,
-    error_message TEXT,
-    started_at TIMESTAMP,
-    finished_at TIMESTAMP,
-    duration_seconds INTEGER,
-    retry_attempt INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX deployment_executions_idx_deployment_id ON deployment_executions (deployment_id);
-
-CREATE INDEX deployment_executions_idx_host_id ON deployment_executions (host_id);
-
-CREATE INDEX deployment_executions_idx_task_id ON deployment_executions (task_id);
-
-CREATE INDEX deployment_executions_idx_status ON deployment_executions (status);
-
--- ============================================================================
--- DEPLOYMENT_ROLLBACKS
--- ============================================================================
-
-CREATE TABLE deployment_rollbacks (
-    id INTEGER CONSTRAINT deployment_rollbacks_pk PRIMARY KEY AUTOINCREMENT,
-    deployment_id INTEGER NOT NULL CONSTRAINT deployment_rollbacks_fk_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
-    rolled_back_to_deployment_id INTEGER NOT NULL CONSTRAINT deployment_rollbacks_fk_rolled_back_to_deployment_id REFERENCES deployments (id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'pending' CONSTRAINT deployment_rollbacks_chk_status CHECK (
-        status IN (
-            'pending',
-            'running',
-            'success',
-            'failed'
-        )
-    ),
-    reason TEXT,
-    triggered_by TEXT,
-    started_at TIMESTAMP,
-    finished_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX deployment_rollbacks_idx_deployment_id ON deployment_rollbacks (deployment_id);
-
-CREATE INDEX deployment_rollbacks_idx_status ON deployment_rollbacks (status);
-
--- ============================================================================
--- DOCKER COMPOSES
--- ============================================================================
-
-CREATE TABLE docker_composes (
-    id INTEGER CONSTRAINT docker_composes_pk PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CONSTRAINT docker_composes_uq_name UNIQUE,
+CREATE TABLE deployer_docker_composes (
+    id INTEGER CONSTRAINT deployer_docker_composes_pk PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CONSTRAINT deployer_docker_composes_uq_name UNIQUE,
     description TEXT,
     compose_content TEXT NOT NULL DEFAULT '',
-    host_id INTEGER CONSTRAINT docker_composes_fk_host_id REFERENCES hosts (id) ON DELETE CASCADE,
+    host_id INTEGER CONSTRAINT deployer_docker_composes_fk_host_id REFERENCES deployer_hosts (id) ON DELETE CASCADE,
     remote_path TEXT NOT NULL DEFAULT '/opt/docker-compose/docker-compose.yml',
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX docker_composes_idx_name ON docker_composes (name);
-CREATE INDEX docker_composes_idx_host_id ON docker_composes (host_id);
-CREATE INDEX docker_composes_idx_enabled ON docker_composes (enabled);
+CREATE INDEX deployer_docker_composes_idx_name ON deployer_docker_composes (name);
+CREATE INDEX deployer_docker_composes_idx_host_id ON deployer_docker_composes (host_id);
+CREATE INDEX deployer_docker_composes_idx_enabled ON deployer_docker_composes (enabled);
 
 -- ============================================================================
 -- TRIGGERS: actualización automática de `updated_at`
--- Solo en las tablas que tienen esa columna. El `WHEN NEW.updated_at = OLD.updated_at`
--- evita una recursión infinita: la propia UPDATE del trigger dispara el trigger de
--- nuevo, pero en esa segunda pasada `NEW.updated_at` (CURRENT_TIMESTAMP recién puesto)
--- ya no coincide con `OLD.updated_at`, así que la condición es falsa y no se repite.
--- Con esto, el código Rust (`db::update_fields`) nunca necesita tocar `updated_at`.
 -- ============================================================================
 
 CREATE TRIGGER deployer_settings_trg_set_updated_at
@@ -415,82 +87,33 @@ BEGIN
 UPDATE deployer_settings SET updated_at = CURRENT_TIMESTAMP WHERE key = OLD.key;
 END;
 
-CREATE TRIGGER passkeys_trg_set_updated_at
-AFTER UPDATE ON passkeys
+CREATE TRIGGER deployer_passkeys_trg_set_updated_at
+AFTER UPDATE ON deployer_passkeys
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-UPDATE passkeys SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+UPDATE deployer_passkeys SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
-CREATE TRIGGER hosts_trg_set_updated_at
-AFTER UPDATE ON hosts
+CREATE TRIGGER deployer_hosts_trg_set_updated_at
+AFTER UPDATE ON deployer_hosts
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-UPDATE hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+UPDATE deployer_hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
-CREATE TRIGGER global_variables_trg_set_updated_at
-AFTER UPDATE ON global_variables
+CREATE TRIGGER deployer_docker_composes_trg_set_updated_at
+AFTER UPDATE ON deployer_docker_composes
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-UPDATE global_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER projects_trg_set_updated_at
-AFTER UPDATE ON projects
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER project_hosts_trg_set_updated_at
-AFTER UPDATE ON project_hosts
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE project_hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER project_variables_trg_set_updated_at
-AFTER UPDATE ON project_variables
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE project_variables SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER framework_configs_trg_set_updated_at
-AFTER UPDATE ON framework_configs
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE framework_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER tasks_trg_set_updated_at
-AFTER UPDATE ON tasks
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER project_tasks_trg_set_updated_at
-AFTER UPDATE ON project_tasks
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE project_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER docker_composes_trg_set_updated_at
-AFTER UPDATE ON docker_composes
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE docker_composes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+UPDATE deployer_docker_composes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 -- ============================================================================
--- DOCKER HUB CACHE - Búsquedas de imágenes
+-- DEPLOYER DOCKER HUB CACHE - Búsquedas de imágenes
 -- ============================================================================
 
-CREATE TABLE docker_hub_search_cache (
-    id INTEGER CONSTRAINT docker_hub_search_cache_pk PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE deployer_docker_hub_search_cache (
+    id INTEGER CONSTRAINT deployer_docker_hub_search_cache_pk PRIMARY KEY AUTOINCREMENT,
     query TEXT NOT NULL,
     namespace TEXT NOT NULL,
     repository TEXT NOT NULL,
@@ -498,24 +121,24 @@ CREATE TABLE docker_hub_search_cache (
     pull_count INTEGER NOT NULL DEFAULT 0,
     star_count INTEGER NOT NULL DEFAULT 0,
     fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT docker_hub_search_cache_uq_query_ns_repo UNIQUE (query, namespace, repository)
+    CONSTRAINT deployer_docker_hub_search_cache_uq_query_ns_repo UNIQUE (query, namespace, repository)
 );
 
-CREATE INDEX docker_hub_search_cache_idx_query ON docker_hub_search_cache (query);
+CREATE INDEX deployer_docker_hub_search_cache_idx_query ON deployer_docker_hub_search_cache (query);
 
 -- ============================================================================
--- DOCKER HUB CACHE - Tags de imágenes
+-- DEPLOYER DOCKER HUB CACHE - Tags de imágenes
 -- ============================================================================
 
-CREATE TABLE docker_hub_tags_cache (
-    id INTEGER CONSTRAINT docker_hub_tags_cache_pk PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE deployer_docker_hub_tags_cache (
+    id INTEGER CONSTRAINT deployer_docker_hub_tags_cache_pk PRIMARY KEY AUTOINCREMENT,
     namespace TEXT NOT NULL,
     repository TEXT NOT NULL,
     tag_name TEXT NOT NULL,
     last_updated TEXT,
     full_size INTEGER NOT NULL DEFAULT 0,
     fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT docker_hub_tags_cache_uq_ns_repo_tag UNIQUE (namespace, repository, tag_name)
+    CONSTRAINT deployer_docker_hub_tags_cache_uq_ns_repo_tag UNIQUE (namespace, repository, tag_name)
 );
 
-CREATE INDEX docker_hub_tags_cache_idx_ns_repo ON docker_hub_tags_cache (namespace, repository);
+CREATE INDEX deployer_docker_hub_tags_cache_idx_ns_repo ON deployer_docker_hub_tags_cache (namespace, repository);
