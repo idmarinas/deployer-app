@@ -63,13 +63,13 @@ export type DockerComposeOperationInput = { docker_compose_id: number, };
 
 export type DockerComposeService = { name: string, status: string, health: string | null, };
 
-export type DockerHubSearchCache = { id: number, query: string, namespace: string, repository: string, description: string | null, pull_count: number, star_count: number, fetched_at: string, };
-
-export type DockerHubTagsCache = { id: number, namespace: string, repository: string, tag_name: string, last_updated: string | null, full_size: number, fetched_at: string, };
-
 export type DockerHubImageResult = { name: string, description: string, pull_count: number, star_count: number, official: boolean, };
 
+export type DockerHubSearchCache = { id: number, query: string, namespace: string, repository: string, description: string | null, pull_count: number, star_count: number, fetched_at: string, };
+
 export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, };
+
+export type DockerHubTagsCache = { id: number, namespace: string, repository: string, tag_name: string, last_updated: string | null, full_size: number, fetched_at: string, };
 
 export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
@@ -89,9 +89,7 @@ passkey_id: number,
  */
 action: ExportPublicKeyAction, 
 /**
- * Credenciales temporales opcionales. Se usan cuando el host no tiene
- * credenciales guardadas en BD que funcionen (ej: host con auth por key
- * pero la passkey aún no está en el servidor).
+ * Credenciales temporales opcionales.
  */
 temp_username: string | null, temp_password: string | null, };
 
@@ -153,7 +151,73 @@ export type Host = { id: number, name: string, host: string, port: number, usern
  * Cifrado siempre. El frontend nunca recibe este valor descifrado;
  * solo la usa Rust internamente para SSH.
  */
-password: string | null, key_id: number | null, description: string | null, enabled: boolean, created_at: string, updated_at: string, };
+password: string | null, key_id: number | null, description: string | null, enabled: boolean, 
+/**
+ * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
+ */
+distribution: string | null, 
+/**
+ * JSON con información del sistema detectada: package_manager, kernel, arch, etc.
+ */
+system_info: string | null, created_at: string, updated_at: string, };
+
+export type HostCheckUpdatesResult = { packages: Array<HostPackage>, summary: HostUpdatesSummary, };
+
+export type HostPackage = { name: string, current_version: string, available_version: string, 
+/**
+ * Repositorio de origen (ej: "jammy-updates", "jammy-security").
+ */
+repo: string, 
+/**
+ * Tipo de actualización: "major", "minor", "patch" o "unknown".
+ */
+update_type: string, 
+/**
+ * True si el paquete proviene de un repositorio de seguridad.
+ */
+is_security: boolean, 
+/**
+ * Prioridad: "high", "medium" o "low".
+ */
+priority: string, };
+
+export type HostStatusInfo = { uname: string, os_release: string, uptime: string, cpu_cores: string, memory: string, disk: string, distribution: string, system_info: HostSystemInfo, };
+
+/**
+ * Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
+ * Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
+ */
+export type HostSystemInfo = { package_manager: string, package_manager_version: string, kernel: string, arch: string, 
+/**
+ * Número de cores CPU (ej: "8").
+ */
+cpu_cores: string, 
+/**
+ * RAM total (ej: "16Gi").
+ */
+memory_total: string, 
+/**
+ * Disco total (ej: "500G").
+ */
+disk_total: string, 
+/**
+ * SO y versión (ej: "Ubuntu 22.04 LTS").
+ */
+os_release: string, };
+
+export type HostUpdatePackagesInput = { host_id: number, 
+/**
+ * Lista de paquetes a actualizar. None o vacío = todos.
+ */
+packages: Array<string> | null, 
+/**
+ * Si es true, se ejecuta el comando con sudo.
+ */
+use_sudo?: boolean | null, };
+
+export type HostUpdateResult = { command: string, output: string, exit_code: number, };
+
+export type HostUpdatesSummary = { total: number, security: number, major: number, minor: number, patch: number, };
 
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 

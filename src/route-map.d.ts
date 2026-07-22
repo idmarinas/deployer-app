@@ -45,45 +45,25 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/dashboard/[...path]'
       | '/dashboard/app'
-      | '/dashboard/deployments'
-      | '/dashboard/deployments/[...path]'
-      | '/dashboard/deployments/add'
       | '/dashboard/docker_composes'
       | '/dashboard/docker_composes/[...path]'
       | '/dashboard/hosts'
       | '/dashboard/passkeys'
       | '/dashboard/passkeys/[...path]'
-      | '/dashboard/projects'
-      | '/dashboard/projects/[...path]'
-      | '/dashboard/tasks'
-      | '/dashboard/tasks/[...path]'
-      | '/dashboard/variables'
-      | '/dashboard/variables/[...path]'
       | 'dashboard-app'
-      | 'dashboard-deployments'
-      | 'dashboard-deployments-id-edit'
       | 'dashboard-docker_composes'
       | 'dashboard-docker_composes-add'
       | 'dashboard-docker_composes-id'
       | 'dashboard-docker_composes-id-edit'
-      | 'dashboard-global_variables'
-      | 'dashboard-global_variables-add'
-      | 'dashboard-global_variables-id-edit'
       | 'dashboard-home'
       | 'dashboard-hosts'
       | 'dashboard-hosts-add'
+      | 'dashboard-hosts-id'
       | 'dashboard-hosts-id-edit'
       | 'dashboard-hosts-not-found'
       | 'dashboard-passkeys'
       | 'dashboard-passkeys-add'
       | 'dashboard-passkeys-id-edit'
-      | 'dashboard-projects'
-      | 'dashboard-projects-add'
-      | 'dashboard-projects-id'
-      | 'dashboard-projects-id-edit'
-      | 'dashboard-tasks'
-      | 'dashboard-tasks-add'
-      | 'dashboard-tasks-id-edit'
     >,
     'dashboard-home': RouteRecordInfo<
       'dashboard-home',
@@ -109,44 +89,6 @@ declare module 'vue-router/auto-routes' {
     'dashboard-app': RouteRecordInfo<
       'dashboard-app',
       '/dashboard/app',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/deployments': RouteRecordInfo<
-      '/dashboard/deployments',
-      '/dashboard/deployments',
-      Record<never, never>,
-      Record<never, never>,
-      | '/dashboard/deployments/[...path]'
-      | '/dashboard/deployments/add'
-      | 'dashboard-deployments'
-      | 'dashboard-deployments-id-edit'
-    >,
-    'dashboard-deployments': RouteRecordInfo<
-      'dashboard-deployments',
-      '/dashboard/deployments',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/deployments/[...path]': RouteRecordInfo<
-      '/dashboard/deployments/[...path]',
-      '/dashboard/deployments/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
-    'dashboard-deployments-id-edit': RouteRecordInfo<
-      'dashboard-deployments-id-edit',
-      '/dashboard/deployments/:id(\\d+)/edit',
-      { id: ParamValue<true> },
-      { id: ParamValue<false> },
-      | never
-    >,
-    '/dashboard/deployments/add': RouteRecordInfo<
-      '/dashboard/deployments/add',
-      '/dashboard/deployments/add',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -204,6 +146,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | 'dashboard-hosts'
       | 'dashboard-hosts-add'
+      | 'dashboard-hosts-id'
       | 'dashboard-hosts-id-edit'
       | 'dashboard-hosts-not-found'
     >,
@@ -219,6 +162,13 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/hosts/:path(.*)',
       { path: ParamValue<true> },
       { path: ParamValue<false> },
+      | never
+    >,
+    'dashboard-hosts-id': RouteRecordInfo<
+      'dashboard-hosts-id',
+      '/dashboard/hosts/:id(\\d+)',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
       | never
     >,
     'dashboard-hosts-id-edit': RouteRecordInfo<
@@ -269,128 +219,6 @@ declare module 'vue-router/auto-routes' {
     'dashboard-passkeys-add': RouteRecordInfo<
       'dashboard-passkeys-add',
       '/dashboard/passkeys/add',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/projects': RouteRecordInfo<
-      '/dashboard/projects',
-      '/dashboard/projects',
-      Record<never, never>,
-      Record<never, never>,
-      | '/dashboard/projects/[...path]'
-      | 'dashboard-projects'
-      | 'dashboard-projects-add'
-      | 'dashboard-projects-id'
-      | 'dashboard-projects-id-edit'
-    >,
-    'dashboard-projects': RouteRecordInfo<
-      'dashboard-projects',
-      '/dashboard/projects',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    'dashboard-projects-id': RouteRecordInfo<
-      'dashboard-projects-id',
-      '/dashboard/projects/:id(\\d+)',
-      { id: ParamValue<true> },
-      { id: ParamValue<false> },
-      | never
-    >,
-    'dashboard-projects-id-edit': RouteRecordInfo<
-      'dashboard-projects-id-edit',
-      '/dashboard/projects/:id(\\d+)/edit',
-      { id: ParamValue<true> },
-      { id: ParamValue<false> },
-      | never
-    >,
-    '/dashboard/projects/[...path]': RouteRecordInfo<
-      '/dashboard/projects/[...path]',
-      '/dashboard/projects/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
-    'dashboard-projects-add': RouteRecordInfo<
-      'dashboard-projects-add',
-      '/dashboard/projects/add',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/tasks': RouteRecordInfo<
-      '/dashboard/tasks',
-      '/dashboard/tasks',
-      Record<never, never>,
-      Record<never, never>,
-      | '/dashboard/tasks/[...path]'
-      | 'dashboard-tasks'
-      | 'dashboard-tasks-add'
-      | 'dashboard-tasks-id-edit'
-    >,
-    'dashboard-tasks': RouteRecordInfo<
-      'dashboard-tasks',
-      '/dashboard/tasks',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/tasks/[...path]': RouteRecordInfo<
-      '/dashboard/tasks/[...path]',
-      '/dashboard/tasks/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
-    'dashboard-tasks-id-edit': RouteRecordInfo<
-      'dashboard-tasks-id-edit',
-      '/dashboard/tasks/:id(\\d+)/edit',
-      { id: ParamValue<true> },
-      { id: ParamValue<false> },
-      | never
-    >,
-    'dashboard-tasks-add': RouteRecordInfo<
-      'dashboard-tasks-add',
-      '/dashboard/tasks/add',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/variables': RouteRecordInfo<
-      '/dashboard/variables',
-      '/dashboard/variables',
-      Record<never, never>,
-      Record<never, never>,
-      | '/dashboard/variables/[...path]'
-      | 'dashboard-global_variables'
-      | 'dashboard-global_variables-add'
-      | 'dashboard-global_variables-id-edit'
-    >,
-    'dashboard-global_variables': RouteRecordInfo<
-      'dashboard-global_variables',
-      '/dashboard/variables',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/dashboard/variables/[...path]': RouteRecordInfo<
-      '/dashboard/variables/[...path]',
-      '/dashboard/variables/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
-    'dashboard-global_variables-id-edit': RouteRecordInfo<
-      'dashboard-global_variables-id-edit',
-      '/dashboard/global_variables/:id(\\d+)/edit',
-      { id: ParamValue<true> },
-      { id: ParamValue<false> },
-      | never
-    >,
-    'dashboard-global_variables-add': RouteRecordInfo<
-      'dashboard-global_variables-add',
-      '/dashboard/variables/add',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -451,45 +279,25 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard'
         | '/dashboard/[...path]'
         | '/dashboard/app'
-        | '/dashboard/deployments'
-        | '/dashboard/deployments/[...path]'
-        | '/dashboard/deployments/add'
         | '/dashboard/docker_composes'
         | '/dashboard/docker_composes/[...path]'
         | '/dashboard/hosts'
         | '/dashboard/passkeys'
         | '/dashboard/passkeys/[...path]'
-        | '/dashboard/projects'
-        | '/dashboard/projects/[...path]'
-        | '/dashboard/tasks'
-        | '/dashboard/tasks/[...path]'
-        | '/dashboard/variables'
-        | '/dashboard/variables/[...path]'
         | 'dashboard-app'
-        | 'dashboard-deployments'
-        | 'dashboard-deployments-id-edit'
         | 'dashboard-docker_composes'
         | 'dashboard-docker_composes-add'
         | 'dashboard-docker_composes-id'
         | 'dashboard-docker_composes-id-edit'
-        | 'dashboard-global_variables'
-        | 'dashboard-global_variables-add'
-        | 'dashboard-global_variables-id-edit'
         | 'dashboard-home'
         | 'dashboard-hosts'
         | 'dashboard-hosts-add'
+        | 'dashboard-hosts-id'
         | 'dashboard-hosts-id-edit'
         | 'dashboard-hosts-not-found'
         | 'dashboard-passkeys'
         | 'dashboard-passkeys-add'
         | 'dashboard-passkeys-id-edit'
-        | 'dashboard-projects'
-        | 'dashboard-projects-add'
-        | 'dashboard-projects-id'
-        | 'dashboard-projects-id-edit'
-        | 'dashboard-tasks'
-        | 'dashboard-tasks-add'
-        | 'dashboard-tasks-id-edit'
       views:
         | 'default'
       pathParamNames:
@@ -523,50 +331,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/app/index.vue': {
       routes:
         | 'dashboard-app'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/deployments.vue': {
-      routes:
-        | '/dashboard/deployments'
-        | '/dashboard/deployments/[...path]'
-        | '/dashboard/deployments/add'
-        | 'dashboard-deployments'
-        | 'dashboard-deployments-id-edit'
-      views:
-        | 'default'
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/deployments/index.vue': {
-      routes:
-        | 'dashboard-deployments'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/deployments/[...path].vue': {
-      routes:
-        | '/dashboard/deployments/[...path]'
-      views:
-        | never
-      pathParamNames:
-        | 'path'
-    }
-    'src/pages/dashboard/deployments/[id].edit.vue': {
-      routes:
-        | 'dashboard-deployments-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
-    }
-    'src/pages/dashboard/deployments/add.vue': {
-      routes:
-        | '/dashboard/deployments/add'
       views:
         | never
       pathParamNames:
@@ -630,6 +394,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/hosts'
         | 'dashboard-hosts'
         | 'dashboard-hosts-add'
+        | 'dashboard-hosts-id'
         | 'dashboard-hosts-id-edit'
         | 'dashboard-hosts-not-found'
       views:
@@ -652,6 +417,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
+    }
+    'src/pages/dashboard/hosts/[id].vue': {
+      routes:
+        | 'dashboard-hosts-id'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
     }
     'src/pages/dashboard/hosts/[id].edit.vue': {
       routes:
@@ -708,147 +481,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/passkeys/add.vue': {
       routes:
         | 'dashboard-passkeys-add'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/projects.vue': {
-      routes:
-        | '/dashboard/projects'
-        | '/dashboard/projects/[...path]'
-        | 'dashboard-projects'
-        | 'dashboard-projects-add'
-        | 'dashboard-projects-id'
-        | 'dashboard-projects-id-edit'
-      views:
-        | 'default'
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/projects/index.vue': {
-      routes:
-        | 'dashboard-projects'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/projects/[id]/(view).vue': {
-      routes:
-        | 'dashboard-projects-id'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/projects/[id]/edit.vue': {
-      routes:
-        | 'dashboard-projects-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/projects/[...path].vue': {
-      routes:
-        | '/dashboard/projects/[...path]'
-      views:
-        | never
-      pathParamNames:
-        | 'path'
-    }
-    'src/pages/dashboard/projects/add.vue': {
-      routes:
-        | 'dashboard-projects-add'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/tasks.vue': {
-      routes:
-        | '/dashboard/tasks'
-        | '/dashboard/tasks/[...path]'
-        | 'dashboard-tasks'
-        | 'dashboard-tasks-add'
-        | 'dashboard-tasks-id-edit'
-      views:
-        | 'default'
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/tasks/index.vue': {
-      routes:
-        | 'dashboard-tasks'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/tasks/[...path].vue': {
-      routes:
-        | '/dashboard/tasks/[...path]'
-      views:
-        | never
-      pathParamNames:
-        | 'path'
-    }
-    'src/pages/dashboard/tasks/[id].edit.vue': {
-      routes:
-        | 'dashboard-tasks-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
-    }
-    'src/pages/dashboard/tasks/add.vue': {
-      routes:
-        | 'dashboard-tasks-add'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/variables.vue': {
-      routes:
-        | '/dashboard/variables'
-        | '/dashboard/variables/[...path]'
-        | 'dashboard-global_variables'
-        | 'dashboard-global_variables-add'
-        | 'dashboard-global_variables-id-edit'
-      views:
-        | 'default'
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/variables/index.vue': {
-      routes:
-        | 'dashboard-global_variables'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/dashboard/variables/[...path].vue': {
-      routes:
-        | '/dashboard/variables/[...path]'
-      views:
-        | never
-      pathParamNames:
-        | 'path'
-    }
-    'src/pages/dashboard/variables/[id].edit.vue': {
-      routes:
-        | 'dashboard-global_variables-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
-    }
-    'src/pages/dashboard/variables/add.vue': {
-      routes:
-        | 'dashboard-global_variables-add'
       views:
         | never
       pathParamNames:
