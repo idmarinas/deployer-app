@@ -56,9 +56,9 @@ const socials: {
 			:default-size="20"
 			:ui="{ footer: 'border-t border-default flex-col' }"
 		>
-			<template #header="{ collapsed }">
-				<!-- <ProjectsMenu :collapsed="collapsed" /> -->
-			</template>
+			<!-- <template #header="{ collapsed }">
+				<ProjectsMenu :collapsed="collapsed" />
+			</template> -->
 
 			<template #default="{ collapsed }">
 				<UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" tooltip />
