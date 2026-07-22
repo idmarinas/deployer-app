@@ -62,6 +62,10 @@ pub struct Host {
     pub key_id: Option<i64>,
     pub description: Option<String>,
     pub enabled: bool,
+    /// Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
+    pub distribution: Option<String>,
+    /// JSON con información del sistema detectada: package_manager, kernel, arch, etc.
+    pub system_info: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -70,7 +74,8 @@ pub struct Host {
 // Input para crear un Host
 // ============================================================================
 
-#[derive(Debug, Deserialize, TS)]
+#[derive(Debug, Default, Deserialize, TS)]
+#[serde(default)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct CreateHostInput {
     pub name: String,
@@ -99,6 +104,8 @@ impl CreateHostInput {
             key_id: self.key_id,
             description: self.description,
             enabled: self.enabled.unwrap_or(true),
+            distribution: None,
+            system_info: Some("{}".to_string()),
             created_at: String::new(),
             updated_at: String::new(),
         }
@@ -134,4 +141,41 @@ pub struct UpdateHostInput {
     pub description: Patch<String>,
     #[ts(optional)]
     pub enabled: Option<bool>,
+}
+
+// ============================================================================
+// Información del sistema (JSON almacenado en deployer_hosts.system_info)
+// ============================================================================
+
+/// Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
+/// Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct HostSystemInfo {
+    pub package_manager: String,
+    pub package_manager_version: String,
+    pub kernel: String,
+    pub arch: String,
+    /// Número de cores CPU (ej: "8").
+    #[serde(default)]
+    pub cpu_cores: String,
+    /// RAM total (ej: "16Gi").
+    #[serde(default)]
+    pub memory_total: String,
+    /// Disco total (ej: "500G").
+    #[serde(default)]
+    pub disk_total: String,
+    /// SO y versión (ej: "Ubuntu 22.04 LTS").
+    #[serde(default)]
+    pub os_release: String,
+}
+
+impl HostSystemInfo {
+    pub fn from_json(json: &str) -> Result<Self, String> {
+        serde_json::from_str(json).map_err(|e| format!("Error al parsear system_info: {}", e))
+    }
+
+    pub fn to_json(&self) -> Result<String, String> {
+        serde_json::to_string(self).map_err(|e| format!("Error al serializar system_info: {}", e))
+    }
 }

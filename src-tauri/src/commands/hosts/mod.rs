@@ -1,6 +1,8 @@
 pub mod crud;
+pub mod status;
 pub mod test_connection;
 pub mod types;
+pub mod updates;
 
 // Re-exportar comandos CRUD
 pub use crud::{
@@ -8,4 +10,6 @@ pub use crud::{
 };
 
 // Re-exportar otros comandos
+pub use status::host_check_status;
 pub use test_connection::test_connection;
+pub use updates::{host_check_updates, host_update_packages};
