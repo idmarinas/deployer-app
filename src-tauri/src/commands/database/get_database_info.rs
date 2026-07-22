@@ -9,19 +9,11 @@ use ts_rs::TS;
 /// Tablas creadas por la aplicación (excluidas de "Otras tablas").
 const APP_TABLES: &[&str] = &[
     "deployer_settings",
-    "passkeys",
-    "hosts",
-    "global_variables",
-    "projects",
-    "project_hosts",
-    "project_variables",
-    "framework_configs",
-    "tasks",
-    "project_tasks",
-    "task_dependencies",
-    "deployments",
-    "deployment_executions",
-    "deployment_rollbacks",
+    "deployer_passkeys",
+    "deployer_hosts",
+    "deployer_docker_composes",
+    "deployer_docker_hub_search_cache",
+    "deployer_docker_hub_tags_cache",
 ];
 
 #[derive(Serialize, TS)]
@@ -155,7 +147,7 @@ pub async fn get_database_info(app: AppHandle) -> CommandResponse<DatabaseInfo> 
         .await
         .unwrap_or(0);
 
-    // 5. Obtener todas las tablas (excluye sqlite_stat1–4, tablas internas de ANALYZE)
+    // 5. Obtener todas las tablas (excluye sqlite_stat1-4, tablas internas de ANALYZE)
     let all_table_names: Vec<String> = sqlx::query_scalar(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN ('sqlite_stat1', 'sqlite_stat2', 'sqlite_stat3', 'sqlite_stat4') UNION SELECT 'sqlite_master' ORDER BY name",
     )
