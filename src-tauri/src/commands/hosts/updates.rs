@@ -53,6 +53,17 @@ pub struct HostUpdatePackagesInput {
     pub host_id: i64,
     /// Lista de paquetes a actualizar. None o vacío = todos.
     pub packages: Option<Vec<String>>,
+    /// Si es true, se ejecuta el comando con sudo.
+    #[serde(default)]
+    pub use_sudo: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct HostUpdateResult {
+    pub command: String,
+    pub output: String,
+    pub exit_code: i64,
 }
 
 // ============================================================================
@@ -90,24 +101,22 @@ pub async fn host_check_updates(
 pub async fn host_update_packages(
     app: AppHandle,
     input: HostUpdatePackagesInput,
-) -> Result<CommandResponse<String>, String> {
+) -> Result<CommandResponse<HostUpdateResult>, String> {
     let (mut session, system_info) = connect_and_load_system_info(&app, input.host_id).await?;
 
-    let output = match update_packages(&mut session, &system_info, input.packages.as_deref()).await {
-        Ok(out) => out,
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "hosts.errors.update_failed",
-                params!("reason" => e),
-            ))
-        }
-    };
+    let (command, output, exit_code) = update_packages(&mut session, &system_info, input.packages.as_deref(), input.use_sudo.unwrap_or(false)).await;
 
     let _ = session.disconnect().await;
 
+    let key = if exit_code == 0 {
+        "hosts.success.packages_updated"
+    } else {
+        "hosts.errors.update_failed"
+    };
+
     Ok(CommandResponse::ok(
-        output,
-        "hosts.success.packages_updated",
+        HostUpdateResult { command, output, exit_code },
+        key,
     ))
 }
 
@@ -172,41 +181,51 @@ async fn check_updates(
     Ok(packages)
 }
 
-/// Actualiza paquetes en el servidor.
+/// Actualiza paquetes en el servidor. Devuelve (command, output, exit_code).
 async fn update_packages(
     session: &mut SshSession,
     system_info: &HostSystemInfo,
     packages: Option<&[String]>,
-) -> Result<String, String> {
+    use_sudo: bool,
+) -> (String, String, i64) {
+    let sudo = if use_sudo { "sudo " } else { "" };
     let command = match system_info.package_manager.as_str() {
         "apt" => match packages {
             Some(pkgs) if !pkgs.is_empty() => {
                 let list = pkgs.join(" ");
                 format!(
-                    "DEBIAN_FRONTEND=noninteractive apt-get install -y {}",
-                    list
+                    "{sudo}DEBIAN_FRONTEND=noninteractive apt-get install -y {list}"
                 )
             }
-            _ => "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y".to_string(),
+            _ => format!("{sudo}DEBIAN_FRONTEND=noninteractive apt-get upgrade -y"),
         },
         "yum" => match packages {
             Some(pkgs) if !pkgs.is_empty() => {
                 let list = pkgs.join(" ");
-                format!("yum update -y {}", list)
+                format!("{sudo}yum update -y {list}")
             }
-            _ => "yum update -y".to_string(),
+            _ => format!("{sudo}yum update -y"),
         },
         "dnf" => match packages {
             Some(pkgs) if !pkgs.is_empty() => {
                 let list = pkgs.join(" ");
-                format!("dnf update -y {}", list)
+                format!("{sudo}dnf update -y {list}")
             }
-            _ => "dnf update -y".to_string(),
+            _ => format!("{sudo}dnf update -y"),
         },
-        _ => return Err("Package manager no soportado".to_string()),
+        _ => {
+            return (
+                String::new(),
+                "Package manager no soportado".to_string(),
+                1,
+            )
+        }
     };
 
-    run_ssh_cmd(session, &command).await
+    match run_ssh_command(session, &command, UPDATE_COMMAND_TIMEOUT_SECS).await {
+        Ok((output, exit_code)) => (command, output, exit_code),
+        Err(e) => (command, e, 1),
+    }
 }
 
 // ============================================================================
@@ -310,7 +329,8 @@ fn parse_yum_dnf_updates(output: &str) -> Vec<HostPackage> {
 // ============================================================================
 
 fn clean_version(v: &str) -> String {
-    v.split('-').next().unwrap_or(v).trim().to_string()
+    let no_epoch = v.split(':').last().unwrap_or(v);
+    no_epoch.split('-').next().unwrap_or(no_epoch).trim().to_string()
 }
 
 fn classify_update(current: &str, new: &str) -> String {

@@ -49,7 +49,7 @@ pub async fn run_ssh_command(
         .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
 
     let mut output = String::new();
-    let mut exit_code: i64 = -1;
+    let mut exit_code: i64 = 0;
 
     loop {
         let msg = tokio_timeout(Duration::from_secs(timeout_secs), ssh_channel.wait())
@@ -71,5 +71,22 @@ pub async fn run_ssh_command(
         }
     }
 
-    Ok((output, exit_code))
+    Ok((normalize_output(output), exit_code))
+}
+
+/// Normaliza el output de comandos SSH: reemplaza `\r\n` por `\n` y
+/// `\r` sueltos (progreso de apt-get, etc.) por `\n`.
+fn normalize_output(s: String) -> String {
+    let normalized = s.replace("\r\n", "\n").replace('\r', "\n");
+    let mut lines: Vec<&str> = Vec::new();
+    let mut prev_empty = false;
+    for line in normalized.lines() {
+        let empty = line.trim().is_empty();
+        if empty && prev_empty {
+            continue;
+        }
+        lines.push(line);
+        prev_empty = empty;
+    }
+    lines.join("\n")
 }
