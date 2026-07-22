@@ -8,7 +8,7 @@ import { RouteLocationRaw } from 'vue-router'
 const { t } = useI18n()
 
 const props = defineProps<{
-	module: 'projects' | 'tasks' | 'passkeys' | 'hosts' | 'variables' | 'global_variables'
+	module: 'projects' | 'tasks' | 'passkeys' | 'hosts' | 'variables' | 'global_variables' | 'docker_composes'
 	reloadFn: () => void
 	addRoute?: RouteLocationRaw
 }>()
