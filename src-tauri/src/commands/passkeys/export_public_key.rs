@@ -464,8 +464,8 @@ async fn fetch_host_data(db_path: &str, host_id: i64) -> Result<Option<HostData>
         SELECT
             h.host, h.port, h.username, h.auth_type, h.password,
             p.key_content, p.passphrase
-        FROM hosts h
-        LEFT JOIN passkeys p ON h.key_id = p.id
+        FROM deployer_hosts h
+        LEFT JOIN deployer_passkeys p ON h.key_id = p.id
         WHERE h.id = ?
         "#,
     )
@@ -490,7 +490,7 @@ async fn fetch_host_data(db_path: &str, host_id: i64) -> Result<Option<HostData>
 async fn fetch_passkey_data(db_path: &str, passkey_id: i64) -> Result<Option<PasskeyData>, String> {
     let pool = open_pool(db_path).await?;
 
-    let row = sqlx::query("SELECT key_content, passphrase FROM passkeys WHERE id = ?")
+    let row = sqlx::query("SELECT key_content, passphrase FROM deployer_passkeys WHERE id = ?")
         .bind(passkey_id)
         .fetch_optional(&pool)
         .await

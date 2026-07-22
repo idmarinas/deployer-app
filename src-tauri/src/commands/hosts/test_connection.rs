@@ -204,8 +204,8 @@ async fn fetch_host_data(db_path: &str, host_id: i64) -> Result<Option<HostData>
             h.password,
             p.key_content,
             p.passphrase
-        FROM hosts h
-        LEFT JOIN passkeys p ON h.key_id = p.id
+        FROM deployer_hosts h
+        LEFT JOIN deployer_passkeys p ON h.key_id = p.id
         WHERE h.id = ?
         "#,
     )

@@ -49,7 +49,7 @@ impl std::str::FromStr for KeyType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
 #[ts(export, export_to = "tauri-types.d.ts")]
-#[db_table("passkeys")]
+#[db_table("deployer_passkeys")]
 pub struct Passkey {
     pub id: i64,
     pub name: String,

@@ -47,7 +47,7 @@ impl std::str::FromStr for AuthType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
 #[ts(export, export_to = "tauri-types.d.ts")]
-#[db_table("hosts")]
+#[db_table("deployer_hosts")]
 pub struct Host {
     pub id: i64,
     pub name: String,
