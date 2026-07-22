@@ -1,7 +1,7 @@
 import type { Host } from '@/types/tauri-types'
 
 import { db } from '@/lib/db'
-import { hosts } from '@/lib/schema'
+import { deployer_hosts as hosts } from '@/lib/schema'
 import { asc, eq } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
@@ -11,6 +11,18 @@ export interface HostSelectItem {
 	username: string
 	enabled: boolean
 }
+
+export const useHostByIdView = defineColadaLoader('dashboard-hosts-id', {
+	key: to => ['hosts', `host-${to.params.id}`],
+	query: async to =>
+		await db
+			.select()
+			.from(hosts)
+			.where(eq(hosts.id, Number.parseInt(to.params.id)))
+			.limit(1)
+			.then(data => data[0] as unknown as Host)
+			.catch(() => undefined),
+})
 
 export const useHostById = defineColadaLoader('dashboard-hosts-id-edit', {
 	key: to => ['hosts', `host-${to.params.id}`],
