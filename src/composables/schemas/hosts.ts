@@ -2,7 +2,7 @@ import { and, eq, ne } from 'drizzle-orm'
 import * as z from 'zod'
 import { useI18n } from 'vue-i18n'
 import { countWhere } from '@/composables/queries/shared'
-import { hosts } from '@/lib/schema'
+import { deployer_hosts as hosts } from '@/lib/schema'
 import { descriptionField } from './description'
 
 export function useHostSchema(hostId?: number) {

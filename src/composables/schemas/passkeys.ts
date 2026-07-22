@@ -1,5 +1,5 @@
 import { countWhere } from '@/composables/queries/shared'
-import { passkeys } from '@/lib/schema'
+import { deployer_passkeys as passkeys } from '@/lib/schema'
 import { and, eq, ne } from 'drizzle-orm'
 import { useI18n } from 'vue-i18n'
 import * as z from 'zod'
