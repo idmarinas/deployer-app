@@ -5,6 +5,8 @@ import { useHostSelectPopulate } from '@/loaders/hosts'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { ICONS } from '@/utils/icons'
+
 type SelectMenuItemExtends = SelectMenuItem & {
 	id: number
 	username: string
@@ -57,13 +59,13 @@ watch(
 		:loading="isLoading"
 		:disabled="isLoading"
 		:placeholder="t('form.shared.placeholder.hosts.select')"
-		icon="i-tabler-server"
+		:icon="ICONS.server.server"
 	>
 		<template #item-leading="{ item }">
 			<UBadge
 				:color="item.enabled ? 'success' : 'error'"
 				variant="outline"
-				:icon="item.enabled ? 'i-tabler-server' : 'i-tabler-server-off'"
+				:icon="item.enabled ? ICONS.server.server : ICONS.server.serverOff"
 				size="sm"
 			/>
 		</template>
