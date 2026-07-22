@@ -6,16 +6,6 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 use ts_rs::TS;
 
-/// Tablas creadas por la aplicación (excluidas de "Otras tablas").
-const APP_TABLES: &[&str] = &[
-    "deployer_settings",
-    "deployer_passkeys",
-    "deployer_hosts",
-    "deployer_docker_composes",
-    "deployer_docker_hub_search_cache",
-    "deployer_docker_hub_tags_cache",
-];
-
 #[derive(Serialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct TableInfo {
@@ -157,16 +147,14 @@ pub async fn get_database_info(app: AppHandle) -> CommandResponse<DatabaseInfo> 
 
     let table_count = all_table_names.len() as i64;
 
-    // 6. Separar tablas de la app de las demás
-    let app_table_set: std::collections::HashSet<&str> = APP_TABLES.iter().copied().collect();
-
+    // 6. Separar tablas de la app (prefijo deployer_) de las demás
     let mut app_tables = Vec::new();
     let mut other_names = Vec::new();
     let mut other_row_count: i64 = 0;
     let mut other_size_bytes: i64 = 0;
 
     for table_name in &all_table_names {
-        if app_table_set.contains(table_name.as_str()) {
+        if table_name.starts_with("deployer_") {
             let (row_count, size_bytes) = get_table_stats(&pool, table_name).await;
             app_tables.push(TableInfo {
                 name: table_name.clone(),
