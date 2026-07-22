@@ -3,7 +3,8 @@ use tauri::ipc::Channel;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::time::Instant;
 
-use super::session::SshSession;
+use crate::commands::ssh::{open_sftp_session, SshSession};
+
 use super::types::{ProgressEvent, ResolvedTask};
 use crate::commands::projects::tasks::types::FileTransferConfig;
 
@@ -150,26 +151,6 @@ pub async fn download_file(
 }
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
-
-/// Abre una sesión SFTP: channel_open_session → request_subsystem("sftp") → SftpSession::new
-async fn open_sftp_session(
-    session: &mut SshSession,
-) -> Result<russh_sftp::client::SftpSession, String> {
-    let channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH para SFTP: {}", e))?;
-
-    channel
-        .request_subsystem(true, "sftp")
-        .await
-        .map_err(|e| format!("Error al solicitar subsistema SFTP: {}", e))?;
-
-    russh_sftp::client::SftpSession::new(channel.into_stream())
-        .await
-        .map_err(|e| format!("Error al iniciar sesión SFTP: {}", e))
-}
 
 fn resolve_local_path(path: &str, working_dir: Option<&str>) -> PathBuf {
     let p = Path::new(path);

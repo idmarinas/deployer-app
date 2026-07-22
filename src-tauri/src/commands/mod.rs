@@ -13,6 +13,7 @@ pub mod passkeys;
 pub mod patch;
 pub mod projects;
 pub mod response;
+pub mod ssh;
 pub mod store;
 pub mod tasks;
 

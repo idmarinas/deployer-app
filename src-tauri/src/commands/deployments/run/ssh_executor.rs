@@ -2,7 +2,8 @@ use std::time::Duration;
 use tauri::ipc::Channel;
 use tokio::time::Instant;
 
-use super::session::SshSession;
+use crate::commands::ssh::{shell_escape, SshSession};
+
 use super::types::{ProgressEvent, ResolvedTask};
 
 /// Tamaño máximo del output almacenado en BD (64 KB). El excedente va al log.
@@ -201,8 +202,3 @@ pub async fn execute_script(
 }
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
-
-/// Escapa una ruta para uso seguro en shell (comillas simples).
-fn shell_escape(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "'\\''"))
-}

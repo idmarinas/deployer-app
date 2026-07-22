@@ -9,8 +9,9 @@ use crate::commands::projects::tasks::types::{OnFailure, TaskConfig};
 use crate::commands::tasks::types::TaskType;
 use crate::db;
 
+use crate::commands::ssh::{decrypt_host_credentials, SshSession};
+
 use super::interpolator::{build_snapshot, evaluate_condition};
-use super::session::{decrypt_host_credentials, SshSession};
 use super::sftp_executor;
 use super::ssh_executor;
 use super::types::{ProgressEvent, ResolvedTask, RunDeploymentInput, VariableSnapshot};

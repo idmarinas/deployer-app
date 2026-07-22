@@ -6,13 +6,11 @@ use crate::commands::docker_composes::types::{
     DockerCompose, DockerComposeOperationInput, DockerComposeService,
 };
 use crate::commands::helpers::open_crypto_context;
-use crate::commands::hosts::types::Host;
-use crate::commands::CommandResponse;
-use crate::{params};
-
-use super::super::deployments::run::session::{
-    decrypt_host_credentials, SshSession,
+use crate::commands::ssh::{
+    connect_to_host_by_id, open_sftp_session, run_ssh_command, shell_escape, SshSession,
 };
+use crate::commands::CommandResponse;
+use crate::params;
 
 // ============================================================================
 // Helpers
@@ -45,75 +43,6 @@ async fn load_docker_compose(
     })
 }
 
-/// Carga un Host con sus credenciales SSH (passkey) por ID.
-async fn load_host_with_credentials(
-    pool: &sqlx::SqlitePool,
-    host_id: i64,
-) -> Result<(Host, Option<String>, Option<String>), String> {
-    use sqlx::Row;
-
-    let row = sqlx::query(
-        r#"
-        SELECT
-            h.id, h.name, h.host, h.port, h.username, h.auth_type,
-            h.password, h.key_id, h.description, h.enabled,
-            h.created_at, h.updated_at,
-            p.key_content,
-            p.passphrase
-        FROM deployer_hosts h
-        LEFT JOIN deployer_passkeys p ON h.key_id = p.id
-        WHERE h.id = ?1 AND h.enabled = 1
-        "#,
-    )
-    .bind(host_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Error al cargar host: {}", e))?
-    .ok_or_else(|| "El host asociado no existe o está deshabilitado".to_string())?;
-
-    let host = Host {
-        id: row.get("id"),
-        name: row.get("name"),
-        host: row.get("host"),
-        port: row.get("port"),
-        username: row.get("username"),
-        auth_type: row.get("auth_type"),
-        password: row.get("password"),
-        key_id: row.get("key_id"),
-        description: row.get("description"),
-        enabled: row.get("enabled"),
-        distribution: row.try_get("distribution").ok().flatten(),
-        system_info: row.try_get("system_info").ok().flatten(),
-        created_at: row.get("created_at"),
-        updated_at: row.get("updated_at"),
-    };
-
-    let key_content: Option<String> = row.try_get("key_content").ok().flatten();
-    let passphrase: Option<String> = row.try_get("passphrase").ok().flatten();
-
-    Ok((host, key_content, passphrase))
-}
-
-/// Abre una sesión SFTP sobre una sesión SSH existente.
-async fn open_sftp_session(
-    session: &mut SshSession,
-) -> Result<russh_sftp::client::SftpSession, String> {
-    let channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH para SFTP: {}", e))?;
-
-    channel
-        .request_subsystem(true, "sftp")
-        .await
-        .map_err(|e| format!("Error al solicitar subsistema SFTP: {}", e))?;
-
-    russh_sftp::client::SftpSession::new(channel.into_stream())
-        .await
-        .map_err(|e| format!("Error al iniciar sesión SFTP: {}", e))
-}
-
 /// Sube contenido de texto como archivo en el servidor remoto via SFTP.
 /// Crea los directorios padre si no existen.
 async fn upload_content_to_file(
@@ -125,7 +54,6 @@ async fn upload_content_to_file(
 
     let sftp = open_sftp_session(session).await?;
 
-    // Crear directorios padre si no existen
     if let Some(parent) = Path::new(remote_path).parent() {
         if let Some(parent_str) = parent.to_str() {
             let _ = sftp.create_dir(parent_str).await;
@@ -150,61 +78,14 @@ async fn upload_content_to_file(
     Ok(())
 }
 
-/// Ejecuta un comando SSH simple y devuelve el output completo.
-async fn run_ssh_command(
+/// Ejecuta un comando SSH en un directorio remoto.
+async fn run_in_dir(
     session: &mut SshSession,
     working_dir: &str,
     command: &str,
 ) -> Result<(String, i64), String> {
-    session.ensure_connected().await?;
-
     let full_command = format!("cd {} && {}", shell_escape(working_dir), command);
-
-    let mut ssh_channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH: {}", e))?;
-
-    ssh_channel
-        .exec(true, full_command.as_bytes())
-        .await
-        .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
-
-    let mut output = String::new();
-    let mut exit_code: i64 = -1;
-
-    loop {
-        use russh::ChannelMsg;
-
-        let msg = tokio::time::timeout(
-            std::time::Duration::from_secs(300),
-            ssh_channel.wait(),
-        )
-        .await
-        .map_err(|_| "Timeout de 300 segundos alcanzado".to_string())?;
-
-        match msg {
-            Some(ChannelMsg::Data { ref data }) => {
-                output.push_str(&String::from_utf8_lossy(data));
-            }
-            Some(ChannelMsg::ExtendedData { ref data, ext: 1 }) => {
-                output.push_str(&String::from_utf8_lossy(data));
-            }
-            Some(ChannelMsg::ExitStatus { exit_status }) => {
-                exit_code = exit_status as i64;
-            }
-            Some(ChannelMsg::Eof) | None => break,
-            _ => {}
-        }
-    }
-
-    Ok((output, exit_code))
-}
-
-/// Escapa un path para uso en shell.
-fn shell_escape(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "'\\''"))
+    run_ssh_command(session, &full_command, 300).await
 }
 
 /// Extrae el directorio padre de una ruta.
@@ -233,6 +114,20 @@ fn exit_code_message(exit_code: i64, action: &str) -> String {
     }
 }
 
+/// Helper para cargar compose + conectar al host.
+async fn load_compose_and_connect(
+    app: &AppHandle,
+    docker_compose_id: i64,
+) -> Result<(sqlx::SqlitePool, DockerCompose, SshSession), String> {
+    let (pool, _key) = open_crypto_context(app).await?;
+    let compose = load_docker_compose(&pool, docker_compose_id).await?;
+    let host_id = compose
+        .host_id
+        .ok_or("Este compose no tiene un servidor asignado")?;
+    let (session, _host) = connect_to_host_by_id(app, host_id, 3, true).await?;
+    Ok((pool, compose, session))
+}
+
 // ============================================================================
 // Comandos Tauri
 // ============================================================================
@@ -243,24 +138,23 @@ pub async fn docker_compose_up(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     // Subir compose file via SFTP
-    if let Err(e) = upload_content_to_file(&mut session, compose.compose_content.as_bytes(), &compose.remote_path).await {
+    if let Err(e) = upload_content_to_file(
+        &mut session,
+        compose.compose_content.as_bytes(),
+        &compose.remote_path,
+    )
+    .await
+    {
         let _ = session.disconnect();
         return Err(format!("Error al subir docker-compose.yml: {}", e));
     }
 
-    // Ejecutar docker compose up -d
     let working_dir = parent_dir(&compose.remote_path);
-    let result = run_ssh_command(
+    let result = run_in_dir(
         &mut session,
         working_dir,
         &format!("docker compose -f {} up -d", compose.remote_path),
@@ -296,17 +190,11 @@ pub async fn docker_compose_down(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     let working_dir = parent_dir(&compose.remote_path);
-    let (output, exit_code) = run_ssh_command(
+    let (output, exit_code) = run_in_dir(
         &mut session,
         working_dir,
         &format!("docker compose -f {} down", compose.remote_path),
@@ -340,17 +228,11 @@ pub async fn docker_compose_ps(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<Vec<DockerComposeService>>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     let working_dir = parent_dir(&compose.remote_path);
-    let (output, exit_code) = run_ssh_command(
+    let (output, exit_code) = run_in_dir(
         &mut session,
         working_dir,
         &format!("docker compose -f {} ps --format json", compose.remote_path),
@@ -379,17 +261,11 @@ pub async fn docker_compose_logs(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     let working_dir = parent_dir(&compose.remote_path);
-    let (output, exit_code) = run_ssh_command(
+    let (output, exit_code) = run_in_dir(
         &mut session,
         working_dir,
         &format!(
@@ -420,17 +296,11 @@ pub async fn docker_compose_restart(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     let working_dir = parent_dir(&compose.remote_path);
-    let (output, exit_code) = run_ssh_command(
+    let (output, exit_code) = run_in_dir(
         &mut session,
         working_dir,
         &format!("docker compose -f {} restart", compose.remote_path),
@@ -464,17 +334,11 @@ pub async fn docker_compose_pull(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (pool, key) = open_crypto_context(&app).await?;
-    let compose = load_docker_compose(&pool, input.docker_compose_id).await?;
-    let (host, key_content, passphrase) =
-        load_host_with_credentials(&pool, compose.host_id.ok_or("Este compose no tiene un servidor asignado")?).await?;
-
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
-    let mut session = SshSession::connect(addr, credentials, 3).await?;
+    let (_pool, compose, mut session) =
+        load_compose_and_connect(&app, input.docker_compose_id).await?;
 
     let working_dir = parent_dir(&compose.remote_path);
-    let (output, exit_code) = run_ssh_command(
+    let (output, exit_code) = run_in_dir(
         &mut session,
         working_dir,
         &format!("docker compose -f {} pull", compose.remote_path),

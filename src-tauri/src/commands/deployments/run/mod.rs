@@ -1,7 +1,6 @@
 pub mod glob;
 pub mod interpolator;
 pub mod runner;
-pub mod session;
 pub mod sftp_executor;
 pub mod ssh_executor;
 pub mod types;

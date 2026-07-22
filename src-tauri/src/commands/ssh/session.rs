@@ -60,15 +60,12 @@ impl SshSession {
     /// Verifica si la sesión sigue activa y reconecta si es necesario.
     /// Realiza hasta `max_reconnect_attempts` intentos con backoff lineal de 2s.
     pub async fn ensure_connected(&mut self) -> Result<(), String> {
-        // Abrir un canal de prueba para verificar conectividad.
-        // Si tiene éxito, lo cerramos limpiamente — russh genera un error de canal
-        // huérfano si se descarta un Channel sin cerrar.
         match self.handle.channel_open_session().await {
             Ok(ch) => {
                 let _ = ch.eof().await;
                 return Ok(());
             }
-            Err(_) => {} // La sesión cayó — intentar reconexión
+            Err(_) => {}
         }
 
         for attempt in 1..=self.max_reconnect_attempts {
@@ -99,7 +96,7 @@ impl SshSession {
     /// Cierra la sesión SSH limpiamente.
     pub async fn disconnect(self) {
         self.handle
-            .disconnect(russh::Disconnect::ByApplication, "Deployment completado", "en")
+            .disconnect(russh::Disconnect::ByApplication, "Sesión cerrada", "en")
             .await
             .ok();
     }
