@@ -57,7 +57,7 @@ const socials: {
 			:ui="{ footer: 'border-t border-default flex-col' }"
 		>
 			<template #header="{ collapsed }">
-				<ProjectsMenu :collapsed="collapsed" />
+				<!-- <ProjectsMenu :collapsed="collapsed" /> -->
 			</template>
 
 			<template #default="{ collapsed }">
