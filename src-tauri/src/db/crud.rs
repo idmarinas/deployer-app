@@ -157,6 +157,15 @@ pub async fn apply_encryption<E: DbEntity>(
     for (field_name, field_value) in fields.iter_mut() {
         let field_str = field_name.as_str();
 
+        // Saltar el centinela BLANK_VALUE: el frontend lo envía como placeholder
+        // de campos cifrados que el usuario no modificó. Cifrarlo corrompería el
+        // valor real en BD.
+        if let Value::String(ref val) = field_value {
+            if crypto::is_blank_value(val) {
+                continue;
+            }
+        }
+
         // Cifrado estático (declarado en encrypted_fields del trait)
         let should_encrypt_static = E::encrypted_fields().iter().any(|f| *f == field_str);
 
