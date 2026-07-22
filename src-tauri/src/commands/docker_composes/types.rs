@@ -10,7 +10,7 @@ use crate::commands::Patch;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
 #[ts(export, export_to = "tauri-types.d.ts")]
-#[db_table("docker_composes")]
+#[db_table("deployer_docker_composes")]
 pub struct DockerCompose {
     pub id: i64,
     pub name: String,

@@ -25,7 +25,7 @@ async fn load_docker_compose(
 ) -> Result<DockerCompose, String> {
     use sqlx::Row;
 
-    let row = sqlx::query("SELECT * FROM docker_composes WHERE id = ?1")
+    let row = sqlx::query("SELECT * FROM deployer_docker_composes WHERE id = ?1")
         .bind(id)
         .fetch_optional(pool)
         .await
@@ -60,8 +60,8 @@ async fn load_host_with_credentials(
             h.created_at, h.updated_at,
             p.key_content,
             p.passphrase
-        FROM hosts h
-        LEFT JOIN passkeys p ON h.key_id = p.id
+        FROM deployer_hosts h
+        LEFT JOIN deployer_passkeys p ON h.key_id = p.id
         WHERE h.id = ?1 AND h.enabled = 1
         "#,
     )
@@ -82,6 +82,8 @@ async fn load_host_with_credentials(
         key_id: row.get("key_id"),
         description: row.get("description"),
         enabled: row.get("enabled"),
+        distribution: row.try_get("distribution").ok().flatten(),
+        system_info: row.try_get("system_info").ok().flatten(),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
     };

@@ -75,7 +75,7 @@ pub async fn get_docker_hub_search_cache(
     // Check cache
     let cached: Vec<DockerHubSearchCache> = sqlx::query_as(
         "SELECT id, query, namespace, repository, description, pull_count, star_count, fetched_at
-         FROM docker_hub_search_cache WHERE query = ?1",
+         FROM deployer_docker_hub_search_cache WHERE query = ?1",
     )
     .bind(&query)
     .fetch_all(&pool)
@@ -152,7 +152,7 @@ pub async fn get_docker_hub_search_cache(
         let results_clone = results.clone();
         let now = now_iso();
         tokio::spawn(async move {
-            let _ = sqlx::query("DELETE FROM docker_hub_search_cache WHERE query = ?1")
+            let _ = sqlx::query("DELETE FROM deployer_docker_hub_search_cache WHERE query = ?1")
                 .bind(&query_clone)
                 .execute(&pool_clone)
                 .await;
@@ -160,7 +160,7 @@ pub async fn get_docker_hub_search_cache(
             for r in &results_clone {
                 let (ns, repo) = parse_image_name(&r.name);
                 let _ = sqlx::query(
-                    "INSERT INTO docker_hub_search_cache (query, namespace, repository, description, pull_count, star_count, fetched_at)
+                    "INSERT INTO deployer_docker_hub_search_cache (query, namespace, repository, description, pull_count, star_count, fetched_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 )
                 .bind(&query_clone)
@@ -194,7 +194,7 @@ pub async fn get_docker_hub_tags_cache(
     // Check cache
     let cached: Vec<DockerHubTagsCache> = sqlx::query_as(
         "SELECT id, namespace, repository, tag_name, last_updated, full_size, fetched_at
-         FROM docker_hub_tags_cache WHERE namespace = ?1 AND repository = ?2",
+         FROM deployer_docker_hub_tags_cache WHERE namespace = ?1 AND repository = ?2",
     )
     .bind(&namespace)
     .bind(&repository)
@@ -250,7 +250,7 @@ pub async fn get_docker_hub_tags_cache(
         let now = now_iso();
         tokio::spawn(async move {
             let _ = sqlx::query(
-                "DELETE FROM docker_hub_tags_cache WHERE namespace = ?1 AND repository = ?2",
+                "DELETE FROM deployer_docker_hub_tags_cache WHERE namespace = ?1 AND repository = ?2",
             )
             .bind(&ns_clone)
             .bind(&repo_clone)
@@ -259,7 +259,7 @@ pub async fn get_docker_hub_tags_cache(
 
             for t in &tags_clone {
                 let _ = sqlx::query(
-                    "INSERT INTO docker_hub_tags_cache (namespace, repository, tag_name, last_updated, full_size, fetched_at)
+                    "INSERT INTO deployer_docker_hub_tags_cache (namespace, repository, tag_name, last_updated, full_size, fetched_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 )
                 .bind(&ns_clone)
@@ -290,13 +290,13 @@ pub async fn cleanup_docker_hub_cache(
     let cutoff =
         (chrono::Utc::now() - chrono::Duration::hours(older_than_hours)).to_rfc3339();
 
-    let r1 = sqlx::query("DELETE FROM docker_hub_search_cache WHERE fetched_at < ?1")
+    let r1 = sqlx::query("DELETE FROM deployer_docker_hub_search_cache WHERE fetched_at < ?1")
         .bind(&cutoff)
         .execute(&pool)
         .await
         .map_err(|e| e.to_string())?;
 
-    let r2 = sqlx::query("DELETE FROM docker_hub_tags_cache WHERE fetched_at < ?1")
+    let r2 = sqlx::query("DELETE FROM deployer_docker_hub_tags_cache WHERE fetched_at < ?1")
         .bind(&cutoff)
         .execute(&pool)
         .await
