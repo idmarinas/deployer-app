@@ -11,7 +11,7 @@ export default {
 		root: [
 			'pcb-clip-card pcb-shadow-neutral',
 			'border border-(--ui-border) bg-(--ui-bg-elevated)/90 backdrop-blur-md',
-			'relative overflow-hidden',
+			'relative overflow-visible',
 			'transition-all duration-300',
 			'hover:border-primary-500/30 hover:pcb-shadow-hover-md',
 			// Dot-grid blueprint pattern (panel de instrumentos)
