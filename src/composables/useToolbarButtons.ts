@@ -31,7 +31,7 @@ export function useToolbarButtons(
 				color: 'info',
 				variant: 'outline',
 				label: t('common.actions.edit'),
-				loading: loading.value,
+				loading,
 				tooltip,
 				onClick() {
 					router.push({
@@ -45,7 +45,7 @@ export function useToolbarButtons(
 				icon: ICONS.actions.delete,
 				label: t('common.actions.delete'),
 				color: 'error',
-				loading: loading.value,
+				loading,
 				async onClick() {
 					const dialog = useConfirmDialog()
 
@@ -93,7 +93,7 @@ export function useToolbarButtons(
 				id: 'list',
 				icon: 'i-tabler-list',
 				label: t('common.back.list'),
-				loading: loading.value,
+				loading,
 				tooltip,
 				async onClick() {
 					router.push({ name: `dashboard-${moduleName}` } as any)
@@ -105,7 +105,7 @@ export function useToolbarButtons(
 				label: t('common.actions.cancel'),
 				variant: 'outline',
 				color: 'neutral',
-				loading: loading.value,
+				loading,
 				tooltip,
 				onClick: () => router.back(),
 			},

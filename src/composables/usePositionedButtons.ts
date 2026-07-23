@@ -1,5 +1,5 @@
 import type { ButtonProps } from '@nuxt/ui'
-import type { VNode } from 'vue'
+import type { Ref, VNode } from 'vue'
 
 import { h } from 'vue'
 
@@ -8,7 +8,7 @@ import UTooltip from '@nuxt/ui/components/Tooltip.vue'
 
 export type PositionAction = 'before' | 'after' | 'replace' | 'remove' | 'append' | 'prepend' | 'update'
 
-export interface PositionedButton extends ButtonProps {
+export interface PositionedButton extends Omit<ButtonProps, 'loading'> {
 	/** Identificador único del botón (ej. 'submit', 'reset', 'cancel') */
 	id: string
 	/** Función que devuelve el VNode del botón. Es opcional porque acciones como 'remove' no lo necesitan. */
@@ -17,6 +17,8 @@ export interface PositionedButton extends ButtonProps {
 	action?: PositionAction
 	/** ID del botón objetivo para las acciones relativas ('before', 'after', 'replace', 'update'). Si no se indica, suele usarse el propio `id`. */
 	targetId?: string
+	// Cambiar el tipo de loading a un Ref para que se active el estado de loading
+	loading?: Ref<boolean>
 	// Permite mostrar el botón como un icono con tooltip
 	tooltip?: boolean
 }
@@ -34,7 +36,7 @@ export function usePositionedButtons() {
 				label: btn.tooltip ? undefined : btn.label, // si hay tooltip, no mostramos texto
 				color: btn.color,
 				variant: btn.variant,
-				loading: btn.loading,
+				loading: btn.loading?.value,
 				onClick: btn.onClick,
 			}),
 		)
