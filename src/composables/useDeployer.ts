@@ -18,6 +18,9 @@ export function useDeployerShortcuts() {
     },
     shift_v: async () => {
       await router.push('/dashboard/variables/add')
+    },
+    shift_d: async () => {
+      await router.push('/dashboard/docker_composes/add')
     }
   }
 
