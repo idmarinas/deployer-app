@@ -6,7 +6,7 @@ import { h } from 'vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 import UTooltip from '@nuxt/ui/components/Tooltip.vue'
 
-export type PositionAction = 'before' | 'after' | 'replace' | 'remove' | 'append' | 'prepend'
+export type PositionAction = 'before' | 'after' | 'replace' | 'remove' | 'append' | 'prepend' | 'update'
 
 export interface PositionedButton extends ButtonProps {
 	/** Identificador único del botón (ej. 'submit', 'reset', 'cancel') */
@@ -15,7 +15,7 @@ export interface PositionedButton extends ButtonProps {
 	vnode?: (btn?: PositionedButton) => VNode
 	/** Acción a realizar con este botón respecto a la lista. Por defecto es 'append'. */
 	action?: PositionAction
-	/** ID del botón objetivo para las acciones relativas ('before', 'after', 'replace'). Si no se indica, suele usarse el propio `id`. */
+	/** ID del botón objetivo para las acciones relativas ('before', 'after', 'replace', 'update'). Si no se indica, suele usarse el propio `id`. */
 	targetId?: string
 	// Permite mostrar el botón como un icono con tooltip
 	tooltip?: boolean
@@ -49,7 +49,7 @@ export function usePositionedButtons() {
 
 		for (const extra of extras) {
 			const action = extra.action || 'append'
-			// Para acciones como replace o remove, si no hay targetId explícito, asumimos que es el propio id
+			// Para acciones como replace, remove o update, si no hay targetId explícito, asumimos que es el propio id
 			const target = extra.targetId || extra.id
 
 			switch (action) {
@@ -69,6 +69,17 @@ export function usePositionedButtons() {
 					} else {
 						// Si no lo encuentra para reemplazar, por fallback lo añadimos al final
 						result.push(extra)
+					}
+					break
+				}
+				case 'update': {
+					const index = result.findIndex(b => b.id === target)
+					if (index !== -1) {
+						// Mergea solo las props definidas en extra sobre el botón original,
+						// preservando todo lo que no se indique explícitamente.
+						// La id y action no se propagan al merge para no alterar la identidad del botón.
+						const { id: _id, action: _action, targetId: _targetId, ...patches } = extra
+						result[index] = { ...result[index], ...patches }
 					}
 					break
 				}
@@ -93,7 +104,6 @@ export function usePositionedButtons() {
 			}
 		}
 
-		// Extraemos los VNodes, omitiendo los nulos (ej. si algún vnode no devolvió nada o no tiene vnode definido)
 		return result.map(b => (b.vnode ? b.vnode(b) : createButton(b)))
 	}
 
