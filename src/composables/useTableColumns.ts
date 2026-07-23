@@ -1,8 +1,8 @@
 import type { CommandResponse } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h } from 'vue'
 import { useQueryCache } from '@pinia/colada'
+import { h } from 'vue'
 
 import { useConfirmDialog } from '@/composables/useDialog'
 import { invoke } from '@tauri-apps/api/core'
@@ -27,7 +27,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const confirmDialog = useConfirmDialog()
-  const queryCache = useQueryCache()
+	const queryCache = useQueryCache()
 
 	const expandColumn: TableColumn<T> = {
 		id: 'expand',
@@ -66,90 +66,88 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 			if (options?.moduleName && options?.singularName) {
 				defaultButtons.push({
 					id: 'edit',
-					vnode: () =>
-						h(UButton, {
-							icon: ICONS.actions.edit,
-							color: 'info',
-							variant: 'ghost',
-							onClick() {
-								router.push({
-									name: `dashboard-${options.moduleName}-id-edit` as any,
-									params: { id: (row.original as any).id },
-								})
-							},
-						}),
+					icon: ICONS.actions.edit,
+					label: t('common.actions.edit'),
+					color: 'info',
+					variant: 'ghost',
+					tooltip: true,
+					onClick() {
+						router.push({
+							name: `dashboard-${options.moduleName}-id-edit` as any,
+							params: { id: (row.original as any).id },
+						})
+					},
 				})
 
 				defaultButtons.push({
 					id: 'delete',
-					vnode: () =>
-						h(UButton, {
-							icon: ICONS.actions.delete,
-							color: 'error',
-							variant: 'ghost',
-							async onClick() {
-								const result = await confirmDialog({
-									type: 'cancel_delete',
-									title: t('common.confirm.delete.label'),
-									description: t('common.confirm.delete.description', { name: (row.original as any).name }),
-								})
+					icon: ICONS.actions.delete,
+					label: t('common.actions.delete'),
+					color: 'error',
+					variant: 'ghost',
+					tooltip: true,
+					async onClick() {
+						const result = await confirmDialog({
+							type: 'cancel_delete',
+							title: t('common.confirm.delete.label'),
+							description: t('common.confirm.delete.description', { name: (row.original as any).name }),
+						})
 
-								if (result) {
-									const notice = toaster.warning(
-										t(`notifications.${options.moduleName}.delete.loading.title`),
-										t(`notifications.${options.moduleName}.delete.loading.description`, {
+						if (result) {
+							const notice = toaster.warning(
+								t(`notifications.${options.moduleName}.delete.loading.title`),
+								t(`notifications.${options.moduleName}.delete.loading.description`, {
+									name: (row.original as any).name,
+								}),
+								{
+									icon: ICONS.actions.delete,
+									duration: 0,
+								},
+							)
+
+							const deleteResult = await invoke<CommandResponse>(`crud_delete_${options.singularName}`, {
+								id: (row.original as any).id,
+							})
+
+							if (deleteResult.success) {
+								toaster.toast.update(
+									notice.id,
+									toaster.success(
+										t(`notifications.${options.moduleName}.delete.success.title`),
+										t(`notifications.${options.moduleName}.delete.success.description`, {
 											name: (row.original as any).name,
 										}),
 										{
-											icon: ICONS.actions.delete,
-											duration: 0,
+											id: notice.id,
+											duration: undefined,
 										},
-									)
+									),
+								)
+							} else {
+								toaster.toast.update(
+									notice.id,
+									toaster.error(
+										t(`notifications.${options.moduleName}.delete.error.title`),
+										t(`notifications.${options.moduleName}.delete.error.description`, {
+											name: (row.original as any).name,
+										}),
+										{
+											id: notice.id,
+											duration: undefined,
+										},
+									),
+								)
+							}
 
-									const deleteResult = await invoke<CommandResponse>(`crud_delete_${options.singularName}`, {
-										id: (row.original as any).id,
-									})
+							if (options.moduleName) {
+								await queryCache.invalidateQueries({ key: [options.moduleName] })
+							}
 
-									if (deleteResult.success) {
-										toaster.toast.update(
-											notice.id,
-											toaster.success(
-												t(`notifications.${options.moduleName}.delete.success.title`),
-												t(`notifications.${options.moduleName}.delete.success.description`, {
-													name: (row.original as any).name,
-												}),
-												{
-													id: notice.id,
-													duration: undefined,
-												},
-											),
-										)
-									} else {
-										toaster.toast.update(
-											notice.id,
-											toaster.error(
-												t(`notifications.${options.moduleName}.delete.error.title`),
-												t(`notifications.${options.moduleName}.delete.error.description`, {
-													name: (row.original as any).name,
-												}),
-												{
-													id: notice.id,
-													duration: undefined,
-												},
-											),
-										)
-									}
-
-                  if (options.moduleName) {
-                    await queryCache.invalidateQueries({key: [options.moduleName]})
-                  }
-
-									if (options.onReload) {
-										await options.onReload()
-									}
-								}
-							},
-						}),
+							if (options.onReload) {
+								await options.onReload()
+							}
+						}
+					},
 				})
 			}
 
