@@ -6,7 +6,7 @@ export interface PositionedButton {
 	/** Identificador único del botón (ej. 'submit', 'reset', 'cancel') */
 	id: string
 	/** Función que devuelve el VNode del botón. Es opcional porque acciones como 'remove' no lo necesitan. */
-	vnode?: () => VNode
+	vnode?: (btn?: PositionedButton) => VNode
 	/** Acción a realizar con este botón respecto a la lista. Por defecto es 'append'. */
 	action?: PositionAction
 	/** ID del botón objetivo para las acciones relativas ('before', 'after', 'replace'). Si no se indica, suele usarse el propio `id`. */
@@ -73,9 +73,7 @@ export function usePositionedButtons() {
 		}
 
 		// Extraemos los VNodes, omitiendo los nulos (ej. si algún vnode no devolvió nada o no tiene vnode definido)
-		return result
-			.map(b => (b.vnode ? b.vnode() : null))
-			.filter((v): v is VNode => v !== null)
+		return result.map(b => (b.vnode ? b.vnode(b) : null)).filter((v): v is VNode => v !== null)
 	}
 
 	return {
