@@ -71,19 +71,6 @@ pub enum TaskConfig {
     DownloadFile(FileTransferConfig),
 }
 
-impl TaskConfig {
-    /// Deserializa un TaskConfig desde un string JSON.
-    pub fn from_json(json: &str) -> Result<Self, String> {
-        serde_json::from_str(json).map_err(|e| format!("Error al deserializar TaskConfig: {}", e))
-    }
-
-    /// Serializa el TaskConfig a string JSON.
-    #[allow(dead_code)]
-    pub fn to_json(&self) -> Result<String, String> {
-        serde_json::to_string(self).map_err(|e| format!("Error al serializar TaskConfig: {}", e))
-    }
-}
-
 // ============================================================================
 // OnFailure
 // ============================================================================
@@ -116,7 +103,9 @@ pub struct ProjectTask {
     pub condition: Option<String>,
     pub on_failure: OnFailure,
     /// JSON serializado de TaskConfig. Solo requerido para UploadFile / DownloadFile.
-    pub config: Option<String>,
+    /// Deserializado automáticamente desde la columna TEXT de SQLite.
+    #[ts(as = "Option<TaskConfig>")]
+    pub config: Option<sqlx::types::Json<TaskConfig>>,
     /// Sobreescribe local_working_dir del proyecto para esta task concreta.
     pub local_working_dir: Option<String>,
     /// Sobreescribe remote_working_dir del proyecto para esta task concreta.
@@ -159,7 +148,9 @@ impl CreateProjectTaskInput {
             enabled: self.enabled.unwrap_or(true),
             condition: self.condition,
             on_failure: self.on_failure.unwrap_or_default(),
-            config: self.config,
+            config: self.config
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .map(sqlx::types::Json),
             local_working_dir: self.local_working_dir,
             remote_working_dir: self.remote_working_dir,
             retry_count: self.retry_count,

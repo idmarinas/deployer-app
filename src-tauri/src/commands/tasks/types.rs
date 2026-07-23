@@ -46,7 +46,8 @@ impl std::str::FromStr for TaskType {
 pub struct Task {
     pub id: i64,
     pub name: String,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     #[serde(rename = "type")]
     #[db_rename("type")]
     pub task_type: TaskType,
@@ -83,7 +84,7 @@ impl CreateTaskInput {
         Task {
             id: 0,
             name: self.name,
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             task_type: self.task_type,
             command: self.command,
             timeout: self.timeout.unwrap_or(300),

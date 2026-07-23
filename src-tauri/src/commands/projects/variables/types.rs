@@ -16,7 +16,8 @@ pub struct ProjectVariable {
     pub value: String,
     pub is_secret: bool,
     pub data_type: String,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -43,7 +44,7 @@ impl CreateProjectVariableInput {
             value: self.value,
             is_secret: self.is_secret.unwrap_or(false),
             data_type: self.data_type.unwrap_or_else(|| "string".to_string()),
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             created_at: String::new(),
             updated_at: String::new(),
         }

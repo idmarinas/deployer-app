@@ -132,12 +132,9 @@ async fn connect_and_load_system_info(
     let (session, host) = connect_to_host_by_id(app, host_id, 1, true).await?;
 
     // Parsear system_info del Host
-    let system_info = match host.system_info {
-        Some(json) if !json.is_empty() && json != "{}" => {
-            HostSystemInfo::from_json(&json).unwrap_or_default()
-        }
-        _ => HostSystemInfo::default(),
-    };
+    let system_info = host.system_info
+        .map(|j| j.0)
+        .unwrap_or_default();
 
     Ok((session, system_info))
 }

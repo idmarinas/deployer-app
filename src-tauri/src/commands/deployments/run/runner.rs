@@ -567,12 +567,8 @@ async fn load_resolved_tasks(
 
         let condition: Option<String> = row.get("condition");
 
-        let config_json: Option<String> = row.get("config");
-        let config = config_json
-            .as_deref()
-            .map(TaskConfig::from_json)
-            .transpose()
-            .map_err(|e| format!("Error al parsear config de '{}': {}", task_name, e))?;
+        let config: Option<sqlx::types::Json<TaskConfig>> = row.try_get("config").ok().flatten();
+        let config = config.map(|j| j.0);
 
         // Resolución de working_dir: project_task > proyecto (desde snapshot)
         let pt_local_wd: Option<String> = row.get("pt_local_wd");

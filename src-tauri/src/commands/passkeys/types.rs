@@ -59,7 +59,8 @@ pub struct Passkey {
     pub passphrase: Option<String>,
     pub key_type: Option<KeyType>,
     pub fingerprint: Option<String>,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -88,7 +89,7 @@ impl CreatePasskeyInput {
             passphrase: self.passphrase,
             key_type: self.key_type,
             fingerprint: self.fingerprint,
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             created_at: String::new(),
             updated_at: String::new(),
         }

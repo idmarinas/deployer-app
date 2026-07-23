@@ -135,6 +135,12 @@ fn decode_column_value(row: &sqlx::sqlite::SqliteRow, ordinal: usize) -> Value {
         if v.starts_with(crate::crypto::keyring::ENCRYPTED_PREFIX) {
             return Value::String(crate::crypto::BLANK_VALUE.to_string());
         }
+        let trimmed = v.trim_start();
+        if (trimmed.starts_with('{') || trimmed.starts_with('['))
+            && serde_json::from_str::<Value>(&v).is_ok()
+        {
+            return serde_json::from_str(&v).unwrap_or(Value::String(v));
+        }
         return Value::String(v);
     }
 

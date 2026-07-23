@@ -93,7 +93,7 @@ pub async fn host_check_status(
         os_release: os_pretty.trim().to_string(),
     };
 
-    if let Ok(json) = system_info.to_json() {
+    if let Ok(json) = serde_json::to_string(&system_info) {
         let _ = update_host_system_info(&app, host_id, &distribution, &json).await;
     }
 

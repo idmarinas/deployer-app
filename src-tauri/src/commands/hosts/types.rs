@@ -60,12 +60,15 @@ pub struct Host {
     #[db_encrypt]
     pub password: Option<String>,
     pub key_id: Option<i64>,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub enabled: bool,
     /// Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
     pub distribution: Option<String>,
     /// JSON con información del sistema detectada: package_manager, kernel, arch, etc.
-    pub system_info: Option<String>,
+    /// Deserializado automáticamente desde la columna TEXT de SQLite.
+    #[ts(as = "Option<HostSystemInfo>")]
+    pub system_info: Option<sqlx::types::Json<HostSystemInfo>>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -102,10 +105,10 @@ impl CreateHostInput {
             auth_type: self.auth_type,
             password: self.password,
             key_id: self.key_id,
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             enabled: self.enabled.unwrap_or(true),
             distribution: None,
-            system_info: Some("{}".to_string()),
+            system_info: Some(sqlx::types::Json(HostSystemInfo::default())),
             created_at: String::new(),
             updated_at: String::new(),
         }
@@ -168,14 +171,4 @@ pub struct HostSystemInfo {
     /// SO y versión (ej: "Ubuntu 22.04 LTS").
     #[serde(default)]
     pub os_release: String,
-}
-
-impl HostSystemInfo {
-    pub fn from_json(json: &str) -> Result<Self, String> {
-        serde_json::from_str(json).map_err(|e| format!("Error al parsear system_info: {}", e))
-    }
-
-    pub fn to_json(&self) -> Result<String, String> {
-        serde_json::to_string(self).map_err(|e| format!("Error al serializar system_info: {}", e))
-    }
 }

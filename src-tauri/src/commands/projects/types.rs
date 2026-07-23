@@ -10,7 +10,8 @@ use crate::commands::Patch;
 pub struct Project {
     pub id: i64,
     pub name: String,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub git_url: Option<String>,
     pub framework: String,
     /// Ruta base local del proyecto en el PC del usuario.
@@ -41,7 +42,7 @@ impl CreateProjectInput {
         Project {
             id: 0,
             name: self.name,
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             git_url: self.git_url,
             framework: self.framework,
             local_working_dir: self.local_working_dir,

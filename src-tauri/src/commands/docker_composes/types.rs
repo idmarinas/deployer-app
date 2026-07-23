@@ -14,7 +14,8 @@ use crate::commands::Patch;
 pub struct DockerCompose {
     pub id: i64,
     pub name: String,
-    pub description: Option<String>,
+    #[ts(type = "any")]
+    pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub compose_content: String,
     pub host_id: Option<i64>,
     pub remote_path: String,
@@ -43,7 +44,7 @@ impl CreateDockerComposeInput {
         DockerCompose {
             id: 0,
             name: self.name,
-            description: self.description,
+            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             compose_content: self.compose_content,
             host_id: self.host_id,
             remote_path: self

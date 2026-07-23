@@ -57,7 +57,7 @@ export type DeploymentRollback = { id: number, deployment_id: number, rolled_bac
 
 export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
-export type DockerCompose = { id: number, name: string, description: string | null, compose_content: string, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
+export type DockerCompose = { id: number, name: string, description: any, compose_content: string, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
@@ -107,7 +107,7 @@ overwrite: boolean, };
 
 export type Framework = "symfony" | "laravel" | "nextjs" | "generic";
 
-export type FrameworkConfig = { id: number, project_id: number, framework: Framework, key: string, value: string, is_secret: boolean, data_type: DataType, description: string | null, created_at: string, updated_at: string, };
+export type FrameworkConfig = { id: number, project_id: number, framework: Framework, key: string, value: string, is_secret: boolean, data_type: DataType, description: any, created_at: string, updated_at: string, };
 
 export type GeneratePasskeyInput = { 
 /**
@@ -144,22 +144,23 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type GlobalVariable = { id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: string | null, created_at: string, updated_at: string, };
+export type GlobalVariable = { id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: any, created_at: string, updated_at: string, };
 
 export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
 /**
  * Cifrado siempre. El frontend nunca recibe este valor descifrado;
  * solo la usa Rust internamente para SSH.
  */
-password: string | null, key_id: number | null, description: string | null, enabled: boolean, 
+password: string | null, key_id: number | null, description: any, enabled: boolean, 
 /**
  * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
  */
 distribution: string | null, 
 /**
  * JSON con información del sistema detectada: package_manager, kernel, arch, etc.
+ * Deserializado automáticamente desde la columna TEXT de SQLite.
  */
-system_info: string | null, created_at: string, updated_at: string, };
+system_info: HostSystemInfo | null, created_at: string, updated_at: string, };
 
 export type HostCheckUpdatesResult = { packages: Array<HostPackage>, summary: HostUpdatesSummary, };
 
@@ -213,7 +214,7 @@ packages: Array<string> | null,
 /**
  * Si es true, se ejecuta el comando con sudo.
  */
-use_sudo?: boolean | null, };
+use_sudo: boolean | null, };
 
 export type HostUpdateResult = { command: string, output: string, exit_code: number, };
 
@@ -229,7 +230,7 @@ export type OnFailure = "stop" | "continue" | "retry";
 
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
 
-export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, created_at: string, updated_at: string, };
+export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: any, created_at: string, updated_at: string, };
 
 /**
  * Un mapeo individual origen -> destino dentro de una transferencia de
@@ -273,7 +274,7 @@ chmod?: string | null, };
 
 export type ProgressEvent = { "event": "deployment_started", deployment_id: number, total_tasks: number, } | { "event": "task_pending", execution_id: number, task_name: string, order: number, } | { "event": "task_started", execution_id: number, task_name: string, } | { "event": "output_chunk", execution_id: number, chunk: string, } | { "event": "task_retrying", execution_id: number, attempt: number, max_attempts: number, delay_secs: number, } | { "event": "task_finished", execution_id: number, task_name: string, status: ExecutionStatus, exit_code: number | null, duration_seconds: number, } | { "event": "task_skipped", execution_id: number, task_name: string, reason: string, } | { "event": "deployment_finished", deployment_id: number, status: DeploymentStatus, duration_seconds: number, } | { "event": "fatal_error", message: string, };
 
-export type Project = { id: number, name: string, description: string | null, git_url: string | null, framework: string, 
+export type Project = { id: number, name: string, description: any, git_url: string | null, framework: string, 
 /**
  * Ruta base local del proyecto en el PC del usuario.
  * Actúa como working_dir por defecto para tareas locales (UploadFile, DownloadFile).
@@ -290,8 +291,9 @@ export type ProjectHost = { id: number, project_id: number, host_id: number, dep
 export type ProjectTask = { id: number, project_id: number, task_id: number, order_execution: number, enabled: boolean, condition: string | null, on_failure: OnFailure, 
 /**
  * JSON serializado de TaskConfig. Solo requerido para UploadFile / DownloadFile.
+ * Deserializado automáticamente desde la columna TEXT de SQLite.
  */
-config: string | null, 
+config: TaskConfig | null, 
 /**
  * Sobreescribe local_working_dir del proyecto para esta task concreta.
  */
@@ -309,7 +311,7 @@ retry_count: number | null,
  */
 retry_delay: number | null, created_at: string, updated_at: string, };
 
-export type ProjectVariable = { id: number, project_id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: string | null, created_at: string, updated_at: string, };
+export type ProjectVariable = { id: number, project_id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: any, created_at: string, updated_at: string, };
 
 export type RunDeploymentInput = { deployment_id: number, 
 /**
@@ -319,7 +321,7 @@ ssh_reconnect_attempts: number | null, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
 
-export type Task = { id: number, name: string, description: string | null, type: TaskType, 
+export type Task = { id: number, name: string, description: any, type: TaskType, 
 /**
  * Comando a ejecutar (o contenido del script si task_type = Script).
  * Para UploadFile / DownloadFile este campo no se usa; la configuración
