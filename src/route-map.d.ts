@@ -157,13 +157,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'dashboard-hosts-not-found': RouteRecordInfo<
-      'dashboard-hosts-not-found',
-      '/dashboard/hosts/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
     'dashboard-hosts-id': RouteRecordInfo<
       'dashboard-hosts-id',
       '/dashboard/hosts/:id(\\d+)',
@@ -176,6 +169,13 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/hosts/:id(\\d+)/edit',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    'dashboard-hosts-not-found': RouteRecordInfo<
+      'dashboard-hosts-not-found',
+      '/dashboard/hosts/:path(.*)',
+      { path: ParamValue<true> },
+      { path: ParamValue<false> },
       | never
     >,
     'dashboard-hosts-add': RouteRecordInfo<
@@ -410,6 +410,22 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/dashboard/hosts/[id]/(view).vue': {
+      routes:
+        | 'dashboard-hosts-id'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/hosts/[id]/edit.vue': {
+      routes:
+        | 'dashboard-hosts-id-edit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/dashboard/hosts/[...path].vue': {
       routes:
         | 'dashboard-hosts-not-found'
@@ -417,22 +433,6 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
-    }
-    'src/pages/dashboard/hosts/[id].vue': {
-      routes:
-        | 'dashboard-hosts-id'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
-    }
-    'src/pages/dashboard/hosts/[id].edit.vue': {
-      routes:
-        | 'dashboard-hosts-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
     }
     'src/pages/dashboard/hosts/add.vue': {
       routes:

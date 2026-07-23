@@ -42,11 +42,15 @@ function getTextContent(node: JSONContent): string {
 }
 
 /**
- * Convierte un string serializado de BD a texto plano.
+ * Convierte un JSONContent o string serializado de BD a texto plano.
  * Útil para vistas truncadas donde el editor completo es demasiado pesado.
  */
-export function descriptionToPlainText(raw: string | null | undefined): string {
+export function descriptionToPlainText(raw: JSONContent | string | null | undefined): string {
 	if (!raw) return ''
+
+	if (typeof raw === 'object') {
+		return getTextContent(raw)
+	}
 
 	let json: JSONContent | undefined
 	try {
