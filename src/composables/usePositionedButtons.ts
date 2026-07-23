@@ -1,8 +1,14 @@
+import type { ButtonProps } from '@nuxt/ui'
 import type { VNode } from 'vue'
+
+import { h } from 'vue'
+
+import UButton from '@nuxt/ui/components/Button.vue'
+import UTooltip from '@nuxt/ui/components/Tooltip.vue'
 
 export type PositionAction = 'before' | 'after' | 'replace' | 'remove' | 'append' | 'prepend'
 
-export interface PositionedButton {
+export interface PositionedButton extends ButtonProps {
 	/** Identificador único del botón (ej. 'submit', 'reset', 'cancel') */
 	id: string
 	/** Función que devuelve el VNode del botón. Es opcional porque acciones como 'remove' no lo necesitan. */
@@ -11,6 +17,8 @@ export interface PositionedButton {
 	action?: PositionAction
 	/** ID del botón objetivo para las acciones relativas ('before', 'after', 'replace'). Si no se indica, suele usarse el propio `id`. */
 	targetId?: string
+	// Permite mostrar el botón como un icono con tooltip
+	tooltip?: boolean
 }
 
 /**
@@ -19,6 +27,19 @@ export interface PositionedButton {
  * en función de sus reglas de posición.
  */
 export function usePositionedButtons() {
+	function createButton(btn: PositionedButton): VNode {
+		return h(UTooltip, { text: btn.label, delayDuration: 0, disabled: !btn.tooltip }, () =>
+			h(UButton, {
+				icon: btn.icon,
+				label: btn.tooltip ? undefined : btn.label, // si hay tooltip, no mostramos texto
+				color: btn.color,
+				variant: btn.variant,
+				loading: btn.loading,
+				onClick: btn.onClick,
+			}),
+		)
+	}
+
 	/**
 	 * Construye y devuelve la lista final de VNode resolviendo las acciones de los botones extra
 	 * sobre la lista de botones por defecto.
@@ -73,7 +94,7 @@ export function usePositionedButtons() {
 		}
 
 		// Extraemos los VNodes, omitiendo los nulos (ej. si algún vnode no devolvió nada o no tiene vnode definido)
-		return result.map(b => (b.vnode ? b.vnode(b) : null)).filter((v): v is VNode => v !== null)
+		return result.map(b => (b.vnode ? b.vnode(b) : createButton(b)))
 	}
 
 	return {
