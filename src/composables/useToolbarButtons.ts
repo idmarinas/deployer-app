@@ -4,6 +4,7 @@ import type { PositionedButton } from './usePositionedButtons'
 
 import { usePositionedButtons } from './usePositionedButtons'
 
+import { isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -13,17 +14,17 @@ import { ICONS } from '@/utils/icons'
 
 import { invoke } from '@tauri-apps/api/core'
 
-export function useToolbarButtons(
-	moduleName: string,
-	item: ShallowRef<{ name: string; id: number }>,
-	loading: Ref<boolean>,
-) {
+export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const { t } = useI18n()
 	const { resolveButtons } = usePositionedButtons()
 
-	function useViewButtons(buttons: PositionedButton[] = [], tooltip: boolean = false) {
+	function useViewButtons(
+		item: ShallowRef<{ name: string; id: number }>,
+		buttons: PositionedButton[] = [],
+		tooltip: boolean = false,
+	) {
 		const defaultBtns: PositionedButton[] = [
 			{
 				id: 'edit',
@@ -114,7 +115,67 @@ export function useToolbarButtons(
 		return resolveButtons(defaultBtns, buttons)
 	}
 
+	type ToolbarButtonFactory = Record<string, (row: any, opts?: Omit<PositionedButton, 'id'>) => PositionedButton>
+
+	function useButtons(): Record<string, ToolbarButtonFactory> {
+		const hostsTestConnection = (row: Ref | object, opts: Omit<PositionedButton, 'id'> = {}): PositionedButton => {
+			return {
+				id: 'test-conection',
+				icon: ICONS.server.plug,
+				label: t('pages.hosts.manage.test_connection'),
+				loading,
+				...opts,
+				async onClick() {
+					const item = (isRef(row) ? row.value : row) as any
+					const notice = toaster.warning(
+						t('pages.hosts.toast.test_connection.loading.title'),
+						t('pages.hosts.toast.test_connection.loading.description', { name: item.name }),
+						{
+							icon: ICONS.server.plug,
+							duration: 0,
+						},
+					)
+
+					const result = await invoke<CommandResponse<null>>('test_connection', { hostId: item.id })
+
+					if (result.success) {
+						toaster.toast.update(
+							notice.id,
+							toaster.success(
+								t('pages.hosts.toast.test_connection.success.title'),
+								t('pages.hosts.toast.test_connection.success.description', { name: item.name }),
+								{
+									id: notice.id,
+									duration: undefined,
+								},
+							),
+						)
+					} else {
+						toaster.toast.update(
+							notice.id,
+							toaster.error(
+								t('pages.hosts.toast.test_connection.error.title'),
+								t('pages.hosts.toast.test_connection.error.description', { name: item.name }),
+								{
+									id: notice.id,
+									duration: undefined,
+								},
+							),
+						)
+					}
+				},
+			}
+		}
+
+		return {
+			hosts: {
+				testConnection: hostsTestConnection,
+			},
+		}
+	}
+
 	return {
 		useViewButtons,
+		useButtons,
 	}
 }
