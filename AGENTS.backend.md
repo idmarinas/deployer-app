@@ -15,6 +15,10 @@ commands/
 ├── database/
 │   └── query_raw.rs                 <- Comando genérico de solo lectura (SELECT) para Drizzle
 ├── deployer_settings/
+├── database/
+│   └── query_raw.rs                 <- Comando genérico de solo lectura (SELECT) para Drizzle
+├── deployer_settings/
+│   └── helpers.rs
 ├── deployments/
 │   ├── crud/
 │   ├── executions/
@@ -26,12 +30,21 @@ commands/
 │   │   ├── session.rs               <- Sesión SSH única con reconexión automática
 │   │   ├── interpolator.rs          <- build_snapshot() + evaluate_condition()
 │   │   ├── ssh_executor.rs          <- execute_command() + execute_script()
+│   │   ├── glob.rs                  <- Glob simple para exclude en file transfer
 │   │   └── sftp_executor.rs         <- upload_file() + download_file()
-│   ├── helpers.rs
 │   ├── mod.rs
 │   └── types.rs
+├── docker_composes/
+├── docker_hub_cache/
 ├── global_variables/
 ├── hosts/
+│   ├── crud.rs
+│   ├── mod.rs
+│   ├── status.rs                    <- host_check_status (estático) + host_check_metrics (dinámico)
+│   ├── test_connection.rs
+│   ├── types.rs
+│   └── updates.rs
+├── migrations/
 ├── passkeys/
 ├── projects/
 │   ├── crud/
@@ -40,13 +53,14 @@ commands/
 │   ├── tasks/
 │   │   └── types.rs                 <- TaskConfig, OnFailure, ProjectTask
 │   ├── variables/
-│   ├── helpers.rs
 │   ├── mod.rs
 │   └── types.rs                     <- Project con local_working_dir, remote_working_dir
+├── ssh/
+│   └── helpers.rs
+├── store/
 └── tasks/
     ├── crud/
     ├── dependencies/
-    ├── helpers.rs
     ├── mod.rs
     └── types.rs                     <- TaskType; retry_delay; sin working_dir
 ```
@@ -80,7 +94,7 @@ El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en regi
 
 ### Nombres de tablas
 
-Centralizados en `src/constants/dbTables.ts`. Nunca escribir el nombre de una tabla como string literal fuera de ese archivo.
+Todas las tablas llevan el prefijo `deployer_`. No hay un archivo centralizado de constants — el nombre de tabla se define en la migración y en el atributo `#[db_table("...")]` del struct.
 
 ### Patrón: escritura batch (varios upserts en una transacción)
 
@@ -103,7 +117,7 @@ El frontend solo debe llamar al comando plural (incluso para guardar un único a
 | `tasks`                 | `type`, `command`, `timeout`, `retry_count`, `retry_delay` (sin `working_dir`)                                                                         |
 | `project_tasks`         | `config` (JSON TaskConfig), `local_working_dir`, `remote_working_dir`, `retry_count`, `retry_delay`                                                    |
 | `deployment_executions` | `status`, `exit_code`, `output`, `retry_attempt`                                                                                                       |
-| `hosts`                 | `auth_type`, `password` (cifrado), `key_id`                                                                                                            |
+| `hosts`                 | `auth_type`, `password` (cifrado), `key_id`, `system_info` (JSON), `status_info` (JSON)                                                          |
 | `passkeys`              | `key_content` (cifrado), `passphrase` (cifrado)                                                                                                        |
 | `framework_configs`     | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional.          |
 | `task_dependencies`     | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
@@ -239,21 +253,21 @@ match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
 
 ## 3.2 `updated_at` automático vía trigger SQL
 
-Las 8 tablas con columna `updated_at` (`passkeys`, `hosts`, `global_variables`, `projects`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`) tienen un trigger `AFTER UPDATE` en la migración (`0001_initial_schema.up.sql`):
+Las 4 tablas con columna `updated_at` (`deployer_settings`, `deployer_passkeys`, `deployer_hosts`, `deployer_docker_composes`) tienen un trigger `AFTER UPDATE` en la migración (`0001_initial_schema.up.sql`):
 
 ```sql
-CREATE TRIGGER projects_trg_set_updated_at
-AFTER UPDATE ON projects
+CREATE TRIGGER deployer_hosts_trg_set_updated_at
+AFTER UPDATE ON deployer_hosts
 FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+UPDATE deployer_hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 ```
 
 La condición `WHEN NEW.updated_at = OLD.updated_at` evita la recursión infinita: la propia `UPDATE` del trigger vuelve a disparar el trigger, pero en esa segunda pasada `NEW.updated_at` (el `CURRENT_TIMESTAMP` recién puesto) ya no coincide con `OLD.updated_at`, así que la condición es falsa y no se repite.
 
-Gracias a esto, **el código Rust nunca toca `updated_at`** en ningún `UPDATE`: ni `db::update_fields` lo añade, ni hace falta una variante separada para las tablas sin esa columna (`project_hosts`, `task_dependencies`, `deployments`, `deployment_executions`, `deployment_rollbacks` simplemente no tienen trigger y `update_fields` funciona igual para ellas).
+Gracias a esto, **el código Rust nunca toca `updated_at`** en ningún `UPDATE`: ni `db::update_fields` lo añade, ni hace falta una variante separada para las tablas sin esa columna (`deployer_docker_hub_search_cache`, `deployer_docker_hub_tags_cache` simplemente no tienen trigger y `update_fields` funciona igual para ellas).
 
 Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspondiente en la migración (y el `DROP TRIGGER` en el `.down.sql`).
 
