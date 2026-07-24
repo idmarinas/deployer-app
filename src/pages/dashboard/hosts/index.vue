@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { CommandResponse, Host } from '@/types/tauri-types'
+import type { Host } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h, resolveComponent } from 'vue'
@@ -9,11 +9,9 @@ import { useRouter } from 'vue-router'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useHostListAll } from '@/loaders/hosts'
 import { ICONS } from '@/utils/icons'
-import { useToast } from '@nuxt/ui/composables'
-
-import { invoke } from '@tauri-apps/api/core'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'
+import { useToolbarButtons } from '@/composables/useToolbarButtons'
 </script>
 
 <script setup lang="ts">
@@ -26,8 +24,9 @@ const UBadge = resolveComponent('UBadge')
 const { data: items, isLoading, status, reload } = useHostListAll()
 
 const { t } = useI18n()
-const toast = useToast()
 const router = useRouter()
+const { useButtons } = useToolbarButtons('hosts', isLoading)
+const { hosts: hostsButtons } = useButtons()
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Host>({
 	moduleName: 'hosts',
 	singularName: 'host',
@@ -82,48 +81,13 @@ const columns: TableColumn<Host>[] = [
 			variant: 'ghost',
 			onClick: () => router.push({ name: 'dashboard-hosts-id', params: { id: row.original.id } }),
 		},
-		{
-			id: 'test-conection',
+		hostsButtons.testConnection(row.original, {
 			action: 'after',
 			targetId: 'edit',
-			icon: ICONS.server.plug,
 			variant: 'ghost',
 			color: 'neutral',
-			label: t('pages.hosts.manage.test_connection'),
 			tooltip: true,
-			async onClick() {
-				const notice = toast.add({
-					title: t('pages.hosts.toast.test_connection.loading.title'),
-					description: t('pages.hosts.toast.test_connection.loading.description', { name: row.original.name }),
-					color: 'warning',
-					icon: ICONS.server.plug,
-					duration: 0,
-				})
-
-				const result = await invoke<CommandResponse<null>>('test_connection', { hostId: row.original.id })
-
-				toast.remove(notice.id)
-				if (result.success) {
-					toast.add({
-						title: t('pages.hosts.toast.test_connection.success.title'),
-						description: t('pages.hosts.toast.test_connection.success.description', {
-							name: row.original.name,
-						}),
-						color: 'success',
-						icon: ICONS.status.check,
-						duration: undefined,
-					})
-				} else {
-					toast.add({
-						title: t('pages.hosts.toast.test_connection.error.title'),
-						description: t('pages.hosts.toast.test_connection.error.description', { name: row.original.name }),
-						color: 'error',
-						icon: ICONS.status.cross,
-						duration: undefined,
-					})
-				}
-			},
-		},
+		}),
 	]),
 ]
 </script>
