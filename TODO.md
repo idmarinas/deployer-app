@@ -38,5 +38,6 @@ Se centra en los módulos:
 		- Actualizar el paquete seleccionado o varios.
 	- Comprobar el espacio en disco usado (¿poder liberar espacio?)
 	- Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
+2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
 
 ### Docker Compose
