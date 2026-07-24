@@ -4,6 +4,7 @@ import type { SelectMenuItem } from '@nuxt/ui'
 import { useHostSelectPopulate } from '@/loaders/hosts'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import { ICONS } from '@/utils/icons'
 
@@ -27,6 +28,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+const router = useRouter()
 const { data: items, isLoading } = useHostSelectPopulate()
 
 const availableItems = computed(() => {
@@ -51,26 +53,32 @@ watch(
 </script>
 
 <template>
-	<USelectMenu
-		v-model="state"
-		clear
-		value-key="id"
-		:items="availableItems as SelectMenuItemExtends[]"
-		:loading="isLoading"
-		:disabled="isLoading"
-		:placeholder="t('form.shared.placeholder.hosts.select')"
-		:icon="ICONS.server.server"
-	>
-		<template #item-leading="{ item }">
-			<UBadge
-				:color="item.enabled ? 'success' : 'error'"
-				variant="outline"
-				:icon="item.enabled ? ICONS.server.server : ICONS.server.serverOff"
-				size="sm"
-			/>
-		</template>
-		<template #item-trailing="{ item }">
-			<UBadge color="neutral" variant="outline" icon="i-tabler-user" size="sm" :label="item.username" />
-		</template>
-	</USelectMenu>
+	<UFieldGroup>
+		<USelectMenu
+			v-model="state"
+			clear
+			value-key="id"
+			class="w-full"
+			:items="availableItems as SelectMenuItemExtends[]"
+			:loading="isLoading"
+			:disabled="isLoading"
+			:placeholder="t('form.shared.placeholder.hosts.select')"
+			:icon="ICONS.server.server"
+		>
+			<template #item-leading="{ item }">
+				<UBadge
+					:color="item.enabled ? 'success' : 'error'"
+					variant="outline"
+					:icon="item.enabled ? ICONS.server.server : ICONS.server.serverOff"
+					size="sm"
+				/>
+			</template>
+			<template #item-trailing="{ item }">
+				<UBadge color="neutral" variant="outline" icon="i-tabler-user" size="sm" :label="item.username" />
+			</template>
+		</USelectMenu>
+		<UTooltip :text="t('form.hosts.title.add')" :delay-duration="0">
+			<UButton :icon="ICONS.actions.add" @click="router.push({ name: 'dashboard-hosts-add' })" />
+		</UTooltip>
+	</UFieldGroup>
 </template>
