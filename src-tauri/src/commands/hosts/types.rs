@@ -63,12 +63,12 @@ pub struct Host {
     #[ts(type = "any")]
     pub description: Option<sqlx::types::Json<serde_json::Value>>,
     pub enabled: bool,
-    /// Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
-    pub distribution: Option<String>,
-    /// JSON con información del sistema detectada: package_manager, kernel, arch, etc.
-    /// Deserializado automáticamente desde la columna TEXT de SQLite.
+    /// JSON con información del sistema detectada: package_manager, kernel, arch, distribution, etc.
     #[ts(as = "Option<HostSystemInfo>")]
     pub system_info: Option<sqlx::types::Json<HostSystemInfo>>,
+    /// JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
+    #[ts(as = "Option<HostStatusMetrics>")]
+    pub status_info: Option<sqlx::types::Json<HostStatusMetrics>>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -107,8 +107,8 @@ impl CreateHostInput {
             key_id: self.key_id,
             description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             enabled: self.enabled.unwrap_or(true),
-            distribution: None,
             system_info: Some(sqlx::types::Json(HostSystemInfo::default())),
+            status_info: None,
             created_at: String::new(),
             updated_at: String::new(),
         }
@@ -159,6 +159,9 @@ pub struct HostSystemInfo {
     pub package_manager_version: String,
     pub kernel: String,
     pub arch: String,
+    /// Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
+    #[serde(default)]
+    pub distribution: String,
     /// Número de cores CPU (ej: "8").
     #[serde(default)]
     pub cpu_cores: String,
@@ -171,4 +174,30 @@ pub struct HostSystemInfo {
     /// SO y versión (ej: "Ubuntu 22.04 LTS").
     #[serde(default)]
     pub os_release: String,
+    /// Timestamp ISO 8601 de la última vez que se obtuvo esta información.
+    #[serde(default)]
+    pub last_checked_at: Option<String>,
+}
+
+// ============================================================================
+// Métricas dinámicas (JSON almacenado en deployer_hosts.status_info)
+// ============================================================================
+
+/// Métricas dinámicas del servidor capturadas en un momento dado.
+/// Almacenada como JSON en `status_info`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct HostStatusMetrics {
+    /// Porcentaje de uso CPU (ej: "23.45").
+    #[serde(default)]
+    pub cpu_usage: String,
+    /// Porcentaje de uso RAM (ej: "67.89").
+    #[serde(default)]
+    pub ram_usage: String,
+    /// Porcentaje de uso disco (ej: "45.12").
+    #[serde(default)]
+    pub disk_usage: String,
+    /// Timestamp ISO 8601 de cuándo se capturaron estas métricas.
+    #[serde(default)]
+    pub last_checked_at: Option<String>,
 }

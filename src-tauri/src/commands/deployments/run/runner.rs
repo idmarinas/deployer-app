@@ -492,8 +492,8 @@ async fn load_project_host(
         key_id: row.get("key_id"),
         description: row.get("description"),
         enabled: row.get("enabled"),
-        distribution: row.try_get("distribution").ok().flatten(),
         system_info: row.try_get("system_info").ok().flatten(),
+        status_info: row.try_get("status_info").ok().flatten(),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
     };

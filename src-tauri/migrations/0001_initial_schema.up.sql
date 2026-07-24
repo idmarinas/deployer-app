@@ -46,8 +46,8 @@ CREATE TABLE deployer_hosts (
     key_id INTEGER CONSTRAINT deployer_hosts_fk_key_id REFERENCES deployer_passkeys (id) ON DELETE SET NULL,
     description TEXT,
     enabled BOOLEAN NOT NULL DEFAULT 1,
-    distribution TEXT,
     system_info TEXT NOT NULL DEFAULT '{}',
+    status_info TEXT NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

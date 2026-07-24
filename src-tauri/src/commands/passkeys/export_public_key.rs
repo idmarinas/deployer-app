@@ -379,7 +379,7 @@ async fn fetch_host_data(
         SELECT
             h.id, h.name, h.host, h.port, h.username, h.auth_type,
             h.password, h.key_id, h.description, h.enabled,
-            h.distribution, h.system_info,
+            h.system_info, h.status_info,
             h.created_at, h.updated_at,
             p.key_content, p.passphrase
         FROM deployer_hosts h
@@ -406,8 +406,8 @@ async fn fetch_host_data(
             key_id: r.get("key_id"),
             description: r.try_get("description").ok().flatten(),
             enabled: r.get("enabled"),
-            distribution: r.try_get("distribution").ok().flatten(),
             system_info: r.try_get("system_info").ok().flatten(),
+            status_info: r.try_get("status_info").ok().flatten(),
             created_at: r.get("created_at"),
             updated_at: r.get("updated_at"),
         };

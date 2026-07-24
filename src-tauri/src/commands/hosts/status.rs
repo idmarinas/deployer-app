@@ -5,13 +5,19 @@ use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::helpers::configured_sqlite_options;
-use crate::commands::hosts::types::HostSystemInfo;
+use crate::commands::hosts::types::{HostStatusMetrics, HostSystemInfo};
 use crate::commands::ssh::{connect_to_host_by_id, run_ssh_command};
 use crate::commands::CommandResponse;
 use crate::params;
 
 /// Timeout para comandos batch (segundos).
 const BATCH_TIMEOUT_SECS: u64 = 15;
+
+/// Cooldown por defecto para system_info (horas).
+const DEFAULT_SYSTEM_INFO_COOLDOWN_HOURS: i64 = 24;
+
+/// Cooldown por defecto para status_info (minutos).
+const DEFAULT_STATUS_INFO_COOLDOWN_MINUTES: i64 = 15;
 
 // ============================================================================
 // Output
@@ -109,33 +115,31 @@ else
   cpu_usage="0.00"
 fi
 
-ram_info=$(free -b 2>/dev/null | awk "NR==2 {printf \"%s %s\", \$3, \$2}")
-ram_used=$(echo "$ram_info" | awk "{print \$1}")
-ram_total=$(echo "$ram_info" | awk "{print \$2}")
+ram_usage=$(free -b 2>/dev/null | awk "NR==2 {printf \"%.2f\", (1 - \$7/\$2) * 100}")
 
-disk_info=$(df -B1 / 2>/dev/null | awk "NR==2 {printf \"%s %s\", \$3, \$2}")
-disk_used=$(echo "$disk_info" | awk "{print \$1}")
-disk_total=$(echo "$disk_info" | awk "{print \$2}")
+disk_usage=$(df / --output=used,size 2>/dev/null | awk "NR==2 {printf \"%.2f\", (\$1/\$2) * 100}")
 
 uptime_out=$(uptime -p 2>/dev/null || uptime)
 
 esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
 
-printf "{\"cpu\":\"%s\",\"ram_used\":\"%s\",\"ram_total\":\"%s\",\"disk_used\":\"%s\",\"disk_total\":\"%s\",\"uptime\":\"%s\"}" \
-  "$cpu_usage" "$ram_used" "$ram_total" "$disk_used" "$disk_total" "$(esc "$uptime_out")"
+printf "{\"cpu\":\"%s\",\"ram\":\"%s\",\"disk\":\"%s\",\"uptime\":\"%s\"}" \
+  "$cpu_usage" "$ram_usage" "$disk_usage" "$(esc "$uptime_out")"
 '"#;
 
 // ============================================================================
-// Comando Tauri
+// Comandos Tauri
 // ============================================================================
 
+/// Comando que captura la información estática del servidor.
+/// Respeta cooldown configurable (default 24h).
 #[tauri::command]
 pub async fn host_check_status(
     app: AppHandle,
     host_id: i64,
 ) -> Result<CommandResponse<HostStatusInfo>, String> {
-    // 1. Conectar al host via helper compartido
-    let (mut session, _host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
+    // 1. Conectar al host
+    let (mut session, host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
         Ok(result) => result,
         Err(e) => {
             if e.contains("Timeout") {
@@ -151,52 +155,150 @@ pub async fn host_check_status(
         }
     };
 
-    // 2. Batch 1: info estática del sistema (1 canal SSH)
-    let sys_json = run_batch(&mut session, BATCH_SYSTEM_INFO).await?;
-    let sys: BatchSystemInfo = serde_json::from_str(&sys_json)
-        .map_err(|e| format!("Error al parsear info del sistema: {}", e))?;
+    // 2. Verificar cooldown de system_info
+    let cached_system_info: Option<HostSystemInfo> = host
+        .system_info
+        .as_ref()
+        .map(|j| j.0.clone());
 
-    // 3. Batch 2: métricas dinámicas (1 canal SSH)
+    let needs_refresh = match &cached_system_info {
+        Some(sys) => match &sys.last_checked_at {
+            Some(last_checked) => {
+                let cooldown_hours = get_setting_i64(&app, "hosts.system_info_cooldown_hours").await
+                    .unwrap_or(DEFAULT_SYSTEM_INFO_COOLDOWN_HOURS);
+                is_expired(last_checked, cooldown_hours * 3600)
+            }
+            None => true,
+        },
+        None => true,
+    };
+
+    // 3. Batch de métricas (siempre, para display: uptime, memory, disk)
     let met_json = run_batch(&mut session, BATCH_METRICS).await?;
     let met: BatchMetrics = serde_json::from_str(&met_json)
         .map_err(|e| format!("Error al parsear métricas: {}", e))?;
 
-    let _ = session.disconnect().await;
+    // 4. Batch de info estática solo si expiró el cooldown
+    let system_info = if needs_refresh {
+        let sys_json = run_batch(&mut session, BATCH_SYSTEM_INFO).await?;
+        let batch_sys: BatchSystemInfo = serde_json::from_str(&sys_json)
+            .map_err(|e| format!("Error al parsear info del sistema: {}", e))?;
 
-    // 4. Formatear strings display
-    let memory = format_bytes_display(&met.ram_used, &met.ram_total);
-    let disk = format_bytes_display(&met.disk_used, &met.disk_total);
+        let now = chrono::Utc::now().to_rfc3339();
+        let sys = HostSystemInfo {
+            package_manager: batch_sys.package_manager.clone(),
+            package_manager_version: batch_sys.package_manager_version,
+            kernel: batch_sys.kernel,
+            arch: batch_sys.arch,
+            distribution: batch_sys.distribution.clone(),
+            cpu_cores: batch_sys.cores,
+            memory_total: format_bytes_unit(&met.ram_total),
+            disk_total: format_bytes_unit(&met.disk_total),
+            os_release: batch_sys.os_release,
+            last_checked_at: Some(now),
+        };
 
-    // 5. Construir system_info y guardar en BD
-    let system_info = HostSystemInfo {
-        package_manager: sys.package_manager.clone(),
-        package_manager_version: sys.package_manager_version,
-        kernel: sys.kernel,
-        arch: sys.arch,
-        cpu_cores: sys.cores,
-        memory_total: format_bytes_unit(&met.ram_total),
-        disk_total: format_bytes_unit(&met.disk_total),
-        os_release: sys.os_release,
+        if let Ok(json) = serde_json::to_string(&sys) {
+            let _ = update_system_info(&app, host_id, &json).await;
+        }
+
+        sys
+    } else {
+        cached_system_info.unwrap_or_default()
     };
 
-    if let Ok(json) = serde_json::to_string(&system_info) {
-        let _ = update_host_system_info(&app, host_id, &sys.distribution, &json).await;
-    }
+    let _ = session.disconnect().await;
+
+    // 5. Formatear strings display
+    let memory = format_bytes_display(&met.ram_used, &met.ram_total);
+    let disk = format_bytes_display(&met.disk_used, &met.disk_total);
 
     // 6. Devolver resultado
     Ok(CommandResponse::ok(
         HostStatusInfo {
-            uname: sys.uname,
+            uname: String::new(),
             os_release: system_info.os_release.clone(),
             uptime: met.uptime,
             cpu_cores: system_info.cpu_cores.clone(),
             cpu_usage: format!("{}%", met.cpu),
             memory,
             disk,
-            distribution: sys.distribution,
+            distribution: system_info.distribution.clone(),
             system_info,
         },
         "hosts.success.status_checked",
+    ))
+}
+
+/// Comando que captura métricas dinámicas del servidor (CPU%, RAM%, DISK%).
+/// Respeta cooldown configurable (default 15 min).
+#[tauri::command]
+pub async fn host_check_metrics(
+    app: AppHandle,
+    host_id: i64,
+) -> Result<CommandResponse<HostStatusMetrics>, String> {
+    // 1. Conectar al host
+    let (mut session, host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
+        Ok(result) => result,
+        Err(e) => {
+            if e.contains("Timeout") {
+                return Ok(CommandResponse::err(
+                    "hosts.errors.connection_timeout",
+                    params!("timeout" => "15"),
+                ));
+            }
+            return Ok(CommandResponse::err(
+                "hosts.errors.connection_failed",
+                params!("reason" => e),
+            ));
+        }
+    };
+
+    // 2. Verificar cooldown de status_info
+    let cached_metrics: Option<HostStatusMetrics> = host
+        .status_info
+        .as_ref()
+        .map(|j| j.0.clone());
+
+    if let Some(ref metrics) = cached_metrics {
+        if let Some(ref last_checked) = metrics.last_checked_at {
+            let cooldown_minutes = get_setting_i64(&app, "hosts.status_info_cooldown_minutes").await
+                .unwrap_or(DEFAULT_STATUS_INFO_COOLDOWN_MINUTES);
+            if !is_expired(last_checked, cooldown_minutes * 60) {
+                let _ = session.disconnect().await;
+                return Ok(CommandResponse::ok(
+                    metrics.clone(),
+                    "hosts.success.metrics_checked",
+                ));
+            }
+        }
+    }
+
+    // 3. Ejecutar batch: métricas dinámicas
+    let met_json = run_batch(&mut session, BATCH_METRICS).await?;
+    let met: BatchMetrics = serde_json::from_str(&met_json)
+        .map_err(|e| format!("Error al parsear métricas: {}", e))?;
+
+    let _ = session.disconnect().await;
+
+    // 4. Construir métricas con timestamp
+    let now = chrono::Utc::now().to_rfc3339();
+    let metrics = HostStatusMetrics {
+        cpu_usage: met.cpu,
+        ram_usage: met.ram_used,
+        disk_usage: met.disk_used,
+        last_checked_at: Some(now),
+    };
+
+    // 5. Persistir en BD
+    if let Ok(json) = serde_json::to_string(&metrics) {
+        let _ = update_status_info(&app, host_id, &json).await;
+    }
+
+    // 6. Devolver resultado
+    Ok(CommandResponse::ok(
+        metrics,
+        "hosts.success.metrics_checked",
     ))
 }
 
@@ -239,11 +341,44 @@ fn format_bytes_display(used_str: &str, total_str: &str) -> String {
     format!("{} / {}", used, total)
 }
 
-/// Actualiza distribution y system_info en la BD.
-async fn update_host_system_info(
+/// Comprueba si un timestamp ISO 8601 ha expirado (más antiguo que `ttl_secs` segundos).
+fn is_expired(last_checked_at: &str, ttl_secs: i64) -> bool {
+    match chrono::DateTime::parse_from_rfc3339(last_checked_at) {
+        Ok(parsed) => {
+            let elapsed = chrono::Utc::now().signed_duration_since(parsed);
+            elapsed.num_seconds() > ttl_secs
+        }
+        Err(_) => true,
+    }
+}
+
+/// Lee un valor de deployer_settings y lo parsea a i64.
+async fn get_setting_i64(app: &AppHandle, key: &str) -> Option<i64> {
+    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+        .ok()??;
+    let url = path_to_sqlite_url(&db_path);
+    let options = configured_sqlite_options(&url).ok()?;
+    let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;
+
+    let result = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT value FROM deployer_settings WHERE key = ?1",
+    )
+    .bind(key)
+    .fetch_optional(&pool)
+    .await
+    .ok()
+    .flatten()
+    .flatten();
+
+    pool.close().await;
+
+    result.and_then(|v| v.parse::<i64>().ok())
+}
+
+/// Actualiza system_info en la BD.
+async fn update_system_info(
     app: &AppHandle,
     host_id: i64,
-    distribution: &str,
     system_info_json: &str,
 ) -> Result<(), String> {
     let db_path = crate::commands::store::get_database_path_internal(app.clone())
@@ -256,15 +391,39 @@ async fn update_host_system_info(
         .await
         .map_err(|e| e.to_string())?;
 
-    sqlx::query(
-        "UPDATE deployer_hosts SET distribution = ?1, system_info = ?2 WHERE id = ?3",
-    )
-    .bind(distribution)
-    .bind(system_info_json)
-    .bind(host_id)
-    .execute(&pool)
-    .await
-    .map_err(|e| e.to_string())?;
+    sqlx::query("UPDATE deployer_hosts SET system_info = ?1 WHERE id = ?2")
+        .bind(system_info_json)
+        .bind(host_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    pool.close().await;
+    Ok(())
+}
+
+/// Actualiza status_info en la BD.
+async fn update_status_info(
+    app: &AppHandle,
+    host_id: i64,
+    status_info_json: &str,
+) -> Result<(), String> {
+    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+        .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
+        .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
+
+    let url = path_to_sqlite_url(&db_path);
+    let options = configured_sqlite_options(&url)?;
+    let pool: sqlx::Pool<sqlx::Sqlite> = SqlitePool::connect_with(options)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    sqlx::query("UPDATE deployer_hosts SET status_info = ?1 WHERE id = ?2")
+        .bind(status_info_json)
+        .bind(host_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| e.to_string())?;
 
     pool.close().await;
     Ok(())

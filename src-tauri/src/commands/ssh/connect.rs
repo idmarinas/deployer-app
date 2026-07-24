@@ -18,7 +18,7 @@ const SSH_TIMEOUT_SECS: u64 = 15;
 ///
 /// Si `enabled_only` es `true`, solo acepta hosts con `enabled = 1`.
 /// Retorna la sesión SSH y el struct `Host` por si el caller necesita
-/// campos como `host.name`, `host.distribution`, etc.
+/// campos como `host.name`, `host.system_info`, etc.
 pub async fn connect_to_host_by_id(
     app: &AppHandle,
     host_id: i64,
@@ -42,7 +42,7 @@ pub async fn connect_to_host_by_id(
         SELECT
             h.id, h.name, h.host, h.port, h.username, h.auth_type,
             h.password, h.key_id, h.description, h.enabled,
-            h.distribution, h.system_info,
+            h.system_info, h.status_info,
             h.created_at, h.updated_at,
             p.key_content, p.passphrase
         FROM deployer_hosts h
@@ -54,7 +54,7 @@ pub async fn connect_to_host_by_id(
         SELECT
             h.id, h.name, h.host, h.port, h.username, h.auth_type,
             h.password, h.key_id, h.description, h.enabled,
-            h.distribution, h.system_info,
+            h.system_info, h.status_info,
             h.created_at, h.updated_at,
             p.key_content, p.passphrase
         FROM deployer_hosts h
@@ -84,8 +84,8 @@ pub async fn connect_to_host_by_id(
         key_id: row.get("key_id"),
         description: row.try_get("description").ok().flatten(),
         enabled: row.get("enabled"),
-        distribution: row.try_get("distribution").ok().flatten(),
         system_info: row.try_get("system_info").ok().flatten(),
+        status_info: row.try_get("status_info").ok().flatten(),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
     };
