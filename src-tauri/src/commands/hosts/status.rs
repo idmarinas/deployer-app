@@ -10,8 +10,8 @@ use crate::commands::ssh::{connect_to_host_by_id, run_ssh_command};
 use crate::commands::CommandResponse;
 use crate::params;
 
-/// Timeout para comandos individuales (segundos).
-const COMMAND_TIMEOUT_SECS: u64 = 10;
+/// Timeout para comandos batch (segundos).
+const BATCH_TIMEOUT_SECS: u64 = 15;
 
 // ============================================================================
 // Output
@@ -24,11 +24,106 @@ pub struct HostStatusInfo {
     pub os_release: String,
     pub uptime: String,
     pub cpu_cores: String,
+    pub cpu_usage: String,
     pub memory: String,
     pub disk: String,
     pub distribution: String,
     pub system_info: HostSystemInfo,
 }
+
+// ============================================================================
+// Batch JSON structs (internos, para deserializar respuestas SSH)
+// ============================================================================
+
+#[derive(Debug, Deserialize)]
+struct BatchSystemInfo {
+    uname: String,
+    kernel: String,
+    arch: String,
+    cores: String,
+    os_release: String,
+    distribution: String,
+    package_manager: String,
+    package_manager_version: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct BatchMetrics {
+    cpu: String,
+    ram_used: String,
+    ram_total: String,
+    disk_used: String,
+    disk_total: String,
+    uptime: String,
+}
+
+// ============================================================================
+// Comandos bash batch
+// ============================================================================
+
+/// Batch 1: Info estática del sistema (uname, kernel, arch, cores, OS, dist, pm).
+const BATCH_SYSTEM_INFO: &str = r#"bash -c '
+esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
+
+kernel=$(uname -r 2>/dev/null)
+arch=$(uname -m 2>/dev/null)
+cores=$(nproc 2>/dev/null || echo 1)
+uname_full=$(uname -a 2>/dev/null)
+
+os_release=""
+dist=""
+if [ -f /etc/os-release ]; then
+  os_release=$(grep -E "^(PRETTY_NAME|VERSION)=" /etc/os-release 2>/dev/null | head -2 | tr "\n" " ")
+  dist=$(grep "^PRETTY_NAME=" /etc/os-release 2>/dev/null | cut -d"\"" -f2)
+fi
+
+pm="unknown"
+pm_ver=""
+for p in apt yum dnf; do
+  if command -v "$p" >/dev/null 2>&1; then
+    pm="$p"
+    pm_ver=$("$p" --version 2>/dev/null | head -1)
+    break
+  fi
+done
+
+printf "{\"uname\":\"%s\",\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"os_release\":\"%s\",\"distribution\":\"%s\",\"package_manager\":\"%s\",\"package_manager_version\":\"%s\"}" \
+  "$(esc "$uname_full")" "$(esc "$kernel")" "$(esc "$arch")" "$(esc "$cores")" \
+  "$(esc "$os_release")" "$(esc "$dist")" "$(esc "$pm")" "$(esc "$pm_ver")"
+'"#;
+
+/// Batch 2: Métricas dinámicas (CPU%, RAM, disco, uptime).
+const BATCH_METRICS: &str = r#"bash -c '
+read cpu user nice system idle iowait irq softirq steal < /proc/stat
+sleep 1
+read cpu2 user2 nice2 system2 idle2 iowait2 irq2 softirq2 steal2 < /proc/stat
+
+idle_delta=$((idle2 - idle))
+total1=$((user + nice + system + idle + iowait + irq + softirq))
+total2=$((user2 + nice2 + system2 + idle2 + iowait2 + irq2 + softirq2))
+total_delta=$((total2 - total1))
+
+if [ "$total_delta" -gt 0 ]; then
+  cpu_usage=$(awk "BEGIN {printf \"%.2f\", (1 - $idle_delta / $total_delta) * 100}")
+else
+  cpu_usage="0.00"
+fi
+
+ram_info=$(free -b 2>/dev/null | awk "NR==2 {printf \"%s %s\", \$3, \$2}")
+ram_used=$(echo "$ram_info" | awk "{print \$1}")
+ram_total=$(echo "$ram_info" | awk "{print \$2}")
+
+disk_info=$(df -B1 / 2>/dev/null | awk "NR==2 {printf \"%s %s\", \$3, \$2}")
+disk_used=$(echo "$disk_info" | awk "{print \$1}")
+disk_total=$(echo "$disk_info" | awk "{print \$2}")
+
+uptime_out=$(uptime -p 2>/dev/null || uptime)
+
+esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
+
+printf "{\"cpu\":\"%s\",\"ram_used\":\"%s\",\"ram_total\":\"%s\",\"disk_used\":\"%s\",\"disk_total\":\"%s\",\"uptime\":\"%s\"}" \
+  "$cpu_usage" "$ram_used" "$ram_total" "$disk_used" "$disk_total" "$(esc "$uptime_out")"
+'"#;
 
 // ============================================================================
 // Comando Tauri
@@ -56,57 +151,49 @@ pub async fn host_check_status(
         }
     };
 
-    // 2. Ejecutar comandos para obtener info del sistema
-    let uname = run_cmd(&mut session, "uname -a").await.unwrap_or_default();
-    let os_release = run_cmd(&mut session, "cat /etc/os-release 2>/dev/null | grep -E '^(PRETTY_NAME|VERSION)=' | head -2").await.unwrap_or_default();
-    let uptime = run_cmd(&mut session, "uptime -p 2>/dev/null || uptime").await.unwrap_or_default();
-    let cpu_cores = run_cmd(&mut session, "nproc 2>/dev/null || echo '-'").await.unwrap_or_default();
-    let memory = run_cmd(&mut session, "free -h 2>/dev/null | awk '/^Mem:/{printf \"%s / %s\", $3, $2}' || echo '-'").await.unwrap_or_default();
-    let disk = run_cmd(&mut session, "df -h / 2>/dev/null | awk 'NR==2{printf \"%s / %s (%s)\", $3, $2, $5}' || echo '-'").await.unwrap_or_default();
+    // 2. Batch 1: info estática del sistema (1 canal SSH)
+    let sys_json = run_batch(&mut session, BATCH_SYSTEM_INFO).await?;
+    let sys: BatchSystemInfo = serde_json::from_str(&sys_json)
+        .map_err(|e| format!("Error al parsear info del sistema: {}", e))?;
 
-    // 3. Detectar package manager
-    let pm = detect_package_manager(&mut session).await;
-
-    // 4. Detectar distribución
-    let distribution = detect_distribution(&mut session).await;
-
-    // 5. Detectar kernel, arch y datos estáticos del sistema
-    let kernel = run_cmd(&mut session, "uname -r 2>/dev/null").await.unwrap_or_default();
-    let arch = run_cmd(&mut session, "uname -m 2>/dev/null").await.unwrap_or_default();
-    let pm_version = run_cmd(&mut session, &format!("{} --version 2>/dev/null | head -1", pm)).await.unwrap_or_default();
-
-    let memory_total = run_cmd(&mut session, "free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo '-'").await.unwrap_or_default();
-    let disk_total = run_cmd(&mut session, "df -h / 2>/dev/null | awk 'NR==2{print $2}' || echo '-'").await.unwrap_or_default();
-    let os_pretty = run_cmd(&mut session, "cat /etc/os-release 2>/dev/null | grep '^PRETTY_NAME=' | cut -d'\"' -f2 || echo '-'").await.unwrap_or_default();
+    // 3. Batch 2: métricas dinámicas (1 canal SSH)
+    let met_json = run_batch(&mut session, BATCH_METRICS).await?;
+    let met: BatchMetrics = serde_json::from_str(&met_json)
+        .map_err(|e| format!("Error al parsear métricas: {}", e))?;
 
     let _ = session.disconnect().await;
 
-    // 6. Construir system_info y guardar en BD
+    // 4. Formatear strings display
+    let memory = format_bytes_display(&met.ram_used, &met.ram_total);
+    let disk = format_bytes_display(&met.disk_used, &met.disk_total);
+
+    // 5. Construir system_info y guardar en BD
     let system_info = HostSystemInfo {
-        package_manager: pm.clone(),
-        package_manager_version: pm_version.trim().to_string(),
-        kernel: kernel.trim().to_string(),
-        arch: arch.trim().to_string(),
-        cpu_cores: cpu_cores.trim().to_string(),
-        memory_total: memory_total.trim().to_string(),
-        disk_total: disk_total.trim().to_string(),
-        os_release: os_pretty.trim().to_string(),
+        package_manager: sys.package_manager.clone(),
+        package_manager_version: sys.package_manager_version,
+        kernel: sys.kernel,
+        arch: sys.arch,
+        cpu_cores: sys.cores,
+        memory_total: format_bytes_unit(&met.ram_total),
+        disk_total: format_bytes_unit(&met.disk_total),
+        os_release: sys.os_release,
     };
 
     if let Ok(json) = serde_json::to_string(&system_info) {
-        let _ = update_host_system_info(&app, host_id, &distribution, &json).await;
+        let _ = update_host_system_info(&app, host_id, &sys.distribution, &json).await;
     }
 
-    // 7. Devolver resultado
+    // 6. Devolver resultado
     Ok(CommandResponse::ok(
         HostStatusInfo {
-            uname: uname.trim().to_string(),
-            os_release: os_release.trim().to_string(),
-            uptime: uptime.trim().to_string(),
-            cpu_cores: cpu_cores.trim().to_string(),
-            memory: memory.trim().to_string(),
-            disk: disk.trim().to_string(),
-            distribution: distribution.clone(),
+            uname: sys.uname,
+            os_release: system_info.os_release.clone(),
+            uptime: met.uptime,
+            cpu_cores: system_info.cpu_cores.clone(),
+            cpu_usage: format!("{}%", met.cpu),
+            memory,
+            disk,
+            distribution: sys.distribution,
             system_info,
         },
         "hosts.success.status_checked",
@@ -117,62 +204,39 @@ pub async fn host_check_status(
 // Helpers
 // ============================================================================
 
-/// Ejecuta un comando SSH simple y devuelve el output (o None si falla).
-async fn run_cmd(
+/// Ejecuta un comando batch SSH y devuelve el output crudo.
+async fn run_batch(
     session: &mut crate::commands::ssh::SshSession,
     command: &str,
-) -> Option<String> {
-    match run_ssh_command(session, command, COMMAND_TIMEOUT_SECS).await {
-        Ok((output, _exit_code)) => {
-            let trimmed = output.trim().to_string();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed)
-            }
-        }
-        Err(_) => None,
+) -> Result<String, String> {
+    let (output, _exit_code) = run_ssh_command(session, command, BATCH_TIMEOUT_SECS).await?;
+    Ok(output.trim().to_string())
+}
+
+/// Convierte bytes a string legible: "2254856192" → "2.1Gi".
+fn format_bytes_unit(bytes_str: &str) -> String {
+    let bytes: f64 = bytes_str.parse().unwrap_or(0.0);
+    const KIB: f64 = 1024.0;
+    const MIB: f64 = KIB * 1024.0;
+    const GIB: f64 = MIB * 1024.0;
+    const TIB: f64 = GIB * 1024.0;
+
+    if bytes >= TIB {
+        format!("{:.1}Ti", bytes / TIB)
+    } else if bytes >= GIB {
+        format!("{:.1}Gi", bytes / GIB)
+    } else if bytes >= MIB {
+        format!("{:.0}Mi", bytes / MIB)
+    } else {
+        format!("{:.0}Ki", bytes / KIB)
     }
 }
 
-/// Detecta el package manager instalado en el servidor.
-async fn detect_package_manager(
-    session: &mut crate::commands::ssh::SshSession,
-) -> String {
-    for pm in &["apt", "yum", "dnf"] {
-        if let Some(output) = run_cmd(session, &format!("command -v {} 2>/dev/null", pm)).await {
-            if !output.is_empty() {
-                return pm.to_string();
-            }
-        }
-    }
-    "unknown".to_string()
-}
-
-/// Detecta la distribución del SO.
-async fn detect_distribution(
-    session: &mut crate::commands::ssh::SshSession,
-) -> String {
-    if let Some(output) = run_cmd(
-        session,
-        "cat /etc/os-release 2>/dev/null | grep '^PRETTY_NAME=' | cut -d'\"' -f2",
-    )
-    .await
-    {
-        if !output.is_empty() {
-            return output;
-        }
-    }
-
-    if let Some(output) = run_cmd(session, "lsb_release -d 2>/dev/null | cut -f2").await {
-        if !output.is_empty() {
-            return output;
-        }
-    }
-
-    run_cmd(session, "uname -srm")
-        .await
-        .unwrap_or_else(|| "Desconocido".to_string())
+/// Formatea "used_bytes total_bytes" → "2.1Gi / 7.7Gi".
+fn format_bytes_display(used_str: &str, total_str: &str) -> String {
+    let used = format_bytes_unit(used_str);
+    let total = format_bytes_unit(total_str);
+    format!("{} / {}", used, total)
 }
 
 /// Actualiza distribution y system_info en la BD.
@@ -188,7 +252,7 @@ async fn update_host_system_info(
 
     let url = path_to_sqlite_url(&db_path);
     let options = configured_sqlite_options(&url)?;
-    let pool = SqlitePool::connect_with(options)
+    let pool: sqlx::Pool<sqlx::Sqlite> = SqlitePool::connect_with(options)
         .await
         .map_err(|e| e.to_string())?;
 
