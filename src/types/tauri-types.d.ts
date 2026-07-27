@@ -153,14 +153,13 @@ export type Host = { id: number, name: string, host: string, port: number, usern
  */
 password: string | null, key_id: number | null, description: any, enabled: boolean, 
 /**
- * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
+ * JSON con información del sistema detectada: package_manager, kernel, arch, distribution, etc.
  */
-distribution: string | null, 
+system_info: HostSystemInfo | null, 
 /**
- * JSON con información del sistema detectada: package_manager, kernel, arch, etc.
- * Deserializado automáticamente desde la columna TEXT de SQLite.
+ * JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
  */
-system_info: HostSystemInfo | null, created_at: string, updated_at: string, };
+status_info: HostStatusMetrics | null, created_at: string, updated_at: string, };
 
 export type HostCheckUpdatesResult = { packages: Array<HostPackage>, summary: HostUpdatesSummary, };
 
@@ -182,13 +181,37 @@ is_security: boolean,
  */
 priority: string, };
 
-export type HostStatusInfo = { uname: string, os_release: string, uptime: string, cpu_cores: string, memory: string, disk: string, distribution: string, system_info: HostSystemInfo, };
+/**
+ * Métricas dinámicas del servidor capturadas en un momento dado.
+ * Almacenada como JSON en `status_info`.
+ */
+export type HostStatusMetrics = { 
+/**
+ * Porcentaje de uso CPU (ej: "23.45").
+ */
+cpu_usage: string, 
+/**
+ * Porcentaje de uso RAM (ej: "67.89").
+ */
+ram_usage: string, 
+/**
+ * Porcentaje de uso disco (ej: "45.12").
+ */
+disk_usage: string, 
+/**
+ * Timestamp ISO 8601 de cuándo se capturaron estas métricas.
+ */
+last_checked_at: string | null, };
 
 /**
  * Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
  * Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
  */
 export type HostSystemInfo = { package_manager: string, package_manager_version: string, kernel: string, arch: string, 
+/**
+ * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
+ */
+distribution: string, 
 /**
  * Número de cores CPU (ej: "8").
  */
@@ -204,7 +227,11 @@ disk_total: string,
 /**
  * SO y versión (ej: "Ubuntu 22.04 LTS").
  */
-os_release: string, };
+os_release: string, 
+/**
+ * Timestamp ISO 8601 de la última vez que se obtuvo esta información.
+ */
+last_checked_at: string | null, };
 
 export type HostUpdatePackagesInput = { host_id: number, 
 /**
