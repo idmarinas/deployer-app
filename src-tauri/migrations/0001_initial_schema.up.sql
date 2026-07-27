@@ -48,6 +48,7 @@ CREATE TABLE deployer_hosts (
     enabled BOOLEAN NOT NULL DEFAULT 1,
     system_info TEXT NOT NULL DEFAULT '{}',
     status_info TEXT NOT NULL DEFAULT '{}',
+    server_updates TEXT NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::commands::Patch;
+use crate::commands::hosts::updates::HostServerUpdates;
 
 // ============================================================================
 // Enum AuthType
@@ -69,6 +70,9 @@ pub struct Host {
     /// JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
     #[ts(as = "Option<HostStatusMetrics>")]
     pub status_info: Option<sqlx::types::Json<HostStatusMetrics>>,
+    /// JSON con las actualizaciones de paquetes disponibles y la última comprobación.
+    #[ts(as = "Option<HostServerUpdates>")]
+    pub server_updates: Option<sqlx::types::Json<HostServerUpdates>>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -109,6 +113,7 @@ impl CreateHostInput {
             enabled: self.enabled.unwrap_or(true),
             system_info: Some(sqlx::types::Json(HostSystemInfo::default())),
             status_info: None,
+            server_updates: None,
             created_at: String::new(),
             updated_at: String::new(),
         }

@@ -408,6 +408,7 @@ async fn fetch_host_data(
             enabled: r.get("enabled"),
             system_info: r.try_get("system_info").ok().flatten(),
             status_info: r.try_get("status_info").ok().flatten(),
+            server_updates: r.try_get("server_updates").ok().flatten(),
             created_at: r.get("created_at"),
             updated_at: r.get("updated_at"),
         };

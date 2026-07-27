@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 use tauri::AppHandle;
 use ts_rs::TS;
 
+use crate::commands::database::path_to_sqlite_url;
+use crate::commands::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::HostSystemInfo;
 use crate::commands::ssh::{connect_to_host_by_id, run_ssh_command, SshSession};
 use crate::commands::CommandResponse;
@@ -30,7 +33,7 @@ pub struct HostPackage {
     pub priority: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct HostUpdatesSummary {
     pub total: usize,
@@ -45,6 +48,19 @@ pub struct HostUpdatesSummary {
 pub struct HostCheckUpdatesResult {
     pub packages: Vec<HostPackage>,
     pub summary: HostUpdatesSummary,
+}
+
+/// JSON almacenado en deployer_hosts.server_updates.
+/// Contiene las actualizaciones disponibles y la última vez que se comprobaron.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct HostServerUpdates {
+    #[serde(default)]
+    pub packages: Vec<HostPackage>,
+    #[serde(default)]
+    pub summary: HostUpdatesSummary,
+    #[serde(default)]
+    pub last_checked_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -89,6 +105,17 @@ pub async fn host_check_updates(
     };
 
     let summary = build_summary(&packages);
+
+    // Persistir resultado en BD
+    let now = chrono::Utc::now().to_rfc3339();
+    let server_updates = HostServerUpdates {
+        packages: packages.clone(),
+        summary: summary.clone(),
+        last_checked_at: Some(now),
+    };
+    if let Ok(json) = serde_json::to_string(&server_updates) {
+        let _ = update_server_updates(&app, host_id, &json).await;
+    }
 
     Ok(CommandResponse::ok(
         HostCheckUpdatesResult { packages, summary },
@@ -370,4 +397,31 @@ fn build_summary(packages: &[HostPackage]) -> HostUpdatesSummary {
         minor: packages.iter().filter(|p| p.update_type == "minor").count(),
         patch: packages.iter().filter(|p| p.update_type == "patch").count(),
     }
+}
+
+/// Actualiza server_updates en la BD.
+async fn update_server_updates(
+    app: &AppHandle,
+    host_id: i64,
+    server_updates_json: &str,
+) -> Result<(), String> {
+    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+        .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
+        .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
+
+    let url = path_to_sqlite_url(&db_path);
+    let options = configured_sqlite_options(&url)?;
+    let pool: SqlitePool = SqlitePool::connect_with(options)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    sqlx::query("UPDATE deployer_hosts SET server_updates = ?1 WHERE id = ?2")
+        .bind(server_updates_json)
+        .bind(host_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    pool.close().await;
+    Ok(())
 }

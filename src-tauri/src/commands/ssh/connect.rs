@@ -86,6 +86,7 @@ pub async fn connect_to_host_by_id(
         enabled: row.get("enabled"),
         system_info: row.try_get("system_info").ok().flatten(),
         status_info: row.try_get("status_info").ok().flatten(),
+        server_updates: row.try_get("server_updates").ok().flatten(),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
     };
