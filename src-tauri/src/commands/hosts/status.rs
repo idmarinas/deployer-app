@@ -55,8 +55,8 @@ esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
 kernel=$(uname -r 2>/dev/null)
 arch=$(uname -m 2>/dev/null)
 cores=$(nproc 2>/dev/null || echo 1)
-mem_total=$(free -b --gigas 2>/dev/null | awk "NR==2 {print \$2}")
-disk_total=$(df -B1 --gigas / 2>/dev/null | awk "NR==2 {print \$2}")
+mem_total=$(free -b 2>/dev/null | awk "NR==2 {print \$2}")
+disk_total=$(df -B1 / 2>/dev/null | awk "NR==2 {print \$2}")
 
 os_release=""
 dist=""
