@@ -36,7 +36,7 @@ use commands::global_variables::{
 };
 use commands::hosts::{
     crud_create_host, crud_delete_host, crud_get_host, crud_list_hosts, crud_update_host,
-    host_check_status, host_check_metrics, host_check_updates, host_update_packages, test_connection,
+    host_check_system_info, host_check_metrics, host_check_updates, host_update_packages, test_connection,
 };
 use commands::migrations::{has_pending_migrations, run_migrations};
 use commands::passkeys::{
@@ -94,7 +94,7 @@ pub fn run() {
             crud_delete_host,
             // Hosts - otros
             test_connection,
-            host_check_status,
+            host_check_system_info,
             host_check_metrics,
             host_check_updates,
             host_update_packages,

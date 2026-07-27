@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::SqlitePool;
 use tauri::AppHandle;
-use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::helpers::configured_sqlite_options;
@@ -20,33 +19,16 @@ const DEFAULT_SYSTEM_INFO_COOLDOWN_HOURS: i64 = 24;
 const DEFAULT_STATUS_INFO_COOLDOWN_MINUTES: i64 = 15;
 
 // ============================================================================
-// Output
-// ============================================================================
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct HostStatusInfo {
-    pub uname: String,
-    pub os_release: String,
-    pub uptime: String,
-    pub cpu_cores: String,
-    pub cpu_usage: String,
-    pub memory: String,
-    pub disk: String,
-    pub distribution: String,
-    pub system_info: HostSystemInfo,
-}
-
-// ============================================================================
 // Batch JSON structs (internos, para deserializar respuestas SSH)
 // ============================================================================
 
 #[derive(Debug, Deserialize)]
 struct BatchSystemInfo {
-    uname: String,
     kernel: String,
     arch: String,
     cores: String,
+    memory_total: String,
+    disk_total: String,
     os_release: String,
     distribution: String,
     package_manager: String,
@@ -56,10 +38,9 @@ struct BatchSystemInfo {
 #[derive(Debug, Deserialize)]
 struct BatchMetrics {
     cpu: String,
-    ram_used: String,
-    ram_total: String,
-    disk_used: String,
-    disk_total: String,
+    ram: String,
+    disk: String,
+    #[allow(dead_code)]
     uptime: String,
 }
 
@@ -67,14 +48,15 @@ struct BatchMetrics {
 // Comandos bash batch
 // ============================================================================
 
-/// Batch 1: Info estática del sistema (uname, kernel, arch, cores, OS, dist, pm).
+/// Batch 1: Info estática del sistema (kernel, arch, cores, RAM total, disco total, OS, dist, pm).
 const BATCH_SYSTEM_INFO: &str = r#"bash -c '
 esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
 
 kernel=$(uname -r 2>/dev/null)
 arch=$(uname -m 2>/dev/null)
 cores=$(nproc 2>/dev/null || echo 1)
-uname_full=$(uname -a 2>/dev/null)
+mem_total=$(free -b --gigas 2>/dev/null | awk "NR==2 {print \$2}")
+disk_total=$(df -B1 --gigas / 2>/dev/null | awk "NR==2 {print \$2}")
 
 os_release=""
 dist=""
@@ -93,8 +75,9 @@ for p in apt yum dnf; do
   fi
 done
 
-printf "{\"uname\":\"%s\",\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"os_release\":\"%s\",\"distribution\":\"%s\",\"package_manager\":\"%s\",\"package_manager_version\":\"%s\"}" \
-  "$(esc "$uname_full")" "$(esc "$kernel")" "$(esc "$arch")" "$(esc "$cores")" \
+printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%s\",\"disk_total\":\"%s\",\"os_release\":\"%s\",\"distribution\":\"%s\",\"package_manager\":\"%s\",\"package_manager_version\":\"%s\"}" \
+  "$(esc "$kernel")" "$(esc "$arch")" "$(esc "$cores")" \
+  "$(esc "$mem_total")" "$(esc "$disk_total")" \
   "$(esc "$os_release")" "$(esc "$dist")" "$(esc "$pm")" "$(esc "$pm_ver")"
 '"#;
 
@@ -131,13 +114,13 @@ printf "{\"cpu\":\"%s\",\"ram\":\"%s\",\"disk\":\"%s\",\"uptime\":\"%s\"}" \
 // Comandos Tauri
 // ============================================================================
 
-/// Comando que captura la información estática del servidor.
+/// Comando que recupera y guarda la información estática del servidor (system_info).
 /// Respeta cooldown configurable (default 24h).
 #[tauri::command]
-pub async fn host_check_status(
+pub async fn host_check_system_info(
     app: AppHandle,
     host_id: i64,
-) -> Result<CommandResponse<HostStatusInfo>, String> {
+) -> Result<CommandResponse<HostSystemInfo>, String> {
     // 1. Conectar al host
     let (mut session, host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
         Ok(result) => result,
@@ -173,12 +156,7 @@ pub async fn host_check_status(
         None => true,
     };
 
-    // 3. Batch de métricas (siempre, para display: uptime, memory, disk)
-    let met_json = run_batch(&mut session, BATCH_METRICS).await?;
-    let met: BatchMetrics = serde_json::from_str(&met_json)
-        .map_err(|e| format!("Error al parsear métricas: {}", e))?;
-
-    // 4. Batch de info estática solo si expiró el cooldown
+    // 3. Batch de info estática solo si expiró el cooldown
     let system_info = if needs_refresh {
         let sys_json = run_batch(&mut session, BATCH_SYSTEM_INFO).await?;
         let batch_sys: BatchSystemInfo = serde_json::from_str(&sys_json)
@@ -192,8 +170,8 @@ pub async fn host_check_status(
             arch: batch_sys.arch,
             distribution: batch_sys.distribution.clone(),
             cpu_cores: batch_sys.cores,
-            memory_total: format_bytes_unit(&met.ram_total),
-            disk_total: format_bytes_unit(&met.disk_total),
+            memory_total: format_bytes_unit(&batch_sys.memory_total),
+            disk_total: format_bytes_unit(&batch_sys.disk_total),
             os_release: batch_sys.os_release,
             last_checked_at: Some(now),
         };
@@ -209,24 +187,10 @@ pub async fn host_check_status(
 
     let _ = session.disconnect().await;
 
-    // 5. Formatear strings display
-    let memory = format_bytes_display(&met.ram_used, &met.ram_total);
-    let disk = format_bytes_display(&met.disk_used, &met.disk_total);
-
-    // 6. Devolver resultado
+    // 4. Devolver resultado
     Ok(CommandResponse::ok(
-        HostStatusInfo {
-            uname: String::new(),
-            os_release: system_info.os_release.clone(),
-            uptime: met.uptime,
-            cpu_cores: system_info.cpu_cores.clone(),
-            cpu_usage: format!("{}%", met.cpu),
-            memory,
-            disk,
-            distribution: system_info.distribution.clone(),
-            system_info,
-        },
-        "hosts.success.status_checked",
+        system_info,
+        "hosts.success.system_info_checked",
     ))
 }
 
@@ -285,8 +249,8 @@ pub async fn host_check_metrics(
     let now = chrono::Utc::now().to_rfc3339();
     let metrics = HostStatusMetrics {
         cpu_usage: met.cpu,
-        ram_usage: met.ram_used,
-        disk_usage: met.disk_used,
+        ram_usage: met.ram,
+        disk_usage: met.disk,
         last_checked_at: Some(now),
     };
 
@@ -332,13 +296,6 @@ fn format_bytes_unit(bytes_str: &str) -> String {
     } else {
         format!("{:.0}Ki", bytes / KIB)
     }
-}
-
-/// Formatea "used_bytes total_bytes" → "2.1Gi / 7.7Gi".
-fn format_bytes_display(used_str: &str, total_str: &str) -> String {
-    let used = format_bytes_unit(used_str);
-    let total = format_bytes_unit(total_str);
-    format!("{} / {}", used, total)
 }
 
 /// Comprueba si un timestamp ISO 8601 ha expirado (más antiguo que `ttl_secs` segundos).
