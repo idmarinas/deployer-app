@@ -155,7 +155,7 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 							notice.id,
 							toaster.error(
 								t('pages.hosts.toast.test_connection.error.title'),
-								t('pages.hosts.toast.test_connection.error.description', { name: item.name }),
+								t('pages.hosts.toast.test_connection.error.description', { name: item.name, ...result.message_params }),
 								{
 									id: notice.id,
 									duration: undefined,
