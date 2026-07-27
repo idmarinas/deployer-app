@@ -42,6 +42,7 @@ export default {
 		none: 'Ninguno',
 		username: 'Usuario',
 		encrypted: 'Encriptado',
+		last_check: 'Última comprobación',
 		yes: 'Sí',
 		no: 'No',
 	},
