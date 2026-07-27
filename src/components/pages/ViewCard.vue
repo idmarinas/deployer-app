@@ -34,7 +34,7 @@ const { t, locale } = useI18n()
 			<DescriptionViewer :value="description" :placeholder="t('common.empty.description')" />
 		</template>
 
-		<template #default>
+		<template v-if="$slots.default" #default>
 			<slot />
 		</template>
 
