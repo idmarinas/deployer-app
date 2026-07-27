@@ -32,7 +32,7 @@
 		"slugify": "^1.6.9",
 		"sortablejs": "^1.15.7",
 		"vue": "^3.5.40",
-		"vue-i18n": "^11.4.7",
+		"vue-i18n": "^11.4.8",
 		"vue-router": "^5.2.0",
 		"yaml": "^2.9.0",
 		"zod": "^4.4.3"
@@ -48,7 +48,7 @@
 		"tailwindcss": "^4.3.3",
 		"typescript": "~6.0.3",
 		"vite": "^8.1.5",
-		"vite-plugin-vue-devtools": "^8.1.5",
+		"vite-plugin-vue-devtools": "^8.2.1",
 		"vue-tsc": "^3.3.8"
 	}
 }
