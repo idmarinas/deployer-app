@@ -159,7 +159,11 @@ system_info: HostSystemInfo | null,
 /**
  * JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
  */
-status_info: HostStatusMetrics | null, created_at: string, updated_at: string, };
+status_info: HostStatusMetrics | null, 
+/**
+ * JSON con las actualizaciones de paquetes disponibles y la última comprobación.
+ */
+server_updates: HostServerUpdates | null, created_at: string, updated_at: string, };
 
 export type HostCheckUpdatesResult = { packages: Array<HostPackage>, summary: HostUpdatesSummary, };
 
@@ -180,6 +184,12 @@ is_security: boolean,
  * Prioridad: "high", "medium" o "low".
  */
 priority: string, };
+
+/**
+ * JSON almacenado en deployer_hosts.server_updates.
+ * Contiene las actualizaciones disponibles y la última vez que se comprobaron.
+ */
+export type HostServerUpdates = { packages: Array<HostPackage>, summary: HostUpdatesSummary, last_checked_at: string | null, };
 
 /**
  * Métricas dinámicas del servidor capturadas en un momento dado.

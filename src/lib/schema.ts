@@ -55,6 +55,7 @@ export const deployer_hosts = sqliteTable("deployer_hosts", {
 	enabled: integer({ mode: 'boolean' }).notNull().default(true),
 	system_info: text().default("{}").notNull(),
 	status_info: text().default("{}").notNull(),
+	server_updates: text().default("{}").notNull(),
 	created_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
