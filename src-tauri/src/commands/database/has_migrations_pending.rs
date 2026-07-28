@@ -20,7 +20,7 @@ macro_rules! params {
 /// y `false` si está completamente actualizada.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn has_pending_migrations(app: AppHandle) -> CommandResponse<bool> {
+pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     let (pool, path) = match open_pool(&app).await {

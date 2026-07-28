@@ -10,8 +10,8 @@ mod ssh;
 
 use commands::database::{
     create_database_file, get_app_info, get_database_info, get_database_url,
-    get_migrations_info, has_pending_migrations, initialize_database, query_raw,
-    run_migrations, validate_sqlite_database,
+    get_migrations_info, has_migrations_pending, initialize_database, query_raw,
+    execute_migrations, validate_database_sqlite,
 };
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
 use commands::deployer_settings::{
@@ -212,14 +212,14 @@ pub fn run() {
             get_database_url,
             initialize_database,
             create_database_file,
-            validate_sqlite_database,
+            validate_database_sqlite,
             query_raw,
             get_app_info,
             get_database_info,
             get_migrations_info,
             // Database - Migrations
-            run_migrations,
-            has_pending_migrations,
+            execute_migrations,
+            has_migrations_pending,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

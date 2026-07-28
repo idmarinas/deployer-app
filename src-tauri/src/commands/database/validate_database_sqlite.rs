@@ -10,7 +10,7 @@ use tokio::time::{sleep_until, Instant};
 /// Devuelve un CommandResponse con clave de traducción y parámetros para el frontend.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn validate_sqlite_database(app: AppHandle) -> CommandResponse<()> {
+pub async fn validate_database_sqlite(app: AppHandle) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     // 1. Crear pool de conexión
