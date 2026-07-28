@@ -41,3 +41,21 @@ Se centra en los módulos:
 2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
 
 ### Docker Compose
+
+1. En planificación
+
+### Commands (antes Tasks)
+
+1. Este nombre para el proposito que tiene este módulo no es adecuado
+	- Actualmente este módulo su proposito es crear los comandos que se va a ejecutar para cada proyecto.
+2. Cambiar el nombre por "Commands" que es más apropiado para lo que va a hacer.
+
+### Tasks (nueva versión)
+
+1. Este es un módulo nuevo. que no tiene nada que ver con el de arriba.
+2. Este nuevo módulo su función es para crear tareas que se ejecutarán por la aplicación a ciertos intervalos y en un cron.
+3. IDEA, este es un módulo que es una IDEA, no es definitivo.
+4. Propositos para lo que se pensó:
+	- Crear una tarea que se ejecute cada X tiempo para comprobar si los servidores tienen actualizaciones (aunque se puede hacer de forma manual puede que se olvide comprobarlo)
+	- Las tareas se pueden crear para todos los módulos y sus items.
+	- Muestra la última vez que se ejecuto, y si hubo algún problema.
