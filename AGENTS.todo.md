@@ -8,7 +8,7 @@
     - Las tareas que están incompletas porque depende de otras dejarlo indicado en este archivo.
 3. Migraciones SQL:
     - Sólo se genera una nueva migración si se cambia de versión, definida en `src-tauri\tauri.conf.json`
-4. Lee el archivo [`AGENTS.md`](./AGENTS.md) para entender el proyecto
+4. Lee el archivo @AGENTS.md para entender el proyecto
 
 ### Tareas
 
