@@ -46,7 +46,7 @@ export function useMigrations() {
 				title: t('pages.migrations.steps.title.run_migrations'),
 				description: t('pages.migrations.steps.description.idle.run_migrations'),
 				status: 'idle',
-				invoke: 'run_migrations',
+				invoke: 'execute_migrations',
 			},
 			{
 				id: 'validate',
@@ -54,7 +54,7 @@ export function useMigrations() {
 				title: t('pages.migrations.steps.title.validate'),
 				description: t('pages.migrations.steps.description.idle.validate'),
 				status: 'idle',
-				invoke: 'validate_sqlite_database',
+				invoke: 'validate_database_sqlite',
 			},
 		]
 

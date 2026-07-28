@@ -108,7 +108,7 @@ export function useDatabaseSetup() {
 				title: t('pages.setup.steps.title.migrations'),
 				description: t('pages.setup.steps.description.idle.migrations'),
 				status: 'idle',
-				invoke: 'run_migrations',
+				invoke: 'execute_migrations',
 			},
 			{
 				id: 'seed',
@@ -131,7 +131,7 @@ export function useDatabaseSetup() {
 				title: t('pages.setup.steps.title.validate'),
 				description: t('pages.setup.steps.description.idle.validate'),
 				status: 'idle',
-				invoke: 'validate_sqlite_database',
+				invoke: 'validate_database_sqlite',
 			},
 		]
 
@@ -214,7 +214,7 @@ export function useDatabaseSetup() {
 				title: t('pages.setup.steps.title.validate'),
 				description: t('pages.setup.steps.description.idle.validate'),
 				status: 'idle',
-				invoke: 'validate_sqlite_database',
+				invoke: 'validate_database_sqlite',
 			},
 			{
 				id: 'migrations',
@@ -222,7 +222,7 @@ export function useDatabaseSetup() {
 				title: t('pages.setup.steps.title.migrations'),
 				description: t('pages.setup.steps.description.idle.migrations'),
 				status: 'idle',
-				invoke: 'run_migrations',
+				invoke: 'execute_migrations',
 			},
 			{
 				id: 'validate_post',
@@ -230,7 +230,7 @@ export function useDatabaseSetup() {
 				title: t('pages.setup.steps.title.validate'),
 				description: t('pages.setup.steps.description.idle.validate'),
 				status: 'idle',
-				invoke: 'validate_sqlite_database',
+				invoke: 'validate_database_sqlite',
 			},
 		]
 

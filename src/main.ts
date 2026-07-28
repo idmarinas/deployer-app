@@ -54,7 +54,7 @@ async function bootstrap() {
 	const exists = await invoke<CommandResponse<boolean>>('check_database_exists')
 
 	if (exists.success && exists.data) {
-		const hasPending = await invoke<CommandResponse<boolean>>('has_pending_migrations')
+		const hasPending = await invoke<CommandResponse<boolean>>('has_migrations_pending')
 
 		if (hasPending.success && hasPending.data) {
 			await router.push('/deployer/migrations')
