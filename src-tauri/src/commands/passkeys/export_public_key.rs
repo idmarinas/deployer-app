@@ -8,10 +8,10 @@ use tokio::time::timeout;
 use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::commands::helpers::configured_sqlite_options;
+use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::{AuthType, Host};
-use crate::commands::ssh::{SshCredentials, SshSession};
-use crate::commands::CommandResponse;
+use crate::ssh::{SshCredentials, SshSession};
+use crate::response::CommandResponse;
 use crate::crypto;
 use crate::params;
 
@@ -68,7 +68,7 @@ pub async fn export_public_key(
     input: ExportPublicKeyInput,
 ) -> Result<CommandResponse<()>, String> {
     // 1. Contexto de cifrado
-    let (_pool, master_key) = match crate::commands::helpers::open_crypto_context(&app).await {
+    let (_pool, master_key) = match crate::helpers::open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -79,7 +79,7 @@ pub async fn export_public_key(
     };
 
     // 2. Ruta de BD
-    let db_path = match crate::commands::store::get_database_path_internal(app) {
+    let db_path = match crate::commands::database::store::get_database_path_internal(app) {
         Ok(Some(p)) => p,
         Ok(None) => {
             return Ok(CommandResponse::err(

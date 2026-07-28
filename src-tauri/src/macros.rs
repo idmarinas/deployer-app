@@ -79,10 +79,10 @@ macro_rules! crud_commands {
                 use std::collections::HashMap;
                 use serde_json::Value;
                 use tauri::AppHandle;
-                use $crate::commands::CommandResponse;
-                use $crate::commands::description::ValidateDescription;
-                use $crate::commands::helpers::open_crypto_context;
-                use $crate::db::{self, DbEntity};
+                use $crate::response::CommandResponse;
+                use $crate::description::ValidateDescription;
+                use $crate::helpers::open_crypto_context;
+                use $crate::crud::{self as db, DbEntity};
 
                 // ---- CREATE ----
                 #[tauri::command]
@@ -245,10 +245,10 @@ macro_rules! crud_commands {
                 use std::collections::HashMap;
                 use serde_json::Value;
                 use tauri::AppHandle;
-                use $crate::commands::CommandResponse;
-                use $crate::commands::description::ValidateDescription;
-                use $crate::commands::helpers::open_crypto_context;
-                use $crate::db::{self, DbEntity};
+                use $crate::response::CommandResponse;
+                use $crate::description::ValidateDescription;
+                use $crate::helpers::open_crypto_context;
+                use $crate::crud::{self as db, DbEntity};
 
                 // ---- CREATE ----
                 #[tauri::command]
@@ -432,10 +432,10 @@ macro_rules! crud_commands {
                 use std::collections::HashMap;
                 use serde_json::Value;
                 use tauri::AppHandle;
-                use $crate::commands::CommandResponse;
-                use $crate::commands::description::ValidateDescription;
-                use $crate::commands::helpers::open_crypto_context;
-                use $crate::db::{self, DbEntity};
+                use $crate::response::CommandResponse;
+                use $crate::description::ValidateDescription;
+                use $crate::helpers::open_crypto_context;
+                use $crate::crud::{self as db, DbEntity};
 
                 // ---- CREATE ----
                 #[tauri::command]
@@ -606,10 +606,10 @@ macro_rules! crud_commands {
                 use std::collections::HashMap;
                 use serde_json::Value;
                 use tauri::AppHandle;
-                use $crate::commands::CommandResponse;
-                use $crate::commands::description::ValidateDescription;
-                use $crate::commands::helpers::open_crypto_context;
-                use $crate::db::{self, DbEntity};
+                use $crate::response::CommandResponse;
+                use $crate::description::ValidateDescription;
+                use $crate::helpers::open_crypto_context;
+                use $crate::crud::{self as db, DbEntity};
 
                 // ---- CREATE ----
                 #[tauri::command]

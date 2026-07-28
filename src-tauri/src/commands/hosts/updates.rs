@@ -4,10 +4,10 @@ use tauri::AppHandle;
 use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::commands::helpers::configured_sqlite_options;
+use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::HostSystemInfo;
-use crate::commands::ssh::{connect_to_host_by_id, run_ssh_command, SshSession};
-use crate::commands::CommandResponse;
+use crate::ssh::{connect_to_host_by_id, run_ssh_command, SshSession};
+use crate::response::CommandResponse;
 use crate::params;
 
 /// Timeout para comandos de actualización (segundos). Puede ser largo.
@@ -405,7 +405,7 @@ async fn update_server_updates(
     host_id: i64,
     server_updates_json: &str,
 ) -> Result<(), String> {
-    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
         .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
         .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
 

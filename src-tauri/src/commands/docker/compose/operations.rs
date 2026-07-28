@@ -2,14 +2,14 @@ use std::path::Path;
 use tauri::AppHandle;
 use tokio::io::AsyncWriteExt;
 
-use crate::commands::docker_composes::types::{
+use crate::commands::docker::compose::types::{
     DockerCompose, DockerComposeOperationInput, DockerComposeService,
 };
-use crate::commands::helpers::open_crypto_context;
-use crate::commands::ssh::{
+use crate::helpers::open_crypto_context;
+use crate::ssh::{
     connect_to_host_by_id, open_sftp_session, run_ssh_command, shell_escape, SshSession,
 };
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 use crate::params;
 
 // ============================================================================

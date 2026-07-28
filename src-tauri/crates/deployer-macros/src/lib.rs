@@ -164,7 +164,7 @@ pub fn derive_db_entity(input: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl crate::db::DbEntity for #name {
+        impl crate::crud::DbEntity for #name {
             fn table_name() -> &'static str {
                 #table_name
             }

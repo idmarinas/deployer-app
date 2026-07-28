@@ -1,5 +1,5 @@
 use super::{DB_PATH_KEY, STORE_FILE};
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 

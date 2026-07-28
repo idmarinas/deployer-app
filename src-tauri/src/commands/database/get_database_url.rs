@@ -1,6 +1,6 @@
 use super::path_to_plugin_sql_url;
-use crate::commands::store::get_database_path_internal;
-use crate::commands::CommandResponse;
+use crate::commands::database::store::get_database_path_internal;
+use crate::response::CommandResponse;
 use tauri::AppHandle;
 
 /// Devuelve la URI SQLite lista para usar en el frontend (plugin-sql).

@@ -1,5 +1,5 @@
-use crate::commands::helpers::open_pool;
-use crate::commands::CommandResponse;
+use crate::helpers::open_pool;
+use crate::response::CommandResponse;
 use crate::params;
 use std::time::Duration;
 use tauri::AppHandle;

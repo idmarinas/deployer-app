@@ -2,8 +2,8 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::timeout;
 
-use crate::commands::ssh::connect_to_host_by_id;
-use crate::commands::CommandResponse;
+use crate::ssh::connect_to_host_by_id;
+use crate::response::CommandResponse;
 use crate::params;
 
 /// Timeout por defecto para la conexión SSH (en segundos)

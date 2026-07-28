@@ -3,10 +3,10 @@ use sqlx::SqlitePool;
 use tauri::AppHandle;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::commands::helpers::configured_sqlite_options;
+use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::{HostStatusMetrics, HostSystemInfo};
-use crate::commands::ssh::{connect_to_host_by_id, run_ssh_command};
-use crate::commands::CommandResponse;
+use crate::ssh::{connect_to_host_by_id, run_ssh_command};
+use crate::response::CommandResponse;
 use crate::params;
 
 /// Timeout para comandos batch (segundos).
@@ -272,7 +272,7 @@ pub async fn host_check_metrics(
 
 /// Ejecuta un comando batch SSH y devuelve el output crudo.
 async fn run_batch(
-    session: &mut crate::commands::ssh::SshSession,
+    session: &mut crate::ssh::SshSession,
     command: &str,
 ) -> Result<String, String> {
     let (output, _exit_code) = run_ssh_command(session, command, BATCH_TIMEOUT_SECS).await?;
@@ -311,7 +311,7 @@ fn is_expired(last_checked_at: &str, ttl_secs: i64) -> bool {
 
 /// Lee un valor de deployer_settings y lo parsea a i64.
 async fn get_setting_i64(app: &AppHandle, key: &str) -> Option<i64> {
-    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
         .ok()??;
     let url = path_to_sqlite_url(&db_path);
     let options = configured_sqlite_options(&url).ok()?;
@@ -338,7 +338,7 @@ async fn update_system_info(
     host_id: i64,
     system_info_json: &str,
 ) -> Result<(), String> {
-    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
         .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
         .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
 
@@ -365,7 +365,7 @@ async fn update_status_info(
     host_id: i64,
     status_info_json: &str,
 ) -> Result<(), String> {
-    let db_path = crate::commands::store::get_database_path_internal(app.clone())
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
         .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
         .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
 

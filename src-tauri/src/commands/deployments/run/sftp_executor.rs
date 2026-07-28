@@ -3,7 +3,7 @@ use tauri::ipc::Channel;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::time::Instant;
 
-use crate::commands::ssh::{open_sftp_session, SshSession};
+use crate::ssh::{open_sftp_session, SshSession};
 
 use super::types::{ProgressEvent, ResolvedTask};
 use crate::commands::projects::tasks::types::FileTransferConfig;

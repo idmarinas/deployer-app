@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::commands::docker_composes::types::{
+use crate::commands::docker::compose::types::{
     CreateDockerComposeInput, DockerCompose, UpdateDockerComposeInput,
 };
 use crate::crud_commands;

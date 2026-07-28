@@ -8,9 +8,9 @@ pub mod types;
 use tauri::ipc::Channel;
 use tauri::{AppHandle};
 
-use crate::commands::helpers::open_pool;
-use crate::commands::helpers::get_master_key;
-use crate::commands::CommandResponse;
+use crate::helpers::open_pool;
+use crate::helpers::get_master_key;
+use crate::response::CommandResponse;
 
 use types::{ProgressEvent, RunDeploymentInput};
 

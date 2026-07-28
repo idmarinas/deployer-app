@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use super::entity::DbEntity;
 use crate::crypto;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 
 // ============================================================================
 // Formateo estructurado de errores SQLite

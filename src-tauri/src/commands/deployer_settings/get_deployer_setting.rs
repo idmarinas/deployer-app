@@ -3,7 +3,7 @@ use tauri::AppHandle;
 
 use crate::commands::deployer_settings::helpers::open_pool;
 use crate::commands::deployer_settings::types::DeployerSetting;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 
 /// Obtiene el valor de una clave de configuración.
 /// Devuelve `None` en `value` si la clave no existe.

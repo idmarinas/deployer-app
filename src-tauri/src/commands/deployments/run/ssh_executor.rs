@@ -2,7 +2,7 @@ use std::time::Duration;
 use tauri::ipc::Channel;
 use tokio::time::Instant;
 
-use crate::commands::ssh::{shell_escape, SshSession};
+use crate::ssh::{shell_escape, SshSession};
 
 use super::types::{ProgressEvent, ResolvedTask};
 

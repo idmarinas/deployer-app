@@ -6,7 +6,7 @@ use crate::commands::global_variables::types::GlobalVariable;
 use crate::commands::hosts::types::Host;
 use crate::commands::projects::types::Project;
 use crate::commands::projects::variables::types::ProjectVariable;
-use crate::db::{self, DbEntity};
+use crate::crud::{self, DbEntity};
 
 use super::types::VariableSnapshot;
 
@@ -46,7 +46,7 @@ pub async fn build_snapshot(
     // ── 2. Variables globales ────────────────────────────────────────────────
     // Usamos patrón manual (from_row + apply_decryption) porque GlobalVariable.value
     // usa #[db_conditional_encrypt(condition = "is_secret")], que se gestiona por
-    // el macro y no por encryption_config. db::fetch_all solo descifra por
+    // el macro y no por encryption_config. crud::fetch_all solo descifra por
     // encryption_config, por lo que no resuelve correctamente campos condicionales.
     let sql = format!("SELECT * FROM {}", GlobalVariable::table_name());
     let rows = sqlx::query(&sql)
@@ -59,7 +59,7 @@ pub async fn build_snapshot(
             .map_err(|e| format!("Error al leer global_variable: {}", e))?;
 
         let mut fields = entity.to_fields_all();
-        db::apply_decryption::<GlobalVariable>(&mut fields, key)
+        crud::apply_decryption::<GlobalVariable>(&mut fields, key)
             .await
             .map_err(|e| format!("Error al descifrar global_variable: {}", e))?;
 
@@ -86,7 +86,7 @@ pub async fn build_snapshot(
             .map_err(|e| format!("Error al leer project_variable: {}", e))?;
 
         let mut fields = entity.to_fields_all();
-        db::apply_decryption::<ProjectVariable>(&mut fields, key)
+        crud::apply_decryption::<ProjectVariable>(&mut fields, key)
             .await
             .map_err(|e| format!("Error al descifrar project_variable: {}", e))?;
 

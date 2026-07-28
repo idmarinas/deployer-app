@@ -1,4 +1,4 @@
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 use serde::Serialize;
 use tauri::AppHandle;
 use ts_rs::TS;

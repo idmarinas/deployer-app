@@ -1,5 +1,5 @@
 use super::get_database_path_internal;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 use tauri::AppHandle;
 
 /// Comprueba si el archivo .sqlite guardado en el store existe físicamente en disco.

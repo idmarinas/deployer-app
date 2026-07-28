@@ -3,7 +3,7 @@ use ts_rs::TS;
 
 use deployer_macros::DbEntity;
 
-use crate::commands::Patch;
+use crate::patch::Patch;
 
 // ============================================================================
 // Enum KeyType

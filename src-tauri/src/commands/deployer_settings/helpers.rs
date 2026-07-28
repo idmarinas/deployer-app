@@ -1,1 +1,1 @@
-pub use crate::commands::helpers::open_pool;
+pub use crate::helpers::open_pool;

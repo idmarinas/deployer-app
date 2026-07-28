@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 
 use crate::commands::deployer_settings::helpers::open_pool;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 
 /// Inserta o actualiza (upsert) uno o varios pares clave-valor en una única
 /// transacción. Pensado para sustituir las llamadas sueltas a

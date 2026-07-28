@@ -1,7 +1,7 @@
 use tauri::AppHandle;
 use serde::Deserialize;
 
-use crate::commands::helpers::open_pool;
+use crate::helpers::open_pool;
 use super::types::{DockerHubImageResult, DockerHubSearchCache, DockerHubTagResult, DockerHubTagsCache};
 
 const CACHE_TTL_SECONDS: i64 = 3600; // 1 hour

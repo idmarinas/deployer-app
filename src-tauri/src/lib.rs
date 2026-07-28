@@ -1,11 +1,19 @@
 mod commands;
 mod crypto;
-mod db;
+mod crud;
+mod description;
+mod helpers;
+mod macros;
+mod patch;
+mod response;
+mod ssh;
 
 use commands::database::{
     create_database_file, get_app_info, get_database_info, get_database_url,
-    get_migrations_info, initialize_database, query_raw, validate_sqlite_database,
+    get_migrations_info, has_pending_migrations, initialize_database, query_raw,
+    run_migrations, validate_sqlite_database,
 };
+use commands::database::store::{check_database_exists, get_database_path, set_database_path};
 use commands::deployer_settings::{
     delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
     set_deployer_settings,
@@ -21,13 +29,13 @@ use commands::deployments::{
     crud_update_deployment_rollback,
     run_deployment,
 };
-use commands::docker_composes::{
+use commands::docker::compose::{
     crud_create_docker_compose, crud_delete_docker_compose, crud_get_docker_compose,
     crud_list_docker_composes, crud_update_docker_compose,
     docker_compose_down, docker_compose_logs, docker_compose_ps, docker_compose_pull,
     docker_compose_restart, docker_compose_up,
 };
-use commands::docker_hub_cache::{
+use commands::docker::hub_cache::{
     get_docker_hub_search_cache, get_docker_hub_tags_cache, cleanup_docker_hub_cache,
 };
 use commands::global_variables::{
@@ -38,7 +46,6 @@ use commands::hosts::{
     crud_create_host, crud_delete_host, crud_get_host, crud_list_hosts, crud_update_host,
     host_check_system_info, host_check_metrics, host_check_updates, host_update_packages, test_connection,
 };
-use commands::migrations::{has_pending_migrations, run_migrations};
 use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
     crud_update_passkey, export_public_key, generate_passkey,
@@ -55,7 +62,6 @@ use commands::projects::{
     crud_create_project_variable, crud_delete_project_variable, crud_get_project_variable,
     crud_list_project_variables, crud_update_project_variable,
 };
-use commands::store::{check_database_exists, get_database_path, set_database_path};
 use commands::tasks::{
     crud_create_task, crud_delete_task, crud_get_task, crud_list_tasks, crud_update_task,
     crud_create_task_dependency, crud_delete_task_dependency, crud_get_task_dependency,
@@ -198,7 +204,7 @@ pub fn run() {
             crud_get_task_dependency,
             crud_list_task_dependencies,
             crud_delete_task_dependency,
-            // Store
+            // Database - Store
             get_database_path,
             set_database_path,
             check_database_exists,
@@ -211,7 +217,7 @@ pub fn run() {
             get_app_info,
             get_database_info,
             get_migrations_info,
-            // Migrations
+            // Database - Migrations
             run_migrations,
             has_pending_migrations,
         ])

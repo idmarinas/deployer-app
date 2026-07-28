@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 
 use crate::commands::deployer_settings::helpers::open_pool;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 
 /// Inserta o actualiza (upsert) el valor de una clave de configuración.
 #[tauri::command]

@@ -3,21 +3,15 @@ use std::str::FromStr;
 use tauri::AppHandle;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::commands::store::get_database_path_internal;
+use crate::commands::database::store::get_database_path_internal;
 use crate::crypto;
-/// Configuración base compartida para todas las conexiones SQLite del proyecto.
-/// Aplica `PRAGMA foreign_keys = ON` y cualquier otra opción global futura.
-/// Usa esta función siempre que necesites crear un `SqliteConnectOptions`.
+
 pub fn configured_sqlite_options(url: &str) -> Result<SqliteConnectOptions, String> {
     SqliteConnectOptions::from_str(url)
         .map_err(|e| e.to_string())
         .map(|o| o.foreign_keys(true))
 }
 
-/// Crea un pool SQLite con la configuración estándar del proyecto.
-/// Todas las conexiones del pool tienen `PRAGMA foreign_keys = ON`.
-/// Para opciones adicionales (ej. `.read_only(true)`), usa
-/// `configured_sqlite_options` y luego `SqlitePool::connect_with`.
 pub async fn create_configured_pool(url: &str) -> Result<SqlitePool, String> {
     let options = configured_sqlite_options(url)?;
     SqlitePool::connect_with(options)
@@ -25,7 +19,6 @@ pub async fn create_configured_pool(url: &str) -> Result<SqlitePool, String> {
         .map_err(|e| e.to_string())
 }
 
-/// Obtiene la ruta de la BD desde el store y crea un pool de conexiones SQLite.
 pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> {
     let path = get_database_path_internal(app.clone())
         .map_err(|e| e)?
@@ -37,14 +30,10 @@ pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> 
     Ok((pool, path))
 }
 
-/// Obtiene la clave maestra de cifrado desde el keychain del SO.
 pub fn get_master_key() -> Result<Vec<u8>, String> {
     crypto::get_or_create_master_key()
 }
 
-/// Agrupa pool SQLite y clave maestra para operaciones con cifrado.
-///
-/// Usado por todos los módulos de comandos que gestionan entidades con campos cifrados.
 pub async fn open_crypto_context(
     app: &AppHandle,
 ) -> Result<(SqlitePool, Vec<u8>), String> {

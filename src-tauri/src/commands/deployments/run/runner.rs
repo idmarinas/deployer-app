@@ -7,9 +7,9 @@ use crate::commands::deployments::types::{Deployment, DeploymentStatus};
 use crate::commands::hosts::types::Host;
 use crate::commands::projects::tasks::types::{OnFailure, TaskConfig};
 use crate::commands::tasks::types::TaskType;
-use crate::db;
+use crate::crud;
 
-use crate::commands::ssh::{decrypt_host_credentials, SshSession};
+use crate::ssh::{decrypt_host_credentials, SshSession};
 
 use super::interpolator::{build_snapshot, evaluate_condition};
 use super::sftp_executor;
@@ -428,7 +428,7 @@ async fn load_deployment(
     key: &[u8],
     id: i64,
 ) -> Result<Deployment, String> {
-    db::fetch_one::<Deployment>(pool, id, key)
+    crud::fetch_one::<Deployment>(pool, id, key)
         .await?
         .ok_or_else(|| format!("Deployment {} no encontrado", id))
 }
@@ -439,7 +439,7 @@ async fn load_project(
     project_id: i64,
 ) -> Result<crate::commands::projects::types::Project, String> {
     use crate::commands::projects::types::Project;
-    db::fetch_one::<Project>(pool, project_id, key)
+    crud::fetch_one::<Project>(pool, project_id, key)
         .await?
         .ok_or_else(|| format!("Proyecto {} no encontrado", project_id))
 }
@@ -679,7 +679,7 @@ async fn get_or_create_execution(
         created_at: String::new(),
     };
 
-    db::insert::<DeploymentExecution>(pool, &execution, key)
+    crud::insert::<DeploymentExecution>(pool, &execution, key)
         .await
         .map_err(|e| format!("Error al crear execution: {}", e))
 }

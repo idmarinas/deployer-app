@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use ts_rs::TS;
 
-use crate::commands::helpers::open_crypto_context;
+use crate::helpers::open_crypto_context;
 use crate::commands::passkeys::types::KeyType;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 use crate::crypto;
 
 use crate::params;

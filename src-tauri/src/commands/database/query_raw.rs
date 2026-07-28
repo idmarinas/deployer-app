@@ -4,8 +4,8 @@ use sqlx::Row;
 use sqlx::ValueRef;
 use tauri::AppHandle;
 
-use crate::commands::helpers::open_pool;
-use crate::commands::CommandResponse;
+use crate::helpers::open_pool;
+use crate::response::CommandResponse;
 use crate::params;
 
 /// Ejecuta una query SELECT arbitraria desde el frontend (Drizzle proxy).

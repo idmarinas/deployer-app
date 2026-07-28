@@ -1,6 +1,6 @@
-use crate::commands::helpers::open_pool;
-use crate::commands::store::get_database_path_internal;
-use crate::commands::CommandResponse;
+use crate::helpers::open_pool;
+use crate::commands::database::store::get_database_path_internal;
+use crate::response::CommandResponse;
 use serde::Serialize;
 use std::collections::HashMap;
 use tauri::AppHandle;

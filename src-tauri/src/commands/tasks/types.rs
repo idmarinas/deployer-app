@@ -2,7 +2,7 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::commands::Patch;
+use crate::patch::Patch;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS, sqlx::Type)]
 #[ts(export, export_to = "tauri-types.d.ts")]

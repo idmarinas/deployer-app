@@ -4,9 +4,9 @@ use tauri::AppHandle;
 use tokio::time::timeout;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::commands::helpers::{configured_sqlite_options, open_crypto_context};
+use crate::helpers::{configured_sqlite_options, open_crypto_context};
 use crate::commands::hosts::types::Host;
-use crate::commands::store::get_database_path_internal;
+use crate::commands::database::store::get_database_path_internal;
 
 use super::session::{decrypt_host_credentials, SshSession};
 

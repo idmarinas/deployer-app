@@ -2,7 +2,7 @@ use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::commands::Patch;
+use crate::patch::Patch;
 use crate::commands::hosts::updates::HostServerUpdates;
 
 // ============================================================================

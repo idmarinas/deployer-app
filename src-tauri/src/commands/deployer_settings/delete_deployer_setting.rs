@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 
 use crate::commands::deployer_settings::helpers::open_pool;
-use crate::commands::CommandResponse;
+use crate::response::CommandResponse;
 
 /// Elimina una clave de configuración.
 /// Si la clave no existe, devuelve error `not_found`.

@@ -108,8 +108,8 @@ pub fn validate_description_opt(desc: &Option<String>) -> Result<(), String> {
 
 /// Valida un campo `Patch<String>` de descripción.
 /// Si es `Value`, valida el contenido JSONContent; `Null` y `Unset` se ignoran.
-pub fn validate_description_patch(desc: &crate::commands::Patch<String>) -> Result<(), String> {
-    if let crate::commands::Patch::Value(s) = desc {
+pub fn validate_description_patch(desc: &crate::patch::Patch<String>) -> Result<(), String> {
+    if let crate::patch::Patch::Value(s) = desc {
         validate_description(s)?;
     }
     Ok(())
@@ -122,20 +122,20 @@ pub trait ValidateDescription {
     fn validate_update(&self) -> Result<(), String> { Ok(()) }
 }
 
-use super::passkeys::types::{CreatePasskeyInput, UpdatePasskeyInput};
-use super::hosts::types::{CreateHostInput, UpdateHostInput};
-use super::global_variables::types::{CreateGlobalVariableInput, UpdateGlobalVariableInput};
-use super::projects::types::{CreateProjectInput, UpdateProjectInput};
-use super::tasks::types::{CreateTaskInput, UpdateTaskInput};
-use super::projects::variables::types::{CreateProjectVariableInput, UpdateProjectVariableInput};
-use super::projects::framework_configs::types::{CreateFrameworkConfigInput, UpdateFrameworkConfigInput};
-use super::deployments::types::{CreateDeploymentInput, UpdateDeploymentInput};
-use super::deployments::executions::types::{CreateDeploymentExecutionInput, UpdateDeploymentExecutionInput};
-use super::deployments::rollbacks::types::{CreateDeploymentRollbackInput, UpdateDeploymentRollbackInput};
-use super::projects::hosts::types::{CreateProjectHostInput, UpdateProjectHostInput};
-use super::projects::tasks::types::{CreateProjectTaskInput, UpdateProjectTaskInput};
-use super::tasks::dependencies::types::{CreateTaskDependencyInput, UpdateTaskDependencyInput};
-use super::docker_composes::types::{CreateDockerComposeInput, UpdateDockerComposeInput};
+use crate::commands::passkeys::types::{CreatePasskeyInput, UpdatePasskeyInput};
+use crate::commands::hosts::types::{CreateHostInput, UpdateHostInput};
+use crate::commands::global_variables::types::{CreateGlobalVariableInput, UpdateGlobalVariableInput};
+use crate::commands::projects::types::{CreateProjectInput, UpdateProjectInput};
+use crate::commands::tasks::types::{CreateTaskInput, UpdateTaskInput};
+use crate::commands::projects::variables::types::{CreateProjectVariableInput, UpdateProjectVariableInput};
+use crate::commands::projects::framework_configs::types::{CreateFrameworkConfigInput, UpdateFrameworkConfigInput};
+use crate::commands::deployments::types::{CreateDeploymentInput, UpdateDeploymentInput};
+use crate::commands::deployments::executions::types::{CreateDeploymentExecutionInput, UpdateDeploymentExecutionInput};
+use crate::commands::deployments::rollbacks::types::{CreateDeploymentRollbackInput, UpdateDeploymentRollbackInput};
+use crate::commands::projects::hosts::types::{CreateProjectHostInput, UpdateProjectHostInput};
+use crate::commands::projects::tasks::types::{CreateProjectTaskInput, UpdateProjectTaskInput};
+use crate::commands::tasks::dependencies::types::{CreateTaskDependencyInput, UpdateTaskDependencyInput};
+use crate::commands::docker::compose::types::{CreateDockerComposeInput, UpdateDockerComposeInput};
 
 impl ValidateDescription for CreatePasskeyInput {
     fn validate_create(&self) -> Result<(), String> { validate_description_opt(&self.description) }

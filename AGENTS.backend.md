@@ -6,63 +6,82 @@
 
 ## 1. Estructura de Comandos
 
-Los comandos Tauri se organizan en `src-tauri/src/commands/`, **un archivo por comando**.
+Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend**. La infraestructura compartida (`helpers`, `response`, `patch`, `macros`, `description`, `ssh`) vive en `src-tauri/src/` (raíz del crate).
+
+### Estructura del crate
 
 ```
-commands/
-├── helpers.rs                       <- open_pool(), get_master_key(), open_crypto_context()
-├── response.rs                      <- CommandResponse<T>
-├── database/
-│   └── query_raw.rs                 <- Comando genérico de solo lectura (SELECT) para Drizzle
-├── deployer_settings/
-├── database/
-│   └── query_raw.rs                 <- Comando genérico de solo lectura (SELECT) para Drizzle
-├── deployer_settings/
-│   └── helpers.rs
-├── deployments/
-│   ├── crud/
-│   ├── executions/
-│   ├── rollbacks/
-│   ├── run/                         <- Runner universal de deployments
-│   │   ├── mod.rs                   <- Comando #[tauri::command] run_deployment
-│   │   ├── types.rs                 <- RunDeploymentInput, ProgressEvent, VariableSnapshot, ResolvedTask
-│   │   ├── runner.rs                <- Orquestador principal
-│   │   ├── session.rs               <- Sesión SSH única con reconexión automática
-│   │   ├── interpolator.rs          <- build_snapshot() + evaluate_condition()
-│   │   ├── ssh_executor.rs          <- execute_command() + execute_script()
-│   │   ├── glob.rs                  <- Glob simple para exclude en file transfer
-│   │   └── sftp_executor.rs         <- upload_file() + download_file()
-│   ├── mod.rs
-│   └── types.rs
-├── docker_composes/
-├── docker_hub_cache/
-├── global_variables/
-├── hosts/
-│   ├── crud.rs
-│   ├── mod.rs
-│   ├── status.rs                    <- host_check_status (estático) + host_check_metrics (dinámico)
-│   ├── test_connection.rs
-│   ├── types.rs
-│   └── updates.rs
-├── migrations/
-├── passkeys/
-├── projects/
-│   ├── crud/
-│   ├── framework_configs/
+src-tauri/src/
+├── commands/              ← solo comandos frontend (#[tauri::command])
+│   ├── database/
+│   │   ├── store/         ← get_database_path, set_database_path, check_database_exists
+│   │   ├── has_pending_migrations.rs
+│   │   ├── run_migrations.rs
+│   │   ├── query_raw.rs   ← Comando genérico de solo lectura (SELECT) para Drizzle
+│   │   └── ... (initialize_database, create_database_file, etc.)
+│   ├── deployer_settings/
+│   │   └── helpers.rs     ← re-exporta open_pool desde crate::helpers
+│   ├── deployments/
+│   │   ├── crud/
+│   │   ├── executions/
+│   │   ├── rollbacks/
+│   │   ├── run/           ← Runner universal de deployments
+│   │   │   ├── mod.rs     ← Comando #[tauri::command] run_deployment
+│   │   │   ├── types.rs   ← RunDeploymentInput, ProgressEvent, VariableSnapshot, ResolvedTask
+│   │   │   ├── runner.rs  ← Orquestador principal
+│   │   │   ├── session.rs ← Sesión SSH única con reconexión automática
+│   │   │   ├── interpolator.rs ← build_snapshot() + evaluate_condition()
+│   │   │   ├── ssh_executor.rs ← execute_command() + execute_script()
+│   │   │   ├── glob.rs    ← Glob simple para exclude en file transfer
+│   │   │   └── sftp_executor.rs ← upload_file() + download_file()
+│   │   ├── mod.rs
+│   │   └── types.rs
+│   ├── docker/
+│   │   ├── compose/       ← CRUD + operaciones Docker Compose
+│   │   │   ├── crud.rs
+│   │   │   ├── operations.rs
+│   │   │   └── types.rs
+│   │   └── hub_cache/     ← Caché de Docker Hub (search + tags)
+│   │       ├── commands.rs
+│   │       ├── mod.rs
+│   │       └── types.rs
+│   ├── global_variables/
 │   ├── hosts/
-│   ├── tasks/
-│   │   └── types.rs                 <- TaskConfig, OnFailure, ProjectTask
-│   ├── variables/
-│   ├── mod.rs
-│   └── types.rs                     <- Project con local_working_dir, remote_working_dir
-├── ssh/
-│   └── helpers.rs
-├── store/
-└── tasks/
-    ├── crud/
-    ├── dependencies/
+│   │   ├── crud.rs
+│   │   ├── status.rs      ← host_check_status (estático) + host_check_metrics (dinámico)
+│   │   ├── test_connection.rs
+│   │   ├── types.rs
+│   │   └── updates.rs
+│   ├── passkeys/
+│   ├── projects/
+│   │   ├── crud/
+│   │   ├── framework_configs/
+│   │   ├── hosts/
+│   │   ├── tasks/
+│   │   │   └── types.rs   ← TaskConfig, OnFailure, ProjectTask
+│   │   ├── variables/
+│   │   ├── mod.rs
+│   │   └── types.rs       ← Project con local_working_dir, remote_working_dir
+│   └── tasks/
+│       ├── crud/
+│       ├── dependencies/
+│       ├── mod.rs
+│       └── types.rs       ← TaskType; retry_delay; sin working_dir
+├── crypto/                ← Cifrado AES-256-GCM
+├── crud/                  ← Infraestructura CRUD genérica (insert, update_fields, delete, fetch_*, DbEntity)
+│   ├── crud.rs
+│   ├── entity.rs
+│   └── mod.rs
+├── description.rs         ← ValidateDescription trait + validación JSONContent
+├── helpers.rs             ← open_pool(), get_master_key(), open_crypto_context(), configured_sqlite_options()
+├── macros.rs              ← crud_commands! macro (genera los 5 comandos CRUD)
+├── patch.rs               ← Patch<T> para updates parciales (Unset/Null/Value)
+├── response.rs            ← CommandResponse<T>
+└── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, etc.)
+    ├── connect.rs
+    ├── helpers.rs
     ├── mod.rs
-    └── types.rs                     <- TaskType; retry_delay; sin working_dir
+    └── session.rs
 ```
 
 ### Convenciones de comandos CRUD
