@@ -34,6 +34,7 @@ const router = createRouter({
 })
 
 const i18n = createI18n({
+	escapeParameter: true,
 	legacy: false,
 	locale: DEFAULT_LOCALE,
 	fallbackLocale: DEFAULT_LOCALE,
