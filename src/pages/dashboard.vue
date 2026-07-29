@@ -4,6 +4,8 @@
 import { useSideberMenu } from '@/composables/useNavigationMenu'
 import { ICONS } from '@/utils/icons'
 
+import idmarinasLogo from '@/assets/logos/idmarinas.png'
+
 const { navigationMenu, searchGroups } = useSideberMenu()
 
 const socials: {
@@ -56,9 +58,10 @@ const socials: {
 			:default-size="20"
 			:ui="{ footer: 'border-t border-default flex-col' }"
 		>
-			<!-- <template #header="{ collapsed }">
-				<ProjectsMenu :collapsed="collapsed" />
-			</template> -->
+			<template #header="{ collapsed }">
+				<DeployerLogo :collapsed="collapsed" as-link />
+				<!-- <ProjectsMenu :collapsed="collapsed" /> -->
+			</template>
 
 			<template #default="{ collapsed }">
 				<UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" tooltip />
@@ -85,7 +88,7 @@ const socials: {
 					<span v-if="!collapsed">IDMarinas © 2026-{{ new Date().getFullYear() }}</span>
 					<span v-else>
 						<UTooltip :text="`IDMarinas © ${new Date().getFullYear()}`">
-							<UAvatar src="/logos/idmarinas.png" />
+							<UAvatar :src="idmarinasLogo" />
 						</UTooltip>
 					</span>
 				</p>
