@@ -38,6 +38,13 @@ export default {
 		description: 'No se ha proporcionado una descripción',
 	},
 
+	semver: {
+		patch: 'Parche',
+		minor: 'Menor',
+		major: 'Mayor',
+		security: 'Seguridad',
+	},
+
 	common: {
 		none: 'Ninguno',
 		username: 'Usuario',

@@ -23,6 +23,10 @@ export default {
 			copy: 'Copiar al servidor',
 			remove: 'Eliminar del servidor',
 		},
+		cancel_update: {
+			cancel: 'Canclear',
+			confirm: 'Actualizar',
+		},
 	},
 	toast: {
 		title: {

@@ -21,14 +21,21 @@ export default {
 		},
 	},
 	manage: {
+		title: {
+			updates: 'Actualizaciones',
+			metrics: 'Estado del servidor',
+			server_info: 'Información del servidor',
+		},
+		metrics: {
+			cpu_usage: 'Uso de CPU',
+			ram_usage: 'Uso de RAM',
+			disk_usage: 'Uso del disco',
+		},
 		actions_title: 'Acciones',
 		test_connection: 'Probar conexión',
 		check_status: 'Comprobar estado',
 		check_updates: 'Comprobar actualizaciones',
-		server_info_title: 'Información del servidor',
-		server_status_title: 'Estado del servidor',
-		updates_title: 'Actualizaciones disponibles',
-		updates_summary: 'Total: {total} | Seguridad: {security} | Major: {major} | Minor: {minor} | Patch: {patch}',
+		updates_summary: 'Total: {total} - Seguridad: {security} - Major: {major} - Minor: {minor} - Patch: {patch}',
 		update_selected: 'Actualizar seleccionados ({count})',
 		update_all: 'Actualizar todo ({count})',
 		update_package: 'Actualizar paquete',
@@ -57,52 +64,6 @@ export default {
 		use_sudo: 'Usar sudo',
 	},
 	toast: {
-		test_connection: {
-			loading: {
-				title: 'Probando conexión',
-				description: 'Se está comprobando que se puede conectar al servidor: {name}',
-			},
-			success: {
-				title: 'Conexión exitosa',
-				description: 'Se ha establecido conexión con el servidor: {name}',
-			},
-			error: {
-				title: 'Error al conectar',
-				description: 'No se ha podido establecer conexión con el servidor: {name}',
-			},
-		},
-		check_status: {
-			loading: {
-				title: 'Comprobando estado',
-				description: 'Obteniendo información del servidor: {name}',
-			},
-			success: {
-				title: 'Estado obtenido',
-				description: 'Información del servidor: {name} actualizada',
-			},
-			error: {
-				title: 'Error al comprobar estado',
-				description: 'No se ha podido obtener el estado del servidor: {name}',
-			},
-		},
-		check_updates: {
-			loading: {
-				title: 'Buscando actualizaciones',
-				description: 'Comprobando actualizaciones disponibles en: {name}',
-			},
-			success: {
-				title: 'Actualizaciones encontradas',
-				description: '{count} actualización(es) disponible(s) en {name}',
-			},
-			error: {
-				title: 'Error al buscar actualizaciones',
-				description: 'No se han podido buscar actualizaciones en: {name}',
-			},
-			no_updates: {
-				title: 'Sistema actualizado',
-				description: 'No hay actualizaciones disponibles en: {name}',
-			},
-		},
 		update_packages: {
 			loading: {
 				title: 'Actualizando paquetes',
@@ -114,21 +75,7 @@ export default {
 			},
 			error: {
 				title: 'Error al actualizar',
-				description: 'No se han podido actualizar los paquetes en: {name}',
-			},
-		},
-		confirm_update: {
-			single: {
-				title: 'Confirmar actualización',
-				description: '¿Actualizar el paquete {package} en {name}?',
-			},
-			selected: {
-				title: 'Confirmar actualización',
-				description: '¿Actualizar {count} paquete(s) seleccionado(s) en {name}?',
-			},
-			all: {
-				title: 'Confirmar actualización',
-				description: '¿Actualizar todos los {count} paquete(s) disponibles en {name}?',
+				description: 'No se han podido actualizar los paquetes en: {name}. \nRazón: {reason}',
 			},
 		},
 		delete: {
@@ -142,7 +89,7 @@ export default {
 			},
 			error: {
 				title: 'Error al eliminar el servidor',
-				description: 'No se ha podido eliminar el servidor: {name}',
+				description: 'No se ha podido eliminar el servidor: {name}. \nRazón: {reason}',
 			},
 		},
 	},
