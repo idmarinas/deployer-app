@@ -43,13 +43,6 @@ pub struct HostUpdatesSummary {
     pub patch: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct HostCheckUpdatesResult {
-    pub packages: Vec<HostPackage>,
-    pub summary: HostUpdatesSummary,
-}
-
 /// JSON almacenado en deployer_hosts.server_updates.
 /// Contiene las actualizaciones disponibles y la última vez que se comprobaron.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
