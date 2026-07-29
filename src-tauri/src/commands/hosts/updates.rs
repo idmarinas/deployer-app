@@ -218,7 +218,7 @@ async fn update_packages(
             Some(pkgs) if !pkgs.is_empty() => {
                 let list = pkgs.join(" ");
                 format!(
-                    "{sudo}DEBIAN_FRONTEND=noninteractive apt-get install -y {list}"
+                    "{sudo}DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y {list}"
                 )
             }
             _ => format!("{sudo}DEBIAN_FRONTEND=noninteractive apt-get upgrade -y"),
