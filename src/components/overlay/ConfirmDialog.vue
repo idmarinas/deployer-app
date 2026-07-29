@@ -37,7 +37,13 @@ const emits = defineEmits<{
 </script>
 
 <template>
-	<UModal :title="title" :description="description" :dismissible="false" :ui="{ footer: 'justify-end' }">
+	<UModal :dismissible="false" :ui="{ footer: 'justify-end' }">
+		<template #title>
+			<div v-html="title" />
+		</template>
+		<template #description>
+			<div v-html="description" />
+		</template>
 		<template #footer>
 			<UButton
 				:label="t(`overlays.dialog.${type}.cancel`)"
