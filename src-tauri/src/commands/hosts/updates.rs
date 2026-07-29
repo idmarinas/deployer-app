@@ -91,7 +91,7 @@ pub struct HostUpdateResult {
 pub async fn host_check_updates(
     app: AppHandle,
     host_id: i64,
-) -> Result<CommandResponse<HostCheckUpdatesResult>, String> {
+) -> Result<CommandResponse<HostServerUpdates>, String> {
     let (session, system_info) = connect_and_load_system_info(&app, host_id).await?;
 
     let packages = match check_updates(session, &system_info).await {
@@ -118,7 +118,7 @@ pub async fn host_check_updates(
     }
 
     Ok(CommandResponse::ok(
-        HostCheckUpdatesResult { packages, summary },
+        server_updates,
         "hosts.success.updates_checked",
     ))
 }
