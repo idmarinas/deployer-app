@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import type { FormSubmitEvent, Form } from '@nuxt/ui'
 import type { CommandResponse, CreateHostInput } from '@/types/tauri-types'
+import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
-import { ref, useTemplateRef, onMounted, onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { useQueryCache } from '@pinia/colada'
-import { useI18n } from 'vue-i18n'
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import {
 	useHostSchema,
-	type HostSchema,
 	type AuthKeySchema,
 	type AuthPasswordSchema,
+	type HostSchema,
 } from '@/composables/schemas/hosts'
+import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { useToolbarContentCreate } from '@/composables/useToolbarContent'
 import { useToast } from '@nuxt/ui/composables/useToast'
+import { useQueryCache } from '@pinia/colada'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { invoke } from '@tauri-apps/api/core'
