@@ -20,6 +20,7 @@ Se centra en los módulos:
 9. Posibilidad de actualizar las claves de encriptación (de la app). (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
 10. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
 	- También se puede dividir entre lo que es la configuración y mera información.
+11. Comprobar que toda llamada al backend tiene un toast con loading > success | error
 
 ## Módulos
 
