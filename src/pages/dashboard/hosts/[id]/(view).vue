@@ -468,7 +468,6 @@ provide<Ref<boolean>>('isOperating', isOperating)
 				</div>
 			</template>
 		</UTabs>
-		<pre>{{ hostData }}</pre>
 	</template>
 	<StatusError v-else-if="status === 'error' && error?.message === 'not-found'" />
 	<Loading v-else-if="isLoading" what="host" />
