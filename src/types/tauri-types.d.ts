@@ -165,8 +165,6 @@ status_info: HostStatusMetrics | null,
  */
 server_updates: HostServerUpdates | null, created_at: string, updated_at: string, };
 
-export type HostCheckUpdatesResult = { packages: Array<HostPackage>, summary: HostUpdatesSummary, };
-
 export type HostPackage = { name: string, current_version: string, available_version: string, 
 /**
  * Repositorio de origen (ej: "jammy-updates", "jammy-security").
