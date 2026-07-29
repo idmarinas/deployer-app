@@ -128,8 +128,8 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 				async onClick() {
 					const item = (isRef(row) ? row.value : row) as any
 					const notice = toaster.warning(
-						t('pages.hosts.toast.test_connection.loading.title'),
-						t('pages.hosts.toast.test_connection.loading.description', { name: item.name }),
+						t('notifications.hosts.test_connection.loading.title'),
+						t('notifications.hosts.test_connection.loading.description', { name: item.name }),
 						{
 							icon: ICONS.server.plug,
 							duration: 0,
@@ -142,8 +142,8 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 						toaster.toast.update(
 							notice.id,
 							toaster.success(
-								t('pages.hosts.toast.test_connection.success.title'),
-								t('pages.hosts.toast.test_connection.success.description', { name: item.name }),
+								t('notifications.hosts.test_connection.success.title'),
+								t('notifications.hosts.test_connection.success.description', { name: item.name }),
 								{
 									id: notice.id,
 									duration: undefined,
@@ -154,8 +154,11 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 						toaster.toast.update(
 							notice.id,
 							toaster.error(
-								t('pages.hosts.toast.test_connection.error.title'),
-								t('pages.hosts.toast.test_connection.error.description', { name: item.name, ...result.message_params }),
+								t('notifications.hosts.test_connection.error.title'),
+								t('notifications.hosts.test_connection.error.description', {
+									name: item.name,
+									...result.message_params,
+								}),
 								{
 									id: notice.id,
 									duration: undefined,
