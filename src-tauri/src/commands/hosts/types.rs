@@ -112,8 +112,8 @@ impl CreateHostInput {
             description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             enabled: self.enabled.unwrap_or(true),
             system_info: Some(sqlx::types::Json(HostSystemInfo::default())),
-            status_info: None,
-            server_updates: None,
+            status_info: Some(sqlx::types::Json(HostStatusMetrics::default())),
+            server_updates: Some(sqlx::types::Json(HostServerUpdates::default())),
             created_at: String::new(),
             updated_at: String::new(),
         }
