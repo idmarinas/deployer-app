@@ -12,7 +12,7 @@ import { ICONS, getModuleIcon, getModuleSwitchIcons } from '@/utils/icons'
 import { useRouter } from 'vue-router'
 import { ToolbarManager } from './useDashboardToolbar'
 
-import { usePositionedButtons, type PositionedButton } from './usePositionedButtons'
+import { usePositionedButtons, type PositionedButton } from '../../usePositionedButtons'
 
 // ---------------------------------------------------------------------------
 // Función interna principal
