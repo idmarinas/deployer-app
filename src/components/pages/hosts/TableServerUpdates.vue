@@ -181,7 +181,7 @@ const tableMeta: TableMeta<HostPackage> = {
 
 const table = useTemplateRef('table')
 const rowsSelected = ref({})
-const useSudo = ref(false)
+const useSudo = ref(true)
 
 const disableComponent = computed<boolean>(() => {
 	return !props.data || !props.data.packages || props.data.packages.length === 0
