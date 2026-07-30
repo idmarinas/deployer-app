@@ -25,7 +25,7 @@ crud_commands! {
         entity: GlobalVariable,
         fun: global_variable,
         list_fun: global_variables,
-        i18n: "global_variables",
+        i18n: "tauri.global_variables",
         create: CreateGlobalVariableInput => into_global_variable,
         update: UpdateGlobalVariableInput => build_global_variable_update,
         conditional_encrypt: value => is_secret,

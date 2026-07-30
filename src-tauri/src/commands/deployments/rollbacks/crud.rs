@@ -25,7 +25,7 @@ crud_commands! {
         entity: DeploymentRollback,
         fun: deployment_rollback,
         list_fun: deployment_rollbacks,
-        i18n: "deployment_rollbacks",
+        i18n: "tauri.deployment_rollbacks",
         create: CreateDeploymentRollbackInput => into_deployment_rollback,
         update: UpdateDeploymentRollbackInput => build_deployment_rollback_update,
         list_filter: deployment_id: i64,

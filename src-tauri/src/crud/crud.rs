@@ -63,27 +63,27 @@ pub fn error_to_response<T>(
 
     match kind {
         "UNIQUE" => CommandResponse::err(
-            &format!("{}.errors.duplicate", entity),
+            &format!("tauri.{}.errors.duplicate", entity),
             HashMap::from([("reason".to_string(), message.to_string())]),
         ),
         "FK" => CommandResponse::err(
-            &format!("{}.errors.referenced_not_found", entity),
+            &format!("tauri.{}.errors.referenced_not_found", entity),
             HashMap::from([("reason".to_string(), message.to_string())]),
         ),
         "NOTNULL" => CommandResponse::err(
-            &format!("{}.errors.required_field", entity),
+            &format!("tauri.{}.errors.required_field", entity),
             HashMap::new(),
         ),
         "NOT_FOUND" => CommandResponse::err(
-            &format!("{}.errors.not_found", entity),
+            &format!("tauri.{}.errors.not_found", entity),
             HashMap::from([("id".to_string(), detail.to_string())]),
         ),
         "TRANSITION_DENIED" => CommandResponse::err(
-            &format!("{}.errors.transition_denied", entity),
+            &format!("tauri.{}.errors.transition_denied", entity),
             HashMap::from([("reason".to_string(), message.to_string())]),
         ),
         _ => CommandResponse::err(
-            &format!("{}.errors.{}", entity, operation),
+            &format!("tauri.{}.errors.{}", entity, operation),
             HashMap::from([("reason".to_string(), err)]),
         ),
     }

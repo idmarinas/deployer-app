@@ -22,7 +22,7 @@ crud_commands! {
         entity: FrameworkConfig,
         fun: framework_config,
         list_fun: framework_configs,
-        i18n: "framework_configs",
+        i18n: "tauri.framework_configs",
         create: CreateFrameworkConfigInput => into_framework_config,
         update: UpdateFrameworkConfigInput => build_framework_config_update,
         conditional_encrypt: value => is_secret,

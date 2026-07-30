@@ -16,7 +16,7 @@ pub async fn get_deployer_setting(
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.context_failed",
+                "tauri.deployer_settings.errors.context_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -31,13 +31,13 @@ pub async fn get_deployer_setting(
     .map_err(|e| format!("Error al obtener deployer_setting '{}': {}", key, e));
 
     match row {
-        Ok(Some(setting)) => Ok(CommandResponse::ok(setting, "deployer_settings.success.fetched")),
+        Ok(Some(setting)) => Ok(CommandResponse::ok(setting, "tauri.deployer_settings.success.fetched")),
         Ok(None) => Ok(CommandResponse::ok(
             DeployerSetting { key, value: None },
-            "deployer_settings.success.fetched",
+            "tauri.deployer_settings.success.fetched",
         )),
         Err(e) => Ok(CommandResponse::err(
-            "deployer_settings.errors.fetch_failed",
+            "tauri.deployer_settings.errors.fetch_failed",
             HashMap::from([("reason".to_string(), e)]),
         )),
     }

@@ -97,13 +97,13 @@ pub async fn get_database_info(app: AppHandle) -> CommandResponse<DatabaseInfo> 
         Ok(Some(p)) => p,
         Ok(None) => {
             return CommandResponse::err(
-                "database.errors.path_not_configured",
+                "tauri.database.errors.path_not_configured",
                 HashMap::new(),
             );
         }
         Err(e) => {
             return CommandResponse::err(
-                "database.errors.store_error",
+                "tauri.database.errors.store_error",
                 HashMap::from([("reason".to_string(), e)]),
             );
         }
@@ -120,7 +120,7 @@ pub async fn get_database_info(app: AppHandle) -> CommandResponse<DatabaseInfo> 
         Ok((p, _)) => p,
         Err(e) => {
             return CommandResponse::err(
-                "database.errors.initialization_failed",
+                "tauri.database.errors.initialization_failed",
                 HashMap::from([("reason".to_string(), e)]),
             );
         }
@@ -192,6 +192,6 @@ pub async fn get_database_info(app: AppHandle) -> CommandResponse<DatabaseInfo> 
             page_count,
             page_size,
         },
-        "database.success.info",
+        "tauri.database.success.info",
     )
 }

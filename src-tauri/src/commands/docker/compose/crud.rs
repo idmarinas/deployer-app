@@ -34,7 +34,7 @@ crud_commands! {
         entity: DockerCompose,
         fun: docker_compose,
         list_fun: docker_composes,
-        i18n: "docker_composes",
+        i18n: "tauri.docker_composes",
         create: CreateDockerComposeInput => into_docker_compose,
         update: UpdateDockerComposeInput => build_docker_compose_update,
     }

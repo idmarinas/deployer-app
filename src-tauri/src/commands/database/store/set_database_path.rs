@@ -11,7 +11,7 @@ pub fn set_database_path(app: AppHandle, path: String) -> CommandResponse<()> {
         Err(e) => {
             let mut params = std::collections::HashMap::new();
             params.insert("reason".to_string(), e.to_string());
-            return CommandResponse::err("store.errors.open_failed", params);
+            return CommandResponse::err("tauri.store.errors.open_failed", params);
         }
     };
 
@@ -20,8 +20,8 @@ pub fn set_database_path(app: AppHandle, path: String) -> CommandResponse<()> {
     if let Err(e) = store.save() {
         let mut params = std::collections::HashMap::new();
         params.insert("reason".to_string(), e.to_string());
-        return CommandResponse::err("store.errors.save_failed", params);
+        return CommandResponse::err("tauri.store.errors.save_failed", params);
     }
 
-    CommandResponse::ok_empty("store.success.set_path")
+    CommandResponse::ok_empty("tauri.store.success.set_path")
 }

@@ -127,12 +127,12 @@ pub async fn host_check_system_info(
         Err(e) => {
             if e.contains("Timeout") {
                 return Ok(CommandResponse::err(
-                    "hosts.errors.connection_timeout",
+                    "tauri.hosts.errors.connection_timeout",
                     params!("timeout" => "15"),
                 ));
             }
             return Ok(CommandResponse::err(
-                "hosts.errors.connection_failed",
+                "tauri.hosts.errors.connection_failed",
                 params!("reason" => e),
             ));
         }
@@ -190,7 +190,7 @@ pub async fn host_check_system_info(
     // 4. Devolver resultado
     Ok(CommandResponse::ok(
         system_info,
-        "hosts.success.system_info_checked",
+        "tauri.hosts.success.system_info_checked",
     ))
 }
 
@@ -207,12 +207,12 @@ pub async fn host_check_metrics(
         Err(e) => {
             if e.contains("Timeout") {
                 return Ok(CommandResponse::err(
-                    "hosts.errors.connection_timeout",
+                    "tauri.hosts.errors.connection_timeout",
                     params!("timeout" => "15"),
                 ));
             }
             return Ok(CommandResponse::err(
-                "hosts.errors.connection_failed",
+                "tauri.hosts.errors.connection_failed",
                 params!("reason" => e),
             ));
         }
@@ -232,7 +232,7 @@ pub async fn host_check_metrics(
                 let _ = session.disconnect().await;
                 return Ok(CommandResponse::ok(
                     metrics.clone(),
-                    "hosts.success.metrics_checked",
+                    "tauri.hosts.success.metrics_checked",
                 ));
             }
         }
@@ -262,7 +262,7 @@ pub async fn host_check_metrics(
     // 6. Devolver resultado
     Ok(CommandResponse::ok(
         metrics,
-        "hosts.success.metrics_checked",
+        "tauri.hosts.success.metrics_checked",
     ))
 }
 

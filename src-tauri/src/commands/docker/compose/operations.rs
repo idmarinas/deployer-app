@@ -174,11 +174,11 @@ pub async fn docker_compose_up(
     if exit_code == 0 {
         Ok(CommandResponse::ok(
             message,
-            "docker_composes.operations.up.success",
+            "tauri.docker_composes.operations.up.success",
         ))
     } else {
         Ok(CommandResponse::err(
-            "docker_composes.operations.up.failed",
+            "tauri.docker_composes.operations.up.failed",
             params!("output" => message),
         ))
     }
@@ -212,11 +212,11 @@ pub async fn docker_compose_down(
     if exit_code == 0 {
         Ok(CommandResponse::ok(
             message,
-            "docker_composes.operations.down.success",
+            "tauri.docker_composes.operations.down.success",
         ))
     } else {
         Ok(CommandResponse::err(
-            "docker_composes.operations.down.failed",
+            "tauri.docker_composes.operations.down.failed",
             params!("output" => message),
         ))
     }
@@ -243,7 +243,7 @@ pub async fn docker_compose_ps(
 
     if exit_code != 0 {
         return Ok(CommandResponse::err(
-            "docker_composes.operations.ps.failed",
+            "tauri.docker_composes.operations.ps.failed",
             params!("output" => output),
         ));
     }
@@ -251,7 +251,7 @@ pub async fn docker_compose_ps(
     let services = parse_ps_output(&output);
     Ok(CommandResponse::ok(
         services,
-        "docker_composes.operations.ps.success",
+        "tauri.docker_composes.operations.ps.success",
     ))
 }
 
@@ -279,14 +279,14 @@ pub async fn docker_compose_logs(
 
     if exit_code != 0 {
         return Ok(CommandResponse::err(
-            "docker_composes.operations.logs.failed",
+            "tauri.docker_composes.operations.logs.failed",
             params!("output" => output),
         ));
     }
 
     Ok(CommandResponse::ok(
         output,
-        "docker_composes.operations.logs.success",
+        "tauri.docker_composes.operations.logs.success",
     ))
 }
 
@@ -318,11 +318,11 @@ pub async fn docker_compose_restart(
     if exit_code == 0 {
         Ok(CommandResponse::ok(
             message,
-            "docker_composes.operations.restart.success",
+            "tauri.docker_composes.operations.restart.success",
         ))
     } else {
         Ok(CommandResponse::err(
-            "docker_composes.operations.restart.failed",
+            "tauri.docker_composes.operations.restart.failed",
             params!("output" => message),
         ))
     }
@@ -356,11 +356,11 @@ pub async fn docker_compose_pull(
     if exit_code == 0 {
         Ok(CommandResponse::ok(
             message,
-            "docker_composes.operations.pull.success",
+            "tauri.docker_composes.operations.pull.success",
         ))
     } else {
         Ok(CommandResponse::err(
-            "docker_composes.operations.pull.failed",
+            "tauri.docker_composes.operations.pull.failed",
             params!("output" => message),
         ))
     }

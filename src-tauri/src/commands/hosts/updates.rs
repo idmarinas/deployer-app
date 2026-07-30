@@ -91,7 +91,7 @@ pub async fn host_check_updates(
         Ok(pkgs) => pkgs,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "hosts.errors.updates_check_failed",
+                "tauri.hosts.errors.updates_check_failed",
                 params!("reason" => e),
             ))
         }
@@ -112,7 +112,7 @@ pub async fn host_check_updates(
 
     Ok(CommandResponse::ok(
         server_updates,
-        "hosts.success.updates_checked",
+        "tauri.hosts.success.updates_checked",
     ))
 }
 
@@ -129,9 +129,9 @@ pub async fn host_update_packages(
     let _ = session.disconnect().await;
 
     let key = if exit_code == 0 {
-        "hosts.success.packages_updated"
+        "tauri.hosts.success.packages_updated"
     } else {
-        "hosts.errors.update_failed"
+        "tauri.hosts.errors.update_failed"
     };
 
     Ok(CommandResponse::ok(

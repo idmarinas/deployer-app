@@ -25,7 +25,7 @@ crud_commands! {
         entity: ProjectVariable,
         fun: project_variable,
         list_fun: project_variables,
-        i18n: "project_variables",
+        i18n: "tauri.project_variables",
         create: CreateProjectVariableInput => into_project_variable,
         update: UpdateProjectVariableInput => build_project_variable_update,
         conditional_encrypt: value => is_secret,

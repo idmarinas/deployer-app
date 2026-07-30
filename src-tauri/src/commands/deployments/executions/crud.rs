@@ -40,7 +40,7 @@ crud_commands! {
         entity: DeploymentExecution,
         fun: deployment_execution,
         list_fun: deployment_executions,
-        i18n: "deployment_executions",
+        i18n: "tauri.deployment_executions",
         create: CreateDeploymentExecutionInput => into_deployment_execution,
         update: UpdateDeploymentExecutionInput => build_deployment_execution_update,
         list_filter: deployment_id: i64,

@@ -31,13 +31,13 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsIn
         Ok(Some(p)) => p,
         Ok(None) => {
             return CommandResponse::err(
-                "database.errors.path_not_configured",
+                "tauri.database.errors.path_not_configured",
                 HashMap::new(),
             );
         }
         Err(e) => {
             return CommandResponse::err(
-                "database.errors.store_error",
+                "tauri.database.errors.store_error",
                 HashMap::from([("reason".to_string(), e)]),
             );
         }
@@ -47,7 +47,7 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsIn
         Ok((p, _)) => p,
         Err(e) => {
             return CommandResponse::err(
-                "database.errors.initialization_failed",
+                "tauri.database.errors.initialization_failed",
                 HashMap::from([("reason".to_string(), e)]),
             );
         }
@@ -79,6 +79,6 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsIn
 
     CommandResponse::ok(
         MigrationsInfo { count, applied },
-        "database.success.migrations",
+        "tauri.database.success.migrations",
     )
 }

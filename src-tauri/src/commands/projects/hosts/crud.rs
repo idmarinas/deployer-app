@@ -19,7 +19,7 @@ crud_commands! {
         entity: ProjectHost,
         fun: project_host,
         list_fun: project_hosts,
-        i18n: "project_hosts",
+        i18n: "tauri.project_hosts",
         create: CreateProjectHostInput => into_project_host,
         update: UpdateProjectHostInput => build_project_host_update,
         list_filter: project_id: i64,

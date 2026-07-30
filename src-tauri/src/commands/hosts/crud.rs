@@ -41,7 +41,7 @@ crud_commands! {
         entity: Host,
         fun: host,
         list_fun: hosts,
-        i18n: "hosts",
+        i18n: "tauri.hosts",
         create: CreateHostInput => into_host,
         update: UpdateHostInput => build_host_update,
     }

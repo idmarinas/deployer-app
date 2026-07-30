@@ -9,12 +9,12 @@ pub fn get_database_url(app: AppHandle) -> CommandResponse<Option<String>> {
     match get_database_path_internal(app) {
         Ok(path) => {
             let url = path.map(|p| path_to_plugin_sql_url(&p));
-            CommandResponse::ok(url, "database.success.url_retrieved")
+            CommandResponse::ok(url, "tauri.database.success.url_retrieved")
         }
         Err(e) => {
             let mut params = std::collections::HashMap::new();
             params.insert("reason".to_string(), e);
-            CommandResponse::err("database.errors.store_error", params)
+            CommandResponse::err("tauri.database.errors.store_error", params)
         }
     }
 }

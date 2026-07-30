@@ -36,6 +36,6 @@ pub fn get_app_info(app: AppHandle) -> CommandResponse<AppInfo> {
             platform: std::env::consts::OS.to_string(),
             architecture: std::env::consts::ARCH.to_string(),
         },
-        "database.success.app_info",
+        "tauri.database.success.app_info",
     )
 }

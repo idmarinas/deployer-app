@@ -14,7 +14,7 @@ pub async fn list_deployer_settings(
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.context_failed",
+                "tauri.deployer_settings.errors.context_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -28,9 +28,9 @@ pub async fn list_deployer_settings(
     .map_err(|e| format!("Error al listar deployer_settings: {}", e));
 
     match rows {
-        Ok(settings) => Ok(CommandResponse::ok(settings, "deployer_settings.success.listed")),
+        Ok(settings) => Ok(CommandResponse::ok(settings, "tauri.deployer_settings.success.listed")),
         Err(e) => Ok(CommandResponse::err(
-            "deployer_settings.errors.list_failed",
+            "tauri.deployer_settings.errors.list_failed",
             HashMap::from([("reason".to_string(), e)]),
         )),
     }

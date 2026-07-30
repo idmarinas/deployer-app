@@ -27,7 +27,7 @@ pub async fn execute_migrations(app: AppHandle) -> CommandResponse<()> {
         Err(e) => {
             sleep_until(deadline).await;
             return CommandResponse::err(
-                "migrations.errors.connection_failed",
+                "tauri.migrations.errors.connection_failed",
                 params!("reason" => e),
             );
         }
@@ -40,9 +40,9 @@ pub async fn execute_migrations(app: AppHandle) -> CommandResponse<()> {
     sleep_until(deadline).await;
 
     match result {
-        Ok(_) => CommandResponse::ok_empty("migrations.success.completed"),
+        Ok(_) => CommandResponse::ok_empty("tauri.migrations.success.completed"),
         Err(e) => CommandResponse::err(
-            "migrations.errors.migration_failed",
+            "tauri.migrations.errors.migration_failed",
             params!("reason" => e.to_string()),
         ),
     }

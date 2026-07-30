@@ -20,11 +20,11 @@ pub fn get_database_path_internal(app: AppHandle) -> Result<Option<String>, Stri
 #[tauri::command]
 pub fn get_database_path(app: AppHandle) -> CommandResponse<Option<String>> {
     match get_database_path_internal(app) {
-        Ok(path) => CommandResponse::ok(path, "store.success.get_path"),
+        Ok(path) => CommandResponse::ok(path, "tauri.store.success.get_path"),
         Err(e) => {
             let mut params = std::collections::HashMap::new();
             params.insert("reason".to_string(), e);
-            CommandResponse::err("store.errors.get_path_failed", params)
+            CommandResponse::err("tauri.store.errors.get_path_failed", params)
         }
     }
 }

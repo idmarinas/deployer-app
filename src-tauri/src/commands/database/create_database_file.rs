@@ -11,9 +11,9 @@ pub async fn create_database_file(path: String) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     let result = match std::fs::File::create(&path) {
-        Ok(_) => CommandResponse::ok_empty("database.success.file_created"),
+        Ok(_) => CommandResponse::ok_empty("tauri.database.success.file_created"),
         Err(e) => CommandResponse::err(
-            "database.errors.file_creation_failed",
+            "tauri.database.errors.file_creation_failed",
             params!("path" => path, "reason" => e.to_string()),
         ),
     };

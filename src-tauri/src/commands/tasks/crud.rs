@@ -43,7 +43,7 @@ crud_commands! {
         entity: Task,
         fun: task,
         list_fun: tasks,
-        i18n: "tasks",
+        i18n: "tauri.tasks",
         create: CreateTaskInput => into_task,
         update: UpdateTaskInput => build_task_update,
     }

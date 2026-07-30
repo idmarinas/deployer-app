@@ -32,7 +32,7 @@ crud_commands! {
         entity: Project,
         fun: project,
         list_fun: projects,
-        i18n: "projects",
+        i18n: "tauri.projects",
         create: CreateProjectInput => into_project,
         update: UpdateProjectInput => build_project_update,
     }

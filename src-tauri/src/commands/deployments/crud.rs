@@ -31,7 +31,7 @@ crud_commands! {
         entity: Deployment,
         fun: deployment,
         list_fun: deployments,
-        i18n: "deployments",
+        i18n: "tauri.deployments",
         create: CreateDeploymentInput => into_deployment,
         update: UpdateDeploymentInput => build_deployment_update,
         list_filter: project_id: i64,

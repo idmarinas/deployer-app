@@ -28,7 +28,7 @@ pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
         Err(e) => {
             sleep_until(deadline).await;
             return CommandResponse::err(
-                "migrations.errors.connection_failed",
+                "tauri.migrations.errors.connection_failed",
                 params!("reason" => e),
             );
         }
@@ -40,7 +40,7 @@ pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
             pool.close().await;
             sleep_until(deadline).await;
             return CommandResponse::err(
-                "migrations.errors.connection_failed",
+                "tauri.migrations.errors.connection_failed",
                 params!("path" => path, "reason" => e.to_string()),
             );
         }
@@ -51,7 +51,7 @@ pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
         pool.close().await;
         sleep_until(deadline).await;
         return CommandResponse::err(
-            "migrations.errors.migration_failed",
+            "tauri.migrations.errors.migration_failed",
             params!("reason" => e.to_string()),
         );
     }
@@ -63,7 +63,7 @@ pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
             pool.close().await;
             sleep_until(deadline).await;
             return CommandResponse::err(
-                "migrations.errors.migration_failed",
+                "tauri.migrations.errors.migration_failed",
                 params!("reason" => e.to_string()),
             );
         }
@@ -83,5 +83,5 @@ pub async fn has_migrations_pending(app: AppHandle) -> CommandResponse<bool> {
     pool.close().await;
     sleep_until(deadline).await;
 
-    CommandResponse::ok(has_pending, "migrations.success.checked")
+    CommandResponse::ok(has_pending, "tauri.migrations.success.checked")
 }

@@ -15,7 +15,7 @@ pub async fn delete_deployer_setting(
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.context_failed",
+                "tauri.deployer_settings.errors.context_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -31,14 +31,14 @@ pub async fn delete_deployer_setting(
 
     match result {
         Ok(r) if r.rows_affected() > 0 => {
-            Ok(CommandResponse::ok_empty("deployer_settings.success.deleted"))
+            Ok(CommandResponse::ok_empty("tauri.deployer_settings.success.deleted"))
         }
         Ok(_) => Ok(CommandResponse::err(
-            "deployer_settings.errors.not_found",
+            "tauri.deployer_settings.errors.not_found",
             HashMap::from([("key".to_string(), key)]),
         )),
         Err(e) => Ok(CommandResponse::err(
-            "deployer_settings.errors.delete_failed",
+            "tauri.deployer_settings.errors.delete_failed",
             HashMap::from([("reason".to_string(), e)]),
         )),
     }

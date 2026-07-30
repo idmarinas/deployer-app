@@ -35,14 +35,14 @@ pub async fn test_connection(
     match connection_result {
         Ok(Ok((session, _host))) => {
             session.disconnect().await;
-            Ok(CommandResponse::ok_empty("hosts.success.connection"))
+            Ok(CommandResponse::ok_empty("tauri.hosts.success.connection"))
         }
         Ok(Err(e)) => Ok(CommandResponse::err(
-            "hosts.errors.connection_failed",
+            "tauri.hosts.errors.connection_failed",
             params!("reason" => e),
         )),
         Err(_) => Ok(CommandResponse::err(
-            "hosts.errors.connection_timeout",
+            "tauri.hosts.errors.connection_timeout",
             params!("timeout" => CONNECTION_TIMEOUT_SECS.to_string()),
         )),
     }

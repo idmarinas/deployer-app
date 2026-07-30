@@ -15,7 +15,7 @@ pub async fn set_deployer_setting(
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.context_failed",
+                "tauri.deployer_settings.errors.context_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -32,9 +32,9 @@ pub async fn set_deployer_setting(
     .map_err(|e| format!("Error al guardar deployer_setting '{}': {}", key, e));
 
     match result {
-        Ok(_) => Ok(CommandResponse::ok_empty("deployer_settings.success.saved")),
+        Ok(_) => Ok(CommandResponse::ok_empty("tauri.deployer_settings.success.saved")),
         Err(e) => Ok(CommandResponse::err(
-            "deployer_settings.errors.save_failed",
+            "tauri.deployer_settings.errors.save_failed",
             HashMap::from([("reason".to_string(), e)]),
         )),
     }

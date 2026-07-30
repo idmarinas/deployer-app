@@ -17,7 +17,7 @@ pub async fn initialize_database(app: AppHandle) -> CommandResponse<()> {
         Err(e) => {
             sleep_until(deadline).await;
             return CommandResponse::err(
-                "database.errors.initialization_failed",
+                "tauri.database.errors.initialization_failed",
                 params!("reason" => e),
             );
         }
@@ -27,5 +27,5 @@ pub async fn initialize_database(app: AppHandle) -> CommandResponse<()> {
 
     sleep_until(deadline).await;
 
-    CommandResponse::ok_empty("database.success.initialized")
+    CommandResponse::ok_empty("tauri.database.success.initialized")
 }

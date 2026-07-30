@@ -33,7 +33,7 @@ pub async fn run_deployment(
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployments.errors.context_failed",
+                "tauri.deployments.errors.context_failed",
                 std::collections::HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -43,16 +43,16 @@ pub async fn run_deployment(
         Ok(k) => k,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployments.errors.context_failed",
+                "tauri.deployments.errors.context_failed",
                 std::collections::HashMap::from([("reason".to_string(), e)]),
             ))
         }
     };
 
     match runner::run(pool, key, input, channel).await {
-        Ok(()) => Ok(CommandResponse::ok_empty("deployments.success.run_completed")),
+        Ok(()) => Ok(CommandResponse::ok_empty("tauri.deployments.success.run_completed")),
         Err(e) => Ok(CommandResponse::err(
-            "deployments.errors.run_failed",
+            "tauri.deployments.errors.run_failed",
             std::collections::HashMap::from([("reason".to_string(), e)]),
         )),
     }

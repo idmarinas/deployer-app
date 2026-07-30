@@ -17,7 +17,7 @@ crud_commands! {
         entity: TaskDependency,
         fun: task_dependency,
         list_fun: task_dependencies,
-        i18n: "task_dependencies",
+        i18n: "tauri.task_dependencies",
         create: CreateTaskDependencyInput => into_task_dependency,
         update: UpdateTaskDependencyInput => build_task_dependency_update,
         list_filter: task_id: i64,

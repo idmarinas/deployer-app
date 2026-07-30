@@ -29,7 +29,7 @@ crud_commands! {
         entity: Passkey,
         fun: passkey,
         list_fun: passkeys,
-        i18n: "passkeys",
+        i18n: "tauri.passkeys",
         create: CreatePasskeyInput => into_passkey,
         update: UpdatePasskeyInput => build_passkey_update,
     }

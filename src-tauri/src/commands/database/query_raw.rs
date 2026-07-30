@@ -30,7 +30,7 @@ pub async fn query_raw(
     if !trimmed.starts_with("select") {
         let preview: String = sql.chars().take(80).collect();
         return Ok(CommandResponse::err(
-            "database.errors.query_raw_not_select",
+            "tauri.database.errors.query_raw_not_select",
             params!("sql" => preview),
         ));
     }
@@ -39,7 +39,7 @@ pub async fn query_raw(
         Ok(v) => v,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "database.errors.query_raw_open_pool_failed",
+                "tauri.database.errors.query_raw_open_pool_failed",
                 params!("reason" => e),
             ))
         }
@@ -72,7 +72,7 @@ pub async fn query_raw(
         Ok(r) => r,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "database.errors.query_raw_execution_failed",
+                "tauri.database.errors.query_raw_execution_failed",
                 params!("reason" => e.to_string()),
             ))
         }
@@ -92,7 +92,7 @@ pub async fn query_raw(
         result.push(values);
     }
 
-    Ok(CommandResponse::ok(result, "database.success.query_raw_executed"))
+    Ok(CommandResponse::ok(result, "tauri.database.success.query_raw_executed"))
 }
 
 /// Decodifica el valor de una columna SQLite sin fiarse de `type_info()`.

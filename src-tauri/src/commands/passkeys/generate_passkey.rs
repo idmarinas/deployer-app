@@ -70,7 +70,7 @@ pub async fn generate_passkey(
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "passkeys.errors.context_failed",
+                "tauri.passkeys.errors.context_failed",
                 params!("reason" => e),
             ));
         }
@@ -84,7 +84,7 @@ pub async fn generate_passkey(
         Ok(k) => k,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "passkeys.errors.generation_failed",
+                "tauri.passkeys.errors.generation_failed",
                 params!("reason" => e),
             ));
         }
@@ -95,7 +95,7 @@ pub async fn generate_passkey(
         Ok(s) => s.to_string(),
         Err(e) => {
             return Ok(CommandResponse::err(
-                "passkeys.errors.serialization_failed",
+                "tauri.passkeys.errors.serialization_failed",
                 params!("reason" => e.to_string()),
             ));
         }
@@ -106,7 +106,7 @@ pub async fn generate_passkey(
         Ok(s) => s,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "passkeys.errors.serialization_failed",
+                "tauri.passkeys.errors.serialization_failed",
                 params!("reason" => e.to_string()),
             ));
         }
@@ -121,7 +121,7 @@ pub async fn generate_passkey(
             Ok(enc) => Some(enc),
             Err(e) => {
                 return Ok(CommandResponse::err(
-                    "passkeys.errors.encryption_failed",
+                    "tauri.passkeys.errors.encryption_failed",
                     params!("reason" => e.to_string()),
                 ));
             }
@@ -137,7 +137,7 @@ pub async fn generate_passkey(
             key_type,
             passphrase: passphrase_encrypted,
         },
-        "passkeys.success.generated",
+        "tauri.passkeys.success.generated",
     ))
 }
 

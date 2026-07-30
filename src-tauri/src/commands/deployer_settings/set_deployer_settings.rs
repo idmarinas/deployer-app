@@ -17,14 +17,14 @@ pub async fn set_deployer_settings(
     settings: HashMap<String, String>,
 ) -> Result<CommandResponse<()>, String> {
     if settings.is_empty() {
-        return Ok(CommandResponse::ok_empty("deployer_settings.success.saved"));
+        return Ok(CommandResponse::ok_empty("tauri.deployer_settings.success.saved"));
     }
 
     let (pool, _) = match open_pool(&app).await {
         Ok(p) => p,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.context_failed",
+                "tauri.deployer_settings.errors.context_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -34,7 +34,7 @@ pub async fn set_deployer_settings(
         Ok(tx) => tx,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.save_failed",
+                "tauri.deployer_settings.errors.save_failed",
                 HashMap::from([("reason".to_string(), e.to_string())]),
             ))
         }
@@ -54,7 +54,7 @@ pub async fn set_deployer_settings(
             // Si falla un upsert, no dejamos la BD en un estado a medias.
             let _ = tx.rollback().await;
             return Ok(CommandResponse::err(
-                "deployer_settings.errors.save_failed",
+                "tauri.deployer_settings.errors.save_failed",
                 HashMap::from([
                     ("reason".to_string(), e.to_string()),
                     ("key".to_string(), key.clone()),
@@ -64,9 +64,9 @@ pub async fn set_deployer_settings(
     }
 
     match tx.commit().await {
-        Ok(_) => Ok(CommandResponse::ok_empty("deployer_settings.success.saved")),
+        Ok(_) => Ok(CommandResponse::ok_empty("tauri.deployer_settings.success.saved")),
         Err(e) => Ok(CommandResponse::err(
-            "deployer_settings.errors.save_failed",
+            "tauri.deployer_settings.errors.save_failed",
             HashMap::from([("reason".to_string(), e.to_string())]),
         )),
     }
