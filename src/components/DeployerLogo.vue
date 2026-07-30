@@ -23,7 +23,7 @@ withDefaults(
 			DeployerApp
 		</span>
 	</div>
-	<RouterLink v-else :to="{ name: 'dashboard-home' }" class="w-full px-2">
+	<RouterLink v-else :to="{ name: 'dashboard-home' }" class="w-full px-3">
 		<div class="flex items-center gap-2 justify-between w-full">
 			<UAvatar :src="logo" :size="collapsed ? 'lg' : 'xl'" :ui="{ root: 'rounded-none bg-transparent' }" />
 			<span
