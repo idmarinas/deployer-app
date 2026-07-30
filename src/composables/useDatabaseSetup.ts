@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 // Composables
 
 // Tauri related imports
+import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 
 type StepStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -65,6 +66,38 @@ export function useDatabaseSetup() {
 		// Pasos para la configuración inicial
 		steps.value = [
 			{
+				id: 'create_file',
+				icon: 'i-tabler-file-database',
+				title: t('pages.setup.steps.title.create_file'),
+				description: t('pages.setup.steps.description.idle.create_file'),
+				status: 'idle',
+				invoke: 'create_database_file',
+			},
+			{
+				id: 'initialize',
+				icon: 'i-tabler-database-plus',
+				title: t('pages.setup.steps.title.initialize'),
+				description: t('pages.setup.steps.description.idle.initialize'),
+				status: 'idle',
+				invoke: 'initialize_database',
+			},
+			{
+				id: 'migrations',
+				icon: ICONS.database.databaseImport,
+				title: t('pages.setup.steps.title.migrations'),
+				description: t('pages.setup.steps.description.idle.migrations'),
+				status: 'idle',
+				invoke: 'execute_migrations',
+			},
+			{
+				id: 'validate',
+				icon: 'i-tabler-database-smile',
+				title: t('pages.setup.steps.title.validate'),
+				description: t('pages.setup.steps.description.idle.validate'),
+				status: 'idle',
+				invoke: 'validate_database_sqlite',
+			},
+			{
 				id: 'save_path',
 				icon: 'i-tabler-database-search',
 				title: t('pages.setup.steps.title.save_path'),
@@ -87,30 +120,6 @@ export function useDatabaseSetup() {
 				},
 			},
 			{
-				id: 'create_file',
-				icon: 'i-tabler-file-database',
-				title: t('pages.setup.steps.title.create_file'),
-				description: t('pages.setup.steps.description.idle.create_file'),
-				status: 'idle',
-				invoke: 'create_database_file',
-			},
-			{
-				id: 'initialize',
-				icon: 'i-tabler-database-plus',
-				title: t('pages.setup.steps.title.initialize'),
-				description: t('pages.setup.steps.description.idle.initialize'),
-				status: 'idle',
-				invoke: 'initialize_database',
-			},
-			{
-				id: 'migrations',
-				icon: 'i-tabler-database-cog',
-				title: t('pages.setup.steps.title.migrations'),
-				description: t('pages.setup.steps.description.idle.migrations'),
-				status: 'idle',
-				invoke: 'execute_migrations',
-			},
-			{
 				id: 'seed',
 				icon: 'i-tabler-database-import',
 				title: t('pages.setup.steps.title.seed'),
@@ -124,14 +133,6 @@ export function useDatabaseSetup() {
 						},
 					})
 				},
-			},
-			{
-				id: 'validate',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
 			},
 		]
 
@@ -153,7 +154,7 @@ export function useDatabaseSetup() {
 		completeSetup(all_steps_completed)
 	}
 
-	// Cargar una archivo .sqlite ya existente.
+	// Cargar un archivo .sqlite ya existente.
 	async function databaseLoad(path: string | null) {
 		buttons.value = {
 			select: {
@@ -187,8 +188,32 @@ export function useDatabaseSetup() {
 		// Pasos para seleccionar .sqlite existente
 		steps.value = [
 			{
+				id: 'validate_pre',
+				icon: 'i-tabler-database-smile',
+				title: t('pages.setup.steps.title.validate'),
+				description: t('pages.setup.steps.description.idle.validate'),
+				status: 'idle',
+				invoke: 'validate_database_sqlite',
+			},
+			{
+				id: 'migrations',
+				icon: ICONS.database.databaseCog,
+				title: t('pages.setup.steps.title.migrations'),
+				description: t('pages.setup.steps.description.idle.migrations'),
+				status: 'idle',
+				invoke: 'execute_migrations',
+			},
+			{
+				id: 'validate_post',
+				icon: 'i-tabler-database-smile',
+				title: t('pages.setup.steps.title.validate'),
+				description: t('pages.setup.steps.description.idle.validate'),
+				status: 'idle',
+				invoke: 'validate_database_sqlite',
+			},
+			{
 				id: 'save_path',
-				icon: 'i-tabler-database-search',
+				icon: ICONS.database.databaseImport,
 				title: t('pages.setup.steps.title.save_path'),
 				description: t('pages.setup.steps.description.idle.save_path'),
 				status: 'idle',
@@ -207,30 +232,6 @@ export function useDatabaseSetup() {
 						}
 					}
 				},
-			},
-			{
-				id: 'validate_pre',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
-			},
-			{
-				id: 'migrations',
-				icon: 'i-tabler-database-cog',
-				title: t('pages.setup.steps.title.migrations'),
-				description: t('pages.setup.steps.description.idle.migrations'),
-				status: 'idle',
-				invoke: 'execute_migrations',
-			},
-			{
-				id: 'validate_post',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
 			},
 		]
 
