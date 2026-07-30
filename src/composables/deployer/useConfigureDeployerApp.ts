@@ -1,4 +1,4 @@
-import type { CommandResponse } from '../types/tauri-types'
+import type { CommandResponse } from '../../types/tauri-types'
 
 import { StepperItem } from '@nuxt/ui'
 import { useColorMode } from '@vueuse/core'
@@ -20,7 +20,7 @@ interface StepItem extends Omit<StepperItem, 'key'> {
 	invoke: string | Function
 }
 
-export function useDatabaseSetup() {
+export function useConfigureDeployerApp() {
 	const toast = useToast()
 	const router = useRouter()
 	const { locale, t } = useI18n()
