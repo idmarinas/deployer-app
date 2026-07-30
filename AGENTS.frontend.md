@@ -266,14 +266,12 @@ Al añadir o modificar cualquier theme file, verificar:
   ```
 - Los **tipos** de las entidades (ej. `ProjectRow`, `HostRow`) se importan desde los loaders o desde `@/tauri-types` (tipos auto-generados por `ts-rs`).
 - **Ninguna escritura (CRUD) vive en un loader.** Los `invoke('crud_create_*' | 'crud_update_*' | 'crud_delete_*' | 'set_*', ...)` se llaman siempre directamente en el sitio de uso (página, composable de página, o `useTableColumns.ts` para las acciones de tabla) — nunca a través de un wrapper intermedio. Si aparece una tabla clave-valor o de ajustes en bloque, seguir el patrón de `invoke` directo.
-- Los métodos de escritura, cuando existan como helpers (no CRUD, ej. utilidades de `useDatabase.ts`), tienen dos variantes:
-  - Variante segura: devuelve `null` en caso de error.
-  - Variante `OrThrow`: lanza excepción — **siempre usada dentro de `transaction()`**.
-
 ### Acceso a la base de datos
 
-- El acceso directo a SQLite (vía `tauri-plugin-sql`) solo es válido para tablas **sin campos cifrados**.
-- Las tablas con campos sensibles (`hosts`, `passkeys`) deben usar los comandos Tauri CRUD.
+- Todas las escrituras van por comandos Rust CRUD (`invoke('crud_*')`).
+- Las lecturas sin cifrado van por Drizzle (`src/lib/db.ts` vía `invoke('query_raw')`).
+- Las lecturas con cifrado van por comandos Rust (`invoke('crud_get_*' | 'crud_list_*')`).
+- No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
 
 ---
 
@@ -450,7 +448,7 @@ Implementado siguiendo **exactamente** el mismo patrón que `ProjectTabHosts.vue
 
 Vive en la edición de la Task del catálogo, no en la tab de proyecto, porque las dependencias son entre tasks globales (no entre asignaciones `project_tasks`). Particularidades:
 
-- La **lectura** es un `SELECT` directo vía `useDatabase().select()` (`task_dependencies` no tiene datos cifrados ni comando `crud_list_*` dedicado); las **mutaciones** (alta/baja/cambio de `dependency_type`) sí van por `invoke` a `crud_create_task_dependency` / `crud_update_task_dependency` / `crud_delete_task_dependency`.
+- La **lectura** es un `SELECT` directo vía Drizzle (`query_raw`), porque `task_dependencies` no tiene datos cifrados ni comando `crud_list_*` dedicado; las **mutaciones** (alta/baja/cambio de `dependency_type`) sí van por `invoke` a `crud_create_task_dependency` / `crud_update_task_dependency` / `crud_delete_task_dependency`.
 - `UpdateTaskDependencyInput` solo permite cambiar `dependency_type`; para cambiar la task de la que se depende hay que borrar y crear de nuevo (no hay endpoint de "mover").
 - El selector de "añadir dependencia" excluye la propia task (`taskId`) y las tasks de las que ya depende, usando el catálogo de `useTaskSelectPopulate`.
 
