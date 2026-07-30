@@ -7,7 +7,6 @@ import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useDatabase } from '@/composables/useDatabase'
 import { useDeployerShortcuts } from '@/composables/useDeployer'
 import { loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from '@/locales/_loader'
 import { registerExternalLinks } from '@/utils/externalLinks'
@@ -16,7 +15,6 @@ import { CommandResponse } from './types/tauri-types'
 
 const colorMode = useColorMode()
 const i18n = useI18n()
-const { load } = useDatabase()
 const { shortcuts } = useDeployerShortcuts()
 
 const themeColor = computed(() => (colorMode.value === 'dark' ? '#18181b' : '#ffffff'))
@@ -29,8 +27,6 @@ useHead({
 })
 
 onBeforeMount(async () => {
-	await load()
-
 	// Restaurar idioma guardado en deployer_settings
 	try {
 		const response = await invoke<CommandResponse<DeployerSetting>>('get_deployer_setting', { key: 'locale' })
