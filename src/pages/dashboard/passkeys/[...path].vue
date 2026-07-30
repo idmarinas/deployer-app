@@ -7,9 +7,14 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <UError :icon="getModuleIcon('passkeys', 'off')" :clear="false" :error="{
-    statusCode: 404,
-    statusMessage: t('components.error.passkey.statusMessage'),
-    message: t('components.error.passkey.message')
-  }" :ui="{ root: 'h-full min-h-full' }" />
+	<UError
+		:icon="getModuleIcon('passkeys', 'off')"
+		:clear="false"
+		:error="{
+			statusCode: 404,
+			statusMessage: t('components.error.not_found.passkey.statusMessage'),
+			message: t('components.error.not_found.passkey.message'),
+		}"
+		:ui="{ root: 'h-full min-h-full' }"
+	/>
 </template>

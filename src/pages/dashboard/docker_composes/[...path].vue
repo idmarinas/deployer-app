@@ -12,8 +12,8 @@ const { t } = useI18n()
 		:clear="false"
 		:error="{
 			statusCode: 404,
-			statusMessage: t('components.error.docker_compose.statusMessage'),
-			message: t('components.error.docker_compose.message'),
+			statusMessage: t('components.error.not_found.docker_compose.statusMessage'),
+			message: t('components.error.not_found.docker_compose.message'),
 		}"
 		:ui="{ root: 'h-full min-h-full' }"
 	/>
