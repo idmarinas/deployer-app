@@ -89,6 +89,7 @@ export default defineConfig(async () => ({
 				toast: theme.toast,
 				tooltip: theme.tooltip,
 				dashboardNavbar: theme.dashboardNavbar,
+				dashboardPanel: theme.dashboardPanel,
 				dashboardSidebar: theme.dashboardSidebar,
 			},
 			icon: {
