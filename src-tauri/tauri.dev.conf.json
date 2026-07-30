@@ -1,12 +1,18 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "DeployerAppDev",
+	"productName": "Dev - DeployerApp - Dev",
 	"identifier": "com.idmarinas.deployer-app-dev",
 	"app": {
 		"windows": [
 			{
 				"label": "main",
-				"title": "DeployerAppDev"
+				"title": "Dev - DeployerApp - Dev",
+				"width": 1400,
+				"height": 900,
+				"minWidth": 800,
+				"minHeight": 800,
+				"center": true,
+				"visible": false
 			}
 		]
 	}
