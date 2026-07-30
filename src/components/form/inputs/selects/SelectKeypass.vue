@@ -9,6 +9,8 @@ import { ICONS } from '@/utils/icons'
 </script>
 
 <script setup lang="ts">
+const state = defineModel<number | null>()
+
 const { t } = useI18n()
 const router = useRouter()
 const { data: items, isLoading } = useSelectPasskeys()
@@ -17,6 +19,7 @@ const { data: items, isLoading } = useSelectPasskeys()
 <template>
 	<UFieldGroup>
 		<USelectMenu
+			v-model="state"
 			value-key="id"
 			:items="items as SelectMenuItem[]"
 			:loading="isLoading"
