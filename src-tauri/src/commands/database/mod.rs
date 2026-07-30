@@ -1,7 +1,6 @@
 pub mod create_database_file;
 pub mod get_app_info;
 pub mod get_database_info;
-pub mod get_database_url;
 pub mod get_migrations_info;
 pub mod has_migrations_pending;
 pub mod initialize_database;
@@ -14,7 +13,6 @@ pub mod validate_database_sqlite;
 pub use create_database_file::create_database_file;
 pub use get_app_info::get_app_info;
 pub use get_database_info::get_database_info;
-pub use get_database_url::get_database_url;
 pub use get_migrations_info::get_migrations_info;
 pub use has_migrations_pending::has_migrations_pending;
 pub use initialize_database::initialize_database;
@@ -28,7 +26,4 @@ pub fn path_to_sqlite_url(path: &str) -> String {
     format!("sqlite:///{}", normalized)
 }
 
-pub fn path_to_plugin_sql_url(path: &str) -> String {
-    let normalized = path.replace('\\', "/");
-    format!("sqlite:{}", normalized)
-}
+

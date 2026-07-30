@@ -9,7 +9,7 @@ mod response;
 mod ssh;
 
 use commands::database::{
-    create_database_file, get_app_info, get_database_info, get_database_url,
+    create_database_file, get_app_info, get_database_info,
     get_migrations_info, has_migrations_pending, initialize_database, query_raw,
     execute_migrations, validate_database_sqlite,
 };
@@ -74,7 +74,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
         .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
@@ -209,7 +208,6 @@ pub fn run() {
             set_database_path,
             check_database_exists,
             // Database
-            get_database_url,
             initialize_database,
             create_database_file,
             validate_database_sqlite,
