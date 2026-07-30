@@ -1,3 +1,5 @@
+use crate::commands::database::path_to_sqlite_url;
+use crate::helpers::create_configured_pool;
 use crate::helpers::open_pool;
 use crate::response::CommandResponse;
 use std::collections::HashMap;
@@ -15,22 +17,41 @@ macro_rules! params {
 }
 
 /// Ejecuta todas las migraciones pendientes sobre la base de datos indicada.
-/// La ruta del archivo .sqlite se obtiene del store de Tauri.
+/// Si se proporciona `path`, abre la conexión directamente desde esa ruta;
+/// de lo contrario, usa la ruta guardada en el store.
 /// Los archivos .sql se embeben en el binario en tiempo de compilación.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn execute_migrations(app: AppHandle) -> CommandResponse<()> {
+pub async fn execute_migrations(
+    app: AppHandle,
+    path: Option<String>,
+) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
-    let (pool, _path) = match open_pool(&app).await {
-        Ok((p, path)) => (p, path),
-        Err(e) => {
-            sleep_until(deadline).await;
-            return CommandResponse::err(
-                "tauri.migrations.errors.connection_failed",
-                params!("reason" => e),
-            );
+    let pool = match path {
+        Some(p) => {
+            let url = path_to_sqlite_url(&p);
+            match create_configured_pool(&url).await {
+                Ok(pool) => pool,
+                Err(e) => {
+                    sleep_until(deadline).await;
+                    return CommandResponse::err(
+                        "tauri.migrations.errors.connection_failed",
+                        params!("reason" => e),
+                    );
+                }
+            }
         }
+        None => match open_pool(&app).await {
+            Ok((pool, _)) => pool,
+            Err(e) => {
+                sleep_until(deadline).await;
+                return CommandResponse::err(
+                    "tauri.migrations.errors.connection_failed",
+                    params!("reason" => e),
+                );
+            }
+        },
     };
 
     // Los archivos .sql se embeben en el binario en tiempo de compilación
