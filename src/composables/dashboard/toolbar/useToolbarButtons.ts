@@ -1,8 +1,8 @@
+import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { CommandResponse } from '@/types/tauri-types'
 import type { Ref, ShallowRef } from 'vue'
-import type { PositionedButton } from './usePositionedButtons'
 
-import { usePositionedButtons } from './usePositionedButtons'
+import { usePositionedButtons } from '@/composables/usePositionedButtons'
 
 import { isRef } from 'vue'
 import { useI18n } from 'vue-i18n'

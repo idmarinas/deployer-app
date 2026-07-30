@@ -8,10 +8,10 @@ import { invoke } from '@tauri-apps/api/core'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
+import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
+import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
 import useToaster from '@/composables/useToaster'
-import { useToolbarButtons } from '@/composables/useToolbarButtons'
-import { useToolbarContentTitle } from '@/composables/useToolbarContent'
 import { useHostById } from '@/loaders/hosts'
 
 import { ICONS } from '@/utils/icons'

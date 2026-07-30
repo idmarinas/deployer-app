@@ -1,16 +1,16 @@
 <script lang="ts">
 import { useHostById } from '@/loaders/hosts'
-import { watch, ref, useTemplateRef, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 
-import { useQueryCache } from '@pinia/colada'
+import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useHostSchema, type HostSchema } from '@/composables/schemas/hosts'
-import { sanitizeNulls } from '@/utils/sanitize'
-import { useToolbarContentEdit } from '@/composables/useToolbarContent'
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { CommandResponse, UpdateHostInput } from '@/types/tauri-types'
+import { sanitizeNulls } from '@/utils/sanitize'
 import { Form, FormSubmitEvent } from '@nuxt/ui'
+import { useQueryCache } from '@pinia/colada'
 import { invoke } from '@tauri-apps/api/core'
 </script>
 

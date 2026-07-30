@@ -4,14 +4,14 @@ import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
+import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import {
 	useHostSchema,
 	type AuthKeySchema,
 	type AuthPasswordSchema,
 	type HostSchema,
 } from '@/composables/schemas/hosts'
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
-import { useToolbarContentCreate } from '@/composables/useToolbarContent'
 import { useToast } from '@nuxt/ui/composables/useToast'
 import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'

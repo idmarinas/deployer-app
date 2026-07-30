@@ -11,7 +11,7 @@ import { useHostListAll } from '@/loaders/hosts'
 import { ICONS } from '@/utils/icons'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'
-import { useToolbarButtons } from '@/composables/useToolbarButtons'
+import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 </script>
 
 <script setup lang="ts">

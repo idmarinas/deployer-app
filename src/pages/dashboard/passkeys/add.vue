@@ -10,10 +10,10 @@ import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
-import { useToolbarContentCreate } from '@/composables/useToolbarContent'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>

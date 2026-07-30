@@ -1,17 +1,17 @@
 <script lang="ts">
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
-import { watch, ref, useTemplateRef, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { useQueryCache } from '@pinia/colada'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 
+import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
-import { sanitizeNulls } from '@/utils/sanitize'
-import { useToolbarContentEdit } from '@/composables/useToolbarContent'
-import { useDashboardToolbar } from '@/composables/useDashboardToolbar'
-import { CommandResponse, UpdatePasskeyInput } from '@/types/tauri-types'
 import { usePasskeyById } from '@/loaders/passkeys'
+import { CommandResponse, UpdatePasskeyInput } from '@/types/tauri-types'
+import { sanitizeNulls } from '@/utils/sanitize'
 
 import { invoke } from '@tauri-apps/api/core'
 </script>
