@@ -1,7 +1,8 @@
 <script lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import logoSrc from '@/assets/logos/deployerapp.png'
 import { useDeployerAppInfo } from '@/loaders/deployerApp'
-import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
@@ -33,7 +34,7 @@ const { data: componentData, isLoading, status } = useDeployerAppInfo()
 			</div>
 		</template>
 		<template #default>
-			<img :src="logoSrc" class="max-w-sm" />
+			<img :src="logoSrc" class="max-w-xs" />
 
 			<div class="flex flex-col items-center gap-5 grow">
 				<div class="text-2xl text-highlighted">Backend</div>
