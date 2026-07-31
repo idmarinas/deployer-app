@@ -39,6 +39,8 @@ export default {
 			tauri_version: 'Versión de Tauri',
 			platform: 'Plataforma',
 			architecture: 'Arquitectura',
+			vue_version: 'Versión de VueJs',
+			nuxt_ui_version: 'Versión de Nuxt UI',
 		},
 	},
 } satisfies LocaleMessageValue
