@@ -19,16 +19,14 @@ function formatNanoseconds(ns: number): string {
 <template>
 	<!-- Migraciones -->
 	<UCard v-if="!isLoading && status == 'success'">
-		<template #header>
-			<div class="flex flex-col gap-1">
-				<div class="flex items-center justify-between">
-					<h2 class="text-lg font-semibold">
-						{{ t('pages.app.settings.sections.database.migrations') }}
-					</h2>
-					<UBadge variant="subtle" color="neutral" size="sm">
-						{{ t('pages.app.settings.sections.database.migrations_applied', { count: componentData.length }) }}
-					</UBadge>
-				</div>
+		<template #title>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold">
+					{{ t('pages.app.settings.sections.database.migrations') }}
+				</h2>
+				<UBadge variant="subtle" color="neutral" size="sm">
+					{{ t('pages.app.settings.sections.database.migrations_applied', { count: componentData.length }) }}
+				</UBadge>
 			</div>
 		</template>
 
@@ -64,5 +62,4 @@ function formatNanoseconds(ns: number): string {
 	</UCard>
 	<Loading v-else-if="isLoading" />
 	<GeneralError v-else-if="!isLoading && status === 'error'" />
-	<template v-else>cosas </template>
 </template>
