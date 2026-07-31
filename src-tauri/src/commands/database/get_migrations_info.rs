@@ -16,17 +16,10 @@ pub struct MigrationInfo {
     pub execution_time_ns: i64,
 }
 
-#[derive(Serialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct MigrationsInfo {
-    pub count: i64,
-    pub applied: Vec<MigrationInfo>,
-}
-
 /// Devuelve la lista de migraciones aplicadas desde `_sqlx_migrations`,
 /// incluyendo versión, descripción, fecha de instalación, estado y tiempo de ejecución.
 #[tauri::command]
-pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsInfo> {
+pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<Vec<MigrationInfo>> {
     let _path = match get_database_path_internal(app.clone()) {
         Ok(Some(p)) => p,
         Ok(None) => {
@@ -60,8 +53,6 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsIn
     .await
     .unwrap_or_default();
 
-    let count = rows.len() as i64;
-
     let applied = rows
         .into_iter()
         .map(|(version, description, installed_on, success, execution_time_ns)| {
@@ -77,8 +68,5 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<MigrationsIn
 
     pool.close().await;
 
-    CommandResponse::ok(
-        MigrationsInfo { count, applied },
-        "tauri.database.success.migrations",
-    )
+    CommandResponse::ok(applied, "tauri.database.success.migrations")
 }
