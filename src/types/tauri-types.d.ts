@@ -259,8 +259,6 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
 
-export type MigrationsInfo = { count: number, applied: Array<MigrationInfo>, };
-
 export type OnFailure = "stop" | "continue" | "retry";
 
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
