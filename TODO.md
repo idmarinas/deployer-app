@@ -21,6 +21,67 @@ Se centra en los módulos:
 10. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
 	- También se puede dividir entre lo que es la configuración y mera información.
 11. Comprobar que toda llamada al backend tiene un toast con loading > success | error
+12. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
+	```ts
+	async function changeDatabasePath() {
+		// Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
+		const selected = await open({
+			directory: false,
+			multiple: false,
+			title: t('pages.app.settings.sections.database.change'),
+			filters: [
+				{
+					name: 'SQLite Files',
+					extensions: ['sqlite'],
+				},
+			],
+		})
+
+		if (!selected) return
+
+		isChangingDb.value = true
+
+		try {
+			const setResponse = await invoke<CommandResponse>('set_database_path', { path: selected })
+
+			if (!setResponse.success) {
+				toast.add({
+					title: t('overlays.toast.title.error'),
+					description: t('pages.app.settings.sections.database.change_error'),
+					color: 'error',
+				})
+				return
+			}
+
+			const migrationResponse = await invoke<CommandResponse>('execute_migrations')
+
+			if (!migrationResponse.success) {
+				toast.add({
+					title: t('overlays.toast.title.error'),
+					description: t('pages.app.settings.sections.database.change_error'),
+					color: 'error',
+				})
+				return
+			}
+
+			toast.add({
+				title: t('overlays.toast.title.success'),
+				description: t('pages.app.settings.sections.database.change_success'),
+				color: 'success',
+			})
+
+			window.location.reload()
+		} catch {
+			toast.add({
+				title: t('overlays.toast.title.error'),
+				description: t('pages.app.settings.sections.database.change_error'),
+				color: 'error',
+			})
+		} finally {
+			isChangingDb.value = false
+		}
+	}
+	```
 
 ## Módulos
 
