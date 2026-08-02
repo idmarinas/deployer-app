@@ -23,89 +23,103 @@ const { t } = useI18n()
 const appConfig = useAppConfig()
 const colorMode = useColorMode()
 
-const items = computed<DropdownMenuItem[][]>(() => [
-	[
-		{
-			type: 'label',
-			label: t('app.title'),
-			avatar: {
-				icon: ICONS.app.logo,
-				src: '/logo.png',
-				class: 'bg-transparent',
-				alt: 'DeployerApp Logo',
-				size: 'lg',
-				ui: {
-					root: 'rounded-none',
+const items = computed<DropdownMenuItem[][]>(() => {
+	const items: DropdownMenuItem[][] = [
+		[
+			{
+				type: 'label',
+				label: t('app.title'),
+				avatar: {
+					icon: ICONS.app.logo,
+					src: '/logo.png',
+					class: 'bg-transparent',
+					alt: 'DeployerApp Logo',
+					size: 'lg',
+					ui: {
+						root: 'rounded-none',
+					},
 				},
 			},
-		},
-	],
-	[
-		{
-			label: t('components.deployerAppMenu.settings'),
-			icon: ICONS.app.settings,
-			to: { name: 'dashboard-app' },
-		},
-		{
-			label: 'Restablecer ventana',
-			icon: ICONS.app.window,
-			onClick: async () => {
-				const win = getCurrentWindow()
-				await win.setSize(new LogicalSize(1400, 900))
-				await win.center()
+		],
+		[
+			{
+				label: t('components.deployerAppMenu.settings'),
+				icon: ICONS.app.settings,
+				to: { name: 'dashboard-app' },
 			},
-		},
-	],
-	[
-		{
-			label: t('components.deployerAppMenu.appearance.label'),
-			icon: ICONS.app.appearance,
-			children: [
-				{
-					label: t('components.deployerAppMenu.appearance.light'),
-					icon: appConfig.ui.icons.light,
-					type: 'checkbox',
-					checked: colorMode.value === 'light',
-					onSelect(e: Event) {
-						e.preventDefault()
-
-						colorMode.value = 'light'
-					},
+			{
+				label: t('components.deployerAppMenu.resize_window'),
+				icon: ICONS.app.window,
+				onClick: async () => {
+					const win = getCurrentWindow()
+					await win.setSize(new LogicalSize(1400, 900))
+					await win.center()
 				},
-				{
-					label: t('components.deployerAppMenu.appearance.dark'),
-					icon: appConfig.ui.icons.dark,
-					type: 'checkbox',
-					checked: colorMode.value === 'dark',
-					onSelect(e: Event) {
-						e.preventDefault()
+			},
+		],
+		[
+			{
+				label: t('components.deployerAppMenu.appearance.label'),
+				icon: ICONS.app.appearance,
+				children: [
+					{
+						label: t('components.deployerAppMenu.appearance.light'),
+						icon: appConfig.ui.icons.light,
+						type: 'checkbox',
+						checked: colorMode.value === 'light',
+						onSelect(e: Event) {
+							e.preventDefault()
 
-						colorMode.value = 'dark'
+							colorMode.value = 'light'
+						},
 					},
-				},
-			],
-		},
-		{
-			label: t('components.deployerAppMenu.locale'),
-			icon: ICONS.app.language,
-			children: Object.values(uiLocales)
-				.filter(lang => availableLocales.includes(lang.code))
-				.map(lang => ({
-					label: lang.name,
-					icon: `circle-flags:lang-${lang.code}`,
-					type: 'checkbox',
-					name: 'locale',
-					loading: isLocaleLoading.value,
-					disabled: isLocaleLoading.value,
-					checked: locale.value === lang.code,
-					onSelect(e: Event) {
-						e.preventDefault()
-						setLocale(lang.code)
+					{
+						label: t('components.deployerAppMenu.appearance.dark'),
+						icon: appConfig.ui.icons.dark,
+						type: 'checkbox',
+						checked: colorMode.value === 'dark',
+						onSelect(e: Event) {
+							e.preventDefault()
+
+							colorMode.value = 'dark'
+						},
 					},
-				})),
-		},
-	],
-])
+				],
+			},
+			{
+				label: t('components.deployerAppMenu.locale'),
+				icon: ICONS.app.language,
+				children: Object.values(uiLocales)
+					.filter(lang => availableLocales.includes(lang.code))
+					.map(lang => ({
+						label: lang.name,
+						icon: `circle-flags:lang-${lang.code}`,
+						type: 'checkbox',
+						name: 'locale',
+						loading: isLocaleLoading.value,
+						disabled: isLocaleLoading.value,
+						checked: locale.value === lang.code,
+						onSelect(e: Event) {
+							e.preventDefault()
+							setLocale(lang.code)
+						},
+					})),
+			},
+		],
+	]
+
+	if (process.env.NODE_ENV === 'development') {
+		items.push([
+			{
+				label: 'Theme Preview',
+				icon: 'i-tabler-brush',
+				to: { name: 'dashboard-theme' },
+			},
+		])
+	}
+
+	return items
+})
 </script>
 
 <template>
