@@ -64,6 +64,7 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-passkeys'
       | 'dashboard-passkeys-add'
       | 'dashboard-passkeys-id-edit'
+      | 'dashboard-theme'
     >,
     'dashboard-home': RouteRecordInfo<
       'dashboard-home',
@@ -223,6 +224,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'dashboard-theme': RouteRecordInfo<
+      'dashboard-theme',
+      '/dashboard/theme',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/deployer': RouteRecordInfo<
       '/deployer',
       '/deployer',
@@ -298,6 +306,7 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-passkeys'
         | 'dashboard-passkeys-add'
         | 'dashboard-passkeys-id-edit'
+        | 'dashboard-theme'
       views:
         | 'default'
       pathParamNames:
@@ -481,6 +490,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/passkeys/add.vue': {
       routes:
         | 'dashboard-passkeys-add'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/theme.vue': {
+      routes:
+        | 'dashboard-theme'
       views:
         | never
       pathParamNames:
