@@ -9,4 +9,5 @@ export default {
 		system: 'Sistema',
 	},
 	locale: 'Idioma',
+	resize_window: 'Restablecer ventana',
 } satisfies LocaleMessageValue
