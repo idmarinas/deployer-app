@@ -140,7 +140,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 							}
 
 							if (options.moduleName) {
-								await queryCache.invalidateQueries({ key: [options.moduleName] })
+								await queryCache.invalidateQueries({ key: [options.moduleName] }, 'all')
 							}
 
 							if (options.onReload) {

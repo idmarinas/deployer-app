@@ -2,7 +2,7 @@
 import type { Host } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, resolveComponent } from 'vue'
+import { h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -21,7 +21,7 @@ definePage({
 
 const UBadge = resolveComponent('UBadge')
 
-const { data: items, isLoading, status, reload } = useHostListAll()
+const { data: items, isLoading, status, reload, refresh } = useHostListAll()
 
 const { t } = useI18n()
 const router = useRouter()
@@ -90,6 +90,10 @@ const columns: TableColumn<Host>[] = [
 		}),
 	]),
 ]
+
+onMounted(() => {
+	refresh()
+})
 </script>
 
 <template>

@@ -136,7 +136,7 @@ async function saveLocalEdit() {
 			value.value = draft.value
 
 			if (props.invalidateKey) {
-				await queryCache.invalidateQueries({ key: props.invalidateKey })
+				await queryCache.invalidateQueries({ key: props.invalidateKey }, 'all')
 			}
 
 			await reloadProject?.()

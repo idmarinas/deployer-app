@@ -52,7 +52,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 	})
 
 	if (result.success) {
-		await queryCache.invalidateQueries({ key: ['passkeys'] })
+		await queryCache.invalidateQueries({ key: ['passkeys'] }, 'all')
 
 		toast.add({
 			title: t('overlays.toast.title.success'),

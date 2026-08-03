@@ -58,7 +58,7 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	const result = await invoke<CommandResponse<number>>('crud_create_host', { input: host })
 
 	if (result.success) {
-		await queryCache.invalidateQueries({ key: ['hosts'] })
+		await queryCache.invalidateQueries({ key: ['hosts'] }, 'all')
 
 		toast.add({
 			title: t('overlays.toast.title.success'),

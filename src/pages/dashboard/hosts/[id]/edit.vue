@@ -51,7 +51,7 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	})
 
 	if (result.success) {
-		await queryCache.invalidateQueries({ key: ['hosts'] })
+		await queryCache.invalidateQueries({ key: ['hosts'] }, 'all')
 
 		toast.add({
 			title: t('overlays.toast.title.success'),

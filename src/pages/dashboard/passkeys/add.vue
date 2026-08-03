@@ -93,7 +93,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 	const result = await invoke<CommandResponse<number>>('crud_create_passkey', { input: passkey })
 
 	if (result.success) {
-		await cacheQuery.invalidateQueries({ key: ['passkeys'] })
+		await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
 
 		toast.add({
 			title: t('overlays.toast.title.success'),

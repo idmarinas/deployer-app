@@ -2,7 +2,7 @@
 import type { Passkey } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, resolveComponent } from 'vue'
+import { h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useCopyPasskeyToServer } from '@/composables/useDialog'
@@ -21,7 +21,7 @@ definePage({
 const UButton = resolveComponent('UButton')
 
 const { t, locale } = useI18n()
-const { data: items, isLoading, status, reload } = usePasskeysListAll()
+const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
 
 const { tableColumnExpand, tableColumnActions } = useTableColumns<Passkey>({
 	moduleName: 'passkeys',
@@ -65,6 +65,10 @@ const columns: TableColumn<Passkey>[] = [
 		},
 	]),
 ]
+
+onMounted(() => {
+	refresh()
+})
 </script>
 
 <template>
