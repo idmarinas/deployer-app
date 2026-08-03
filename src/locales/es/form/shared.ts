@@ -48,6 +48,14 @@ export default {
 				upper: 'Al menos una letra mayúscula',
 			},
 		},
+		generate: {
+			label: 'Generar contraseña',
+			title_config: 'Configuración de la contraseña generada',
+			config: 'Configurar generador de contraseñas',
+			use_upper: 'Usar letras mayúsculas',
+			use_numbers: 'Usar números',
+			use_special: 'Usar caracteres especiales',
+		},
 	},
 	select: {
 		framework: {
