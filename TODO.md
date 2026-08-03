@@ -1,11 +1,3 @@
-# Versión 0.1.0
-
-Se centra en los módulos:
-1. Docker compose.yaml
-2. Crear los hosts
-3. Crear las claves de acceso.
-
-
 # TODO
 
 1. Inputs, Crear un warpper para Inputs, Textareas, Selects, etc. que se puedan crear de una forma mas sencilla, con ciertos añadidos.
@@ -19,87 +11,103 @@ Se centra en los módulos:
 8. Valorar soporte futuro para BD remota (PostgreSQL/MariaDB) en vez de SQLite local, permitiendo uso multi-instancia/colaborativo.
 9. Posibilidad de actualizar las claves de encriptación (de la app). (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
 10. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
-	- También se puede dividir entre lo que es la configuración y mera información.
+    - También se puede dividir entre lo que es la configuración y mera información.
 11. Comprobar que toda llamada al backend tiene un toast con loading > success | error
 12. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
-	```ts
-	async function changeDatabasePath() {
-		// Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
-		const selected = await open({
-			directory: false,
-			multiple: false,
-			title: t('pages.app.settings.sections.database.change'),
-			filters: [
-				{
-					name: 'SQLite Files',
-					extensions: ['sqlite'],
-				},
-			],
-		})
 
-		if (!selected) return
+  ```ts
+  async function changeDatabasePath() {
+   // Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
+  const selected = await open({
+  directory: false,
+  multiple: false,
+  title: t('pages.app.settings.sections.database.change'),
+  filters: [
+   {
+   name: 'SQLite Files',
+   extensions: ['sqlite'],
+   },
+  ],
+  })
 
-		isChangingDb.value = true
+  if (!selected) return
 
-		try {
-			const setResponse = await invoke<CommandResponse>('set_database_path', { path: selected })
+  isChangingDb.value = true
 
-			if (!setResponse.success) {
-				toast.add({
-					title: t('overlays.toast.title.error'),
-					description: t('pages.app.settings.sections.database.change_error'),
-					color: 'error',
-				})
-				return
-			}
+  try {
+  const setResponse = await invoke<CommandResponse>('set_database_path', { path: selected })
 
-			const migrationResponse = await invoke<CommandResponse>('execute_migrations')
+  if (!setResponse.success) {
+   toast.add({
+   title: t('overlays.toast.title.error'),
+   description: t('pages.app.settings.sections.database.change_error'),
+   color: 'error',
+   })
+   return
+  }
 
-			if (!migrationResponse.success) {
-				toast.add({
-					title: t('overlays.toast.title.error'),
-					description: t('pages.app.settings.sections.database.change_error'),
-					color: 'error',
-				})
-				return
-			}
+  const migrationResponse = await invoke<CommandResponse>('execute_migrations')
 
-			toast.add({
-				title: t('overlays.toast.title.success'),
-				description: t('pages.app.settings.sections.database.change_success'),
-				color: 'success',
-			})
+  if (!migrationResponse.success) {
+   toast.add({
+   title: t('overlays.toast.title.error'),
+   description: t('pages.app.settings.sections.database.change_error'),
+   color: 'error',
+   })
+   return
+  }
 
-			window.location.reload()
-		} catch {
-			toast.add({
-				title: t('overlays.toast.title.error'),
-				description: t('pages.app.settings.sections.database.change_error'),
-				color: 'error',
-			})
-		} finally {
-			isChangingDb.value = false
-		}
-	}
-	```
+  toast.add({
+   title: t('overlays.toast.title.success'),
+   description: t('pages.app.settings.sections.database.change_success'),
+   color: 'success',
+  })
+
+  window.location.reload()
+  } catch {
+  toast.add({
+   title: t('overlays.toast.title.error'),
+   description: t('pages.app.settings.sections.database.change_error'),
+   color: 'error',
+  })
+  } finally {
+  isChangingDb.value = false
+  }
+  }
+  ```
+
+## Versión 0.1.0
+
+Se centra en los módulos:
+
+1. Docker `compose.yaml`
+2. Crear los hosts
+3. Crear las claves de acceso.
 
 ## Módulos
 
 ### Passkeys
 
 1. Poder ver la cláve pública.
+   - Se puede guardar en la tabla, para evitar tener que calcularla cada vez.
 2. Comprobar si se le puede poner una duración a la clave.
-	- Incluirla en la infromación y avisar cuando está apunto de caducar.
-	- Eliminarla de todos los servidores que la usa, y cambiarla por una nueva.
+   - Incluirla en la infromación y avisar cuando está apunto de caducar.
+   - Eliminarla de todos los servidores que la usa, y cambiarla por una nueva.
 3. Incluir que servidores están usando la clave de acceso.
+4. Cuando se genera una clave de acceso, marcarla como generada.
+   - Esto permite poder hacer que cuando sea agregada de forma manual, actualizar la contraseña (por si se agrego mal)
+   - No permitir actualizar la contraseña si se ha generado de forma automática la clave.
+5. Cuando se agrega una clave de acceso, que se genere el la huella digital.
+6. Poder des/activar una clave de acceso, para permitir borrarla
+   - Cuando una clave de acceso está desactivata, el host no la puede usar.
 
 ### Hosts
 
 1. Hosts (Servidores) agregar el poder manejar ciertos aspectos del servidor:
-	- Comprobar si hay actualizaciones
-		- Actualizar el paquete seleccionado o varios.
-	- Comprobar el espacio en disco usado (¿poder liberar espacio?)
-	- Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
+   - Comprobar si hay actualizaciones
+     - Actualizar el paquete seleccionado o varios.
+     - Comprobar el espacio en disco usado (¿poder liberar espacio?)
+   - Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
 2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
 
 ### Docker Compose
@@ -109,7 +117,7 @@ Se centra en los módulos:
 ### Commands (antes Tasks)
 
 1. Este nombre para el proposito que tiene este módulo no es adecuado
-	- Actualmente este módulo su proposito es crear los comandos que se va a ejecutar para cada proyecto.
+   - Actualmente este módulo su proposito es crear los comandos que se va a ejecutar para cada proyecto.
 2. Cambiar el nombre por "Commands" que es más apropiado para lo que va a hacer.
 
 ### Tasks (nueva versión)
@@ -118,6 +126,6 @@ Se centra en los módulos:
 2. Este nuevo módulo su función es para crear tareas que se ejecutarán por la aplicación a ciertos intervalos y en un cron.
 3. IDEA, este es un módulo que es una IDEA, no es definitivo.
 4. Propositos para lo que se pensó:
-	- Crear una tarea que se ejecute cada X tiempo para comprobar si los servidores tienen actualizaciones (aunque se puede hacer de forma manual puede que se olvide comprobarlo)
-	- Las tareas se pueden crear para todos los módulos y sus items.
-	- Muestra la última vez que se ejecuto, y si hubo algún problema.
+   - Crear una tarea que se ejecute cada X tiempo para comprobar si los servidores tienen actualizaciones (aunque se puede hacer de forma manual puede que se olvide comprobarlo)
+   - Las tareas se pueden crear para todos los módulos y sus items.
+   - Muestra la última vez que se ejecuto, y si hubo algún problema.
