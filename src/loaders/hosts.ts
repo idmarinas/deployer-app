@@ -25,7 +25,7 @@ export const useHostById = defineColadaLoader('dashboard-hosts-id', {
 })
 
 export const useHostListAll = defineColadaLoader('dashboard-hosts', {
-	key: () => ['hosts', 'all'],
+	key: ['hosts', 'all'],
 	query: async () =>
 		await db
 			.select()
@@ -36,7 +36,7 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
 })
 
 export const useHostSelectPopulate = defineColadaLoader({
-	key: () => ['hosts', 'select', 'populate'],
+	key: ['hosts', 'select', 'populate'],
 	query: async () =>
 		await db
 			.select({
