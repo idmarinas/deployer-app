@@ -1,11 +1,11 @@
 <script lang="ts">
+import { isEncryptedValue } from '@/utils/crypto'
+import { ICONS } from '@/utils/icons'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BLANK_VALUE } from '@/utils/crypto'
 </script>
-<script setup lang="ts">
-const { t } = useI18n()
 
+<script setup lang="ts">
 const password = defineModel<string>({ required: true })
 const props = withDefaults(
 	defineProps<{
@@ -24,7 +24,16 @@ const props = withDefaults(
 	},
 )
 
-const show = ref(false)
+const { t } = useI18n()
+
+const showPassword = ref(false)
+const showPasswordConfig = ref(false)
+const passConfig = ref({
+	length: 16,
+	useUpper: true,
+	useNumbers: true,
+	useSpecial: true,
+})
 
 function checkStrength(str: string) {
 	if (!props.checkStrength || (props.optional && str.length === 0)) return []
@@ -56,6 +65,22 @@ const text = computed(() => {
 	if (score.value === 3) return t('form.shared.password.strength.score._3')
 	return t('form.shared.password.strength.score._4')
 })
+
+function generatePassword(length: number, useUpper: boolean, useNumbers: boolean, useSpecial: boolean) {
+	const lower = 'abcdefghijklmnopqrstuvwxyz'
+	const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	const numbers = '0123456789'
+	const special = '!@#$%^&*()-_=+[]{}|;:,.<>?'
+	let charset = lower
+	if (useUpper) charset += upper
+	if (useNumbers) charset += numbers
+	if (useSpecial) charset += special
+
+	const array = new Uint32Array(length)
+	window.crypto.getRandomValues(array)
+
+	return Array.from(array, x => charset[x % charset.length]).join('')
+}
 </script>
 
 <template>
@@ -66,11 +91,11 @@ const text = computed(() => {
 				:placeholder="t('form.shared.placeholder.password.input')"
 				autocomplete="off"
 				:color="color"
-				:type="show ? 'text' : 'password'"
+				:type="showPassword ? 'text' : 'password'"
 				:aria-invalid="score < 4"
 				aria-describedby="password-strength"
 				class="w-full"
-				:ui="{ trailing: 'pe-1' }"
+				:ui="{ trailing: 'pe-1 pointer-events-auto' }"
 				:disabled="disabled"
 			>
 				<template #trailing>
@@ -78,27 +103,57 @@ const text = computed(() => {
 						color="neutral"
 						variant="link"
 						size="sm"
-						:icon="show ? 'i-tabler-eye-off' : 'i-tabler-eye'"
-						:aria-label="show ? t('form.shared.hide.password') : t('form.shared.show.password')"
-						:aria-pressed="show"
+						:icon="showPassword ? 'i-tabler-eye-off' : 'i-tabler-eye'"
+						:aria-label="showPassword ? t('form.shared.hide.password') : t('form.shared.showPassword.password')"
+						:aria-pressed="showPassword"
 						aria-controls="password"
 						:disabled="disabled"
+						@click="showPassword = !showPassword"
+					/>
+					<UButton
+						icon="i-tabler-sparkles"
+						variant="link"
+						size="sm"
+						:disabled="disabled"
+						:aria-label="t('form.shared.password.generate.label')"
+						aria-controls="generate-password"
 						@click="
-							() => {
-								show = !show
-							}
+							password = generatePassword(
+								passConfig.length,
+								passConfig.useUpper,
+								passConfig.useNumbers,
+								passConfig.useSpecial,
+							)
 						"
+					/>
+					<UButton
+						:icon="ICONS.app.settings"
+						variant="link"
+						size="sm"
+						color="secondary"
+						:disabled="disabled"
+						:aria-label="t('form.shared.password.generate.config')"
+						aria-controls="generate-password-config"
+						@click="showPasswordConfig = !showPasswordConfig"
 					/>
 				</template>
 			</UInput>
 		</UFormField>
 
+		<div v-if="showPasswordConfig" class="grid grid-cols-2 gap-2 mt-2 border-y border-primary py-2">
+			<div class="col-span-2">{{ t('form.shared.password.generate.title_config') }}</div>
+			<UInputNumber v-model="passConfig.length" :min="8" />
+			<USwitch v-model="passConfig.useUpper" :label="t('form.shared.password.generate.use_upper')" />
+			<USwitch v-model="passConfig.useNumbers" :label="t('form.shared.password.generate.use_numbers')" />
+			<USwitch v-model="passConfig.useSpecial" :label="t('form.shared.password.generate.use_special')" />
+		</div>
+
 		<div
 			v-if="
 				((props.checkStrength && props.optional && password.length > 0) || !props.optional) &&
-				!password.startsWith('ENC:') && password !== BLANK_VALUE
+				!isEncryptedValue(password)
 			"
-			class="mt-1 space-y-2"
+			class="mt-2 space-y-2"
 		>
 			<UProgress :color="color" :indicator="text" :model-value="score" :max="4" />
 
