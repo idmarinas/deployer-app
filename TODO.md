@@ -94,12 +94,8 @@ Se centra en los módulos:
    - Incluirla en la infromación y avisar cuando está apunto de caducar.
    - Eliminarla de todos los servidores que la usa, y cambiarla por una nueva.
 3. Incluir que servidores están usando la clave de acceso.
-4. Cuando se genera una clave de acceso, marcarla como generada.
-   - Esto permite poder hacer que cuando sea agregada de forma manual, actualizar la contraseña (por si se agrego mal)
-   - No permitir actualizar la contraseña si se ha generado de forma automática la clave.
-5. Cuando se agrega una clave de acceso, que se genere el la huella digital.
-6. Poder des/activar una clave de acceso, para permitir borrarla
-   - Cuando una clave de acceso está desactivata, el host no la puede usar.
+4. Poder des/activar una clave de acceso, para permitir borrarla
+   - Cuando una clave de acceso está desactivada, el host no la puede usar.
 
 ### Hosts
 
@@ -109,6 +105,9 @@ Se centra en los módulos:
      - Comprobar el espacio en disco usado (¿poder liberar espacio?)
    - Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
 2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
+3. Permitir tener varias claves de acceso.
+   - Una idea, puede que no sea útil.
+   - Puede que sea más interesante guardar la clave de acceso y la contraseña para acceder al servidor (usando solo una)
 
 ### Docker Compose
 
