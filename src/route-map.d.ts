@@ -112,13 +112,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/dashboard/docker_composes/[...path]': RouteRecordInfo<
-      '/dashboard/docker_composes/[...path]',
-      '/dashboard/docker_composes/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
-      | never
-    >,
     'dashboard-docker_composes-id': RouteRecordInfo<
       'dashboard-docker_composes-id',
       '/dashboard/docker_composes/:id(\\d+)',
@@ -131,6 +124,13 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/docker_composes/:id(\\d+)/edit',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    '/dashboard/docker_composes/[...path]': RouteRecordInfo<
+      '/dashboard/docker_composes/[...path]',
+      '/dashboard/docker_composes/:path(.*)',
+      { path: ParamValue<true> },
+      { path: ParamValue<false> },
       | never
     >,
     'dashboard-docker_composes-add': RouteRecordInfo<
@@ -366,6 +366,22 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/dashboard/docker_composes/[id]/(view).vue': {
+      routes:
+        | 'dashboard-docker_composes-id'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/docker_composes/[id]/edit.vue': {
+      routes:
+        | 'dashboard-docker_composes-id-edit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/dashboard/docker_composes/[...path].vue': {
       routes:
         | '/dashboard/docker_composes/[...path]'
@@ -373,22 +389,6 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
-    }
-    'src/pages/dashboard/docker_composes/[id].vue': {
-      routes:
-        | 'dashboard-docker_composes-id'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
-    }
-    'src/pages/dashboard/docker_composes/[id].edit.vue': {
-      routes:
-        | 'dashboard-docker_composes-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
     }
     'src/pages/dashboard/docker_composes/add.vue': {
       routes:
