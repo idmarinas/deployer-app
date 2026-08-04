@@ -1,7 +1,9 @@
 use std::path::Path;
 use tauri::AppHandle;
 use tokio::io::AsyncWriteExt;
+use sqlx::Row;
 
+use crate::commands::docker::compose::files_types::DockerComposeFile;
 use crate::commands::docker::compose::types::{
     DockerCompose, DockerComposeOperationInput, DockerComposeService,
 };
@@ -16,7 +18,6 @@ use crate::params;
 // Helpers
 // ============================================================================
 
-/// Carga un DockerCompose por ID desde la BD.
 async fn load_docker_compose(
     pool: &sqlx::SqlitePool,
     id: i64,
@@ -34,7 +35,6 @@ async fn load_docker_compose(
         id: row.get("id"),
         name: row.get("name"),
         description: row.get("description"),
-        compose_content: row.get("compose_content"),
         host_id: row.get("host_id"),
         remote_path: row.get("remote_path"),
         enabled: row.get("enabled"),
@@ -43,37 +43,80 @@ async fn load_docker_compose(
     })
 }
 
-/// Sube contenido de texto como archivo en el servidor remoto via SFTP.
-/// Crea los directorios padre si no existen.
-async fn upload_content_to_file(
-    session: &mut SshSession,
-    content: &[u8],
-    remote_path: &str,
-) -> Result<(), String> {
-    session.ensure_connected().await?;
+async fn load_compose_files(
+    pool: &sqlx::SqlitePool,
+    docker_compose_id: i64,
+) -> Result<Vec<DockerComposeFile>, String> {
+    let rows = sqlx::query("SELECT * FROM deployer_docker_compose_files WHERE docker_compose_id = ?1")
+        .bind(docker_compose_id)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| format!("Error al cargar archivos del compose: {}", e))?;
 
-    let sftp = open_sftp_session(session).await?;
-
-    if let Some(parent) = Path::new(remote_path).parent() {
-        if let Some(parent_str) = parent.to_str() {
-            let _ = sftp.create_dir(parent_str).await;
-        }
+    let mut files = Vec::new();
+    for row in rows {
+        files.push(DockerComposeFile {
+            id: row.get("id"),
+            docker_compose_id: row.get("docker_compose_id"),
+            file_path: row.get("file_path"),
+            content: row.get("content"),
+            is_binary: row.get("is_binary"),
+            created_at: row.get("created_at"),
+            updated_at: row.get("updated_at"),
+        });
     }
 
-    let mut remote_file = sftp
-        .create(remote_path)
-        .await
-        .map_err(|e| format!("Error al crear '{}' en servidor: {}", remote_path, e))?;
+    Ok(files)
+}
 
-    remote_file
-        .write_all(content)
-        .await
-        .map_err(|e| format!("Error al escribir en servidor: {}", e))?;
+/// Sube todos los archivos de un compose al servidor remoto.
+async fn upload_all_compose_files(
+    session: &mut SshSession,
+    remote_dir: &str,
+    files: &[DockerComposeFile],
+) -> Result<(), String> {
+    let sftp = open_sftp_session(session).await?;
 
-    remote_file
-        .flush()
-        .await
-        .map_err(|e| format!("Error al hacer flush SFTP: {}", e))?;
+    for file in files {
+        let dest_path = format!("{}/{}", remote_dir.trim_end_matches('/'), file.file_path);
+
+        let content: Vec<u8> = if file.is_binary {
+            // Para archivos binarios, intentamos recuperar el contenido desde la BD
+            // Si no hay contenido almacenado, saltamos el archivo
+            match &file.content {
+                Some(c) => c.as_bytes().to_vec(),
+                None => {
+                    continue;
+                }
+            }
+        } else {
+            match &file.content {
+                Some(c) => c.as_bytes().to_vec(),
+                None => continue,
+            }
+        };
+
+        if let Some(parent) = Path::new(&dest_path).parent() {
+            if let Some(parent_str) = parent.to_str() {
+                let _ = sftp.create_dir(parent_str).await;
+            }
+        }
+
+        let mut remote_file = sftp
+            .create(&dest_path)
+            .await
+            .map_err(|e| format!("Error al crear '{}' en servidor: {}", dest_path, e))?;
+
+        remote_file
+            .write_all(&content)
+            .await
+            .map_err(|e| format!("Error al escribir '{}' en servidor: {}", dest_path, e))?;
+
+        remote_file
+            .flush()
+            .await
+            .map_err(|e| format!("Error al hacer flush SFTP para '{}': {}", dest_path, e))?;
+    }
 
     Ok(())
 }
@@ -86,14 +129,6 @@ async fn run_in_dir(
 ) -> Result<(String, i64), String> {
     let full_command = format!("cd {} && {}", shell_escape(working_dir), command);
     run_ssh_command(session, &full_command, 300).await
-}
-
-/// Extrae el directorio padre de una ruta.
-fn parent_dir(path: &str) -> &str {
-    Path::new(path)
-        .parent()
-        .and_then(|p| p.to_str())
-        .unwrap_or("/")
 }
 
 /// Parsea el output de `docker compose ps --format json` en una lista de servicios.
@@ -114,50 +149,48 @@ fn exit_code_message(exit_code: i64, action: &str) -> String {
     }
 }
 
-/// Helper para cargar compose + conectar al host.
-async fn load_compose_and_connect(
+/// Helper para cargar compose + conectar al host + cargar archivos.
+async fn load_compose_with_files(
     app: &AppHandle,
     docker_compose_id: i64,
-) -> Result<(sqlx::SqlitePool, DockerCompose, SshSession), String> {
+) -> Result<(sqlx::SqlitePool, DockerCompose, Vec<DockerComposeFile>, SshSession), String> {
     let (pool, _key) = open_crypto_context(app).await?;
     let compose = load_docker_compose(&pool, docker_compose_id).await?;
+    let files = load_compose_files(&pool, docker_compose_id).await?;
     let host_id = compose
         .host_id
         .ok_or("Este compose no tiene un servidor asignado")?;
     let (session, _host) = connect_to_host_by_id(app, host_id, 3, true).await?;
-    Ok((pool, compose, session))
+    Ok((pool, compose, files, session))
 }
 
 // ============================================================================
 // Comandos Tauri
 // ============================================================================
 
-/// docker compose up -d: sube el compose via SFTP y ejecuta docker compose up -d.
+/// docker compose up -d: sube todos los archivos via SFTP y ejecuta docker compose up -d.
 #[tauri::command]
 pub async fn docker_compose_up(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    // Subir compose file via SFTP
-    if let Err(e) = upload_content_to_file(
-        &mut session,
-        compose.compose_content.as_bytes(),
-        &compose.remote_path,
-    )
-    .await
-    {
-        let _ = session.disconnect();
-        return Err(format!("Error al subir docker-compose.yml: {}", e));
-    }
+    let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let working_dir = parent_dir(&compose.remote_path);
+    // Subir todos los archivos via SFTP
+    upload_all_compose_files(&mut session, remote_dir, &files).await?;
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let result = run_in_dir(
         &mut session,
-        working_dir,
-        &format!("docker compose -f {} up -d", compose.remote_path),
+        remote_dir,
+        &format!("docker compose -f {} up -d", compose_remote_path),
     )
     .await;
 
@@ -190,14 +223,20 @@ pub async fn docker_compose_down(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    let working_dir = parent_dir(&compose.remote_path);
+    let remote_dir = compose.remote_path.trim_end_matches('/');
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let (output, exit_code) = run_in_dir(
         &mut session,
-        working_dir,
-        &format!("docker compose -f {} down", compose.remote_path),
+        remote_dir,
+        &format!("docker compose -f {} down", compose_remote_path),
     )
     .await?;
 
@@ -228,14 +267,20 @@ pub async fn docker_compose_ps(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<Vec<DockerComposeService>>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    let working_dir = parent_dir(&compose.remote_path);
+    let remote_dir = compose.remote_path.trim_end_matches('/');
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let (output, exit_code) = run_in_dir(
         &mut session,
-        working_dir,
-        &format!("docker compose -f {} ps --format json", compose.remote_path),
+        remote_dir,
+        &format!("docker compose -f {} ps --format json", compose_remote_path),
     )
     .await?;
 
@@ -261,16 +306,22 @@ pub async fn docker_compose_logs(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    let working_dir = parent_dir(&compose.remote_path);
+    let remote_dir = compose.remote_path.trim_end_matches('/');
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let (output, exit_code) = run_in_dir(
         &mut session,
-        working_dir,
+        remote_dir,
         &format!(
             "docker compose -f {} logs --tail 50",
-            compose.remote_path
+            compose_remote_path
         ),
     )
     .await?;
@@ -296,14 +347,20 @@ pub async fn docker_compose_restart(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    let working_dir = parent_dir(&compose.remote_path);
+    let remote_dir = compose.remote_path.trim_end_matches('/');
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let (output, exit_code) = run_in_dir(
         &mut session,
-        working_dir,
-        &format!("docker compose -f {} restart", compose.remote_path),
+        remote_dir,
+        &format!("docker compose -f {} restart", compose_remote_path),
     )
     .await?;
 
@@ -334,14 +391,20 @@ pub async fn docker_compose_pull(
     app: AppHandle,
     input: DockerComposeOperationInput,
 ) -> Result<CommandResponse<String>, String> {
-    let (_pool, compose, mut session) =
-        load_compose_and_connect(&app, input.docker_compose_id).await?;
+    let (_pool, compose, files, mut session) =
+        load_compose_with_files(&app, input.docker_compose_id).await?;
 
-    let working_dir = parent_dir(&compose.remote_path);
+    let remote_dir = compose.remote_path.trim_end_matches('/');
+
+    let compose_file_name = find_compose_file_name(&files)
+        .unwrap_or_else(|| "compose.yaml".to_string());
+
+    let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
+
     let (output, exit_code) = run_in_dir(
         &mut session,
-        working_dir,
-        &format!("docker compose -f {} pull", compose.remote_path),
+        remote_dir,
+        &format!("docker compose -f {} pull", compose_remote_path),
     )
     .await?;
 
@@ -365,3 +428,19 @@ pub async fn docker_compose_pull(
         ))
     }
 }
+
+/// Devuelve el nombre del archivo compose.yaml o docker-compose.yaml
+/// dentro de la lista de archivos.
+fn find_compose_file_name(files: &[DockerComposeFile]) -> Option<String> {
+    files
+        .iter()
+        .find(|f| {
+            let name = f.file_path.to_lowercase();
+            name == "compose.yaml" || name == "compose.yml" || name == "docker-compose.yaml" || name == "docker-compose.yml"
+        })
+        .map(|f| f.file_path.clone())
+}
+
+// ============================================================================
+// Helpers para resolver el nombre del archivo compose
+// ============================================================================

@@ -65,9 +65,8 @@ CREATE TABLE deployer_docker_composes (
     id INTEGER CONSTRAINT deployer_docker_composes_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT deployer_docker_composes_uq_name UNIQUE,
     description TEXT,
-    compose_content TEXT NOT NULL DEFAULT '',
     host_id INTEGER CONSTRAINT deployer_docker_composes_fk_host_id REFERENCES deployer_hosts (id) ON DELETE CASCADE,
-    remote_path TEXT NOT NULL DEFAULT '/opt/docker-compose/docker-compose.yml',
+    remote_path TEXT NOT NULL DEFAULT '/opt/docker-compose/',
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -76,6 +75,23 @@ CREATE TABLE deployer_docker_composes (
 CREATE INDEX deployer_docker_composes_idx_name ON deployer_docker_composes (name);
 CREATE INDEX deployer_docker_composes_idx_host_id ON deployer_docker_composes (host_id);
 CREATE INDEX deployer_docker_composes_idx_enabled ON deployer_docker_composes (enabled);
+
+-- ============================================================================
+-- DEPLOYER DOCKER COMPOSE FILES (archivos de cada compose)
+-- ============================================================================
+
+CREATE TABLE deployer_docker_compose_files (
+    id INTEGER CONSTRAINT deployer_docker_compose_files_pk PRIMARY KEY AUTOINCREMENT,
+    docker_compose_id INTEGER NOT NULL CONSTRAINT deployer_docker_compose_files_fk_compose_id REFERENCES deployer_docker_composes (id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    content TEXT,
+    is_binary BOOLEAN NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX deployer_docker_compose_files_idx_compose_id ON deployer_docker_compose_files (docker_compose_id);
+CREATE INDEX deployer_docker_compose_files_idx_file_path ON deployer_docker_compose_files (file_path);
 
 -- ============================================================================
 -- TRIGGERS: actualización automática de `updated_at`
@@ -107,6 +123,13 @@ AFTER UPDATE ON deployer_docker_composes
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
 UPDATE deployer_docker_composes SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER deployer_docker_compose_files_trg_set_updated_at
+AFTER UPDATE ON deployer_docker_compose_files
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+UPDATE deployer_docker_compose_files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 -- ============================================================================

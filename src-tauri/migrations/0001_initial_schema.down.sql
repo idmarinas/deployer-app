@@ -6,7 +6,9 @@ DROP TRIGGER IF EXISTS deployer_settings_trg_set_updated_at;
 DROP TRIGGER IF EXISTS deployer_passkeys_trg_set_updated_at;
 DROP TRIGGER IF EXISTS deployer_hosts_trg_set_updated_at;
 DROP TRIGGER IF EXISTS deployer_docker_composes_trg_set_updated_at;
+DROP TRIGGER IF EXISTS deployer_docker_compose_files_trg_set_updated_at;
 
+DROP TABLE IF EXISTS deployer_docker_compose_files;
 DROP TABLE IF EXISTS deployer_docker_hub_tags_cache;
 DROP TABLE IF EXISTS deployer_docker_hub_search_cache;
 DROP TABLE IF EXISTS deployer_docker_composes;

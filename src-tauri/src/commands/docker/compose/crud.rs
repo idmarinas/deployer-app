@@ -15,9 +15,6 @@ fn build_docker_compose_update(
     if let Some(v) = input.description.to_field_value() {
         fields.push(("description".to_string(), v));
     }
-    if let Some(ref content) = input.compose_content {
-        fields.push(("compose_content".to_string(), Value::String(content.clone())));
-    }
     if let Some(host_id) = input.host_id {
         fields.push(("host_id".to_string(), Value::from(host_id)));
     }

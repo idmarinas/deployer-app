@@ -32,6 +32,7 @@ use commands::deployments::{
 use commands::docker::compose::{
     crud_create_docker_compose, crud_delete_docker_compose, crud_get_docker_compose,
     crud_list_docker_composes, crud_update_docker_compose,
+    create_compose_file, delete_compose_file, update_compose_file, upload_compose_files,
     docker_compose_down, docker_compose_logs, docker_compose_ps, docker_compose_pull,
     docker_compose_restart, docker_compose_up,
 };
@@ -180,6 +181,11 @@ pub fn run() {
             crud_get_docker_compose,
             crud_list_docker_composes,
             crud_delete_docker_compose,
+            // Docker Composes - Archivos
+            upload_compose_files,
+            create_compose_file,
+            delete_compose_file,
+            update_compose_file,
             // Docker Composes - Operaciones
             docker_compose_up,
             docker_compose_down,
