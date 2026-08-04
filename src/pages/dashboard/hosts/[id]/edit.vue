@@ -93,12 +93,10 @@ watch(isLoading, () => {
 </script>
 
 <template>
-	<USkeleton v-if="isLoading" class="size-9 rounded-full" />
 	<UForm
-		v-else
 		ref="form"
-		:disabled="isLoading"
 		id="form-host-edit"
+		:disabled="isLoading"
 		:schema="hostSchema"
 		:state="state"
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
