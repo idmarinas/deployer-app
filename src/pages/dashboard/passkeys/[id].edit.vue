@@ -62,7 +62,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-passkeys' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: result.message_key, color: 'error' })
+		toast.add({ title: t('overlays.toast.title.error'), description: t(result.message_key, result.message_params), color: 'error' })
 		isLoading.value = false
 	}
 }
