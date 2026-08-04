@@ -5,15 +5,12 @@
 2. Integrar la edición en la lista de items (en host, en la vista de todos los host integrar ver la información del host y poder editarlo)
 3. En la lista, permitir cambiar activo/inactivo desde la propia lista de la tabla.
 4. Comprobar si se puede generar todas las páginas de una forma más sencilla y si es así, refactorizar el código.
-5. En la vista (lista) mejorar el como se muestra la tabla y el empty. Ahora se muestra la tabla en estado de cargando y si no hay datos se oculta y se muestra el bloque empty
-6. Ajustes de la app, agregar a la tabla campo para determinar si se cargan al inicio o no.
-7. Estudiar rollback automático de despliegues: cuando una task falla con on_failure=stop, el runner se detiene pero no revierte las tasks anteriores que ya se ejecutaron con éxito.
-8. Valorar soporte futuro para BD remota (PostgreSQL/MariaDB) en vez de SQLite local, permitiendo uso multi-instancia/colaborativo.
-9. Posibilidad de actualizar las claves de encriptación (de la app). (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
-10. La pantalla de ajustes de la aplicación, mostrarla en modo pestañas.
-    - También se puede dividir entre lo que es la configuración y mera información.
-11. Comprobar que toda llamada al backend tiene un toast con loading > success | error
-12. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
+5. Ajustes de la app, agregar a la tabla campo para determinar si se cargan al inicio o no.
+6. Estudiar rollback automático de despliegues: cuando una task falla con on_failure=stop, el runner se detiene pero no revierte las tasks anteriores que ya se ejecutaron con éxito.
+7. Valorar soporte futuro para BD remota (PostgreSQL/MariaDB) en vez de SQLite local, permitiendo uso multi-instancia/colaborativo.
+8. Posibilidad de actualizar las claves de encriptación (de la app). (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
+9. Comprobar que toda llamada al backend tiene un toast con loading > success | error
+10. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
 
   ```ts
   async function changeDatabasePath() {
@@ -91,8 +88,9 @@ Se centra en los módulos:
 1. Poder ver la cláve pública.
    - Se puede guardar en la tabla, para evitar tener que calcularla cada vez.
 2. Comprobar si se le puede poner una duración a la clave.
-   - Incluirla en la infromación y avisar cuando está apunto de caducar.
-   - Eliminarla de todos los servidores que la usa, y cambiarla por una nueva.
+   - No se puede hacer. La clave no permite esto.
+   - Alternativa: usar un campo expire en la BD para que la App deje de usar una clave expirada.
+     - También puede ser como orientación para renovar la clave e inutilizar la antigua.
 3. Incluir que servidores están usando la clave de acceso.
 4. Poder des/activar una clave de acceso, para permitir borrarla
    - Cuando una clave de acceso está desactivada, el host no la puede usar.
