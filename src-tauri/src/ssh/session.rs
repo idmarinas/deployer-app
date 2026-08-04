@@ -194,7 +194,13 @@ async fn authenticate(
                 private_key
             };
 
-            let key_with_hash = PrivateKeyWithHashAlg::new(Arc::new(private_key), None);
+            let rsa_hash = handle
+                .best_supported_rsa_hash()
+                .await
+                .map_err(|e| format!("Error al negociar algoritmo RSA: {}", e))?
+                .flatten();
+
+            let key_with_hash = PrivateKeyWithHashAlg::new(Arc::new(private_key), rsa_hash);
             handle
                 .authenticate_publickey(&credentials.username, key_with_hash)
                 .await
