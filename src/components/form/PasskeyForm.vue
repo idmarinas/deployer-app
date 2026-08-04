@@ -106,7 +106,7 @@ const { t, n } = useI18n()
 		<UTextarea v-else v-model="state.key_content" class="w-full" :disabled="isEdit" />
 	</UFormField>
 
-	<PasswordStrength
+	<PasswordInput
 		name="passphrase"
 		v-model="state.passphrase"
 		:label="t('form.passkeys.passphrase.label')"

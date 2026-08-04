@@ -100,7 +100,7 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
 			class="space-y-4"
 			nested
 		>
-			<PasswordStrength
+			<PasswordInput
 				name="password"
 				v-model="state.password!"
 				:label="t('form.hosts.password.label')"
