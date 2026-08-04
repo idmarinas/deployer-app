@@ -4,7 +4,7 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import vueRouter from 'vue-router/vite'
-import * as theme from './theme'
+import * as theme from './theme/index.js'
 
 const host = process.env.TAURI_DEV_HOST
 
