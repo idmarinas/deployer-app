@@ -1,8 +1,11 @@
+use russh::keys::ssh_key::{Algorithm, HashAlg};
+use russh::keys::PrivateKey;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use deployer_macros::DbEntity;
 
+use crate::crypto;
 use crate::patch::Patch;
 
 // ============================================================================
@@ -82,17 +85,76 @@ pub struct CreatePasskeyInput {
 
 impl CreatePasskeyInput {
     pub fn into_passkey(self) -> Passkey {
+        let derived = derive_fingerprint(&self.key_content, self.passphrase.as_deref());
+
+        let fingerprint = if self.fingerprint.as_ref().is_some_and(|f| !f.trim().is_empty()) {
+            self.fingerprint
+        } else {
+            derived.as_ref().ok().map(|(fp, _)| fp.clone())
+        };
+
+        let key_type = derived.as_ref().ok().map(|(_, t)| t.clone()).or(self.key_type);
+
         Passkey {
             id: 0,
             name: self.name,
             key_content: self.key_content,
             passphrase: self.passphrase,
-            key_type: self.key_type,
-            fingerprint: self.fingerprint,
+            key_type,
+            fingerprint,
             description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
             created_at: String::new(),
             updated_at: String::new(),
         }
+    }
+}
+
+// ============================================================================
+// Derivación del fingerprint y tipo a partir de la clave privada
+// ============================================================================
+
+/// Valida la clave privada y deriva su fingerprint SHA-256 (`SHA256:...`)
+/// junto con el tipo real de la clave.
+///
+/// - Si la clave está cifrada, se descifra con la passphrase proporcionada.
+/// - La passphrase proveniente de `generate_passkey` (prefijo `ENC:`) se ignora,
+///   porque en ese caso el `key_content` nunca está cifrado.
+pub(crate) fn derive_fingerprint(
+    key_content: &str,
+    passphrase: Option<&str>,
+) -> Result<(String, KeyType), String> {
+    let key = PrivateKey::from_openssh(key_content.as_bytes())
+        .map_err(|_| "La clave privada no es válida.".to_string())?;
+
+    let usable = passphrase.filter(|p| !p.trim().is_empty() && !crypto::is_encrypted(p));
+
+    let key = match usable {
+        Some(pp) => match key.decrypt(pp.as_bytes()) {
+            Ok(k) => k,
+            Err(e) if e.to_string().contains("already decrypted") => key,
+            Err(_) => return Err("La passphrase no es válida.".to_string()),
+        },
+        None => {
+            if key.is_encrypted() {
+                return Err("La clave privada está protegida con passphrase.".to_string());
+            }
+            key
+        }
+    };
+
+    let key_type = key_type_from_algorithm(&key.algorithm())?;
+    let fingerprint = key.fingerprint(HashAlg::Sha256).to_string();
+
+    Ok((fingerprint, key_type))
+}
+
+/// Mapea el algoritmo real de la clave al `KeyType` soportado por la app.
+fn key_type_from_algorithm(alg: &Algorithm) -> Result<KeyType, String> {
+    match alg {
+        Algorithm::Ed25519 => Ok(KeyType::Ed25519),
+        Algorithm::Rsa { .. } => Ok(KeyType::Rsa),
+        Algorithm::Ecdsa { .. } => Ok(KeyType::Ecdsa),
+        _ => Err("Tipo de clave no soportado.".to_string()),
     }
 }
 

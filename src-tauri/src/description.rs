@@ -122,7 +122,7 @@ pub trait ValidateDescription {
     fn validate_update(&self) -> Result<(), String> { Ok(()) }
 }
 
-use crate::commands::passkeys::types::{CreatePasskeyInput, UpdatePasskeyInput};
+use crate::commands::passkeys::types::{CreatePasskeyInput, UpdatePasskeyInput, derive_fingerprint};
 use crate::commands::hosts::types::{CreateHostInput, UpdateHostInput};
 use crate::commands::global_variables::types::{CreateGlobalVariableInput, UpdateGlobalVariableInput};
 use crate::commands::projects::types::{CreateProjectInput, UpdateProjectInput};
@@ -138,7 +138,11 @@ use crate::commands::tasks::dependencies::types::{CreateTaskDependencyInput, Upd
 use crate::commands::docker::compose::types::{CreateDockerComposeInput, UpdateDockerComposeInput};
 
 impl ValidateDescription for CreatePasskeyInput {
-    fn validate_create(&self) -> Result<(), String> { validate_description_opt(&self.description) }
+    fn validate_create(&self) -> Result<(), String> {
+        validate_description_opt(&self.description)?;
+        derive_fingerprint(&self.key_content, self.passphrase.as_deref()).map(|_| ())?;
+        Ok(())
+    }
 }
 impl ValidateDescription for UpdatePasskeyInput {
     fn validate_update(&self) -> Result<(), String> { validate_description_patch(&self.description) }

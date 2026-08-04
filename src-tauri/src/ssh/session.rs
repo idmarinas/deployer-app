@@ -183,9 +183,13 @@ async fn authenticate(
                 .map_err(|e| format!("Error al procesar la clave privada: {}", e))?;
 
             let private_key = if let Some(ref passphrase) = credentials.passphrase {
-                private_key
-                    .decrypt(passphrase.as_bytes())
-                    .map_err(|e| format!("Error al descifrar la clave privada: {}", e))?
+                match private_key.decrypt(passphrase.as_bytes()) {
+                    Ok(decrypted) => decrypted,
+                    Err(e) if e.to_string().contains("already decrypted") => private_key,
+                    Err(e) => {
+                        return Err(format!("Error al descifrar la clave privada: {}", e));
+                    }
+                }
             } else {
                 private_key
             };
