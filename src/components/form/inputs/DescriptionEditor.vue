@@ -28,7 +28,7 @@ const parsedContent = ref<JSONContent | undefined>(parseContent(modelValue.value
 
 const jsonSize = computed(() => toJsonSize(modelValue.value))
 
-watch(modelValue, (val) => {
+watch(modelValue, val => {
 	const parsed = parseContent(val)
 	if (JSON.stringify(parsed) !== JSON.stringify(parsedContent.value)) {
 		parsedContent.value = parsed
@@ -44,5 +44,10 @@ function onEditorUpdate(json: JSONContent | undefined) {
 </script>
 
 <template>
-	<Editor :model-value="parsedContent" @update:model-value="onEditorUpdate" :json-size="jsonSize" :json-limit="DESCRIPTION_MAX_LENGTH" />
+	<EditorTextarea
+		:model-value="parsedContent"
+		@update:model-value="onEditorUpdate"
+		:json-size="jsonSize"
+		:json-limit="DESCRIPTION_MAX_LENGTH"
+	/>
 </template>
