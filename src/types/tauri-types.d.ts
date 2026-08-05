@@ -10,7 +10,7 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
-export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, };
+export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, metadata?: string | null, };
 
 export type CreateDeploymentExecutionInput = { deployment_id: number, host_id: number, task_id: number, retry_attempt: number | null, };
 
@@ -18,7 +18,7 @@ export type CreateDeploymentInput = { project_id: number, version: string, tag: 
 
 export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back_to_deployment_id: number, reason: string | null, triggered_by: string | null, };
 
-export type CreateDockerComposeFileInput = { docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean | null, };
+export type CreateDockerComposeFileInput = { docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean | null, metadata: string | null, };
 
 export type CreateDockerComposeInput = { name: string, description: string | null, host_id: number | null, remote_path: string | null, enabled: boolean | null, };
 
@@ -65,7 +65,7 @@ export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
-export type DockerComposeFile = { id: number, docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean, created_at: string, updated_at: string, };
+export type DockerComposeFile = { id: number, docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean, metadata: string | null, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
@@ -393,7 +393,7 @@ export type UpdateDeploymentInput = { status?: DeploymentStatus, started_at?: st
 
 export type UpdateDeploymentRollbackInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, };
 
-export type UpdateDockerComposeFileInput = { id: number, file_path?: string, content?: string | null | null, is_binary?: boolean, };
+export type UpdateDockerComposeFileInput = { id: number, file_path?: string, content?: string | null | null, is_binary?: boolean, metadata?: string | null | null, };
 
 export type UpdateDockerComposeInput = { name?: string, description?: string | null, host_id?: number, remote_path?: string, enabled?: boolean, };
 

@@ -90,6 +90,7 @@ export const deployer_docker_compose_files = sqliteTable("deployer_docker_compos
 	file_path: text().notNull(),
 	content: text(),
 	is_binary: numeric().notNull(),
+	metadata: text(),
 	created_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 	updated_at: numeric().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
