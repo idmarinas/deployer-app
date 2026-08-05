@@ -33,6 +33,6 @@ export default {
 		services_title: 'Servicios',
 		status_updated: 'Estado actualizado.',
 		output_title: 'Output',
-		compose_content_title: 'Contenido del compose',
+		files_title: 'Archivos',
 	},
 } satisfies LocaleMessageValue

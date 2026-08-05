@@ -27,6 +27,13 @@ export default {
 			cancel: 'Canclear',
 			confirm: 'Actualizar',
 		},
+		files_replace: {
+			cancel: 'Cancelar',
+			confirm: 'Confirmar',
+			title: 'Reemplazar archivos',
+			description: 'Estos archivos ya existen y su contenido será reemplazado:',
+			compose_note: 'Además, se reemplazará el contenido de compose.yaml (gestionado automáticamente desde el formulario).',
+		},
 	},
 	toast: {
 		title: {

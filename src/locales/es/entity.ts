@@ -61,9 +61,14 @@ export default {
 		label: 'Docker Compose',
 		name: 'Nombre',
 		description: 'Descripción',
-		compose_content: 'Contenido',
 		host_id: 'Servidor',
 		remote_path: 'Ruta remota',
 		enabled: 'Habilitado',
+	},
+	docker_compose_file: {
+		label: 'Archivo compose',
+		file_path: 'Ruta del archivo',
+		content: 'Contenido',
+		is_binary: 'Binario',
 	},
 } satisfies LocaleMessageValue

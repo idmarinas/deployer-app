@@ -95,6 +95,10 @@ export default {
       restart: { failed: 'Error al reiniciar los servicios de Docker Compose. \n Razón: {reason}' },
       up: { failed: 'Error al iniciar los servicios de Docker Compose. \n Razón: {reason}' },
     },
+    files: {
+      sync_failed: 'Error al sincronizar los archivos del Docker Compose. \n Razón: {reason}',
+      sync_success: 'Archivos sincronizados correctamente',
+    },
   },
   framework_configs: {
     errors: {

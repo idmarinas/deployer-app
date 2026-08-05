@@ -17,6 +17,10 @@ export default {
 		required: 'Debes introducir la ruta remota.',
 	},
 	compose_content: {
-		required: 'Debes introducir el contenido del compose.',
+		required: 'Debes introducir el contenido YAML.',
+	},
+	files: {
+		required: 'Debe haber al menos un archivo (compose.yaml).',
+		file_path_required: 'Debes introducir la ruta del archivo.',
 	},
 } satisfies LocaleMessageValue

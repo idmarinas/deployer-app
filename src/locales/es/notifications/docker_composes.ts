@@ -6,6 +6,15 @@ export default {
 	deleted: 'Docker compose "{name}" eliminado correctamente.',
 	invalid_images: 'Las siguientes imágenes no existen en Docker Hub: {images}',
 
+	files: {
+		upload_success: 'Archivos subidos correctamente.',
+		create_success: 'Archivo "{file_path}" creado correctamente.',
+		delete_success: 'Archivo "{file_path}" eliminado correctamente.',
+		update_success: 'Archivo "{file_path}" actualizado correctamente.',
+		delete_error: 'Error al eliminar el archivo.',
+		upload_error: 'Error al subir los archivos.',
+	},
+
 	delete: {
 		loading: {
 			title: 'Eliminando docker compose...',
