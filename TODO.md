@@ -11,6 +11,8 @@
 8. Posibilidad de actualizar las claves de encriptación (de la app). (Renovar claves). Si se cambia de clave, se debe poder actualizar en todos los registros que esten encriptados.
 9. Comprobar que toda llamada al backend tiene un toast con loading > success | error
 10. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
+11. Sistema de cifrado:
+    1. Estudiar usar Stronghold para guardar las claves de des/cifrado se seguiría usando el keychain para la clave maestra que desbloquea el vault de Stronghold.
 
   ```ts
   async function changeDatabasePath() {
@@ -109,7 +111,9 @@ Se centra en los módulos:
 
 ### Docker Compose
 
-1. En planificación
+1. Cuando se desplega un nuevo compose, se deberia comprobar si es mejor:
+   1. Se genere primero el nuevo sin sustituir al antiguo
+   2. Que se suba a una nueva completa y cuando se complete el despliegue se haga una redirección (Algo similar a DeployerPHP)
 
 ### Commands (antes Tasks)
 
