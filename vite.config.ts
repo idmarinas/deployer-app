@@ -94,6 +94,7 @@ export default defineConfig(async () => ({
 			},
 			icon: {
 				clientBundle: {
+					icons: ['i-vscode-icons-file-type-dotenv'],
 					scan: true,
 				},
 			},
