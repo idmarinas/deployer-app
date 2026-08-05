@@ -7,6 +7,7 @@
       "dependencies": {
         "@iconify-json/cib": "^1.2.3",
         "@iconify-json/tabler": "^1.2.38",
+        "@iconify-json/vscode-icons": "^1.2.68",
         "@nuxt/ui": "^4.10.0",
         "@pinia/colada": "^1.4.2",
         "@tauri-apps/api": "^2.11.1",
@@ -34,9 +35,9 @@
         "prettier-plugin-organize-imports": "^4.3.0",
         "tailwindcss": "^4.3.3",
         "typescript": "~6.0.3",
-        "vite": "^8.1.5",
+        "vite": "^8.2.0",
         "vite-plugin-vue-devtools": "^8.2.1",
-        "vue-tsc": "^3.3.8",
+        "vue-tsc": "^3.3.9",
       },
     },
   },
@@ -176,6 +177,8 @@
     "@iconify-json/cib": ["@iconify-json/cib@1.2.3", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-MMvRXVTHt82z3bYN19JDAjv/X8OBNC/1B3I334SV/1nyhdPeeyvJZVoI1cGuNqYznBjMnWxKPtIhhiVgGQ1CzQ=="],
 
     "@iconify-json/tabler": ["@iconify-json/tabler@1.2.38", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-9v6ooRU/bKOK/Whv4w2aiK5gBnfCV9Ei+uD1iDDeLu2b+EnF3G3ZKkRKWEOOLG8bJyfKn6XEia6gUQ9oO7cF+Q=="],
+
+    "@iconify-json/vscode-icons": ["@iconify-json/vscode-icons@1.2.68", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-AG8aMOGv+dzQI50oOD9zMqvh/pnlhb8F2HR2FcKDN7qIZt4wFaUTxKAOtt49EskGdOl8z8Ll1vteUI060jCbDw=="],
 
     "@iconify/collections": ["@iconify/collections@1.0.704", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-rwIk2LK/wsfUY5TG3NSncyVuUzLVcYdqehtWEXatkqXpsvcFwvJLePx0CcXv4iaRhL+Y+Lo5uzPRkzVqDvf6Gg=="],
 
