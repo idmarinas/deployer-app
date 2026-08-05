@@ -61,6 +61,7 @@ async fn load_compose_files(
             file_path: row.get("file_path"),
             content: row.get("content"),
             is_binary: row.get("is_binary"),
+            metadata: row.get("metadata"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         });

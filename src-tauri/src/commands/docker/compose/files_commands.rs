@@ -43,13 +43,25 @@ pub async fn upload_compose_files(
             Some(String::from_utf8_lossy(&content_bytes).to_string())
         };
 
+        let metadata = tokio::fs::metadata(local_path)
+            .await
+            .ok()
+            .map(|m| {
+                serde_json::json!({
+                    "size": m.len(),
+                    "lastModified": m.modified().ok().map(|t| t.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)),
+                })
+                .to_string()
+            });
+
         let result = sqlx::query(
-            "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary) VALUES (?1, ?2, ?3, ?4)"
+            "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary, metadata) VALUES (?1, ?2, ?3, ?4, ?5)"
         )
         .bind(input.docker_compose_id)
         .bind(file_name)
         .bind(&content)
         .bind(is_binary)
+        .bind(&metadata)
         .execute(&pool)
         .await
         .map_err(|e| format!("Error al guardar registro del archivo: {}", e))?;
@@ -60,6 +72,7 @@ pub async fn upload_compose_files(
             file_path: file_name.to_string(),
             content,
             is_binary,
+            metadata,
             created_at: String::new(),
             updated_at: String::new(),
         });
@@ -82,12 +95,13 @@ pub async fn create_compose_file(
     let file = input.into_docker_compose_file();
 
     sqlx::query(
-        "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary) VALUES (?1, ?2, ?3, ?4)"
+        "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary, metadata) VALUES (?1, ?2, ?3, ?4, ?5)"
     )
     .bind(file.docker_compose_id)
     .bind(&file.file_path)
     .bind(&file.content)
     .bind(file.is_binary)
+    .bind(&file.metadata)
     .execute(&pool)
     .await
     .map_err(|e| format!("Error al crear archivo: {}", e))?;
@@ -144,6 +158,9 @@ pub async fn update_compose_file(
     if let Some(is_binary) = input.is_binary {
         fields.push(("is_binary".to_string(), serde_json::Value::Bool(is_binary)));
     }
+    if let Some(v) = input.metadata.to_field_value() {
+        fields.push(("metadata".to_string(), v));
+    }
 
     if !fields.is_empty() {
         let set_clause: String = fields
@@ -181,6 +198,7 @@ pub async fn update_compose_file(
         file_path: updated.get("file_path"),
         content: updated.get("content"),
         is_binary: updated.get("is_binary"),
+        metadata: updated.get("metadata"),
         created_at: updated.get("created_at"),
         updated_at: updated.get("updated_at"),
     };
@@ -229,11 +247,12 @@ pub async fn sync_docker_compose_files(
         let result = match file.id {
             Some(id) => {
                 let result = sqlx::query(
-                    "UPDATE deployer_docker_compose_files SET file_path = ?1, content = ?2, is_binary = ?3 WHERE id = ?4 AND docker_compose_id = ?5"
+                    "UPDATE deployer_docker_compose_files SET file_path = ?1, content = ?2, is_binary = ?3, metadata = ?4 WHERE id = ?5 AND docker_compose_id = ?6"
                 )
                 .bind(&file.file_path)
                 .bind(&file.content)
                 .bind(file.is_binary)
+                .bind(&file.metadata)
                 .bind(id)
                 .bind(input.docker_compose_id)
                 .execute(&mut *tx)
@@ -244,12 +263,13 @@ pub async fn sync_docker_compose_files(
                     Ok(_) => {
                         // El id no pertenecía a este compose: se inserta.
                         sqlx::query(
-                            "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary) VALUES (?1, ?2, ?3, ?4)"
+                            "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary, metadata) VALUES (?1, ?2, ?3, ?4, ?5)"
                         )
                         .bind(input.docker_compose_id)
                         .bind(&file.file_path)
                         .bind(&file.content)
                         .bind(file.is_binary)
+                        .bind(&file.metadata)
                         .execute(&mut *tx)
                         .await
                         .map(|r| r.last_insert_rowid() as i64)
@@ -259,12 +279,13 @@ pub async fn sync_docker_compose_files(
             }
             None => {
                 sqlx::query(
-                    "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary) VALUES (?1, ?2, ?3, ?4)"
+                    "INSERT INTO deployer_docker_compose_files (docker_compose_id, file_path, content, is_binary, metadata) VALUES (?1, ?2, ?3, ?4, ?5)"
                 )
                 .bind(input.docker_compose_id)
                 .bind(&file.file_path)
                 .bind(&file.content)
                 .bind(file.is_binary)
+                .bind(&file.metadata)
                 .execute(&mut *tx)
                 .await
                 .map(|r| r.last_insert_rowid() as i64)
@@ -330,6 +351,7 @@ pub async fn sync_docker_compose_files(
             file_path: row.get("file_path"),
             content: row.get("content"),
             is_binary: row.get("is_binary"),
+            metadata: row.get("metadata"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         })

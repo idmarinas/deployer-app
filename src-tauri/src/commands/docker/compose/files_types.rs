@@ -13,6 +13,7 @@ pub struct DockerComposeFile {
     pub file_path: String,
     pub content: Option<String>,
     pub is_binary: bool,
+    pub metadata: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -24,6 +25,7 @@ pub struct CreateDockerComposeFileInput {
     pub file_path: String,
     pub content: Option<String>,
     pub is_binary: Option<bool>,
+    pub metadata: Option<String>,
 }
 
 impl CreateDockerComposeFileInput {
@@ -34,6 +36,7 @@ impl CreateDockerComposeFileInput {
             file_path: self.file_path,
             content: self.content,
             is_binary: self.is_binary.unwrap_or(false),
+            metadata: self.metadata,
             created_at: String::new(),
             updated_at: String::new(),
         }
@@ -51,6 +54,9 @@ pub struct UpdateDockerComposeFileInput {
     pub content: Patch<Option<String>>,
     #[ts(optional)]
     pub is_binary: Option<bool>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub metadata: Patch<Option<String>>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -75,6 +81,8 @@ pub struct ComposeFileInput {
     #[ts(optional = nullable)]
     pub content: Option<String>,
     pub is_binary: bool,
+    #[ts(optional = nullable)]
+    pub metadata: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]

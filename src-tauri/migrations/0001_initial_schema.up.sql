@@ -86,6 +86,7 @@ CREATE TABLE deployer_docker_compose_files (
     file_path TEXT NOT NULL,
     content TEXT,
     is_binary BOOLEAN NOT NULL DEFAULT 0,
+    metadata TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
