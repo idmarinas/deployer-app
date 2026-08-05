@@ -65,3 +65,21 @@ pub struct UploadComposeFilesInput {
     pub docker_compose_id: i64,
     pub file_paths: Vec<String>,
 }
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct ComposeFileInput {
+    #[ts(optional)]
+    pub id: Option<i64>,
+    pub file_path: String,
+    #[ts(optional = nullable)]
+    pub content: Option<String>,
+    pub is_binary: bool,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub struct SyncDockerComposeFilesInput {
+    pub docker_compose_id: i64,
+    pub files: Vec<ComposeFileInput>,
+}

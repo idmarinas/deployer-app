@@ -18,5 +18,6 @@ pub use operations::{
 
 // Re-exportar comandos de archivos
 pub use files_commands::{
-    create_compose_file, delete_compose_file, update_compose_file, upload_compose_files,
+    create_compose_file, delete_compose_file, sync_docker_compose_files, update_compose_file,
+    upload_compose_files,
 };
