@@ -226,6 +226,7 @@ pub struct UpdateProjectInput {
 
 - `#[serde(default)]` es **obligatorio** en cada campo `Patch<T>`: hace que, si la clave no aparece en el JSON, el campo se rellene con `Patch::Unset` vía `Default`, sin invocar al `Deserialize` de `Patch` (que nunca devuelve `Unset` por sí mismo).
 - `#[ts(optional = nullable)]` es **obligatorio** para que `ts-rs` genere `campo?: T | null` en vez de un tipo obligatorio.
+- `tauri-types.d.ts` se regenera con `cargo test export_bindings` (ts-rs exporta los tipos en un test generado, **no** durante `cargo build`).
 
 ### TypeScript generado
 

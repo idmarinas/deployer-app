@@ -322,13 +322,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ---
 
-## 5. Tipos TypeScript generados
-
-Los tipos del backend se generan automáticamente mediante `ts-rs` en `tauri-types.d.ts`. No editar ese archivo manualmente — se regenera con cada `cargo build`.
-
----
-
-## 6. Internacionalización (i18n)
+## 5. Internacionalización (i18n)
 
 - Se usa `vue-i18n`.
 - Los mensajes de error del backend llegan como claves i18n con parámetros `HashMap<String, String>`.
@@ -363,7 +357,7 @@ Los tipos del backend se generan automáticamente mediante `ts-rs` en `tauri-typ
 
 ---
 
-## 7. Llamadas a comandos Tauri
+## 6. Llamadas a comandos Tauri
 
 ### Patrón estándar (CRUD)
 
@@ -472,7 +466,7 @@ Además, **siempre** pasar `watchElement: true` en las opciones cuando el conten
 
 **`forceFallback: true` es OBLIGATORIO en Tauri.** Sortable.js usa por defecto la API nativa HTML5 Drag & Drop (`dragstart`/`dragover`/...), que **no funciona de forma fiable dentro de webviews embebidos** (WebView2 en Windows, WebKit en macOS/Linux vía Tauri; el mismo problema afecta a Electron). Síntoma: nada de código da error, pero arrastrar no hace absolutamente nada (el navegador del sistema operativo sí lo haría bien, la app empaquetada no). Solución: pasar siempre `forceFallback: true` en las opciones de `useSortable`, que hace que Sortable.js use eventos de ratón normales en vez de la API nativa.
 
-## 7c. CRÍTICO: `project` (y cualquier `data` de un loader de `pinia-colada`) es un `shallowRef`
+## 6c. CRÍTICO: `project` (y cualquier `data` de un loader de `pinia-colada`) es un `shallowRef`
 
 `useProjectById()` (como cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pinia-colada`, que usa `@pinia/colada` por debajo) expone `data` como **`shallowRef`**, por diseño de la librería (rendimiento con datasets grandes). Esto tiene una consecuencia que hay que tener SIEMPRE presente en cualquier componente que reciba `project` (vía `inject('project')`):
 
@@ -484,6 +478,6 @@ Además, **siempre** pasar `watchElement: true` en las opciones cuando el conten
 
 ---
 
-## 8. Loading Screen
+## 7. Loading Screen
 
 La pantalla de carga se gestiona en `index.html`. Cuando Vue monta la aplicación, elimina el elemento splash — no hay un componente `Splashscreen` separado.
