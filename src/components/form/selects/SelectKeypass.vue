@@ -28,7 +28,12 @@ const { data: items, isLoading } = useSelectPasskeys()
 			class="w-full"
 		/>
 		<UTooltip :text="t('form.passkeys.title.add')" :delay-duration="0">
-			<UButton :icon="ICONS.actions.add" @click="router.push({ name: 'dashboard-passkeys-add' })" />
+			<UButton
+				:loading="isLoading"
+				:disabled="isLoading"
+				:icon="ICONS.actions.add"
+				@click="router.push({ name: 'dashboard-passkeys-add' })"
+			/>
 		</UTooltip>
 	</UFieldGroup>
 </template>

@@ -78,7 +78,12 @@ watch(
 			</template>
 		</USelectMenu>
 		<UTooltip :text="t('form.hosts.title.add')" :delay-duration="0">
-			<UButton :icon="ICONS.actions.add" @click="router.push({ name: 'dashboard-hosts-add' })" />
+			<UButton
+				:loading="isLoading"
+				:disabled="isLoading"
+				:icon="ICONS.actions.add"
+				@click="router.push({ name: 'dashboard-hosts-add' })"
+			/>
 		</UTooltip>
 	</UFieldGroup>
 </template>
