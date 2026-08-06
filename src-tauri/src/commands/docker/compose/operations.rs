@@ -2,6 +2,7 @@ use std::path::Path;
 use tauri::AppHandle;
 use tokio::io::AsyncWriteExt;
 use sqlx::Row;
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
 use crate::commands::docker::compose::files_types::DockerComposeFile;
 use crate::commands::docker::compose::types::{
@@ -81,20 +82,16 @@ async fn upload_all_compose_files(
     for file in files {
         let dest_path = format!("{}/{}", remote_dir.trim_end_matches('/'), file.file_path);
 
-        let content: Vec<u8> = if file.is_binary {
-            // Para archivos binarios, intentamos recuperar el contenido desde la BD
+        let content: Vec<u8> = match &file.content {
+            Some(c) if file.is_binary => {
+                // Archivos binarios: el contenido se almacena en base64.
+                BASE64.decode(c).map_err(|e| {
+                    format!("Error al decodificar base64 de '{}': {}", file.file_path, e)
+                })?
+            }
+            Some(c) => c.as_bytes().to_vec(),
             // Si no hay contenido almacenado, saltamos el archivo
-            match &file.content {
-                Some(c) => c.as_bytes().to_vec(),
-                None => {
-                    continue;
-                }
-            }
-        } else {
-            match &file.content {
-                Some(c) => c.as_bytes().to_vec(),
-                None => continue,
-            }
+            None => continue,
         };
 
         if let Some(parent) = Path::new(&dest_path).parent() {

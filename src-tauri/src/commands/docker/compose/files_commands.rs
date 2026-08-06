@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
 use sqlx::Row;
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
 use crate::commands::docker::compose::files_types::{
     DockerComposeFile, DeleteDockerComposeFileInput, SyncDockerComposeFilesInput,
@@ -38,7 +39,8 @@ pub async fn upload_compose_files(
         let is_binary = std::str::from_utf8(&content_bytes).is_err();
 
         let content = if is_binary {
-            None
+            // Archivos binarios: se almacenan en base64 para poder subirlos en el despliegue.
+            Some(BASE64.encode(&content_bytes))
         } else {
             Some(String::from_utf8_lossy(&content_bytes).to_string())
         };
