@@ -58,7 +58,6 @@ watch(
 			v-model="state"
 			clear
 			value-key="id"
-			class="w-full"
 			:items="availableItems as SelectMenuItemExtends[]"
 			:loading="isLoading"
 			:disabled="isLoading"
