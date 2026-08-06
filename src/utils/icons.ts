@@ -126,6 +126,7 @@ export const ICONS = {
 		list: 'i-tabler-list',
 		listDetails: 'i-tabler-list-details',
 		folder: 'i-tabler-folder',
+		folderOpen: 'i-tabler-folder-open',
 	},
 
 	/** Estados / feedback (toasts, alerts, badges) */
