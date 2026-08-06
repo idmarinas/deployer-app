@@ -6,7 +6,7 @@ import { ICONS } from '@/utils/icons'
 
 import idmarinasLogo from '@/assets/logos/idmarinas.png'
 
-const { navigationMenu, searchGroups } = useSideberMenu()
+const { navigationMenu, navigationMenuFooter, searchGroups } = useSideberMenu()
 
 const socials: {
 	[key: string]: {
@@ -67,6 +67,9 @@ const socials: {
 				<UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" tooltip />
 
 				<UNavigationMenu :collapsed="collapsed" :items="navigationMenu" />
+
+				<div class="flex-1" />
+				<UNavigationMenu :collapsed="collapsed" :items="navigationMenuFooter" />
 			</template>
 
 			<template #footer="{ collapsed }">

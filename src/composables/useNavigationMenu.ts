@@ -2,7 +2,7 @@ import type { CommandPaletteGroup, DropdownMenuItem, NavigationMenuItem } from '
 
 import { useI18n } from 'vue-i18n'
 
-import { getModuleIcon } from '@/utils/icons'
+import { getModuleIcon, ICONS } from '@/utils/icons'
 
 export function useSideberMenu() {
 	const { t } = useI18n()
@@ -60,6 +60,15 @@ export function useSideberMenu() {
 		],
 	]
 
+	const navigationMenuFooter: NavigationMenuItem[] = [
+		// Consola remota
+		{
+			label: t('components.sidebar.console'),
+			icon: ICONS.server.terminal,
+			to: { name: 'dashboard-console' },
+		},
+	]
+
 	const searchGroups: CommandPaletteGroup[] = [
 		{
 			id: 'actions',
@@ -113,6 +122,7 @@ export function useSideberMenu() {
 
 	return {
 		navigationMenu,
+		navigationMenuFooter,
 		searchGroups,
 	}
 }
