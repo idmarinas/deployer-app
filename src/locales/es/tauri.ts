@@ -138,9 +138,15 @@ export default {
       database_error: 'No se pudo acceder a la base de datos. \n Razón: {reason}',
       no_database_path: 'No se pudo encontrar la base de datos.',
       not_found: 'No se pudo encontrar el servidor con ID: {id}.',
+      remote_command_failed: 'Error al ejecutar el comando en el servidor. \n Razón: {reason}',
+      remote_command_timeout: 'Tiempo de espera {timeout}s agotado ejecutando el comando en el servidor.',
       store_error: 'No se pudo guardar el servidor. \n Razón: {reason}',
       update_failed: 'Error al actualizar el servidor. \n Razón: {reason}',
       updates_check_failed: 'Error al buscar actualizaciones en el servidor. \n Razón: {reason}',
+    },
+    success: {
+      connection: 'Conexión establecida correctamente.',
+      remote_command_executed: 'Comando ejecutado correctamente.',
     },
     errors: {
       context_failed: 'Error al obtener el contexto de cifrado. \n Razón: {reason}',
@@ -187,6 +193,21 @@ export default {
       transition_denied: 'No se permite la transición de estado solicitada.',
       update_failed: 'Error al actualizar la passkey. \n Razón: {reason}',
       validation_failed: 'Error de validación de la passkey. \n Razón: {reason}',
+    },
+  },
+  remote: {
+    errors: {
+      connection_failed: 'No se pudo conectar con el servidor. \n Razón: {reason}',
+      execution_failed: 'Error al ejecutar el comando en el servidor. \n Razón: {reason}',
+      transfer_failed: 'Error en la transferencia de archivos. \n Razón: {reason}',
+    },
+    success: {
+      exec: 'Comando ejecutado correctamente.',
+      upload: 'Archivos subidos correctamente.',
+      download: 'Archivos descargados correctamente.',
+    },
+    exec: {
+      completed_with_errors: 'El comando terminó con errores (código de salida distinto de 0).',
     },
   },
   project_hosts: {

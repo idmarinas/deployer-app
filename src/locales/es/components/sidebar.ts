@@ -9,6 +9,7 @@ export default {
 	tasks: 'Tareas',
 	deployments: 'Despliegues',
 	docker_composes: 'Docker Compose',
+	console: 'Consola remota',
 	search: {
 		actions: 'Acciones',
 	},

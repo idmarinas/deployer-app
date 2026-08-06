@@ -34,5 +34,9 @@ export default {
 		status_updated: 'Estado actualizado.',
 		output_title: 'Output',
 		files_title: 'Archivos',
+		files_count: '1 archivo | {count} archivos',
+		file_text: 'Texto',
+		compose_label: 'compose.yaml',
+		env_label: 'Archivo .env',
 	},
 } satisfies LocaleMessageValue
