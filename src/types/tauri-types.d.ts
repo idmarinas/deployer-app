@@ -354,6 +354,90 @@ retry_delay: number | null, created_at: string, updated_at: string, };
 
 export type ProjectVariable = { id: number, project_id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: any, created_at: string, updated_at: string, };
 
+export type RemoteCommandInput = { host_id: number, 
+/**
+ * Comando a ejecutar en el servidor.
+ */
+command: string, 
+/**
+ * Directorio remoto desde el que ejecutar (opcional).
+ */
+working_dir: string | null, 
+/**
+ * Timeout de ejecución en segundos. Por defecto: 300.
+ */
+timeout_secs: number | null, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, };
+
+export type RemoteCommandResult = { exit_code: number, output: string, duration_seconds: number, };
+
+export type RemoteConsoleEvent = { "event": "output_chunk", chunk: string, } | { "event": "finished", exit_code: number, duration_seconds: number, } | { "event": "error", message: string, };
+
+export type RemoteDownloadInput = { host_id: number, 
+/**
+ * Ruta remota del archivo o directorio a descargar.
+ */
+remote_path: string, 
+/**
+ * Ruta local donde guardar. Si es None, se devuelve el contenido en base64
+ * (solo archivos simples).
+ */
+local_path: string | null, 
+/**
+ * Sobrescribir si el destino ya existe. Por defecto: true.
+ */
+overwrite: boolean | null, 
+/**
+ * Si true, descarga `remote_path` como directorio de forma recursiva.
+ */
+recursive: boolean | null, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, };
+
+export type RemoteDownloadResult = { 
+/**
+ * Contenido del archivo descargado en base64 (solo si no se indicó `local_path`).
+ */
+content_base64: string | null, 
+/**
+ * Ruta local donde se guardó el archivo (si se indicó `local_path`).
+ */
+saved_to: string | null, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
+
+export type RemoteTransferResult = { bytes_transferred: number, files_transferred: number, duration_seconds: number, };
+
+export type RemoteUploadInput = { host_id: number, 
+/**
+ * Ruta local del archivo o directorio a subir.
+ */
+local_path: string, 
+/**
+ * Ruta remota de destino.
+ */
+remote_path: string, 
+/**
+ * Sobrescribir si el destino ya existe. Por defecto: true.
+ */
+overwrite: boolean | null, 
+/**
+ * Permisos octales a aplicar al archivo subido (ej. "755"). Solo aplica a archivos.
+ */
+chmod: string | null, 
+/**
+ * Forzar tratamiento como directorio. Si es None/Some(false) se auto-detecta
+ * según el tipo de `local_path`.
+ */
+recursive: boolean | null, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, };
+
 export type RunDeploymentInput = { deployment_id: number, 
 /**
  * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.

@@ -51,6 +51,7 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/passkeys'
       | '/dashboard/passkeys/[...path]'
       | 'dashboard-app'
+      | 'dashboard-console'
       | 'dashboard-docker_composes'
       | 'dashboard-docker_composes-add'
       | 'dashboard-docker_composes-id'
@@ -90,6 +91,13 @@ declare module 'vue-router/auto-routes' {
     'dashboard-app': RouteRecordInfo<
       'dashboard-app',
       '/dashboard/app',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'dashboard-console': RouteRecordInfo<
+      'dashboard-console',
+      '/dashboard/console',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -293,6 +301,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/passkeys'
         | '/dashboard/passkeys/[...path]'
         | 'dashboard-app'
+        | 'dashboard-console'
         | 'dashboard-docker_composes'
         | 'dashboard-docker_composes-add'
         | 'dashboard-docker_composes-id'
@@ -340,6 +349,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/app/index.vue': {
       routes:
         | 'dashboard-app'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/console.vue': {
+      routes:
+        | 'dashboard-console'
       views:
         | never
       pathParamNames:
