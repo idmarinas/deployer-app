@@ -6,6 +6,7 @@ pub mod global_variables;
 pub mod hosts;
 pub mod passkeys;
 pub mod projects;
+pub mod remote;
 pub mod tasks;
 
 /// Macro params! global - disponible en todos los módulos de commands.

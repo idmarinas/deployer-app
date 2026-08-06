@@ -52,6 +52,7 @@ use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
     crud_update_passkey, export_public_key, generate_passkey,
 };
+use commands::remote::{ssh_download_file, ssh_execute_command, ssh_upload_file};
 use commands::projects::{
     crud_create_project, crud_delete_project, crud_get_project, crud_list_projects,
     crud_update_project,
@@ -114,6 +115,10 @@ pub fn run() {
             // Passkeys - otros
             export_public_key,
             generate_passkey,
+            // Consola remota
+            ssh_execute_command,
+            ssh_upload_file,
+            ssh_download_file,
             // Projects - CRUD
             crud_create_project,
             crud_update_project,
