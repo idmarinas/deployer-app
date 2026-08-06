@@ -32,10 +32,14 @@ src-tauri/src/
 │   │   │   ├── session.rs ← Sesión SSH única con reconexión automática
 │   │   │   ├── interpolator.rs ← build_snapshot() + evaluate_condition()
 │   │   │   ├── ssh_executor.rs ← execute_command() + execute_script()
-│   │   │   ├── glob.rs    ← Glob simple para exclude en file transfer
-│   │   │   └── sftp_executor.rs ← upload_file() + download_file()
+│   │   │   └── sftp_executor.rs ← upload_file() + download_file() (delegan en ssh::transfer)
 │   │   ├── mod.rs
 │   │   └── types.rs
+│   ├── remote/             ← Comandos SSH "sueltos" (no asociados a deployments)
+│   │   ├── mod.rs         ← re-exporta ssh_execute_command, ssh_upload_file, ssh_download_file
+│   │   ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
+│   │   ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code)
+│   │   └── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
 │   ├── docker/
 │   │   ├── compose/       ← CRUD + operaciones Docker Compose
 │   │   │   ├── crud.rs
@@ -77,11 +81,13 @@ src-tauri/src/
 ├── macros.rs              ← crud_commands! macro (genera los 5 comandos CRUD)
 ├── patch.rs               ← Patch<T> para updates parciales (Unset/Null/Value)
 ├── response.rs            ← CommandResponse<T>
-└── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, etc.)
+└── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, transferencias genéricas)
     ├── connect.rs
+    ├── glob.rs            ← Glob simple (matches_any) para exclude en file transfer
     ├── helpers.rs
     ├── mod.rs
-    └── session.rs
+    ├── session.rs
+    └── transfer.rs        ← upload/download genéricos con callback de progreso (sin tipos de commands/)
 ```
 
 ### Convenciones de comandos CRUD
@@ -405,16 +411,22 @@ Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile`
 
 - `paths`: lista de mapeos; 1 elemento = archivo suelto o directorio (`recursive: true`); N elementos = varios archivos/directorios en la misma task, cada uno con su propio origen/destino.
 - `overwrite` (a nivel de `FileTransferConfig`, no por mapeo): si `false`, se omite un archivo si el destino ya existe. Por defecto `true`. En directorios recursivos aplica archivo a archivo dentro del árbol.
-- `exclude` (por mapeo, solo relevante si `recursive: true`): patrones glob simples (`*`, `?`) comparados contra el **nombre** de cada entrada, no la ruta completa (ver `run/glob.rs`, sin dependencias externas).
+- `exclude` (por mapeo, solo relevante si `recursive: true`): patrones glob simples (`*`, `?`) comparados contra el **nombre** de cada entrada, no la ruta completa (ver `ssh/glob.rs`, sin dependencias externas).
 - `chmod` (por mapeo): permisos octales (ej. `"755"`, `"600"`) aplicados tras subir el archivo al servidor remoto. Solo tiene efecto en `UploadFile` (no hay chmod portable para el lado local Windows/Unix en descargas).
 - Tipos Rust: `PathMapping` y `FileTransferConfig` en `commands/projects/tasks/types.rs`.
 
-**Pendiente de verificar por Iván (`cargo check`):** dos piezas de `sftp_executor.rs` usan API de `russh-sftp` 2.0.6 que no pude confirmar offline al escribirlas (sin acceso al código fuente exacto del crate):
+> **Verificado (cargo check/test OK):** las API de `russh-sftp` usadas en `ssh/transfer.rs` (`set_metadata` con `FileAttributes`, `read_dir` con `.file_name()`/`.file_type().is_dir()`) compilan correctamente con la versión actual del crate.
 
-- `apply_chmod()`: usa `sftp.set_metadata(path, russh_sftp::protocol::FileAttributes { permissions: Some(mode), ..Default::default() })`.
-- `download_recursive()`: usa `sftp.read_dir(path)` y asume que cada entrada tiene `.file_name()` y `.file_type().is_dir()`.
+### Comandos SSH sueltos (`commands/remote/`)
 
-Si `cargo check` falla en alguno de los dos puntos, pegar el error de compilación para ajustar la firma exacta.
+Comandos para ejecutar operaciones SSH/SFTP sin asociarlas a un deployment (los usa la consola remota del frontend):
+
+- `ssh_execute_command(input, channel)`: abre sesión SSH + canal, ejecuta el comando con streaming de output por `Channel<RemoteConsoleEvent>` (eventos `output_chunk`, `finished` con `exit_code`, `error`). Acepta `working_dir` y `timeout_secs` (default 300). Devuelve `CommandResponse<RemoteCommandResult>` con `success: true` incluso si el comando remoto falla (exit != 0); el `exit_code` viaja en `data`. Si el exit code es desconocido se devuelve `-1`.
+- `ssh_upload_file(input, channel)`: sube un archivo o directorio local (`local_path`) a `remote_path` vía SFTP. Auto-detecta archivo/directorio salvo que `recursive` sea `Some(true)`. Aplica `chmod` octal si se indica. Emite progreso por el mismo Channel.
+- `ssh_download_file(input, channel)`: descarga `remote_path` a `local_path`. Si `local_path` es `None`, devuelve el contenido en `content_base64` (solo archivo simple). Detecta directorio remoto salvo que `recursive` sea `Some(true)`.
+- Todos toman `channel: Channel<RemoteConsoleEvent>` **obligatorio** (no es opcional: `Channel` no implementa `Deserialize`).
+- Errores de transporte (conexión, timeout) → `success: false` con `message_key` (`tauri.remote.errors.*`); el mensaje humanizado también se emite como evento `error` por el Channel.
+- Estos comandos usan `connect_to_host_by_id(..., enabled_only: true)`.
 
 ### Herencia de campos (project_task > project)
 
