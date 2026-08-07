@@ -20,9 +20,13 @@ pub struct DockerHubTagsCache {
     pub id: i64,
     pub namespace: String,
     pub repository: String,
-    pub tag_name: String,
-    pub last_updated: Option<String>,
-    pub full_size: i64,
+    pub url_query: String,
+    pub url_next: Option<String>,
+    pub url_previous: Option<String>,
+    pub count: i64,
+    pub tags: String,
+    pub tags_versions: String,
+    pub tags_variants: String,
     pub fetched_at: String,
 }
 
@@ -42,4 +46,6 @@ pub struct DockerHubTagResult {
     pub name: String,
     pub full_size: i64,
     pub last_updated: String,
+    pub version: String,
+    pub variant: String,
 }

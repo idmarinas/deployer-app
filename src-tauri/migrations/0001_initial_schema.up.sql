@@ -159,11 +159,15 @@ CREATE TABLE deployer_docker_hub_tags_cache (
     id INTEGER CONSTRAINT deployer_docker_hub_tags_cache_pk PRIMARY KEY AUTOINCREMENT,
     namespace TEXT NOT NULL,
     repository TEXT NOT NULL,
-    tag_name TEXT NOT NULL,
-    last_updated TEXT,
-    full_size INTEGER NOT NULL DEFAULT 0,
+    url_query TEXT NOT NULL,
+    url_next TEXT,
+    url_previous TEXT,
+    count INTEGER NOT NULL DEFAULT 0,
+    tags TEXT NOT NULL,
+    tags_versions TEXT NOT NULL,
+    tags_variants TEXT NOT NULL,
     fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT deployer_docker_hub_tags_cache_uq_ns_repo_tag UNIQUE (namespace, repository, tag_name)
+    CONSTRAINT deployer_docker_hub_tags_cache_uq_ns_repo_query UNIQUE (namespace, repository, url_query)
 );
 
 CREATE INDEX deployer_docker_hub_tags_cache_idx_ns_repo ON deployer_docker_hub_tags_cache (namespace, repository);
