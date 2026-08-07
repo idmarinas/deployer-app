@@ -75,9 +75,9 @@ export type DockerHubImageResult = { name: string, description: string, pull_cou
 
 export type DockerHubSearchCache = { id: number, query: string, namespace: string, repository: string, description: string | null, pull_count: number, star_count: number, fetched_at: string, };
 
-export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, };
+export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, version: string, variant: string, };
 
-export type DockerHubTagsCache = { id: number, namespace: string, repository: string, tag_name: string, last_updated: string | null, full_size: number, fetched_at: string, };
+export type DockerHubTagsCache = { id: number, namespace: string, repository: string, url_query: string, url_next: string | null, url_previous: string | null, count: number, tags: string, tags_versions: string, tags_variants: string, fetched_at: string, };
 
 export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 

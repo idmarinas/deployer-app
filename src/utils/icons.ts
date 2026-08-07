@@ -123,6 +123,7 @@ export const ICONS = {
 		viewOff: 'i-tabler-eye-off',
 		copy: 'i-tabler-copy',
 		play: 'i-tabler-play',
+		stop: 'i-tabler-square-stop',
 		list: 'i-tabler-list',
 		listDetails: 'i-tabler-list-details',
 		folder: 'i-tabler-folder',

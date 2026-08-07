@@ -86,6 +86,7 @@ export default {
 			version_disabled: 'Selecciona una imagen',
 			variant_placeholder: 'Variante...',
 			variant_empty: 'Sin variantes',
+			variant_count: '1 variante | {count} variantes',
 		},
 		container_name: {
 			label: 'Nombre del contenedor',

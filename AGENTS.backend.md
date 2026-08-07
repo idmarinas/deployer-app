@@ -36,10 +36,11 @@ src-tauri/src/
 │   │   ├── mod.rs
 │   │   └── types.rs
 │   ├── remote/             ← Comandos SSH "sueltos" (no asociados a deployments)
-│   │   ├── mod.rs         ← re-exporta ssh_execute_command, ssh_upload_file, ssh_download_file
+│   │   ├── mod.rs         ← re-exporta ssh_execute_command, ssh_upload_file, ssh_download_file, ssh_cancel_remote_job, RemoteJobCancel
 │   │   ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
-│   │   ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code)
-│   │   └── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
+│   │   ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code, cancelable)
+│   │   ├── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer, cancelables)
+│   │   └── cancel.rs      ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
 │   ├── docker/
 │   │   ├── compose/       ← CRUD + operaciones Docker Compose
 │   │   │   ├── crud.rs
@@ -146,6 +147,25 @@ El frontend solo debe llamar al comando plural (incluso para guardar un único a
 | `passkeys`              | `key_content` (cifrado), `passphrase` (cifrado)                                                                                                        |
 | `framework_configs`     | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional.          |
 | `task_dependencies`     | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
+
+### Caché de Docker Hub (`commands/docker/hub_cache/`)
+
+- `deployer_docker_hub_search_cache` — caché de la búsqueda de imágenes (una fila por imagen, TTL 1 h).
+- `deployer_docker_hub_tags_cache` — caché de tags con una **fila por página consultada** (no por tag), TTL 24 h:
+
+| Columna          | Contenido |
+| ---------------- | --------- |
+| `url_query`      | URL exacta usada para la petición (clave de la caché, UNIQUE con `namespace`+`repository`) |
+| `url_next` / `url_previous` | URLs de paginación devueltas por la API |
+| `count`          | Total de tags (de la API) |
+| `tags`           | JSON de `results` filtrados (`content_type == "image"`, sin `images`/`digest`/`content_type`/`media_type`) y **enriquecido** con `version`/`variant` por tag |
+| `tags_versions` / `tags_variants` | JSON arrays de valores únicos en orden de aparición (orden de la API = `last_updated` desc) |
+
+- `get_docker_hub_tags_cache(image_name, tag?)`:
+  - Sin `tag` → devuelve la **página 1** (base: `page_size=100&ordering=last_updated`) para el dropdown.
+  - Con `tag` → recorre `url_next` (límite `MAX_TAG_PAGES`) consultando la caché por `url_query` y haciendo HTTP solo cuando falta una página fresca; devuelve los tags coincidentes o `[]`.
+- `parse_tag()` es la misma lógica que `parseTag()` del frontend (versión = parte anterior al primer `-`, variante = resto o `""`). El frontend ya no parsea: consume `version`/`variant` del resultado.
+- Regenerar `src/types/tauri-types.d.ts` con `cargo test export_bindings` (con `TS_RS_EXPORT_DIR=../src/types`).
 
 ---
 
@@ -427,6 +447,7 @@ Comandos para ejecutar operaciones SSH/SFTP sin asociarlas a un deployment (los 
 - Todos toman `channel: Channel<RemoteConsoleEvent>` **obligatorio** (no es opcional: `Channel` no implementa `Deserialize`).
 - Errores de transporte (conexión, timeout) → `success: false` con `message_key` (`tauri.remote.errors.*`); el mensaje humanizado también se emite como evento `error` por el Channel.
 - Estos comandos usan `connect_to_host_by_id(..., enabled_only: true)`.
+- **Cancelación:** los tres comandos registran un `CancellationToken` en el estado `RemoteJobCancel` (compartido, `commands/remote/cancel.rs`) al empezar, y `ssh_cancel_remote_job` (sin args) cancela el job en curso. En `exec.rs` la cancelación se espera con `tokio::select!` sobre `token.cancelled()`; en `ssh/transfer.rs` todas las funciones aceptan `cancel: Option<&CancellationToken>` (`None` = nunca cancela, así lo usa el runner de deployments) y comprueban el flag antes y entre operaciones. Al cancelar devuelven error con clave `tauri.remote.errors.cancelled` (`CANCELLED_MSG`). El frontend no debe lanzar varios jobs a la vez: el estado solo guarda el último token.
 
 ### Herencia de campos (project_task > project)
 

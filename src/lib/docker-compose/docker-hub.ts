@@ -18,6 +18,8 @@ interface DockerHubTagResult {
 	name: string
 	full_size: number
 	last_updated: string
+	version: string
+	variant: string
 }
 
 // ============================================================================
@@ -56,6 +58,27 @@ export async function fetchDockerHubTags(imageName: string): Promise<DockerHubTa
 	}
 }
 
+/**
+ * Comprueba si un tag concreto existe, recorriendo las páginas de la caché de
+ * Docker Hub (vía `url_next`) solo si es necesario.
+ */
+export async function fetchDockerHubTagExists(imageName: string, tag: string): Promise<boolean> {
+	const trimmedImage = imageName.trim()
+	const trimmedTag = tag.trim()
+	if (!trimmedImage || !trimmedTag) return false
+
+	try {
+		const results = await invoke<DockerHubTagResult[]>('get_docker_hub_tags_cache', {
+			imageName: trimmedImage,
+			tag: trimmedTag,
+		})
+		return results.some(r => r.name === trimmedTag)
+	} catch (e) {
+		console.error('[docker-hub] tag exists error:', e)
+		return false
+	}
+}
+
 // ============================================================================
 // Validation
 // ============================================================================
@@ -79,15 +102,8 @@ export async function validateComposeImages(composeContent: string): Promise<str
 		const imageName = colonIdx > 0 ? image.substring(0, colonIdx) : image
 		const tag = colonIdx > 0 ? image.substring(colonIdx + 1) : 'latest'
 
-		const tags = await fetchDockerHubTags(imageName)
-
-		if (tags.length === 0) {
-			invalid.push(image)
-			continue
-		}
-
-		const tagNames = new Set(tags.map(t => t.name))
-		if (!tagNames.has(tag)) {
+		const exists = await fetchDockerHubTagExists(imageName, tag)
+		if (!exists) {
 			invalid.push(image)
 		}
 	}
