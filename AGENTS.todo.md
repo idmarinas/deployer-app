@@ -11,6 +11,7 @@
    - Sólo se genera una nueva migración si se cambia de versión, definida en `src-tauri\tauri.conf.json`
 4. Lee el archivo @AGENTS.md para entender el proyecto
    - Si es necesario actualiza los archivos AGENTS
+5. IMPORTANTE, no importa si tienes el modo PLAN o el BUILD todas las tareas de este archivo tienen que ser en modo PLAN.
 
 ### Tareas
 
