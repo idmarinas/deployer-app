@@ -53,11 +53,12 @@ watch(
 </script>
 
 <template>
-	<UFieldGroup>
+	<UFieldGroup class="flex items-center">
 		<USelectMenu
 			v-model="state"
 			clear
 			value-key="id"
+			class="flex-1"
 			:items="availableItems as SelectMenuItemExtends[]"
 			:loading="isLoading"
 			:disabled="isLoading"

@@ -17,15 +17,15 @@ const { data: items, isLoading } = useSelectPasskeys()
 </script>
 
 <template>
-	<UFieldGroup>
+	<UFieldGroup class="flex items-center">
 		<USelectMenu
 			v-model="state"
 			value-key="id"
+			class="flex-1"
 			:items="items as SelectMenuItem[]"
 			:loading="isLoading"
 			:disabled="isLoading"
 			:placeholder="t('form.shared.placeholder.passkeys.select')"
-			class="w-full"
 		/>
 		<UTooltip :text="t('form.passkeys.title.add')" :delay-duration="0">
 			<UButton
