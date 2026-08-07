@@ -7,11 +7,21 @@
 
 use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio_util::sync::CancellationToken;
 
 use super::glob::matches_any;
 
 /// Tamaño del buffer de lectura/escritura SFTP (256 KB).
 const SFTP_BUFFER_SIZE: usize = 256 * 1024;
+
+/// Mensaje devuelto cuando el usuario cancela la transferencia.
+const CANCELLED_MSG: &str = "Operación cancelada por el usuario";
+
+/// Devuelve `true` si el token de cancelación está activo (o si no hay token,
+/// nunca cancela).
+fn cancelled(cancel: Option<&CancellationToken>) -> bool {
+    cancel.map(|c| c.is_cancelled()).unwrap_or(false)
+}
 
 /// Resultado de una transferencia SFTP.
 #[derive(Debug, Clone, Copy)]
@@ -41,6 +51,7 @@ pub async fn upload_single_file<F>(
     dest: &Path,
     overwrite: bool,
     chmod: Option<&str>,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
@@ -69,6 +80,10 @@ where
         .read_to_end(&mut buf)
         .await
         .map_err(|e| format!("Error al leer '{}': {}", src_str, e))?;
+
+    if cancelled(cancel) {
+        return Err(CANCELLED_MSG.to_string());
+    }
 
     let mut remote_file = sftp
         .create(dest_str.as_ref())
@@ -107,6 +122,7 @@ pub async fn upload_dir<F>(
     overwrite: bool,
     exclude: Option<&[String]>,
     chmod: Option<&str>,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
@@ -123,6 +139,10 @@ where
         .await
         .map_err(|e| format!("Error leyendo entrada de directorio: {}", e))?
     {
+        if cancelled(cancel) {
+            return Err(CANCELLED_MSG.to_string());
+        }
+
         let entry_path = entry.path();
         let file_name = entry.file_name();
         let file_name_str = file_name.to_string_lossy();
@@ -145,6 +165,7 @@ where
                 overwrite,
                 exclude,
                 chmod,
+                cancel,
                 on_output,
             ))
             .await?;
@@ -156,6 +177,7 @@ where
                 &dest_entry,
                 overwrite,
                 chmod,
+                cancel,
                 on_output,
             )
             .await?;
@@ -168,6 +190,7 @@ where
 
 /// Sube un archivo o directorio local (`src`) a la ruta remota `dest`.
 /// Si `src` es un directorio, la transferencia es recursiva.
+#[allow(clippy::too_many_arguments)]
 pub async fn upload<F>(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
@@ -175,15 +198,16 @@ pub async fn upload<F>(
     overwrite: bool,
     exclude: Option<&[String]>,
     chmod: Option<&str>,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
     F: FnMut(&str),
 {
     if src.is_dir() {
-        upload_dir(sftp, src, dest, overwrite, exclude, chmod, on_output).await
+        upload_dir(sftp, src, dest, overwrite, exclude, chmod, cancel, on_output).await
     } else {
-        upload_single_file(sftp, src, dest, overwrite, chmod, on_output).await
+        upload_single_file(sftp, src, dest, overwrite, chmod, cancel, on_output).await
     }
 }
 
@@ -193,6 +217,7 @@ pub async fn download_single_file<F>(
     src: &Path,
     dest: &Path,
     overwrite: bool,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
@@ -223,6 +248,10 @@ where
 
     let file_size = buf.len() as u64;
 
+    if cancelled(cancel) {
+        return Err(CANCELLED_MSG.to_string());
+    }
+
     if let Some(parent) = dest.parent() {
         tokio::fs::create_dir_all(parent)
             .await
@@ -248,12 +277,14 @@ where
 }
 
 /// Descarga un directorio remoto a una ruta local de forma recursiva.
+#[allow(clippy::too_many_arguments)]
 pub async fn download_dir<F>(
     sftp: &russh_sftp::client::SftpSession,
     src_dir: &Path,
     dest_dir: &Path,
     overwrite: bool,
     exclude: Option<&[String]>,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
@@ -273,6 +304,10 @@ where
         .map_err(|e| format!("Error al crear directorio local '{}': {}", dest_dir.display(), e))?;
 
     for entry in entries {
+        if cancelled(cancel) {
+            return Err(CANCELLED_MSG.to_string());
+        }
+
         let file_name = entry.file_name();
 
         if let Some(patterns) = exclude {
@@ -292,12 +327,13 @@ where
                 &entry_dest,
                 overwrite,
                 exclude,
+                cancel,
                 on_output,
             ))
             .await?;
             result.add(sub);
         } else {
-            let sub = download_single_file(sftp, &entry_src, &entry_dest, overwrite, on_output)
+            let sub = download_single_file(sftp, &entry_src, &entry_dest, overwrite, cancel, on_output)
                 .await?;
             result.add(sub);
         }
@@ -308,12 +344,14 @@ where
 
 /// Descarga un archivo o directorio remoto (`src`) a la ruta local `dest`.
 /// Detecta si `src` es un directorio remoto probando `read_dir`.
+#[allow(clippy::too_many_arguments)]
 pub async fn download<F>(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
     dest: &Path,
     overwrite: bool,
     exclude: Option<&[String]>,
+    cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
 where
@@ -327,9 +365,9 @@ where
     };
 
     if is_dir {
-        download_dir(sftp, src, dest, overwrite, exclude, on_output).await
+        download_dir(sftp, src, dest, overwrite, exclude, cancel, on_output).await
     } else {
-        download_single_file(sftp, src, dest, overwrite, on_output).await
+        download_single_file(sftp, src, dest, overwrite, cancel, on_output).await
     }
 }
 

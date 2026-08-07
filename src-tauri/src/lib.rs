@@ -52,7 +52,10 @@ use commands::passkeys::{
     crud_create_passkey, crud_delete_passkey, crud_get_passkey, crud_list_passkeys,
     crud_update_passkey, export_public_key, generate_passkey,
 };
-use commands::remote::{ssh_download_file, ssh_execute_command, ssh_upload_file};
+use commands::remote::{
+    ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file,
+    RemoteJobCancel,
+};
 use commands::projects::{
     crud_create_project, crud_delete_project, crud_get_project, crud_list_projects,
     crud_update_project,
@@ -81,6 +84,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_opener::init())
+        .manage(RemoteJobCancel::default())
         .setup(|app| {
             #[cfg(desktop)]
             {
@@ -119,6 +123,7 @@ pub fn run() {
             ssh_execute_command,
             ssh_upload_file,
             ssh_download_file,
+            ssh_cancel_remote_job,
             // Projects - CRUD
             crud_create_project,
             crud_update_project,

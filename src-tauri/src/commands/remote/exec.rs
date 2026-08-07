@@ -1,12 +1,15 @@
 use std::time::Duration;
 use tauri::ipc::Channel;
 use tauri::AppHandle;
+use tauri::State;
 use tokio::time::Instant;
+use tokio_util::sync::CancellationToken;
 
 use crate::response::CommandResponse;
 use crate::ssh::{connect_to_host_by_id, shell_escape, SshSession};
 use crate::params;
 
+use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
 use super::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
 
 /// Timeout por defecto para la ejecución remota (segundos).
@@ -29,8 +32,12 @@ pub async fn ssh_execute_command(
     app: AppHandle,
     input: RemoteCommandInput,
     channel: Channel<RemoteConsoleEvent>,
+    state: State<'_, RemoteJobCancel>,
 ) -> Result<CommandResponse<RemoteCommandResult>, String> {
     let timeout_secs = input.timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS);
+
+    let token = CancellationToken::new();
+    state.register(&token);
 
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
@@ -53,7 +60,8 @@ pub async fn ssh_execute_command(
         input.command.clone()
     };
 
-    let run = run_command_streaming(&mut session, &full_command, timeout_secs, &channel).await;
+    let run = run_command_streaming(&mut session, &full_command, timeout_secs, &channel, &token)
+        .await;
 
     let _ = session.disconnect().await;
 
@@ -61,7 +69,12 @@ pub async fn ssh_execute_command(
         Ok(v) => v,
         Err(e) => {
             emit_error(&channel, &e);
-            return err_response("tauri.remote.errors.execution_failed", &e);
+            let key = if token.is_cancelled() {
+                "tauri.remote.errors.cancelled"
+            } else {
+                "tauri.remote.errors.execution_failed"
+            };
+            return err_response(key, &e);
         }
     };
 
@@ -87,6 +100,7 @@ async fn run_command_streaming(
     full_command: &str,
     timeout_secs: u64,
     channel: &Channel<RemoteConsoleEvent>,
+    token: &CancellationToken,
 ) -> Result<(String, i64, i64), String> {
     session.ensure_connected().await?;
 
@@ -110,31 +124,37 @@ async fn run_command_streaming(
     loop {
         use russh::ChannelMsg;
 
-        let msg = tokio::time::timeout(Duration::from_secs(timeout_secs), ssh_channel.wait())
-            .await
-            .map_err(|_| format!("Timeout de {} segundos alcanzado", timeout_secs))?;
+        tokio::select! {
+            _ = token.cancelled() => {
+                return Err(CANCELLED_MSG.to_string());
+            }
+            result = tokio::time::timeout(Duration::from_secs(timeout_secs), ssh_channel.wait()) => {
+                let msg = result
+                    .map_err(|_| format!("Timeout de {} segundos alcanzado", timeout_secs))?;
 
-        match msg {
-            Some(ChannelMsg::Data { ref data })
-            | Some(ChannelMsg::ExtendedData { ref data, ext: 1 }) => {
-                // stdout + stderr, en orden de llegada
-                let text = String::from_utf8_lossy(data).to_string();
-                output.push_str(&text);
-                chunk_buffer.push_str(&text);
+                match msg {
+                    Some(ChannelMsg::Data { ref data })
+                    | Some(ChannelMsg::ExtendedData { ref data, ext: 1 }) => {
+                        // stdout + stderr, en orden de llegada
+                        let text = String::from_utf8_lossy(data).to_string();
+                        output.push_str(&text);
+                        chunk_buffer.push_str(&text);
 
-                if last_emit.elapsed() >= Duration::from_millis(OUTPUT_CHUNK_INTERVAL_MS) {
-                    if !chunk_buffer.is_empty() {
-                        emit_chunk(channel, &chunk_buffer);
-                        chunk_buffer.clear();
-                        last_emit = Instant::now();
+                        if last_emit.elapsed() >= Duration::from_millis(OUTPUT_CHUNK_INTERVAL_MS) {
+                            if !chunk_buffer.is_empty() {
+                                emit_chunk(channel, &chunk_buffer);
+                                chunk_buffer.clear();
+                                last_emit = Instant::now();
+                            }
+                        }
                     }
+                    Some(ChannelMsg::ExitStatus { exit_status }) => {
+                        exit_code = exit_status as i64;
+                    }
+                    None => break,
+                    _ => {}
                 }
             }
-            Some(ChannelMsg::ExitStatus { exit_status }) => {
-                exit_code = exit_status as i64;
-            }
-            None => break,
-            _ => {}
         }
     }
 

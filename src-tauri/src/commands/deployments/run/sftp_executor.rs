@@ -58,6 +58,7 @@ pub async fn upload_file(
             config.overwrite,
             mapping.exclude.as_deref(),
             mapping.chmod.as_deref(),
+            None,
             &mut on_output,
         )
         .await?;
@@ -117,6 +118,7 @@ pub async fn download_file(
                 &dest_path,
                 config.overwrite,
                 mapping.exclude.as_deref(),
+                None,
                 &mut on_output,
             )
             .await?
@@ -126,6 +128,7 @@ pub async fn download_file(
                 &src_path,
                 &dest_path,
                 config.overwrite,
+                None,
                 &mut on_output,
             )
             .await?

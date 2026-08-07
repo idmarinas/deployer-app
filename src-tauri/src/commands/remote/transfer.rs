@@ -1,15 +1,18 @@
 use std::path::Path;
 use tauri::ipc::Channel;
 use tauri::AppHandle;
+use tauri::State;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use tokio::io::AsyncReadExt;
 use tokio::time::Instant;
+use tokio_util::sync::CancellationToken;
 
 use crate::response::CommandResponse;
 use crate::ssh::transfer::{self as transfer_utils, TransferResult};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session};
 use crate::params;
 
+use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
 use super::types::{
     RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteTransferResult,
     RemoteUploadInput,
@@ -25,7 +28,11 @@ pub async fn ssh_upload_file(
     app: AppHandle,
     input: RemoteUploadInput,
     channel: Channel<RemoteConsoleEvent>,
+    state: State<'_, RemoteJobCancel>,
 ) -> Result<CommandResponse<RemoteTransferResult>, String> {
+    let token = CancellationToken::new();
+    state.register(&token);
+
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
         input.host_id,
@@ -75,6 +82,7 @@ pub async fn ssh_upload_file(
             overwrite,
             None,
             input.chmod.as_deref(),
+            Some(&token),
             &mut emit,
         )
         .await
@@ -87,6 +95,7 @@ pub async fn ssh_upload_file(
             overwrite,
             None,
             input.chmod.as_deref(),
+            Some(&token),
             &mut emit,
         )
         .await
@@ -96,7 +105,12 @@ pub async fn ssh_upload_file(
         Ok(r) => r,
         Err(e) => {
             emit_error(&channel, &e);
-            return err_response("tauri.remote.errors.transfer_failed", &e);
+            let key = if token.is_cancelled() {
+                "tauri.remote.errors.cancelled"
+            } else {
+                "tauri.remote.errors.transfer_failed"
+            };
+            return err_response(key, &e);
         }
     };
 
@@ -125,7 +139,11 @@ pub async fn ssh_download_file(
     app: AppHandle,
     input: RemoteDownloadInput,
     channel: Channel<RemoteConsoleEvent>,
+    state: State<'_, RemoteJobCancel>,
 ) -> Result<CommandResponse<RemoteDownloadResult>, String> {
+    let token = CancellationToken::new();
+    state.register(&token);
+
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
         input.host_id,
@@ -172,19 +190,44 @@ pub async fn ssh_download_file(
         // None → auto-detecta según el tipo remoto.
         let result = match input.recursive {
             Some(true) => {
-                transfer_utils::download_dir(&sftp, &src, &dest, overwrite, None, &mut emit).await
+                transfer_utils::download_dir(
+                    &sftp,
+                    &src,
+                    &dest,
+                    overwrite,
+                    None,
+                    Some(&token),
+                    &mut emit,
+                )
+                .await
             }
             Some(false) => {
-                transfer_utils::download_single_file(&sftp, &src, &dest, overwrite, &mut emit).await
+                transfer_utils::download_single_file(
+                    &sftp,
+                    &src,
+                    &dest,
+                    overwrite,
+                    Some(&token),
+                    &mut emit,
+                )
+                .await
             }
-            None => transfer_utils::download(&sftp, &src, &dest, overwrite, None, &mut emit).await,
+            None => {
+                transfer_utils::download(&sftp, &src, &dest, overwrite, None, Some(&token), &mut emit)
+                    .await
+            }
         };
 
         match result {
             Ok(r) => (None, Some(local_path.to_string()), r),
             Err(e) => {
                 emit_error(&channel, &e);
-                return err_response("tauri.remote.errors.transfer_failed", &e);
+                let key = if token.is_cancelled() {
+                    "tauri.remote.errors.cancelled"
+                } else {
+                    "tauri.remote.errors.transfer_failed"
+                };
+                return err_response(key, &e);
             }
         }
     } else {
@@ -201,10 +244,28 @@ pub async fn ssh_download_file(
         };
 
         let mut buf = Vec::new();
-        if let Err(e) = remote_file.read_to_end(&mut buf).await {
-            let msg = e.to_string();
-            emit_error(&channel, &msg);
-            return err_response("tauri.remote.errors.transfer_failed", &msg);
+        loop {
+            if token.is_cancelled() {
+                let _ = session.disconnect().await;
+                emit_error(&channel, CANCELLED_MSG);
+                return err_response("tauri.remote.errors.cancelled", CANCELLED_MSG);
+            }
+
+            let mut chunk = vec![0u8; 256 * 1024];
+            let n = match remote_file.read(&mut chunk).await {
+                Ok(n) => n,
+                Err(e) => {
+                    let msg = e.to_string();
+                    emit_error(&channel, &msg);
+                    return err_response("tauri.remote.errors.transfer_failed", &msg);
+                }
+            };
+
+            if n == 0 {
+                break;
+            }
+
+            buf.extend_from_slice(&chunk[..n]);
         }
 
         (
