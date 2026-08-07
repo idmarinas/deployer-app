@@ -38,6 +38,7 @@ export default {
 		title: 'Salida',
 		placeholder: 'El output de las operaciones aparecerá aquí.',
 		clear: 'Limpiar',
+		cancel: 'Cancelar',
 		exit_code: 'Código de salida: {code}',
 		running: 'Ejecutando…',
 		error: 'Error: {message}',
