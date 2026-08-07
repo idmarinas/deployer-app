@@ -52,6 +52,8 @@ export default {
 		already_exists: 'Ya existe un archivo con esa ruta',
 		invalid_path: 'Introduce una ruta relativa válida',
 		upload_success: 'Archivos subidos correctamente',
+		discarded_size:
+			'{count} archivo descartado por superar {size} | {count} archivos descartados por superar {size}',
 		create_success: 'Archivo creado correctamente',
 		delete_success: 'Archivo eliminado correctamente',
 		update_success: 'Archivo actualizado correctamente',
