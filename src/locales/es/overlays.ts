@@ -27,12 +27,16 @@ export default {
 			cancel: 'Canclear',
 			confirm: 'Actualizar',
 		},
-		files_replace: {
+		files_review: {
 			cancel: 'Cancelar',
 			confirm: 'Confirmar',
-			title: 'Reemplazar archivos',
-			description: 'Estos archivos ya existen y su contenido será reemplazado:',
-			compose_note: 'Además, se reemplazará el contenido de compose.yaml (gestionado automáticamente desde el formulario).',
+			title: 'Revisar archivos',
+			nothing_to_upload: 'Ningún archivo válido para subir.',
+			action_add: 'Añadir',
+			action_replace: 'Sustituir',
+			action_compose: 'Sustituir compose.yaml',
+			action_reject_size: 'Rechazado: tamaño',
+			action_reject_type: 'Rechazado: tipo',
 		},
 	},
 	toast: {

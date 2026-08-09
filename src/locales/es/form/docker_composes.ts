@@ -28,6 +28,7 @@ export default {
 		upload_folder: 'Seleccionar carpeta',
 		upload_compose: 'Cargar contenido',
 		confirm: 'Confirmar',
+		review: 'Revisar',
 		cancel: 'Cancelar',
 		file_count: '1 archivo | {count} archivos',
 		compose_label: 'compose.yaml',
@@ -52,8 +53,11 @@ export default {
 		already_exists: 'Ya existe un archivo con esa ruta',
 		invalid_path: 'Introduce una ruta relativa válida',
 		upload_success: 'Archivos subidos correctamente',
-		discarded_size:
-			'{count} archivo descartado por superar {size} | {count} archivos descartados por superar {size}',
+		discarded_size: '{count} archivo descartado por superar {size} | {count} archivos descartados por superar {size}',
+		discarded_type:
+			'{count} archivo descartado por tipo no permitido | {count} archivos descartados por tipo no permitido',
+		discarded_files: '1 archivo fue descargado | {count} archivos fueron descartados',
+		ignored_dirs_note: 'Se ignora el contenido de los directorios: {dirs}',
 		create_success: 'Archivo creado correctamente',
 		delete_success: 'Archivo eliminado correctamente',
 		update_success: 'Archivo actualizado correctamente',
