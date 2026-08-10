@@ -5,6 +5,8 @@ import type { TreeItem } from '@nuxt/ui'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { formatBytes } from '@/utils/format'
+
 export interface ReviewComposeFileItem {
 	path: string
 	size: number
@@ -201,17 +203,6 @@ function actionColor(action: ReviewAction): 'success' | 'primary' | 'info' | 'wa
 			return 'warning'
 	}
 }
-
-function formatBytes(size: number): string {
-	const units = ['B', 'KB', 'MB', 'GB']
-	let value = size
-	let unit = 0
-	while (value >= 1024 && unit < units.length - 1) {
-		value /= 1024
-		unit++
-	}
-	return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
-}
 </script>
 
 <template>
@@ -274,7 +265,9 @@ function formatBytes(size: number): string {
 				</p>
 				<p class="text-muted flex items-center gap-2">
 					<UIcon name="i-tabler-folder-off" />
-					{{ t('form.docker_composes.files.ignored_dirs_note', { dirs: ignoredDirsLabel }, { escapeParameter: false }) }}
+					{{
+						t('form.docker_composes.files.ignored_dirs_note', { dirs: ignoredDirsLabel }, { escapeParameter: false })
+					}}
 				</p>
 			</div>
 			<div class="flex items-center gap-3">
