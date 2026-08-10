@@ -19,7 +19,7 @@
 	"dependencies": {
 		"@iconify-json/cib": "^1.2.3",
 		"@iconify-json/tabler": "^1.2.38",
-		"@iconify-json/vscode-icons": "^1.2.69",
+		"@iconify-json/vscode-icons": "^1.2.70",
 		"@nuxt/ui": "^4.10.0",
 		"@pinia/colada": "^1.4.2",
 		"@tauri-apps/api": "^2.11.1",

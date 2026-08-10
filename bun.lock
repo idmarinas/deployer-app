@@ -7,7 +7,7 @@
       "dependencies": {
         "@iconify-json/cib": "^1.2.3",
         "@iconify-json/tabler": "^1.2.38",
-        "@iconify-json/vscode-icons": "^1.2.68",
+        "@iconify-json/vscode-icons": "^1.2.70",
         "@nuxt/ui": "^4.10.0",
         "@pinia/colada": "^1.4.2",
         "@tauri-apps/api": "^2.11.1",
@@ -19,7 +19,7 @@
         "drizzle-orm": "^0.45.2",
         "slugify": "^1.6.9",
         "sortablejs": "^1.15.7",
-        "vue": "^3.5.40",
+        "vue": "^3.5.41",
         "vue-i18n": "^11.4.8",
         "vue-router": "^5.2.0",
         "yaml": "^2.9.0",
@@ -35,7 +35,7 @@
         "prettier-plugin-organize-imports": "^4.3.0",
         "tailwindcss": "^4.3.3",
         "typescript": "~6.0.3",
-        "vite": "^8.2.0",
+        "vite": "^8.2.1",
         "vite-plugin-vue-devtools": "^8.2.1",
         "vue-tsc": "^3.3.9",
       },
@@ -178,7 +178,7 @@
 
     "@iconify-json/tabler": ["@iconify-json/tabler@1.2.38", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-9v6ooRU/bKOK/Whv4w2aiK5gBnfCV9Ei+uD1iDDeLu2b+EnF3G3ZKkRKWEOOLG8bJyfKn6XEia6gUQ9oO7cF+Q=="],
 
-    "@iconify-json/vscode-icons": ["@iconify-json/vscode-icons@1.2.69", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-qNT3Xf7tVylX3LbTj867/VRa5/FxCxYA1lclucf5TPGn9t5J5qwu0sm8RwN10+UGeEc3oAewYuJ+rDam9l8cqA=="],
+    "@iconify-json/vscode-icons": ["@iconify-json/vscode-icons@1.2.70", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-J5EnIWj9cCPvn0obl88giucgFtNalgBkhML3oHse5MBEU7H7fyezKHhVsfXOuxs7osSfTAoOcXtmbmWUD6rXqw=="],
 
     "@iconify/collections": ["@iconify/collections@1.0.704", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-rwIk2LK/wsfUY5TG3NSncyVuUzLVcYdqehtWEXatkqXpsvcFwvJLePx0CcXv4iaRhL+Y+Lo5uzPRkzVqDvf6Gg=="],
 
