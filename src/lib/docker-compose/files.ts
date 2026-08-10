@@ -57,13 +57,21 @@ export function isExcludedComposeFileType(filePath: string): boolean {
 }
 
 export function isComposeFile(filePath: string): boolean {
-	const lower = filePath.toLowerCase()
+	const name = filePath.split('/').filter(Boolean).pop()?.toLowerCase() ?? ''
 	return (
-		lower === 'compose.yaml' ||
-		lower === 'compose.yml' ||
-		lower === 'docker-compose.yaml' ||
-		lower === 'docker-compose.yml'
+		name === 'compose.yaml' ||
+		name === 'compose.yml' ||
+		name === 'docker-compose.yaml' ||
+		name === 'docker-compose.yml'
 	)
+}
+
+export function isMainComposeFile(filePath: string): boolean {
+	return isComposeFile(filePath) && !filePath.includes('/')
+}
+
+export function isSecondaryComposeFile(filePath: string): boolean {
+	return isComposeFile(filePath) && filePath.includes('/')
 }
 
 export function isEnvFilePath(filePath: string): boolean {

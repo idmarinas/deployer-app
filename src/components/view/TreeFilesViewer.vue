@@ -1,5 +1,6 @@
 <script lang="ts">
 import type { ComposeTreeNode } from '@/lib/docker-compose/files'
+import { isComposeFile, isMainComposeFile } from '@/lib/docker-compose/files'
 
 import { useI18n } from 'vue-i18n'
 
@@ -37,6 +38,19 @@ async function openCreateDialog(folder: string) {
 		</UTooltip>
 	</div>
 	<UTree v-model="selected" :items="items" :get-key="node => node.key" :as="{ link: 'div' }">
+		<template #item-trailing="{ item }">
+			<UBadge
+				v-if="item.type === 'file' && isComposeFile(item.key)"
+				size="xs"
+				variant="subtle"
+				:color="isMainComposeFile(item.key) ? 'primary' : 'info'"
+				:label="
+					isMainComposeFile(item.key)
+						? t('form.docker_composes.files.principal')
+						: t('form.docker_composes.files.secondary')
+				"
+			/>
+		</template>
 		<template #folder-trailing="{ item, expanded: isExpanded }">
 			<UIcon :name="isExpanded ? 'i-tabler-chevron-down' : 'i-tabler-chevron-right'" class="size-4 shrink-0" />
 			<UTooltip :text="t('form.docker_composes.files.create_file')">
