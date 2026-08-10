@@ -37,6 +37,9 @@ export default {
 			action_compose: 'Sustituir compose.yaml',
 			action_reject_size: 'Rechazado: tamaño',
 			action_reject_type: 'Rechazado: tipo',
+			remove: 'Quitar de la importación',
+			restore: 'Restaurar',
+			removed_count: '1 archivo quitado | {count} archivos quitados',
 		},
 	},
 	toast: {
