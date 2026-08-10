@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const emits = defineEmits<{
-	close: [value: string]
+	close: [value: string | false]
 }>()
 
 const { t } = useI18n()
@@ -43,7 +43,7 @@ const fileName = ref<string>('')
 				:label="t('form.docker_composes.files.cancel')"
 				variant="outline"
 				size="sm"
-				@click="emits('close', '')"
+				@click="emits('close', false)"
 			/>
 			<UButton
 				:label="t('form.docker_composes.files.confirm')"
