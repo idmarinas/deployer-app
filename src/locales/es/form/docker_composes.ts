@@ -31,6 +31,8 @@ export default {
 		cancel: 'Cancelar',
 		file_count: '1 archivo | {count} archivos',
 		compose_label: 'compose.yaml',
+		principal: 'Principal',
+		secondary: 'Secundario',
 		env_label: 'Archivos .env',
 		env_add: 'Añadir variable',
 		text_content: 'Contenido',
@@ -58,6 +60,10 @@ export default {
 		create_success: 'Archivo creado correctamente',
 		delete_success: 'Archivo eliminado correctamente',
 		update_success: 'Archivo actualizado correctamente',
+		create: {
+			compose_already_exists: 'Ya existe un archivo compose principal',
+			not_empty: 'El nombre no puede estar vacío.',
+		},
 	},
 	compose_content: {
 		label: 'Contenido YAML',
