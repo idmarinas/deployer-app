@@ -1,3 +1,10 @@
+import type { TreeItem } from '@nuxt/ui'
+
+const COMPOSE_ICON = 'i-vscode-icons-file-type-docker2'
+const IMAGE_ICON = 'i-vscode-icons-file-type-image'
+const BINARY_ICON = 'i-vscode-icons-file-type-binary'
+const FILE_ICON = 'i-vscode-icons-file-type-text'
+
 export const MAX_COMPOSE_FILE_SIZE = 256 * 1024
 
 export const EXCLUDED_EXTENSIONS = new Set([
@@ -21,6 +28,27 @@ export const EXCLUDED_EXTENSIONS = new Set([
 	'run',
 ])
 
+export const IGNORED_DIRS = new Set(['vendor', 'node_modules', 'target'])
+
+export interface FileTreeNode extends TreeItem {
+	key: string
+	type: 'file'
+}
+
+export interface FolderTreeNode extends TreeItem {
+	key: string
+	type: 'folder'
+	slot: 'folder'
+	children?: ComposeTreeNode[]
+}
+
+export type ComposeTreeNode = FileTreeNode | FolderTreeNode
+
+export function isIgnoredComposeDir(filePath: string): boolean {
+	const segments = filePath.split('/').filter(Boolean)
+	return segments.some(segment => IGNORED_DIRS.has(segment.toLowerCase()))
+}
+
 export function isExcludedComposeFileType(filePath: string): boolean {
 	const lower = filePath.toLowerCase()
 	const dot = lower.lastIndexOf('.')
@@ -28,7 +56,7 @@ export function isExcludedComposeFileType(filePath: string): boolean {
 	return EXCLUDED_EXTENSIONS.has(lower.slice(dot + 1))
 }
 
-export function isComposeFilePath(filePath: string): boolean {
+export function isComposeFile(filePath: string): boolean {
 	const lower = filePath.toLowerCase()
 	return (
 		lower === 'compose.yaml' ||
@@ -182,67 +210,81 @@ export function detectBinary(file: File): boolean {
 	return !TEXT_EXTENSIONS.has(ext)
 }
 
-const COMPOSE_ICON = 'i-vscode-icons-file-type-docker2'
-const ENV_ICON = 'i-vscode-icons-file-type-dotenv'
-const IMAGE_ICON = 'i-vscode-icons-file-type-image'
-const BINARY_ICON = 'i-vscode-icons-file-type-binary'
-const FILE_ICON = 'i-vscode-icons-file-type-text'
-
-const EXTENSION_ICONS: Record<string, string> = {
-	json: 'i-vscode-icons-file-type-json',
-	html: 'i-vscode-icons-file-type-html',
-	htm: 'i-vscode-icons-file-type-html',
-	css: 'i-vscode-icons-file-type-css',
-	scss: 'i-vscode-icons-file-type-scss',
-	js: 'i-vscode-icons-file-type-js',
-	mjs: 'i-vscode-icons-file-type-js',
-	cjs: 'i-vscode-icons-file-type-js',
-	jsx: 'i-vscode-icons-file-type-js',
-	ts: 'i-vscode-icons-file-type-typescript',
-	tsx: 'i-vscode-icons-file-type-typescript',
-	vue: 'i-vscode-icons-file-type-vue',
-	php: 'i-vscode-icons-file-type-php',
-	py: 'i-vscode-icons-file-type-python',
-	go: 'i-vscode-icons-file-type-go',
-	rs: 'i-vscode-icons-file-type-rust',
-	sql: 'i-vscode-icons-file-type-sql',
-	sh: 'i-vscode-icons-file-type-shell',
-	bash: 'i-vscode-icons-file-type-shell',
-	zsh: 'i-vscode-icons-file-type-shell',
-	fish: 'i-vscode-icons-file-type-shell',
-	yml: 'i-vscode-icons-file-type-yaml',
-	yaml: 'i-vscode-icons-file-type-yaml',
-	toml: 'i-vscode-icons-file-type-toml',
-	md: 'i-vscode-icons-file-type-markdown',
-	markdown: 'i-vscode-icons-file-type-markdown',
-	log: 'i-vscode-icons-file-type-log',
-	svg: 'i-vscode-icons-file-type-svg',
-	conf: 'i-vscode-icons-file-type-config',
-	config: 'i-vscode-icons-file-type-config',
-	ini: 'i-vscode-icons-file-type-config',
-	txt: 'i-vscode-icons-file-type-text',
-}
-
-function iconForExtension(ext: string): string | undefined {
-	return EXTENSION_ICONS[ext]
+function iconForExtension(ext: string): string {
+	switch (ext) {
+		case 'env':
+			return 'i-vscode-icons-file-type-dotenv'
+		case 'json':
+			return 'i-vscode-icons-file-type-json'
+		case 'html':
+		case 'htm':
+			return 'i-vscode-icons-file-type-html'
+		case 'css':
+			return 'i-vscode-icons-file-type-css'
+		case 'scss':
+			return 'i-vscode-icons-file-type-scss'
+		case 'js':
+		case 'mjs':
+		case 'cjs':
+		case 'jsx':
+			return 'i-vscode-icons-file-type-js'
+		case 'ts':
+		case 'tsx':
+			return 'i-vscode-icons-file-type-typescript'
+		case 'vue':
+			return 'i-vscode-icons-file-type-vue'
+		case 'php':
+			return 'i-vscode-icons-file-type-php'
+		case 'py':
+			return 'i-vscode-icons-file-type-python'
+		case 'go':
+			return 'i-vscode-icons-file-type-go'
+		case 'rs':
+			return 'i-vscode-icons-file-type-rust'
+		case 'sql':
+			return 'i-vscode-icons-file-type-sql'
+		case 'sh':
+		case 'bash':
+		case 'zsh':
+		case 'fish':
+			return 'i-vscode-icons-file-type-shell'
+		case 'yml':
+		case 'yaml':
+			return 'i-vscode-icons-file-type-yaml'
+		case 'toml':
+			return 'i-vscode-icons-file-type-toml'
+		case 'md':
+		case 'markdown':
+			return 'i-vscode-icons-file-type-markdown'
+		case 'log':
+			return 'i-vscode-icons-file-type-log'
+		case 'svg':
+			return 'i-vscode-icons-file-type-svg'
+		case 'conf':
+		case 'config':
+		case 'ini':
+			return 'i-vscode-icons-file-type-config'
+		case 'txt':
+			return 'i-vscode-icons-file-type-text'
+		default:
+			return 'i-vscode-icons-default-file'
+	}
 }
 
 export function pickFileIcon(file: File): string {
-	const relativePath = getUploadRelativePath(file)
-	if (isComposeFilePath(relativePath)) return COMPOSE_ICON
-	if (isEnvFilePath(relativePath)) return ENV_ICON
+	if (isComposeFile(file.name)) return COMPOSE_ICON
+
 	const ext = getExtension(file.name)
 	if (detectBinary(file)) {
 		if (IMAGE_EXTENSIONS.has(ext) || file.type.startsWith('image/')) return IMAGE_ICON
 		return BINARY_ICON
 	}
-	return iconForExtension(ext) ?? FILE_ICON
+	return iconForExtension(ext)
 }
 
 export function getFileIcon(filePath: string, isBinary: boolean, metadata: FileMetadata): string {
-	if (isComposeFilePath(filePath)) return COMPOSE_ICON
+	if (isComposeFile(filePath)) return COMPOSE_ICON
 	if (metadata.icon) return metadata.icon
-	if (isEnvFilePath(filePath)) return ENV_ICON
 	const ext = getExtension(filePath)
 	if (isBinary) {
 		if (IMAGE_EXTENSIONS.has(ext) || metadata.mimeType?.startsWith('image/')) return IMAGE_ICON
