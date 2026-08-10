@@ -17,18 +17,15 @@ const { t } = useI18n()
 const overlay = useOverlay()
 
 async function openCreateDialog(folder: string) {
-	const dialog = overlay.create(CreateFileDialog, {
-		destroyOnClose: true,
-		props: { folder },
-	})
+	const dialog = overlay.create(CreateFileDialog, { destroyOnClose: true })
 
-	let fileName = await dialog.open()
-	let error = props.onCreateFile(fileName)
+	let error = undefined
+	let fileName = await dialog.open({ folder, error })
 
-	while (error !== undefined) {
-		fileName = await dialog.open({ error, folder })
-		error = props.onCreateFile(fileName)
-	}
+	do {
+		error = fileName !== false ? props.onCreateFile(fileName) : undefined
+		fileName = await dialog.open({ folder, error })
+	} while (fileName !== false && error !== undefined)
 }
 </script>
 
