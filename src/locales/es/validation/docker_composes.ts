@@ -19,6 +19,7 @@ export default {
 	compose_content: {
 		required: 'Debes introducir el contenido YAML.',
 	},
+	compose_required: 'Debes crear un archivo compose.yaml principal.',
 	files: {
 		required: 'Debe haber al menos un archivo (compose.yaml).',
 		file_path_required: 'Debes introducir la ruta del archivo.',

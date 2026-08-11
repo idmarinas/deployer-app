@@ -52,6 +52,7 @@ export default {
 		last_check: 'Última comprobación',
 		yes: 'Sí',
 		no: 'No',
+		deprecated: 'Obsoleto',
 	},
 
 	back: {
