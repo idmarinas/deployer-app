@@ -59,10 +59,7 @@ export function isExcludedComposeFileType(filePath: string): boolean {
 export function isComposeFile(filePath: string): boolean {
 	const name = filePath.split('/').filter(Boolean).pop()?.toLowerCase() ?? ''
 	return (
-		name === 'compose.yaml' ||
-		name === 'compose.yml' ||
-		name === 'docker-compose.yaml' ||
-		name === 'docker-compose.yml'
+		name === 'compose.yaml' || name === 'compose.yml' || name === 'docker-compose.yaml' || name === 'docker-compose.yml'
 	)
 }
 
@@ -274,20 +271,41 @@ function iconForExtension(ext: string): string {
 			return 'i-vscode-icons-file-type-config'
 		case 'txt':
 			return 'i-vscode-icons-file-type-text'
+		case 'sqlite':
+			return 'i-vscode-icons-file-type-sqlite'
 		default:
 			return 'i-vscode-icons-default-file'
 	}
 }
 
-export function pickFileIcon(file: File): string {
-	if (isComposeFile(file.name)) return COMPOSE_ICON
+function iconForName(name: string): string | undefined {
+	const icons: Record<string, string> = {
+		'composer.json': 'i-vscode-icons-file-type-composer',
+		'compose.yaml': 'i-vscode-icons-file-type-docker2',
+		'compose.yml': 'i-vscode-icons-file-type-docker2',
+		'docker-compose.yaml': 'i-vscode-icons-file-type-docker2',
+		'docker-compose.yml': 'i-vscode-icons-file-type-docker2',
+		'.editorconfig': 'i-vscode-icons-file-type-editorconfig',
+		'package.json': 'i-vscode-icons-file-type-npm',
+		'bun.lock': 'i-vscode-icons-file-type-bun',
+		'agents.md': 'i-vscode-icons-file-type-agents',
+		'.gitignore': 'i-vscode-icons-file-type-git',
+		'.gitkeep': 'i-vscode-icons-file-type-git',
+	}
 
+	return icons[name] ?? undefined
+}
+
+export function pickFileIcon(file: File): string {
 	const ext = getExtension(file.name)
 	if (detectBinary(file)) {
 		if (IMAGE_EXTENSIONS.has(ext) || file.type.startsWith('image/')) return IMAGE_ICON
 		return BINARY_ICON
 	}
-	return iconForExtension(ext)
+
+	const icon = iconForName(file.name)
+
+	return icon ?? iconForExtension(ext)
 }
 
 export function getFileIcon(filePath: string, isBinary: boolean, metadata: FileMetadata): string {
@@ -295,7 +313,7 @@ export function getFileIcon(filePath: string, isBinary: boolean, metadata: FileM
 	if (metadata.icon) return metadata.icon
 	const ext = getExtension(filePath)
 	if (isBinary) {
-		if (IMAGE_EXTENSIONS.has(ext) || metadata.mimeType?.startsWith('image/')) return IMAGE_ICON
+		if (metadata.mimeType?.startsWith('image/') || IMAGE_EXTENSIONS.has(ext)) return IMAGE_ICON
 		return BINARY_ICON
 	}
 	return iconForExtension(ext) ?? FILE_ICON
