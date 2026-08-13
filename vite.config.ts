@@ -80,6 +80,7 @@ export default defineConfig(async () => ({
 				modal: theme.modal,
 				navigationMenu: theme.navigationMenu,
 				progress: theme.progress,
+				radioGroup: theme.radioGroup,
 				select: theme.select,
 				separator: theme.separator,
 				switch: theme.switchTheme,
@@ -176,7 +177,7 @@ export default defineConfig(async () => ({
 			: undefined,
 		watch: {
 			// 3. tell Vite to ignore watching `src-tauri`
-			ignored: ['**/src-tauri/**', '*.sqlite', '*.sqlite-*'],
+			ignored: ['**/src-tauri/**', '*.sqlite', '*.sqlite-*', '**/*.md'],
 		},
 	},
 }))
