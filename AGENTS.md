@@ -3,7 +3,7 @@
 ## Stack (verificado)
 
 | Capa | Tecnología |
-|------|-----------|
+| ------ | ----------- |
 | Frontend | Vue 3 + TS + Nuxt UI v4 (librería, no meta-framework) |
 | Enrutamiento | `src/pages/` → unplugin-vue-router (genera `src/route-map.d.ts`) |
 | Estilos | Tailwind CSS v4 |
@@ -35,7 +35,7 @@
 ## Lecturas Drizzle vs comandos Rust
 
 | Situación | Solución |
-|---|---|
+| --- | --- |
 | SELECT, sin cifrados | Drizzle (`src/lib/db.ts`) |
 | SELECT con cifrados a descifrar | Comando Rust (usa `open_crypto_context`) |
 | INSERT/UPDATE/DELETE | Comando Rust CRUD |
