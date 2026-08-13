@@ -63,6 +63,7 @@ No hay scripts de lint ni test en `package.json`.
 - **i18n:** backend devuelve claves i18n (nunca strings en español). Mensajes en `src/locales/es/`. Tipos autogenerados vía `bun run i18n:types`.
 - **Drag & drop (Tauri):** Sortable.js requiere `forceFallback: true` (HTML5 nativo no funciona en webviews). Contenedores condicionales requieren `watchElement: true`.
 - **Vite ignora `src-tauri/`** en el watch (configurado en `vite.config.ts`). Los cambios en Rust requieren rebuild explícito de Tauri.
+- **Formularios JSON-Schema:** sistema basado en `json-schema-library` (jsl) en `src/utils/schema-form/*` + `src/components/form/schema/*` + `useSchemaForm`. Núcleo **agnóstico** (solo `ComposeEditor.vue` importa Compose). Detalles en `AGENTS.frontend.md` §8.
 
 ## Guías detalladas
 

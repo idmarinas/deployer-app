@@ -496,3 +496,39 @@ Además, **siempre** pasar `watchElement: true` en las opciones cuando el conten
 ## 7. Loading Screen
 
 La pantalla de carga se gestiona en `index.html`. Cuando Vue monta la aplicación, elimina el elemento splash — no hay un componente `Splashscreen` separado.
+
+---
+
+## 8. Formularios JSON-Schema (basado en `json-schema-library`)
+
+Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema (p.ej. `compose.yaml` vía `ComposeEditor.vue`, `composer.json`). El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa `compose-spec.json` ni `composer-schema.json`. Solo `ComposeEditor.vue` es consumidor Compose (importa `src/schemas/compose-spec.json` y lo compila con `compileRoot`).
+
+### Utilidades (`src/utils/schema-form/*`)
+
+- `jsl.ts`:
+  - `compileRoot(schema)` → `{ root: SchemaNode, draft: string }`. La versión de draft se detecta sola (`draft-04`/`2020-12`, etc.).
+  - `classifyNode(node)` → `{ kind, nullable, isUnion, isMap, variants? }`. Kinds: `string | number | integer | boolean | null | enum | array | object | map | union | any`. Semántica de `type` como array: `['<tipo>','null']` → tipo nullable; varios tipos sin `null` → union; varios con `null` → union + nullable; `'null'` solo → campo null.
+  - `resolveNode(node)` → aplica `$ref` (`node.resolveRef()`) y fusiona `allOf` (`mergeNode`). **En jsl el `$ref` a nivel superior NO se resuelve solo**: hay que llamarlo (p.ej. `include.items`, `services` → service).
+  - `activeVariantIndex(node, data, path)` → índice de la variante activa de un oneOf/anyOf (reduce el nodo con `getNode('#', valor)` → `oneOfIndex`; fallback por tipo JS).
+  - `preferredVariant(node)`, `variantDefault(node)` (vía `getData()`), `variantLabel(node)`.
+- `paths.ts` → `getAt`/`setAt`/`deleteAt` por ruta de formulario `a.b[0]` y conversión `pathToPointer`/`pointerToPath`.
+- `validate.ts` → `validateWithJsl(root, data, resolveMessage?)` → `{ ok, errors: Record<ruta, string[]> }`. Cada error mapea el JSON pointer → ruta de formulario y el código de jsl → clave i18n `form.schema_form.errors.<código>` (ver tabla en `validate.ts`). El resolver por defecto usa `useI18n()`; sin resolver se devuelve la clave.
+
+### Composable y componentes
+
+- `useSchemaForm(schema, options)` → `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt(pointer), resolveTitle, resolveDescription }`. Los defaults iniciales salen de `root.getData()`.
+- `src/components/form/schema/*`:
+  - `SchemaField.vue` — clasifica con `classifyNode` y despacha al componente adecuado; cualquier tipo nullable se rodea con `SchemaFieldNull`.
+  - `SchemaFieldNull.vue` — `USwitch` para activar/desactivar el valor `null` (activar → `set(path, null)`; desactivar → `remove(path)`).
+  - `SchemaFieldUnion.vue` — `USelect` de variantes (`oneOf`/`anyOf`/type-array) + editor de la variante activa. **oneOf es exclusivo**: solo se edita el formato elegido.
+  - `SchemaFieldArray.vue` — lista de items; si los items resueltos (`classifyNode(resolveNode(items))`) son una unión (`items.oneOf`, `$ref`→unión o `type` array) → `USelect` de formato del array (**array uniforme: solo UN formato**, todos los items con la misma variante, no se mezclan); default del item vía `variantDefault`.
+  - `SchemaFieldMap.vue` — entradas con clave editable; el nodo de valor es `patternProperties[0]` → `additionalProperties` → `any`.
+  - `SchemaFieldAny.vue` — textarea JSON.
+  - `context.ts` — `useSchemaFormContext()`/`provideSchemaFormContext()` para pasar el formulario a la profundidad.
+
+### Gotchas del sistema
+
+- **Defaults de `getData()`:** solo se incluyen propiedades `required` (con su `default` o el default del tipo: `0`, `""`, `false`…). Las propiedades opcionales con `default` **no** entran (así lo hace jsl).
+- **i18n:** los mensajes de validación son claves `form.schema_form.errors.*` (nunca strings en español). Labels de variantes/títulos: `form.schema_form.*` y `form.compose_schema.*` (vía `resolveTitle`/`resolveDescription`).
+- **No reinventar:** si un caso no se renderiza, resolver/compilar con las utilidades de `jsl.ts` antes de escribir un parser manual de `$ref`/`allOf`.
+- **Testing:** `tests/{jsl,validate,schema-form,render}.test.ts` cubren clasificación, validación, defaults y render sobre `compose-spec`/`composer-schema`.
