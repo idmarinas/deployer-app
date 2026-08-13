@@ -88,5 +88,40 @@ export default {
 				item: 'hover:border-(--ui-border-accented)',
 			},
 		},
+		{
+			size: 'xs',
+			variant: ['card', 'table'],
+			class: {
+				item: 'px-2.5 py-2',
+			},
+		},
+		{
+			size: 'sm',
+			variant: ['card', 'table'],
+			class: {
+				item: 'px-3 py-2.5',
+			},
+		},
+		{
+			size: 'md',
+			variant: ['card', 'table'],
+			class: {
+				item: 'px-3.5 py-3',
+			},
+		},
+		{
+			size: 'lg',
+			variant: ['card', 'table'],
+			class: {
+				item: 'px-4 py-3.5',
+			},
+		},
+		{
+			size: 'xl',
+			variant: ['card', 'table'],
+			class: {
+				item: 'px-4.5 py-4',
+			},
+		},
 	],
 }
