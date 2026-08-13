@@ -19,7 +19,7 @@
 	"dependencies": {
 		"@iconify-json/cib": "^1.2.3",
 		"@iconify-json/tabler": "^1.2.38",
-		"@iconify-json/vscode-icons": "^1.2.71",
+		"@iconify-json/vscode-icons": "^1.2.72",
 		"@nuxt/ui": "^4.10.0",
 		"@pinia/colada": "^1.4.2",
 		"@tauri-apps/api": "^2.11.1",
@@ -29,6 +29,8 @@
 		"@tauri-apps/plugin-store": "~2.4.4",
 		"@tauri-apps/plugin-window-state": "~2.4.1",
 		"drizzle-orm": "^0.45.2",
+		"json-schema-library": "^11.6.2",
+		"lodash.snakecase": "^4.1.1",
 		"slugify": "^1.6.9",
 		"sortablejs": "^1.15.7",
 		"vue": "^3.5.41",
@@ -40,6 +42,7 @@
 	"devDependencies": {
 		"@libsql/client": "^0.17.4",
 		"@tauri-apps/cli": "^2.11.4",
+		"@types/lodash.snakecase": "^4.1.9",
 		"@types/node": "^26.2.0",
 		"@types/sortablejs": "^1.15.9",
 		"@vitejs/plugin-vue": "^6.0.8",
