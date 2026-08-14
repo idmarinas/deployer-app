@@ -2,6 +2,38 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (14 ago 2026 - componentes de archivos (TreeFiles) agnósticos y reutilizables)
+
+**Nota del usuario**: _El componente ComposeTreeFilesUpload junto con DockerComposeTreeFilePicker ¿se pueden hacer agnosticos? más reutilizable, para otras partes. Donde se necesiten guardar y editar archivos. La estructura base de la tabla (y lo que el TreeFilePicker maneja) sean iguales para todos._ Plan y detalle en `AGENTS.tree-files-agnostico.PLAN.md`.
+
+1. **Migración SQL** (`0001_initial_schema.up.sql`, en sitio, sin bump de versión): `deployer_docker_compose_files` con `module_id` (FK del compose, CASCADE) en vez de `docker_compose_id`+`metadata`; columnas base nuevas `name`, `mime_type`, `size`, `last_modified`, `webkit_relative_path`, `icon`; índices `idx_module_id`, `idx_file_path`, `idx_name`. `down.sql` sin cambios (solo `DROP TABLE`). `bun run dev:db:generate` regenera `src/lib/schema.ts`/`relations.ts`.
+2. **Backend Rust** (`commands/docker/compose/`): `files_types.rs` con `DockerComposeFile`/`ComposeFileInput`/`SyncDockerComposeFilesInput` (usa `module_id` + columnas nuevas; eliminados los inputs legacy); `files_commands.rs` reducido a `sync_docker_compose_files` (INSERT/UPDATE/DELETE/SELECT por `module_id`); `mod.rs` y `lib.rs` sin comandos muertos; `operations.rs` con `load_compose_files` por `module_id`. **Nota**: los bindings de `src/types/tauri-types.d.ts` se regeneran con `cargo test export_bindings` (ts-rs v12 genera tests via proc-macro; `cargo check`/`build` NO los regeneran).
+3. **`src/lib/files.ts`** (nueva, agnóstica): `ManagedFile`, `TreeFilesConfig`, tipos de nodo (`ManagedTreeNode`), `getUploadRelativePath`, `detectBinary`, `isBinaryMimeType`, `getFileIcon`, `isImageEntry`/`getImageMimeType`, `buildManagedFile`, `byteSize`, `buildTree`, `collectFolderKeys`. **Defaults globales del picker** (no exclusivos de compose): `MAX_FILE_SIZE` (256 KB), `EXCLUDED_EXTENSIONS` y `IGNORED_DIRS`; `TreeFilePicker` los usa cuando `config` no los define. **`src/lib/docker-compose/files.ts`** reducida a lo específico de compose (`isComposeFile`, `isMainComposeFile`, `isSecondaryComposeFile`, `isEnvFilePath`).
+4. **Componentes genéricos**:
+   - `src/components/form/files/TreeFilePicker.vue` (← `DockerComposeTreeFilePicker.vue`): props `existingPaths`, `config?: TreeFilesConfig`; emite `files-selected: ManagedFile[]`; review dialog genérico.
+   - `src/components/form/files/TreeFiles.vue` (← `ComposeTreeFilesUpload.vue`): props `class?`, `modelValue: ManagedFile[]`, `config?`, `canUpload?`, `canEdit?`, `canCreateFile?`, `isProtectedFile?`, `onBeforeCreate?`; slots `#actions`, `#tree-badges`, `#badges`/`#editor` (selección). Editar texto recalcula `size` (bytes). Crear archivo desde carpeta con ruta correcta (folder + nombre), fix del bug de `createFolder` inerte.
+   - `src/components/form/files/FileContentEditor.vue` (nuevo): editor genérico imagen / alerta binario / textarea.
+   - `src/components/view/TreeFilesViewer.vue` genérica: props `items`, `onCreateFile(fileName, folder)`, `canCreateFile?`; slots `#actions`, `#badges`; vacío `form.files.empty`.
+   - `src/components/overlay/forms/ReviewFilesDialog.vue` (← `ReviewComposeFilesDialog.vue`): sin acción `'compose'`, `ignoredDirs?` por prop.
+   - `useDialog.ts`: `useReviewFilesDialog` (opciones `items`/`existingPaths`/`ignoredDirs?`).
+   - `CreateFileDialog.vue` con i18n genérica `form.files.*`.
+5. **Wrapper compose** `src/components/form/inputs/docker-compose/ComposeTreeFilesUpload.vue` (wrapper fino sobre `TreeFiles`): `#actions` (crear compose.yaml), `#tree-badges`/`#badges` (principal/secundario/compose_label/imagen/binario/.env), `#editor` (`FileEditComposeEditor`/`FileEditEnvEditor`/`FileContentEditor`), alerta `compose_missing` gated por `canCreateFile`, `isProtectedFile = isMainComposeFile`, `onBeforeCreate` bloquea crear compose.yaml por el diálogo. `DockerComposeForm.vue` con `files: ManagedFile[]`. Eliminado `DockerComposeTreeFilePicker.vue`.
+6. **Páginas**: `add.vue`/`edit.vue` construyen `ComposeFileInput[]` con las columnas nuevas y llaman `sync_docker_compose_files` con `module_id`; `(view).vue` usa el wrapper en modo solo ver (`can-upload`/`can-edit`/`can-create-file` a `false`), eliminando el render manual con `parseFileMetadata`/`getFileIcon(metadata)`. Loaders `docker_composes.ts` con SELECT de `module_id` + columnas nuevas.
+7. **i18n**: `src/locales/es/form/files.ts` nueva (sección genérica `form.files.*`); `form/docker_composes.ts` reducida a lo específico; `overlays.ts` sin `action_compose`. `bun run i18n:types` regenera `typed-locale.d.ts`.
+
+**Archivos modificados:**
+- `src-tauri/migrations/0001_initial_schema.up.sql`, `src-tauri/src/commands/docker/compose/{files_types,files_commands,mod}.rs`, `src-tauri/src/lib.rs`, `src-tauri/src/commands/docker/compose/operations.rs`
+- `src/lib/files.ts` (nuevo), `src/lib/docker-compose/files.ts`
+- `src/components/form/files/{TreeFilePicker,TreeFiles,FileContentEditor}.vue` (nuevos), `src/components/view/TreeFilesViewer.vue`, `src/components/overlay/forms/{ReviewFilesDialog.vue nuevo, CreateFileDialog.vue}`, `src/composables/useDialog.ts`
+- `src/components/form/inputs/docker-compose/ComposeTreeFilesUpload.vue` (reescrito), `src/components/form/DockerComposeForm.vue`; eliminado `src/components/form/inputs/docker-compose/DockerComposeTreeFilePicker.vue`
+- `src/loaders/docker_composes.ts`, `src/pages/dashboard/docker_composes/{add.vue,[id]/edit.vue,[id]/(view).vue}`
+- `src/locales/es/form/files.ts` (nuevo), `src/locales/es/form/docker_composes.ts`, `src/locales/es/overlays.ts`
+- `AGENTS.tree-files-agnostico.PLAN.md` (→ plans.done), `AGENTS.todo.md`
+
+**Resultado:** `bun run i18n:types` OK, `bunx vue-tsc --noEmit` limpio, `bun run build` verde, `components.d.ts` regenerado (sin referencias a componentes eliminados), `cargo test export_bindings` regeneró `tauri-types.d.ts`.
+
+---
+
 ## Tareas completadas (13 ago 2026 - separar componentes del editor antiguo de compose: extensión `.back`)
 
 **Nota del usuario**: _Hay que separar los componentes del antiguo editor del compose del nuevo; a los componentes del antiguo editor (y que no se usen) agregarles la extensión `.back`._ Plan y detalle en `AGENTS.compose-old-editor-back.PLAN.md`.
