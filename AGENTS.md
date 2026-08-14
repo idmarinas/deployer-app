@@ -31,7 +31,7 @@
 - **`src/constants/dbTables.ts`** está obsoleto (`.unused`). No importarlo.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
 - **Antes de crear comando `crud_get_*`/`crud_list_*`:** si la tabla no tiene campos cifrados, usar Drizzle.
-- **Migraciones SQL:** solo se genera una nueva migración si se cambia de versión (`src-tauri/tauri.conf.json`). Cada archivo de `src-tauri/migrations/` lleva en su cabecera el marcador `-- Version: X.Y.Z` (versión en la que se añadió). Para saber si hace falta una migración nueva, no hace falta leer los archivos: buscar con `rg "Version:" src-tauri/migrations/`.
+- **Migraciones SQL:** solo se genera una **nueva migración** si se cambia de versión (`src-tauri/tauri.conf.json`). Mientras la versión no cambie, los cambios de esquema se editan **en sitio** en la migración de la versión actual (p. ej. en `0.1.0`, editar `0001_initial_schema.up.sql`/`.down.sql`). Cada archivo de `src-tauri/migrations/` lleva en su cabecera el marcador `-- Version: X.Y.Z` (versión en la que se añadió). Para saber cuál es la migración en curso, no hace falta leer los archivos: buscar con `rg "Version:" src-tauri/migrations/`.
 
 ## Lecturas Drizzle vs comandos Rust
 

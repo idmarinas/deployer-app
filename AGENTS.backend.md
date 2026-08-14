@@ -120,20 +120,13 @@ El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en regi
 
 ### Nombres de tablas
 
-Todas las tablas llevan el prefijo `deployer_`. No hay un archivo centralizado de constants — el nombre de tabla se define en la migración y en el atributo `#[db_table("...")]` del struct.
+Todas las tablas llevan el prefijo `deployer_`. No hay un archivo centralizado de constants — el nombre de tabla se define en el esquema SQL (`src-tauri/migrations/`) y en el atributo `#[db_table("...")]` del struct.
 
 ### Patrón: escritura batch (varios upserts en una transacción)
 
 Para tablas tipo clave-valor (ej. `deployer_settings`), además del comando singular (`set_deployer_setting`, un solo `key`/`value`) existe un comando plural (`set_deployer_settings`) que acepta un `HashMap<String, String>` con 1 o varios pares y los aplica con `pool.begin()` / `tx.commit()` en una única transacción. Si algún upsert falla, se hace `tx.rollback()` y se devuelve error sin dejar cambios parciales.
 
 El frontend solo debe llamar al comando plural (incluso para guardar un único ajuste, pasando un objeto de una clave); evita múltiples invocaciones IPC sueltas cuando hay que guardar varios valores a la vez (p. ej. un formulario completo de configuración). Mismo patrón a reutilizar si aparece otra tabla clave-valor o de ajustes en bloque.
-
-### Migraciones
-
-- Archivo: `src-tauri/migrations/0001_initial_schema.up.sql`
-- Mientras la app esté en versión `0.1.0`, se usa un único archivo de migración inicial.
-- A partir de `0.2.0`, usar archivos numerados adicionales.
-- Tras cualquier migración nueva, regenerar `drizzle/schema.ts` siguiendo `drizzle/README.md` (aplicar la migración sobre `drizzle/dev.sqlite` y ejecutar `dev:db:generate`).
 
 ### Tablas actuales y campos destacados
 
@@ -185,9 +178,9 @@ El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera aut
 
 ### CRÍTICO: sin `#[db_rename]`, el nombre de columna SIEMPRE es el nombre del campo Rust
 
-`from_row()`, `to_fields()`, `to_fields_all()` y `from_fields()` generados por el macro usan **literalmente el identificador del campo Rust** como nombre de columna SQL (vía `field.try_get("nombre_campo")` y como clave en el `INSERT`/`UPDATE` dinámico de `db::insert`/`db::update_fields`). Si el nombre de campo Rust no coincide exactamente con el nombre de columna real de la migración, falla en **create, update Y read** (no solo en el punto donde se notó el error) porque todas esas operaciones pasan por el mismo `DbEntity`.
+`from_row()`, `to_fields()`, `to_fields_all()` y `from_fields()` generados por el macro usan **literalmente el identificador del campo Rust** como nombre de columna SQL (vía `field.try_get("nombre_campo")` y como clave en el `INSERT`/`UPDATE` dinámico de `db::insert`/`db::update_fields`). Si el nombre de campo Rust no coincide exactamente con el nombre de columna real del esquema SQL, falla en **create, update Y read** (no solo en el punto donde se notó el error) porque todas esas operaciones pasan por el mismo `DbEntity`.
 
-Caso real (sesión de julio 2026): `Task.task_type` tenía `#[serde(rename = "type")]` (para que el JSON/TypeScript expusiera el campo como `type`), pero **eso es solo un rename de serialización**, no de columna DB — son mecanismos completamente independientes. El macro siguía generando `row.try_get("task_type")` y `INSERT INTO tasks (task_type, ...)`, mientras la columna real (migración) se llama `type`. Síntoma: crear una task fallaba con "no such column: task_type". Fix: añadir soporte a `#[db_rename("columna")]` en el macro y aplicarlo en el campo (`#[db_rename("type")] pub task_type: TaskType`), **además** de corregir a mano cualquier lugar que construya `Vec<(String, Value)>` manualmente para un `UPDATE` parcial (ej. `crud_update_task.rs` tenía `"task_type".to_string()` hardcodeado en vez de `"type".to_string()` — el macro no puede arreglar ese código manual, hay que revisarlo caso a caso).
+Caso real (sesión de julio 2026): `Task.task_type` tenía `#[serde(rename = "type")]` (para que el JSON/TypeScript expusiera el campo como `type`), pero **eso es solo un rename de serialización**, no de columna DB — son mecanismos completamente independientes. El macro siguía generando `row.try_get("task_type")` y `INSERT INTO tasks (task_type, ...)`, mientras la columna real (esquema SQL) se llama `type`. Síntoma: crear una task fallaba con "no such column: task_type". Fix: añadir soporte a `#[db_rename("columna")]` en el macro y aplicarlo en el campo (`#[db_rename("type")] pub task_type: TaskType`), **además** de corregir a mano cualquier lugar que construya `Vec<(String, Value)>` manualmente para un `UPDATE` parcial (ej. `crud_update_task.rs` tenía `"task_type".to_string()` hardcodeado en vez de `"type".to_string()` — el macro no puede arreglar ese código manual, hay que revisarlo caso a caso).
 
 **Regla al añadir un campo cuyo nombre Rust deseado choca con una palabra reservada, o simplemente quieres que difiera del nombre de columna:** usar siempre `#[db_rename("columna_real")]` junto al campo, y grep del nombre de columna literal (`"columna_real".to_string()`) en cualquier comando `crud_update_*` que construya el `Vec<(String, Value)>` a mano en vez de vía `to_fields()`.
 
@@ -289,7 +282,7 @@ match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
 
 `db::update_fields` (en `db/crud.rs`) construye un `UPDATE ... SET` únicamente con las columnas presentes en `fields` (principio de "dirty tracking", igual que Doctrine/Drizzle: solo se tocan las columnas indicadas explícitamente), aplica cifrado igual que `db::update`, y devuelve `Ok(false)` si no existe ninguna fila con ese `id` (en vez de error). **Nunca incluye `updated_at`** en el `SET`: esa columna se actualiza sola vía trigger SQL (ver §3.2), así que `update_fields` sirve igual para tablas con o sin esa columna.
 
-### Estado de la migración
+### Estado de la refactorización a `Patch<T>`
 
 - ✅ Migradas a `Patch<T>` + `db::update_fields`: `projects`, `hosts`, `passkeys`, `global_variables`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`, `project_hosts`, `deployments`, `deployment_executions`, `deployment_rollbacks`.
 - `task_dependencies` **sí existe** como entidad (CRUD completo implementado en `commands/tasks/dependencies/`), pero no usa `Patch<T>`: su único campo editable (`dependency_type`) es `NOT NULL`, así que `UpdateTaskDependencyInput` usa `DependencyType` directo (sin `Option`/`Patch`).
@@ -299,7 +292,7 @@ match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
 
 ## 3.2 `updated_at` automático vía trigger SQL
 
-Las 4 tablas con columna `updated_at` (`deployer_settings`, `deployer_passkeys`, `deployer_hosts`, `deployer_docker_composes`) tienen un trigger `AFTER UPDATE` en la migración (`0001_initial_schema.up.sql`):
+Las 4 tablas con columna `updated_at` (`deployer_settings`, `deployer_passkeys`, `deployer_hosts`, `deployer_docker_composes`) tienen un trigger `AFTER UPDATE` definido en `src-tauri/migrations/0001_initial_schema.up.sql`:
 
 ```sql
 CREATE TRIGGER deployer_hosts_trg_set_updated_at
@@ -315,7 +308,7 @@ La condición `WHEN NEW.updated_at = OLD.updated_at` evita la recursión infinit
 
 Gracias a esto, **el código Rust nunca toca `updated_at`** en ningún `UPDATE`: ni `db::update_fields` lo añade, ni hace falta una variante separada para las tablas sin esa columna (`deployer_docker_hub_search_cache`, `deployer_docker_hub_tags_cache` simplemente no tienen trigger y `update_fields` funciona igual para ellas).
 
-Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspondiente en la migración (y el `DROP TRIGGER` en el `.down.sql`).
+Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspondiente junto a su `CREATE TABLE` (y el `DROP TRIGGER` en el `.down.sql`).
 
 ---
 
