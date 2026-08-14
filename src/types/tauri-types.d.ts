@@ -10,15 +10,13 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
-export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, metadata?: string | null, };
+export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, name: string, mime_type?: string | null, size?: number | null, last_modified?: number | null, webkit_relative_path?: string | null, icon?: string | null, };
 
 export type CreateDeploymentExecutionInput = { deployment_id: number, host_id: number, task_id: number, retry_attempt: number | null, };
 
 export type CreateDeploymentInput = { project_id: number, version: string, tag: string, build: number, triggered_by: string | null, notes: string | null, };
 
 export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back_to_deployment_id: number, reason: string | null, triggered_by: string | null, };
-
-export type CreateDockerComposeFileInput = { docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean | null, metadata: string | null, };
 
 export type CreateDockerComposeInput = { name: string, description: string | null, host_id: number | null, remote_path: string | null, enabled: boolean | null, };
 
@@ -46,8 +44,6 @@ export type DataType = "string" | "integer" | "boolean" | "json";
 
 export type DatabaseInfo = { path: string, file_size_bytes: number, table_count: number, tables: Array<TableInfo>, other_tables: OtherTablesInfo | null, page_count: number, page_size: number, };
 
-export type DeleteDockerComposeFileInput = { id: number, };
-
 export type DependencyType = "success" | "failure" | "always";
 
 /**
@@ -65,7 +61,7 @@ export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
-export type DockerComposeFile = { id: number, docker_compose_id: number, file_path: string, content: string | null, is_binary: boolean, metadata: string | null, created_at: string, updated_at: string, };
+export type DockerComposeFile = { id: number, module_id: number, file_path: string, content: string | null, is_binary: boolean, name: string, mime_type: string | null, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string | null, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
@@ -444,7 +440,7 @@ export type RunDeploymentInput = { deployment_id: number,
  */
 ssh_reconnect_attempts: number | null, };
 
-export type SyncDockerComposeFilesInput = { docker_compose_id: number, files: Array<ComposeFileInput>, };
+export type SyncDockerComposeFilesInput = { module_id: number, files: Array<ComposeFileInput>, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
 
@@ -477,8 +473,6 @@ export type UpdateDeploymentInput = { status?: DeploymentStatus, started_at?: st
 
 export type UpdateDeploymentRollbackInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, };
 
-export type UpdateDockerComposeFileInput = { id: number, file_path?: string, content?: string | null | null, is_binary?: boolean, metadata?: string | null | null, };
-
 export type UpdateDockerComposeInput = { name?: string, description?: string | null, host_id?: number, remote_path?: string, enabled?: boolean, };
 
 export type UpdateFrameworkConfigInput = { value?: string, is_secret?: boolean, data_type?: DataType, description?: string | null, };
@@ -508,5 +502,3 @@ export type UpdateProjectVariableInput = { name?: string, slug?: string, value?:
 export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
 
 export type UpdateTaskInput = { name?: string, description?: string | null, task_type?: TaskType, command?: string | null, timeout?: number, retry_count?: number, retry_delay?: number, enabled?: boolean, is_global?: boolean, };
-
-export type UploadComposeFilesInput = { docker_compose_id: number, file_paths: Array<string>, };

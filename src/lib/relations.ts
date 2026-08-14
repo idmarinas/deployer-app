@@ -24,7 +24,7 @@ export const deployer_docker_composesRelations = relations(deployer_docker_compo
 
 export const deployer_docker_compose_filesRelations = relations(deployer_docker_compose_files, ({one}) => ({
 	deployer_docker_compose: one(deployer_docker_composes, {
-		fields: [deployer_docker_compose_files.docker_compose_id],
+		fields: [deployer_docker_compose_files.module_id],
 		references: [deployer_docker_composes.id]
 	}),
 }));
