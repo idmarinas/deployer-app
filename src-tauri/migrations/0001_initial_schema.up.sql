@@ -82,18 +82,24 @@ CREATE INDEX deployer_docker_composes_idx_enabled ON deployer_docker_composes (e
 -- ============================================================================
 
 CREATE TABLE deployer_docker_compose_files (
-    id INTEGER CONSTRAINT deployer_docker_compose_files_pk PRIMARY KEY AUTOINCREMENT,
-    docker_compose_id INTEGER NOT NULL CONSTRAINT deployer_docker_compose_files_fk_compose_id REFERENCES deployer_docker_composes (id) ON DELETE CASCADE,
-    file_path TEXT NOT NULL,
-    content TEXT,
-    is_binary BOOLEAN NOT NULL DEFAULT 0,
-    metadata TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id                   INTEGER CONSTRAINT deployer_docker_compose_files_pk PRIMARY KEY AUTOINCREMENT,
+    module_id            INTEGER NOT NULL CONSTRAINT deployer_docker_compose_files_fk_module_id REFERENCES deployer_docker_composes (id) ON DELETE CASCADE,
+    file_path            TEXT NOT NULL,
+    content              TEXT,
+    is_binary            BOOLEAN NOT NULL DEFAULT 0,
+    name                 TEXT NOT NULL,
+    mime_type            TEXT,
+    size                 INTEGER,
+    last_modified        INTEGER,
+    webkit_relative_path TEXT,
+    icon                 TEXT,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX deployer_docker_compose_files_idx_compose_id ON deployer_docker_compose_files (docker_compose_id);
+CREATE INDEX deployer_docker_compose_files_idx_module_id ON deployer_docker_compose_files (module_id);
 CREATE INDEX deployer_docker_compose_files_idx_file_path ON deployer_docker_compose_files (file_path);
+CREATE INDEX deployer_docker_compose_files_idx_name ON deployer_docker_compose_files (name);
 
 -- ============================================================================
 -- TRIGGERS: actualización automática de `updated_at`
