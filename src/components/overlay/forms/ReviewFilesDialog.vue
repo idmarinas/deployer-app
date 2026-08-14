@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { IGNORED_DIRS } from '@/lib/docker-compose/files'
 import type { TreeItem } from '@nuxt/ui'
 
 import { computed, ref, watch } from 'vue'
@@ -7,17 +6,17 @@ import { useI18n } from 'vue-i18n'
 
 import { formatBytes } from '@/utils/format'
 
-export interface ReviewComposeFileItem {
+export interface ReviewFileItem {
 	path: string
 	size: number
 	icon?: string
-	isCompose: boolean
 	reason: 'size' | 'type' | null
 }
 
 const props = defineProps<{
-	items: ReviewComposeFileItem[]
+	items: ReviewFileItem[]
 	existingPaths: string[]
+	ignoredDirs?: string[]
 }>()
 
 const emits = defineEmits<{
@@ -26,7 +25,7 @@ const emits = defineEmits<{
 
 const { t } = useI18n()
 
-type ReviewAction = 'add' | 'replace' | 'compose' | 'reject_size' | 'reject_type'
+type ReviewAction = 'add' | 'replace' | 'reject_size' | 'reject_type'
 
 interface FileTreeNode extends TreeItem {
 	key: string
@@ -90,10 +89,9 @@ const treeItems = computed<ReviewTreeNode[]>(() => {
 		return node
 	}
 
-	function actionFor(item: ReviewComposeFileItem): ReviewAction {
+	function actionFor(item: ReviewFileItem): ReviewAction {
 		if (item.reason === 'type') return 'reject_type'
 		if (item.reason === 'size') return 'reject_size'
-		if (item.isCompose) return 'compose'
 		if (props.existingPaths.includes(item.path)) return 'replace'
 		return 'add'
 	}
@@ -131,11 +129,7 @@ const treeItems = computed<ReviewTreeNode[]>(() => {
 	return root
 })
 
-const ignoredDirsLabel = computed(() =>
-	Array.from(IGNORED_DIRS)
-		.map(d => `**/${d}/**`)
-		.join(', '),
-)
+const ignoredDirsLabel = computed(() => (props.ignoredDirs ?? []).map(d => `**/${d}/**`).join(', '))
 
 const folderKeys = computed(() => {
 	const keys: string[] = []
@@ -181,8 +175,6 @@ function actionLabel(action: ReviewAction): string {
 			return t('overlays.dialog.files_review.action_add')
 		case 'replace':
 			return t('overlays.dialog.files_review.action_replace')
-		case 'compose':
-			return t('overlays.dialog.files_review.action_compose')
 		case 'reject_size':
 			return t('overlays.dialog.files_review.action_reject_size')
 		case 'reject_type':
@@ -196,8 +188,6 @@ function actionColor(action: ReviewAction): 'success' | 'primary' | 'info' | 'wa
 			return 'success'
 		case 'replace':
 			return 'primary'
-		case 'compose':
-			return 'info'
 		case 'reject_size':
 		case 'reject_type':
 			return 'warning'
@@ -263,10 +253,10 @@ function actionColor(action: ReviewAction): 'success' | 'primary' | 'info' | 'wa
 						@click="restore"
 					/>
 				</p>
-				<p class="text-muted flex items-center gap-2">
+				<p v-if="ignoredDirsLabel" class="text-muted flex items-center gap-2">
 					<UIcon name="i-tabler-folder-off" />
 					{{
-						t('form.docker_composes.files.ignored_dirs_note', { dirs: ignoredDirsLabel }, { escapeParameter: false })
+						t('form.files.ignored_dirs_note', { dirs: ignoredDirsLabel }, { escapeParameter: false })
 					}}
 				</p>
 			</div>

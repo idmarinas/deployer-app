@@ -1,10 +1,8 @@
 <script lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import type { ComposeFile, ComposeMode } from '@/lib/docker-compose/types'
-import { parseComposeYaml, serializeComposeYaml } from '@/lib/docker-compose/parser'
-import ComposeFileForm from './parts/ComposeFileForm.vue'
+import type { ComposeMode } from '@/lib/docker-compose/types'
 </script>
 
 <script setup lang="ts">
@@ -14,55 +12,18 @@ const model = defineModel<string | null>({ required: true })
 
 const editMode = ref<ComposeMode>('form')
 
-const composeFile = ref<ComposeFile>({ services: {} })
-
-let lastEmittedContent: string | null = null
-
 function currentContent(): string {
 	return model.value ?? ''
 }
 
 function writeContent(content: string) {
-	lastEmittedContent = content
 	model.value = content
-}
-
-function initComposeFile() {
-	composeFile.value = parseComposeYaml(currentContent())
 }
 
 function switchMode(mode: ComposeMode) {
 	if (mode === editMode.value) return
-	if (mode === 'form') {
-		initComposeFile()
-	} else {
-		writeContent(serializeComposeYaml(composeFile.value))
-	}
 	editMode.value = mode
 }
-
-watch(
-	composeFile,
-	() => {
-		if (editMode.value === 'form') {
-			writeContent(serializeComposeYaml(composeFile.value))
-		}
-	},
-	{ deep: true },
-)
-
-watch(
-	model,
-	value => {
-		const content = value ?? ''
-		if (content === lastEmittedContent) return
-		if (editMode.value === 'form') {
-			initComposeFile()
-		}
-	},
-)
-
-initComposeFile()
 </script>
 
 <template>
@@ -84,7 +45,13 @@ initComposeFile()
 				/>
 			</div>
 		</div>
-		<ComposeFileForm v-if="editMode === 'form'" v-model="composeFile" />
-		<UTextarea v-else :model-value="currentContent()" class="w-full font-mono" :rows="15" @update:model-value="writeContent" />
+		<ComposeJsonSchema v-if="editMode === 'form'" v-model="model" />
+		<UTextarea
+			v-else
+			:model-value="currentContent()"
+			class="w-full font-mono"
+			:rows="15"
+			@update:model-value="writeContent"
+		/>
 	</div>
 </template>

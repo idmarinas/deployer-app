@@ -19,20 +19,20 @@ const fileName = ref<string>('')
 </script>
 
 <template>
-	<UModal :title="t('form.docker_composes.files.create_file_title')" :ui="{ footer: 'justify-end' }">
+	<UModal :title="t('form.files.create_file_title')" :ui="{ footer: 'justify-end' }">
 		<template #body>
 			<UFormField
 				name="new_file_name"
 				:label="
 					folder
-						? t('form.docker_composes.files.file_path_in_folder', { folder: folder }, { escapeParameter: false })
-						: t('form.docker_composes.files.file_path')
+						? t('form.files.file_path_in_folder', { folder: folder }, { escapeParameter: false })
+						: t('form.files.file_path')
 				"
 			>
 				<UInput
 					v-model="fileName"
 					class="w-full font-mono"
-					:placeholder="t('form.docker_composes.files.new_file_placeholder')"
+					:placeholder="t('form.files.new_file_placeholder')"
 					@keydown.enter="emits('close', fileName)"
 				/>
 			</UFormField>
@@ -40,13 +40,13 @@ const fileName = ref<string>('')
 		</template>
 		<template #footer>
 			<UButton
-				:label="t('form.docker_composes.files.cancel')"
+				:label="t('form.files.cancel')"
 				variant="outline"
 				size="sm"
 				@click="emits('close', false)"
 			/>
 			<UButton
-				:label="t('form.docker_composes.files.confirm')"
+				:label="t('form.files.confirm')"
 				color="primary"
 				size="sm"
 				@click="emits('close', fileName)"
