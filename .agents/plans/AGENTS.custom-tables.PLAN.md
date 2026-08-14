@@ -7,7 +7,7 @@ Sistema que permite a los usuarios crear tablas reales en SQLite, con columnas d
 ## Decisiones tomadas
 
 | Decisión | Elección | Razón |
-|---|---|---|
+| --- | --- | --- |
 | Grid editable | UTable/TanStack Table (ya en proyecto) | Sin dependencias nuevas, integrado con Nuxt UI v4 |
 | Persistencia | Auto-save por celda | UX fluida, sin botón guardar |
 | Almacenamiento | Tablas reales en SQLite (no EAV/JSON) | Rendimiento nativo, queries SQL estándar |
@@ -38,6 +38,7 @@ Sistema que permite a los usuarios crear tablas reales en SQLite, con columnas d
 ```
 
 **Flujo de datos:**
+
 - **READ**: Frontend → Tauri command → sqlx query sobre `z_*` → resultados
 - **WRITE**: Frontend → Tauri command → validación contra metadata → sqlx query sobre `z_*`
 - **DDL**: Frontend → Tauri command → CREATE/ALTER/DROP TABLE + actualizar metadata
@@ -127,7 +128,7 @@ END;
 
 ### Estructura de módulos
 
-```
+```tree
 src-tauri/src/commands/custom_tables/
 ├── mod.rs          # Re-export de todos los comandos
 ├── types.rs        # Entidades metadata + inputs
@@ -264,7 +265,7 @@ pub fn validate_row_data(data: &serde_json::Value, columns: &[CustomColumn]) -> 
 ### Comandos DDL (`ddl.rs`)
 
 | Comando | Descripción | SQL generado |
-|---|---|---|
+| --- | --- | --- |
 | `custom_table_create` | Crea tabla real + metadata | `CREATE TABLE z_* (...)` + trigger + INSERT metadata |
 | `custom_table_add_column` | Añade columna real + metadata | `ALTER TABLE z_* ADD COLUMN col TYPE` + INSERT metadata |
 | `custom_table_drop_column` | Elimina columna metadata (SQLite 3.35+ DROP COLUMN) | `ALTER TABLE z_* DROP COLUMN col` + DELETE metadata |
@@ -273,7 +274,7 @@ pub fn validate_row_data(data: &serde_json::Value, columns: &[CustomColumn]) -> 
 ### Comandos DML (`dml.rs`)
 
 | Comando | Descripción | SQL generado |
-|---|---|---|
+| --- | --- | --- |
 | `custom_table_list_rows` | Lista filas de una tabla | `SELECT * FROM z_* ORDER BY id` |
 | `custom_table_get_row` | Obtiene una fila | `SELECT * FROM z_* WHERE id = ?` |
 | `custom_table_insert_row` | Inserta fila (validada) | `INSERT INTO z_* (col1, col2, ...) VALUES (?, ?, ...)` |
@@ -376,7 +377,7 @@ Comportamiento:
 ### Cell Editors
 
 | Tipo | Componente | Render | Edit |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `text` | `EditTextCell.vue` | Texto truncado | `<UInput>` |
 | `number` | `EditNumberCell.vue` | Formateado | `<UInput type="number">` |
 | `boolean` | `EditBooleanCell.vue` | `<UBadge>` (Sí/No) | `<UToggle>` |
@@ -464,7 +465,7 @@ useEditableGrid(columns, rows, tableId, realTableName)
 ## Orden de implementación
 
 | # | Paso | Archivos | Dependencias |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Migración SQL (metadata tables) | `0002_custom_tables.up.sql` | Ninguna |
 | 2 | Rust helpers (nombres, validación) | `custom_tables/helpers.rs` | Ninguna |
 | 3 | Rust types metadata | `custom_tables/types.rs` | Ninguna |
