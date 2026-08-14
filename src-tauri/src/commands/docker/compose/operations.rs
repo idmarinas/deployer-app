@@ -48,7 +48,7 @@ async fn load_compose_files(
     pool: &sqlx::SqlitePool,
     docker_compose_id: i64,
 ) -> Result<Vec<DockerComposeFile>, String> {
-    let rows = sqlx::query("SELECT * FROM deployer_docker_compose_files WHERE docker_compose_id = ?1")
+    let rows = sqlx::query("SELECT * FROM deployer_docker_compose_files WHERE module_id = ?1")
         .bind(docker_compose_id)
         .fetch_all(pool)
         .await
@@ -58,11 +58,16 @@ async fn load_compose_files(
     for row in rows {
         files.push(DockerComposeFile {
             id: row.get("id"),
-            docker_compose_id: row.get("docker_compose_id"),
+            module_id: row.get("module_id"),
             file_path: row.get("file_path"),
             content: row.get("content"),
             is_binary: row.get("is_binary"),
-            metadata: row.get("metadata"),
+            name: row.get("name"),
+            mime_type: row.get("mime_type"),
+            size: row.get("size"),
+            last_modified: row.get("last_modified"),
+            webkit_relative_path: row.get("webkit_relative_path"),
+            icon: row.get("icon"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         });
