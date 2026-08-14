@@ -1,5 +1,6 @@
 -- ============================================================================
 -- Migration 1 Down: Drop all tables
+-- Version: 0.1.0
 -- ============================================================================
 
 DROP TRIGGER IF EXISTS deployer_settings_trg_set_updated_at;

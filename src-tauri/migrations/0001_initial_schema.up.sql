@@ -1,5 +1,6 @@
 -- ============================================================================
 -- Migration 1: Initial Database Schema
+-- Version: 0.1.0
 -- Módulos: Deployer Settings, Passkeys, Hosts, Docker Composes, Docker Hub Cache
 -- Todas las tablas de la app llevan prefijo deployer_*
 -- ============================================================================
