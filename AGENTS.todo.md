@@ -2,21 +2,42 @@
 
 ## IMPORTANTE a seguir
 
-1. Es preferible hacer pocas tareas al mismo tiempo para evitar problemas de que algo se rompa.
-   - Preferiblemente ir de una en una. De la más sencilla a la más compleja.
-   - Si alguna tarea depende de otra, ejecutarlas de mejor forma y dejar constancia en este archivo.
-2. Cuando se complete una tarea por completo muevela a `AGENTS.todo.done.md`
-   - Las tareas que están incompletas porque depende de otras dejarlo indicado en este archivo.
-3. Migraciones SQL:
-   - Sólo se genera una nueva migración si se cambia de versión, definida en `src-tauri\tauri.conf.json`
-4. Lee el archivo @AGENTS.md para entender el proyecto
-   - Si es necesario actualiza los archivos AGENTS
-5. IMPORTANTE, no importa si tienes el modo PLAN o el BUILD todas las tareas de este archivo tienen que ser en modo PLAN.
-   - En caso de estar en modo BUILD crear un archivo `AGENTS.[nombre_descriptivo_del_plan].PLAN.md` con todo el plan.
-     - Este archivo hace de historial y es donde se debe marcar todos los cambios hechos.
-     - Si se crea este archivo hacer referencia en el archivo `AGENTS.todo.done.md`
+1. **Agrupar y planificar.** Cuando llegue una lista de tareas, agruparlas según el cambio que solicitan:
+   - Tareas que tocan el mismo sistema, módulo o cambio → **un mismo grupo**.
+   - Por cada grupo se crea **un plan** (ver punto 2).
+2. **Planes.**
+   - Nombre: `AGENTS.[nombre_descriptivo_del_plan].PLAN.md`.
+   - Ubicación: `.agents/plans/`.
+   - El plan es el historial del cambio: registra decisiones y todos los cambios hechos.
+   - Al inicio, el plan incluye las **instrucciones dadas** en las tareas del grupo (verbatim).
+3. **Creación de un plan.**
+   - Al crear el plan, las instrucciones de las tareas agrupadas se **mueven** al inicio del plan como **instrucciones dadas**.
+   - Todo plan comienza en estado **Planificando** y **no se ejecuta** hasta que esté terminado de planificar.
+   - Las tareas se **eliminan** de la sección `### Tareas` y se añade una **referencia al plan** en `### Tareas en curso`.
+4. **Ejecución.**
+   - Preferiblemente pocas tareas a la vez, de una en una y de la más sencilla a la más compleja.
+   - Si una tarea depende de otra, ejecutarlas en el orden correcto y dejar constancia en este archivo.
+   - Todas las tareas de este archivo se trabajan en **modo PLAN** (el plan se redacta antes de implementar).
+5. **Cierre de un plan.**
+   - Cuando el plan está implementado y verificado, se marca como **completado** en el propio archivo.
+   - Se mueve de `.agents/plans/` a `.agents/plans.done/`.
+   - Se añade una entrada en `.agents/AGENTS.done.md` (este archivo **sustituye** a `AGENTS.todo.done.md`) con una **pequeña nota** y la **referencia al plan** terminado.
+   - Se **elimina la referencia al plan** de `### Tareas en curso`.
+6. Leer `@AGENTS.md` para entender el proyecto y las reglas técnicas globales (incluida la de migraciones SQL). Si es necesario, actualizar los archivos AGENTS.
 
 ### Tareas
 
-> Nota: una vez completadas las tareas esta sección tiene que quedar vacía para agregar las siguientes tareas. No hay que dejar registro aquí de nada.
-> El registro se lleva a cabo en `AGENTS.todo.done.md`
+> Aquí es donde se ponen las tareas a realizar. Al crear un plan para un grupo, sus tareas se eliminan de esta sección.
+
+### Tareas en curso
+
+> Estados de un plan (el inicial es **Planificando**):
+>
+> - **Planificando** — aún se está ajustando el plan; no se puede ejecutar.
+> - **Pendiente** — plan listo para ejecutar, aún no comenzado.
+> - **Ejecutando** — se está implementando (incluida la verificación).
+> - **Bloqueado** — aún no es el momento de implementarlo: espera a otra tarea o dependencia, o simplemente se ha decidido aplazarlo.
+>
+> Al completar un plan, se elimina su referencia. El registro de lo realizado queda en `.agents/AGENTS.done.md`.
+
+- **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
