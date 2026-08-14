@@ -12,13 +12,15 @@
    - Al inicio, el plan incluye las **instrucciones dadas** en las tareas del grupo (verbatim).
 3. **Creación de un plan.**
    - Al crear el plan, las instrucciones de las tareas agrupadas se **mueven** al inicio del plan como **instrucciones dadas**.
-   - Todo plan comienza en estado **Planificando** y **no se ejecuta** hasta que esté terminado de planificar.
+   - Todo plan se crea **SIEMPRE** en estado **Planificando** y **no se ejecuta** hasta que esté terminado de planificar.
    - Las tareas se **eliminan** de la sección `### Tareas` y se añade una **referencia al plan** en `### Tareas en curso`.
 4. **Ejecución.**
+   - El agente **solo** puede cambiar un plan de **Pendiente** a **Ejecutando** (al empezar a implementarlo); el resto de cambios de estado los hace el usuario.
    - Preferiblemente pocas tareas a la vez, de una en una y de la más sencilla a la más compleja.
    - Si una tarea depende de otra, ejecutarlas en el orden correcto y dejar constancia en este archivo.
    - Todas las tareas de este archivo se trabajan en **modo PLAN** (el plan se redacta antes de implementar).
 5. **Cierre de un plan.**
+   - **Solo el usuario** da por completado un plan que está en **Ejecutando**.
    - Cuando el plan está implementado y verificado, se marca como **completado** en el propio archivo.
    - Se mueve de `.agents/plans/` a `.agents/plans.done/`.
    - Se añade una entrada en `.agents/AGENTS.done.md` (este archivo **sustituye** a `AGENTS.todo.done.md`) con una **pequeña nota** y la **referencia al plan** terminado.
@@ -38,6 +40,9 @@
 > - **Ejecutando** — se está implementando (incluida la verificación).
 > - **Bloqueado** — aún no es el momento de implementarlo: espera a otra tarea o dependencia, o simplemente se ha decidido aplazarlo.
 >
+> Transiciones: el agente **solo** puede pasar un plan de **Pendiente** a **Ejecutando**. El resto de cambios de estado (incluido dar por **completado**) los decide el usuario.
+>
 > Al completar un plan, se elimina su referencia. El registro de lo realizado queda en `.agents/AGENTS.done.md`.
 
 - **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
+- **Planificando:** Sistema de ajustes (a futuro) → `.agents/plans/AGENTS.settings-system.PLAN.md`
