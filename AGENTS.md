@@ -26,11 +26,12 @@
 ## Reglas
 
 - **Idioma:** siempre español.
-- **No modificar:** archivos `.dist`, carpetas `.dist/`, `node_modules/`, `vendor/`, `var/`.
+- **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/` (salida de build) y el **historial personal**: archivos `.back` y todo archivo/carpeta con extensión `.dist` (p.ej. `_archived.dist/`). No incluirlos en búsquedas ni lecturas salvo que se pidan explícitamente como referencia; nunca modificarlos.
 - **Archivos autogenerados (no editar):** `drizzle/` (completo, excepto `README.md`), `src/lib/schema.ts`, `src/lib/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`.
 - **`src/constants/dbTables.ts`** está obsoleto (`.unused`). No importarlo.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
 - **Antes de crear comando `crud_get_*`/`crud_list_*`:** si la tabla no tiene campos cifrados, usar Drizzle.
+- **Migraciones SQL:** solo se genera una nueva migración si se cambia de versión (`src-tauri/tauri.conf.json`). Cada archivo de `src-tauri/migrations/` lleva en su cabecera el marcador `-- Version: X.Y.Z` (versión en la que se añadió). Para saber si hace falta una migración nueva, no hace falta leer los archivos: buscar con `rg "Version:" src-tauri/migrations/`.
 
 ## Lecturas Drizzle vs comandos Rust
 
