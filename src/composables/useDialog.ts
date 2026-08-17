@@ -3,9 +3,9 @@ import type { GeneratedPasskey, Passkey } from '@/types/tauri-types'
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
 import CopyPasskeyToServerDialog from '@/components/overlay/forms/CopyPasskeyToServerDialog.vue'
 import GeneratedPasskeyFormDialog from '@/components/overlay/forms/GeneratePasskeyDialog.vue'
-import ReviewComposeFilesDialog, {
-	type ReviewComposeFileItem,
-} from '@/components/overlay/forms/ReviewComposeFilesDialog.vue'
+import ReviewFilesDialog, {
+	type ReviewFileItem,
+} from '@/components/overlay/forms/ReviewFilesDialog.vue'
 
 export interface ConfirmDialogOptions {
 	title: string
@@ -52,14 +52,15 @@ export const useCopyPasskeyToServer = () => {
 	}
 }
 
-export const useReviewComposeFilesDialog = () => {
+export const useReviewFilesDialog = () => {
 	const overlay = useOverlay()
 
 	return (options: {
-		items: ReviewComposeFileItem[]
+		items: ReviewFileItem[]
 		existingPaths: string[]
+		ignoredDirs?: string[]
 	}): Promise<{ confirm: boolean; removedPaths: string[] }> => {
-		const modal = overlay.create(ReviewComposeFilesDialog, {
+		const modal = overlay.create(ReviewFilesDialog, {
 			destroyOnClose: true,
 			props: options,
 		})
