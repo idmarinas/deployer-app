@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import TreeFilesViewer from '@/components/view/TreeFilesViewer.vue'
 import {
 	buildTree,
 	byteSize,
@@ -12,9 +13,8 @@ import {
 	type TreeFilesConfig,
 } from '@/lib/files'
 import { formatBytes } from '@/utils/format.ts'
-import TreeFilesViewer from '@/components/view/TreeFilesViewer.vue'
-import TreeFilePicker from './TreeFilePicker.vue'
 import FileContentEditor from './FileContentEditor.vue'
+import TreeFilePicker from './TreeFilePicker.vue'
 </script>
 
 <script setup lang="ts">
@@ -44,6 +44,29 @@ const canCreateFile = computed(() => props.canCreateFile ?? true)
 
 const treeItems = computed(() => buildTree(props.modelValue))
 
+const selectHintKey = computed(() => {
+	const hasFiles = treeItems.value.length > 0
+
+	if (!hasFiles) {
+		if (canUpload.value && canCreateFile.value) return 'form.files.hint.empty_all'
+		if (canUpload.value) return 'form.files.hint.empty_upload'
+		if (canCreateFile.value) return 'form.files.hint.empty_create'
+		return 'form.files.hint.empty_none'
+	}
+
+	if (canEdit.value) {
+		if (canUpload.value && canCreateFile.value) return 'form.files.hint.select_edit_all'
+		if (canUpload.value) return 'form.files.hint.select_edit_upload'
+		if (canCreateFile.value) return 'form.files.hint.select_edit_create'
+		return 'form.files.hint.select_edit'
+	}
+
+	if (canUpload.value && canCreateFile.value) return 'form.files.hint.select_view_all'
+	if (canUpload.value) return 'form.files.hint.select_view_upload'
+	if (canCreateFile.value) return 'form.files.hint.select_view_create'
+	return 'form.files.hint.select_view'
+})
+
 const folderKeys = computed(() => collectFolderKeys(treeItems.value))
 
 watch(
@@ -58,14 +81,12 @@ const selectedPath = computed(() => (selected.value?.type === 'file' ? selected.
 
 const selectedEntry = computed(() => props.modelValue.find(f => f.file_path === selectedPath.value))
 
-const selectedIsProtected = computed(() =>
-	!!selectedPath.value && !!selectedEntry.value && (props.isProtectedFile?.(selectedEntry.value) ?? false),
+const selectedIsProtected = computed(
+	() => !!selectedPath.value && !!selectedEntry.value && (props.isProtectedFile?.(selectedEntry.value) ?? false),
 )
 
 const selectedIcon = computed(() =>
-	selectedPath.value && selectedEntry.value
-		? getFileIcon(selectedEntry.value)
-		: 'i-vscode-icons-file-type-text',
+	selectedPath.value && selectedEntry.value ? getFileIcon(selectedEntry.value) : 'i-vscode-icons-file-type-text',
 )
 
 const selectedContent = computed({
@@ -75,9 +96,7 @@ const selectedContent = computed({
 		emit(
 			'update:modelValue',
 			props.modelValue.map(f =>
-				f.file_path === selectedPath.value
-					? { ...f, content: value, size: f.is_binary ? f.size : byteSize(value) }
-					: f,
+				f.file_path === selectedPath.value ? { ...f, content: value, size: f.is_binary ? f.size : byteSize(value) } : f,
 			),
 		)
 	},
@@ -233,22 +252,25 @@ function confirmCreateFile(fileName: string, folder: string): string | undefined
 						</div>
 					</div>
 
-					<slot
-						v-if="canEdit"
-						name="editor"
-						:entry="selectedEntry"
-						:content="selectedContent"
-						:update-content="updateContent"
-					>
-						<FileContentEditor :entry="selectedEntry" v-model="selectedContent" />
-					</slot>
+					<template v-if="canEdit">
+						<slot
+							name="editor"
+							:entry="selectedEntry"
+							:content="selectedContent"
+							:update-content="updateContent"
+						>
+							<FileContentEditor :entry="selectedEntry" v-model="selectedContent" />
+						</slot>
+					</template>
+					<FileContentEditor v-else :entry="selectedEntry" :model-value="selectedContent" readonly />
 				</div>
 
-				<div
-					v-else-if="canEdit && (canUpload || canCreateFile)"
-					class="border-2 border-dashed border-muted rounded-lg p-6 text-center text-sm text-muted"
-				>
-					{{ t('form.files.select_hint') }}
+				<div v-else>
+					<slot name="empty" :hint="t(selectHintKey)">
+						<div class="border-2 border-dashed border-muted rounded-lg p-6 text-center text-sm text-muted">
+							{{ t(selectHintKey) }}
+						</div>
+					</slot>
 				</div>
 			</div>
 		</div>

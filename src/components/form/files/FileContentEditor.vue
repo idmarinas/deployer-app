@@ -8,6 +8,7 @@ import { getImageMimeType, isImageEntry, type ManagedFile } from '@/lib/files'
 <script setup lang="ts">
 const props = defineProps<{
 	entry: ManagedFile
+	readonly?: boolean
 }>()
 
 const model = defineModel<string>({ required: true })
@@ -43,5 +44,6 @@ const imageSrc = computed(() => {
 		class="w-full font-mono"
 		:rows="15"
 		:placeholder="t('form.files.text_content')"
+		:readonly="props.readonly"
 	/>
 </template>
