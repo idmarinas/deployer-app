@@ -58,19 +58,20 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 
 					if (result) {
 						const notice = toaster.warning(
-							t('notifications.projects.delete.loading.title'),
-							t('notifications.projects.delete.loading.description', { name: item.value.name }),
+							t(`notifications.${moduleName}.delete.loading.title`),
+							t(`notifications.${moduleName}.delete.loading.description`, { name: item.value.name }),
 							{ duration: 0 },
 						)
 
-						const result = await invoke<CommandResponse>('crud_delete_project', { id: item.value.id })
+						// TODO: usar `crud_delete_${moduleName}` en vez de 'crud_delete_project' (bug preexistente)
+						const result = await invoke<CommandResponse>(`crud_delete_${moduleName}`, { id: item.value.id })
 
 						if (result.success) {
 							toaster.toast.update(
 								notice.id,
 								toaster.success(
-									t('notifications.projects.delete.success.title'),
-									t('notifications.projects.delete.success.description', { name: item.value.name }),
+									t(`notifications.${moduleName}.delete.success.title`),
+									t(`notifications.${moduleName}.delete.success.description`, { name: item.value.name }),
 									{ id: notice.id, duration: undefined },
 								),
 							)
@@ -78,8 +79,8 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 							toaster.toast.update(
 								notice.id,
 								toaster.error(
-									t('notifications.projects.delete.error.title'),
-									t('notifications.projects.delete.error.description', { name: item.value.name }),
+									t(`notifications.${moduleName}.delete.error.title`),
+									t(`notifications.${moduleName}.delete.error.description`, { name: item.value.name }),
 									{ id: notice.id, duration: undefined },
 								),
 							)
