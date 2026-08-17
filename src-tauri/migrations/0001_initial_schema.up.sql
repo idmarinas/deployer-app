@@ -66,7 +66,7 @@ CREATE TABLE deployer_docker_composes (
     id INTEGER CONSTRAINT deployer_docker_composes_pk PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CONSTRAINT deployer_docker_composes_uq_name UNIQUE,
     description TEXT,
-    host_id INTEGER CONSTRAINT deployer_docker_composes_fk_host_id REFERENCES deployer_hosts (id) ON DELETE CASCADE,
+    host_id INTEGER CONSTRAINT deployer_docker_composes_fk_host_id REFERENCES deployer_hosts (id) ON DELETE SET NULL,
     remote_path TEXT NOT NULL DEFAULT '/opt/docker-compose/',
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
