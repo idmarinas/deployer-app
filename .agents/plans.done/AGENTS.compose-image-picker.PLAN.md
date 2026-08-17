@@ -35,8 +35,8 @@ function widgetsNormalizer(map: Record<pointer, nombre>): SchemaNormalizer
 ## 4. Archivos
 
 - `src/utils/schema-form/normalize.ts` — `SchemaNormalizer` con pointer; walker con seguimiento de pointer (escapando `~`/`/`); `WIDGET_KEY`; `widgetsNormalizer`.
-- `src/composables/useSchemaForm.ts` — opción + instancia `widgets`.
-- `src/components/form/schema/JsonSchemaEditor.vue` — prop `widgets` → `useSchemaForm`.
+- `src/composables/useSchemaToForm.ts` — opción + instancia `widgets`.
+- `src/components/form/schema/JsonSchemaEditor.vue` — prop `widgets` → `useSchemaToForm`.
 - `src/components/form/schema/SchemaField.vue` — `widget` computed desde `schema[WIDGET_KEY]` + `form.widgets[nombre]`; `<component :is="widget" v-model="model" />` antes del `UInput` de string.
 - `src/components/form/schema/ComposeEditor.vue` — `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` y `:widgets="{ 'compose-image': ComposeImagePicker }"`.
 - `tests/normalize.test.ts` — tests de `widgetsNormalizer` (pointer coincidente/no, escapado, E2E compose con el marcado sobreviviendo a `$ref`, y `x-widget` sin warnings en jsl).

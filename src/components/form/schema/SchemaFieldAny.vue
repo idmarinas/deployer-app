@@ -1,20 +1,20 @@
 <script setup lang="ts">
+import type { SchemaNode } from 'json-schema-library'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SchemaNode } from 'json-schema-library'
 
-import { useSchemaFormContext } from './context'
+import { useSchemaToFormContext } from './context'
 
 const props = defineProps<{ node: SchemaNode; path: string }>()
 
 const { t } = useI18n()
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const jsonText = ref('')
 const jsonError = ref(false)
 watch(
 	() => form.get(props.path),
-	(v) => {
+	v => {
 		jsonText.value = JSON.stringify(v ?? {}, null, 2)
 	},
 	{ immediate: true },

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import type { Component } from 'vue'
-import { useI18n } from 'vue-i18n'
 import type { JsonSchema, SchemaNode } from 'json-schema-library'
+import type { Component } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { useSchemaForm } from '@/composables/useSchemaForm'
+import { useSchemaToForm } from '@/composables/useSchemaToForm'
 import useToaster from '@/composables/useToaster'
 import type { MessageResolver } from '@/utils/schema-form/validate'
 import { parseYaml, toYaml } from '@/utils/yaml-utils'
@@ -48,7 +48,7 @@ function serializeDocument(data: unknown): string {
 	return props.formatOutput === 'json' ? (JSON.stringify(data, null, 2) ?? '') : toYaml(data)
 }
 
-const form = useSchemaForm(props.schema, {
+const form = useSchemaToForm(props.schema, {
 	resolveTitle: props.resolveTitle,
 	resolveDescription: props.resolveDescription,
 	resolveMessage: props.resolveMessage,
@@ -192,13 +192,7 @@ async function handleImport(event: Event) {
 			</div>
 			<div class="flex items-center gap-2">
 				<UBadge size="xs" color="neutral" variant="subtle">{{ form.draft }}</UBadge>
-				<UButton
-					size="sm"
-					icon="i-tabler-upload"
-					variant="outline"
-					:label="importLabel"
-					@click="importDocument"
-				/>
+				<UButton size="sm" icon="i-tabler-upload" variant="outline" :label="importLabel" @click="importDocument" />
 				<input ref="fileInputRef" type="file" :accept="importAccept" class="hidden" @change="handleImport" />
 			</div>
 		</div>

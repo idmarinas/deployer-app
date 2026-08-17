@@ -11,12 +11,12 @@ import {
 	variantDefault,
 	variantLabel,
 } from '@/utils/schema-form/jsl'
-import { useSchemaFormContext } from './context'
+import { useSchemaToFormContext } from './context'
 
 const props = defineProps<{ node: SchemaNode; path: string }>()
 
 const { t } = useI18n()
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const variants = computed(() => classifyNode(props.node).variants ?? [])
 const resolved = computed(() => variants.value.map(v => resolveNode(v)))

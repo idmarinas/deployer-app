@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import type { SchemaNode } from 'json-schema-library'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SchemaNode } from 'json-schema-library'
 
 import { classifyNode, resolveNode } from '@/utils/schema-form/jsl'
 import { WIDGET_KEY } from '@/utils/schema-form/normalize'
-import { useSchemaFormContext } from './context'
+import { useSchemaToFormContext } from './context'
 
 const SCALAR_KINDS = new Set(['string', 'number', 'integer', 'boolean', 'enum'])
 
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const node = computed(() => resolveNode(props.node))
 const cls = computed(() => classifyNode(node.value))
@@ -55,7 +55,9 @@ const model = computed<any>({
 })
 
 const containerClass = computed(() =>
-	props.bare ? 'flex flex-col gap-2' : 'flex flex-col gap-2 rounded-lg border border-muted-300 p-3 dark:border-muted-700',
+	props.bare
+		? 'flex flex-col gap-2'
+		: 'flex flex-col gap-2 rounded-lg border border-muted-300 p-3 dark:border-muted-700',
 )
 
 const enumSource = computed<unknown[]>(() => {
@@ -64,7 +66,7 @@ const enumSource = computed<unknown[]>(() => {
 	if (schema.value.const !== undefined) return [schema.value.const]
 	return []
 })
-const enumItems = computed<any[]>(() => enumSource.value.map((o) => ({ label: String(o), value: o })))
+const enumItems = computed<any[]>(() => enumSource.value.map(o => ({ label: String(o), value: o })))
 
 const arrayRef = ref<{ add: () => void }>()
 const mapRef = ref<{ add: () => void }>()

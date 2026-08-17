@@ -3,9 +3,9 @@ import type { SchemaNode } from 'json-schema-library'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { classifyNode, isContainerNode, resolveNode } from '@/utils/schema-form/jsl'
 import { ICONS } from '@/utils/icons'
-import { useSchemaFormContext } from './context'
+import { classifyNode, isContainerNode, resolveNode } from '@/utils/schema-form/jsl'
+import { useSchemaToFormContext } from './context'
 
 const OBJECT_COLLAPSE_THRESHOLD = 10
 
@@ -19,7 +19,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const children = computed(() => {
 	const propsMap = props.node.properties ?? {}
@@ -30,12 +30,12 @@ const children = computed(() => {
 	}))
 })
 
-const simpleChildren = computed(() => children.value.filter((c) => !isContainerNode(c.node)))
-const containerChildren = computed(() => children.value.filter((c) => isContainerNode(c.node)))
+const simpleChildren = computed(() => children.value.filter(c => !isContainerNode(c.node)))
+const containerChildren = computed(() => children.value.filter(c => isContainerNode(c.node)))
 
 const requiredNames = computed(() => new Set(props.node.required ?? []))
-const simpleRequired = computed(() => simpleChildren.value.filter((c) => requiredNames.value.has(c.name)))
-const simpleOptional = computed(() => simpleChildren.value.filter((c) => !requiredNames.value.has(c.name)))
+const simpleRequired = computed(() => simpleChildren.value.filter(c => requiredNames.value.has(c.name)))
+const simpleOptional = computed(() => simpleChildren.value.filter(c => !requiredNames.value.has(c.name)))
 
 const collapseOptional = computed(() => simpleOptional.value.length > OBJECT_COLLAPSE_THRESHOLD)
 
@@ -69,7 +69,7 @@ function pretty(raw: string): string {
 }
 
 const tabs = computed(() =>
-	containerChildren.value.map((c) => ({
+	containerChildren.value.map(c => ({
 		...c,
 		path: childPath(c.name),
 		label: labelOf(c.name, c.node),
@@ -80,18 +80,22 @@ const tabs = computed(() =>
 const active = ref(0)
 
 watch(
-	() => tabs.value.map((tb) => tb.name).join('\u0000'),
+	() => tabs.value.map(tb => tb.name).join('\u0000'),
 	() => {
 		active.value = 0
 	},
 )
 
 function tabHasError(tabPath: string): boolean {
-	return Object.keys(form.errors.value ?? {}).some((p) => p === tabPath || p.startsWith(`${tabPath}.`) || p.startsWith(`${tabPath}[`))
+	return Object.keys(form.errors.value ?? {}).some(
+		p => p === tabPath || p.startsWith(`${tabPath}.`) || p.startsWith(`${tabPath}[`),
+	)
 }
 
 function tabHasWarning(tabPath: string): boolean {
-	return Object.keys(form.warnings.value ?? {}).some((p) => p === tabPath || p.startsWith(`${tabPath}.`) || p.startsWith(`${tabPath}[`))
+	return Object.keys(form.warnings.value ?? {}).some(
+		p => p === tabPath || p.startsWith(`${tabPath}.`) || p.startsWith(`${tabPath}[`),
+	)
 }
 </script>
 

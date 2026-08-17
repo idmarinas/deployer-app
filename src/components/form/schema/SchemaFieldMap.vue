@@ -4,14 +4,14 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { classifyNode, compileRoot, resolveNode, variantDefault } from '@/utils/schema-form/jsl'
-import { useSchemaFormContext } from './context'
+import { useSchemaToFormContext } from './context'
 
 const ANY_NODE = compileRoot({}).root
 
 const props = defineProps<{ node: SchemaNode; path: string; bare?: boolean }>()
 
 const { t } = useI18n()
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const entries = computed<Record<string, unknown>>(() => {
 	const v = form.get(props.path)
@@ -70,7 +70,9 @@ defineExpose({ add: addEntry })
 
 <template>
 	<div class="flex flex-col gap-2">
-		<p v-if="patternHint" class="text-xs text-muted">{{ t('form.schema_form.key_pattern', { pattern: patternHint }) }}</p>
+		<p v-if="patternHint" class="text-xs text-muted">
+			{{ t('form.schema_form.key_pattern', { pattern: patternHint }) }}
+		</p>
 		<p v-if="keys.length === 0" class="text-xs italic text-muted">{{ t('form.schema_form.empty_object') }}</p>
 
 		<div v-if="showTabs" class="flex flex-col gap-2">
@@ -94,7 +96,13 @@ defineExpose({ add: addEntry })
 						class="w-40 shrink-0 font-mono"
 						@update:model-value="(v: string) => renameEntry(keys[activeEntry], v)"
 					/>
-					<UButton icon="i-tabler-trash" color="error" variant="ghost" size="xs" @click="removeEntry(keys[activeEntry])" />
+					<UButton
+						icon="i-tabler-trash"
+						color="error"
+						variant="ghost"
+						size="xs"
+						@click="removeEntry(keys[activeEntry])"
+					/>
 				</div>
 				<SchemaField :node="valueNode" :path="`${path}.${keys[activeEntry]}`" bare />
 			</div>

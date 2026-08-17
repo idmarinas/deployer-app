@@ -6,7 +6,7 @@
 
 ## 1. Objetivo
 
-Reconstruir el sistema de formularios por JSON-Schema (`src/components/form/schema/*`, `src/composables/useSchemaForm.ts`, `src/utils/schema-form/*`, `src/utils/json-utils.ts`) para que **gire alrededor de la API de `json-schema-library` (jsl)** y sea **agnóstico** de cualquier esquema concreto (no debe depender de `compose-spec.json` ni `composer-schema.json`).
+Reconstruir el sistema de formularios por JSON-Schema (`src/components/form/schema/*`, `src/composables/useSchemaToForm.ts`, `src/utils/schema-form/*`, `src/utils/json-utils.ts`) para que **gire alrededor de la API de `json-schema-library` (jsl)** y sea **agnóstico** de cualquier esquema concreto (no debe depender de `compose-spec.json` ni `composer-schema.json`).
 
 Requisitos literales de `AGENTS.todo.md`:
 
@@ -25,7 +25,7 @@ Requisitos literales de `AGENTS.todo.md`:
 - `src/utils/schema-form/extract.ts` es un **parser manual completo** (deserializa `$ref`, `allOf`, keywords) → justo lo contrario de "usar jsl".
 - `src/utils/schema-form/toZod.ts` está roto y mal nombrado (no usa Zod, pero tampoco funciona con jsl).
 - `SchemaField.vue` referencia `field.oneOf` (no existe en el tipo `ArrayField`) y `./types` que ya no está en esa ruta.
-- `useSchemaForm.ts` mapea errores con un `reduce` roto (`e.data.pointer` no se usa).
+- `useSchemaToForm.ts` mapea errores con un `reduce` roto (`e.data.pointer` no se usa).
 - Decisiones previas (archivo `schema-form.plan.md`, sesión anterior) que se mantienen:
   1. Componentes sobre el **`SchemaNode` de jsl** (se elimina el modelo `SchemaField`).
   2. Campo `type: "null"` → `USwitch` activar/desactivar.
@@ -58,14 +58,14 @@ Implicaciones de diseño:
 ## 4. Arquitectura objetivo
 
 ```
-useSchemaForm(schema, options)
+useSchemaToForm(schema, options)
   └─ compileSchema(schema) ─► root: SchemaNode  (+ draft vía getDraftVersion())
        ├─ formData ref            (paths.ts: getAt/setAt/removeAt)
        ├─ validate()              ─► root.validate(data) → errors por ruta (i18n)
        ├─ errorAt(path)
        └─ nodeAt(pointer)         ─► root.getNode(pointer, data) (reducido/resuelto)
 
-Componentes (consumen SchemaNode + useSchemaFormContext):
+Componentes (consumen SchemaNode + useSchemaToFormContext):
   SchemaField        : clasifica el nodo (classifyNode) y despacha
   SchemaFieldScalar  : UInput / UInputNumber / USwitch / USelect (string·number·integer·boolean·enum)
   SchemaFieldNull    : USwitch null ←→ sin valor            (NUEVO)
@@ -75,7 +75,7 @@ Componentes (consumen SchemaNode + useSchemaFormContext):
   SchemaFieldAny     : textarea JSON (se conserva el actual)
 ```
 
-Núcleo **agnóstico**: `src/utils/schema-form/*`, `useSchemaForm.ts` y `src/components/form/schema/*` **no importan** `compose-spec.json` ni `composer-schema.json`. `ComposeEditor.vue` es el único consumidor Compose (importa `src/schemas/compose-spec.json` y lo compila con `compileRoot`).
+Núcleo **agnóstico**: `src/utils/schema-form/*`, `useSchemaToForm.ts` y `src/components/form/schema/*` **no importan** `compose-spec.json` ni `composer-schema.json`. `ComposeEditor.vue` es el único consumidor Compose (importa `src/schemas/compose-spec.json` y lo compila con `compileRoot`).
 
 ## 5. Decisiones
 
@@ -126,7 +126,7 @@ Núcleo **agnóstico**: `src/utils/schema-form/*`, `useSchemaForm.ts` y `src/com
 
 Construir de abajo arriba:
 
-1. `src/composables/useSchemaForm.ts` — reescritura: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt(pointer), resolveTitle, resolveDescription }`. `validate()` usa `validateWithJsl` con `useI18n()` por defecto.
+1. `src/composables/useSchemaToForm.ts` — reescritura: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt(pointer), resolveTitle, resolveDescription }`. `validate()` usa `validateWithJsl` con `useI18n()` por defecto.
 2. `src/components/form/schema/context.ts` — tipar contra la nueva `SchemaFormInstance`.
 3. `SchemaField.vue` — despacho por `classifyNode(node)`:
    - string → `UInput` (respeta `format` email/uri, `pattern`), number/integer → `UInputNumber` (min/max/multipleOf), boolean → `USwitch`, enum → `USelect`.
@@ -185,7 +185,7 @@ Construir de abajo arriba:
 - `tests/validate.test.ts`: 11 tests verdes (rutas anidadas, arrays, formatos, códigos).
 
 ### Fase 3 — COMPLETADA
-- `src/composables/useSchemaForm.ts` reescrito: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt, resolveTitle, resolveDescription }`; `validate()` vía `validateWithJsl` con `useI18n()` por defecto.
+- `src/composables/useSchemaToForm.ts` reescrito: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt, resolveTitle, resolveDescription }`; `validate()` vía `validateWithJsl` con `useI18n()` por defecto.
 - `context.ts` sin cambios de API (mismo `SchemaFormInstance`).
 - Componentes sobre `SchemaNode`:
   - `SchemaField.vue`: clasifica con `classifyNode` y despacha; soporta `nullable` (USwitch `SchemaFieldNull`) para cualquier tipo.
@@ -236,7 +236,7 @@ Notas dejadas en `AGENTS.todo.md`:
 Nota del usuario: _la validación de jsl incluye warnings; también deberían mostrarse_.
 - jsl expone los warnings como **annotations** en `root.validate(data)` (p.ej. `deprecated-warning` cuando una propiedad `deprecated` tiene valor); antes se ignoraban (`result.valid` solo tiene en cuenta `errors`).
 - `src/utils/schema-form/validate.ts`: `ValidationResult` gana `warnings: Record<ruta, string[]>`. Se recogen las annotations cuyo `code` termina en `-warning` y se traducen vía `form.schema_form.warnings.<código>` (`deprecated`, `unknown_keyword`, `unknown_format`, `schema`, `generic`). `ok` solo depende de `errors` (los warnings no invalidan). `errorPath` y `paramsOf` ahora aceptan una forma genérica (valen para `JsonError` y `JsonAnnotation`).
-- `src/composables/useSchemaForm.ts`: expone `warnings` (ref) y `warningAt(path)`; `validate()` rellena ambos.
+- `src/composables/useSchemaToForm.ts`: expone `warnings` (ref) y `warningAt(path)`; `validate()` rellena ambos.
 - `SchemaField.vue`: muestra el primer warning del campo en `text-warning` bajo el campo.
 - `ComposeEditor.vue`: `UAlert` color `warning` con resumen (`form.schema_form.validation_warnings`), punto ámbar (`bg-warning`) en tabs con warnings (el punto rojo de error tiene prioridad).
 - i18n: `validation_warnings` y `warnings.*` en `src/locales/es/form/schema_form.ts`.

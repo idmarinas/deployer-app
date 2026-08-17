@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { SchemaNode } from 'json-schema-library'
+import { computed } from 'vue'
 
 import { variantDefault } from '@/utils/schema-form/jsl'
-import { useSchemaFormContext } from './context'
+import { useSchemaToFormContext } from './context'
 
 const props = defineProps<{ path: string; node?: SchemaNode }>()
 
-const form = useSchemaFormContext()
+const form = useSchemaToFormContext()
 
 const isNull = computed(() => form.get(props.path) === null)
 

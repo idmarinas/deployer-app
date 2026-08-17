@@ -2,6 +2,38 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (16 ago 2026 - mensajes informativos del selector de archivos TreeFiles)
+
+**Nota del usuario en `AGENTS.todo.md`**: _Mensajes informativos según la combinación de capacidades (Editar/Subir/Crear) y si hay archivos o no. La alerta de compose faltante debe sustituir el placeholder. Vista previa de solo lectura cuando canEdit = false._ Plan y detalle en `AGENTS.tree-files-select-hint.PLAN.md`.
+
+1. **i18n** (`src/locales/es/form/files.ts`): eliminado `select_hint`; añadida sección `hint.*` con 12 claves de la matriz (8 × hay/sin archivos, con mensajes compartidos en "sin archivos").
+2. **`FileContentEditor.vue`**: nueva prop `readonly?: boolean` → pasa `readonly` al `UTextarea`.
+3. **`TreeFiles.vue`**: computed `selectHintKey` (matriz E/U/C × archivos); placeholder sustituible con slot `#empty`; vista previa de solo lectura (`FileContentEditor` con `readonly`) cuando `canEdit = false`.
+4. **`ComposeMissingAlert.vue`** (nuevo): `UAlert` de `compose_missing`/`compose_missing_hint`.
+5. **`ComposeTreeFilesUpload.vue`**: eliminada alerta inferior; añadido slot `#empty` (`ComposeMissingAlert` si `canCreateFile && !hasMainCompose`, `<p>` si no) y `ComposeMissingAlert` en slot `#editor`.
+
+**Resultado:** `bun run i18n:types` OK, `bunx vue-tsc --noEmit` limpio, `bun run build` verde.
+
+---
+
+## Tareas completadas (14 ago 2026 - simplificar la lib de archivos docker-compose)
+
+**Nota del usuario en `AGENTS.todo.md`**: _Proposito de las funciones... las únicas que las interpreto como que son exclusivas de docker compose son: isMainComposeFile y isSecondaryComposeFile... en su mayoria solo es necesario el nombre del archivo, el cual está disponible en la fila del archivo._ Plan y detalle en `AGENTS.docker-compose-files-lib.PLAN.md`.
+
+1. **`src/lib/files.ts`** (genérica): nuevas `isComposeFile(name)` (reconoce `compose.yaml`/`compose.yml`/`docker-compose.yaml`/`docker-compose.yml`) e `isEnvFile(name)` (`.env`, `*.env`, `.env.*`) — reciben el **nombre** del archivo (basename), no el `file_path`.
+2. **`src/lib/docker-compose/files.ts`** reducida a lo exclusivo de compose: `isMainComposeFile`/`isSecondaryComposeFile` siguen recibiendo `file_path` (necesitan saber si el archivo está en la raíz o en subcarpeta) y delegan el chequeo de nombre en `isComposeFile` genérica.
+3. **Callers**: `ComposeTreeFilesUpload.vue` usa `entry.name`/`item.label` en vez de `file_path` para `isComposeFile`/`isEnvFile`; `add.vue` usa `f.name` (eliminado el alias `isComposeFilePath`). `index.vue`/`edit.vue` sin cambios (solo `isMainComposeFile(f.file_path)`).
+
+**Archivos modificados:**
+- `src/lib/files.ts`, `src/lib/docker-compose/files.ts`
+- `src/components/form/inputs/docker-compose/ComposeTreeFilesUpload.vue`
+- `src/pages/dashboard/docker_composes/add.vue`
+- `AGENTS.docker-compose-files-lib.PLAN.md` (→ plans.done), `AGENTS.todo.md`
+
+**Resultado:** `bunx vue-tsc --noEmit` limpio, `bun run build` verde (17.5s). Sin cambios de BD, Rust ni i18n.
+
+---
+
 ## Tareas completadas (14 ago 2026 - componentes de archivos (TreeFiles) agnósticos y reutilizables)
 
 **Nota del usuario**: _El componente ComposeTreeFilesUpload junto con DockerComposeTreeFilePicker ¿se pueden hacer agnosticos? más reutilizable, para otras partes. Donde se necesiten guardar y editar archivos. La estructura base de la tabla (y lo que el TreeFilePicker maneja) sean iguales para todos._ Plan y detalle en `AGENTS.tree-files-agnostico.PLAN.md`.
@@ -59,15 +91,15 @@
 1. **`src/utils/schema-form/normalize.ts`**: `SchemaNormalizer` pasa a `(schema, pointer) => ...` (retrocompatible: funciones de 1 parámetro siguen valiendo) y el walker de `normalizeSchema` ahora recorre con seguimiento del **JSON pointer** (raíz `#`, escapando `~`→`~0` y `/`→`~1` en properties/patternProperties/$defs/definitions y `/<idx>` en arrays). Nuevos:
    - `WIDGET_KEY = 'x-widget'` — clave de marcado de widget. jsl **ignora las claves `x-*`** (`SchemaNode.addKeywords`: `!key.startsWith("x-")`), por lo que no genera `unknown-keyword-warning` ni hace falta registrar keywords en `compileRoot`.
    - `widgetsNormalizer(map: Record<pointer, nombre>)` — marca `{ ...schema, 'x-widget': nombre }` solo si el pointer del nodo está en el mapa; `undefined` si no.
-2. **`src/composables/useSchemaForm.ts`**: opción `widgets?: Record<string, Component>` en `SchemaFormOptions` y expuesta en `SchemaFormInstance.widgets` (núcleo agnóstico: solo guarda el mapa).
-3. **`src/components/form/schema/JsonSchemaEditor.vue`**: prop `widgets?: Record<string, Component>` → `useSchemaForm`.
+2. **`src/composables/useSchemaToForm.ts`**: opción `widgets?: Record<string, Component>` en `SchemaFormOptions` y expuesta en `SchemaFormInstance.widgets` (núcleo agnóstico: solo guarda el mapa).
+3. **`src/components/form/schema/JsonSchemaEditor.vue`**: prop `widgets?: Record<string, Component>` → `useSchemaToForm`.
 4. **`src/components/form/schema/SchemaField.vue`**: `widget` computed leyendo `schema[WIDGET_KEY]` → `form.widgets[nombre]`; en la rama escalar, `<component v-if="widget" :is="widget" v-model="model" />` antes del `UInput` de string.
 5. **`src/components/form/schema/ComposeEditor.vue`** (único sitio compose-específico): `widgetsNormalizer({ '#/$defs/service/properties/image': 'compose-image' })` y `:widgets="{ 'compose-image': ComposeImagePicker }"`. El marcado sobrevive a la resolución de `$ref`: `services.<x>.image` llega al nodo `image` de `$defs.service` con su `x-widget`.
 6. **`tests/normalize.test.ts`** (+4 tests): pointer coincidente/no coincidente, escapado `~`/`/`, E2E compose (`service.image` → kind string con `x-widget='compose-image'` tras `$ref`) y `x-widget` sin warnings en jsl.
 
 **Archivos modificados:**
 - `src/utils/schema-form/normalize.ts`
-- `src/composables/useSchemaForm.ts`
+- `src/composables/useSchemaToForm.ts`
 - `src/components/form/schema/JsonSchemaEditor.vue`
 - `src/components/form/schema/SchemaField.vue`
 - `src/components/form/schema/ComposeEditor.vue`
@@ -130,7 +162,7 @@
 
 **Detección del usuario**: `ComposeEditor.vue` (y su copia de prueba `ComposerEditor.vue` para `composer.json`) hardcodeaban el layout de la raíz: `name`/`version` sacadas a una sección superior y **todo** el resto como pestañas, incluso campos simples. Con `composer.json` se nota: campos simples (`description`, `type`…) aparecen como pestañas. Plan y detalle en `AGENTS.schema-editor-generico.PLAN.md`.
 
-1. **`src/components/form/schema/JsonSchemaEditor.vue`** (nuevo): editor genérico de documento JSON-Schema. Props: `schema: JsonSchema`, `title?`, `description?`, `importLabel?` (default `form.schema_form.import_compose`), `importAccept?` (default `.yaml,.yml`), `resolveTitle?`, `resolveDescription?`, `resolveMessage?`, `icon?` (resolver de icono por tab). Contiene `defineModel<string|null>`, `useSchemaForm` + `provideSchemaFormContext`, sync model↔formData, alerts de error/warning, import de archivo, preview YAML y badge de draft. La raíz se renderiza con `<SchemaFieldObject :node="form.root" path="" :icon="icon" />` → layout genérico de objeto: **simples inline primero, contenedores como pestañas** (sin hardcodeo de `name`/`version` ni "todo-en-tabs").
+1. **`src/components/form/schema/JsonSchemaEditor.vue`** (nuevo): editor genérico de documento JSON-Schema. Props: `schema: JsonSchema`, `title?`, `description?`, `importLabel?` (default `form.schema_form.import_compose`), `importAccept?` (default `.yaml,.yml`), `resolveTitle?`, `resolveDescription?`, `resolveMessage?`, `icon?` (resolver de icono por tab). Contiene `defineModel<string|null>`, `useSchemaToForm` + `provideSchemaFormContext`, sync model↔formData, alerts de error/warning, import de archivo, preview YAML y badge de draft. La raíz se renderiza con `<SchemaFieldObject :node="form.root" path="" :icon="icon" />` → layout genérico de objeto: **simples inline primero, contenedores como pestañas** (sin hardcodeo de `name`/`version` ni "todo-en-tabs").
 2. **`SchemaFieldObject.vue`**: nuevo prop opcional `icon?: (name, node) => string | undefined`; `tabIcon` usa `props.icon?.()` antes de `ICONS.schemaForm`. El núcleo sigue sin importar compose/composer.
 3. **`ComposeEditor.vue`**: reescrito como wrapper fino → `JsonSchemaEditor` con `composeJson = normalizeBooleanString(composeSpec)`, `resolveTitle`/`resolveDescription` de `form.compose_schema.*` e `icon = ICONS.compose[name]`. Eliminado todo el layout hardcodeado.
 4. **`ComposerEditor.vue`** (prueba de agnosticismo): reescrito como wrapper fino con `composer-schema.json` + `normalizeBooleanString`, `importAccept: '.json'`, sin resolvers ni iconos de Compose.
@@ -192,14 +224,14 @@
 **Nota del usuario en `AGENTS.todo.md`**: _La validación de jsl incluye también warnings; esos warnings también se deberían mostrar._ Plan y detalle en `AGENTS.schema-form-jsl.PLAN.md` Fase 8.
 
 1. **`src/utils/schema-form/validate.ts`**: `ValidationResult` ahora incluye `warnings: Record<ruta, string[]>`. `validateWithJsl` recoge las annotations de `root.validate(data)` cuyo código termina en `-warning` (p.ej. `deprecated-warning` de propiedades `deprecated` con valor) y las agrupa por ruta con clave i18n `form.schema_form.warnings.*`. `ok` sigue dependiendo solo de `errors` (los warnings no invalidan).
-2. **`src/composables/useSchemaForm.ts`**: expone `warnings` (ref) y `warningAt(path)`; `validate()` rellena ambos.
+2. **`src/composables/useSchemaToForm.ts`**: expone `warnings` (ref) y `warningAt(path)`; `validate()` rellena ambos.
 3. **`SchemaField.vue`**: muestra el primer warning del campo (`text-warning`) bajo el campo.
 4. **`ComposeEditor.vue`**: `UAlert` color `warning` con resumen de warnings y punto ámbar en los tabs afectados (el rojo de errores tiene prioridad).
 5. **i18n**: `validation_warnings` y `warnings.*` (deprecated/unknown_keyword/unknown_format/schema/generic) en `src/locales/es/form/schema_form.ts`.
 
 **Archivos modificados:**
 - `src/utils/schema-form/validate.ts`
-- `src/composables/useSchemaForm.ts`
+- `src/composables/useSchemaToForm.ts`
 - `src/components/form/schema/SchemaField.vue`
 - `src/components/form/schema/ComposeEditor.vue`
 - `src/locales/es/form/schema_form.ts`
@@ -278,7 +310,7 @@
 
 ## Tareas completadas (13 ago 2026 - sistema de formularios JSON-Schema con jsl)
 
-**Objetivo:** Reconstruir el sistema de formularios por JSON-Schema (`src/components/form/schema/*`, `src/composables/useSchemaForm.ts`, `src/utils/schema-form/*`) para que gire alrededor de **`json-schema-library` (jsl)** y sea **agnóstico** (no depende de `compose-spec.json` ni `composer-schema.json`). Ejecutado en 4 fases según `AGENTS.schema-form-jsl.PLAN.md`.
+**Objetivo:** Reconstruir el sistema de formularios por JSON-Schema (`src/components/form/schema/*`, `src/composables/useSchemaToForm.ts`, `src/utils/schema-form/*`) para que gire alrededor de **`json-schema-library` (jsl)** y sea **agnóstico** (no depende de `compose-spec.json` ni `composer-schema.json`). Ejecutado en 4 fases según `AGENTS.schema-form-jsl.PLAN.md`.
 
 **Fase 1 - utilidades jsl (`src/utils/schema-form/jsl.ts`, `paths.ts`):**
 - `compileRoot(schema)` → `{ root: SchemaNode, draft: string }` (detecta `draft-04`/`2020-12`).
@@ -292,7 +324,7 @@
 - Claves `errors.*`, `kind.null`, `null_value` en `src/locales/es/form/schema_form.ts`; `typed-locale.d.ts` regenerado.
 
 **Fase 3 - composable + contexto + componentes + ComposeEditor (el swap):**
-- `useSchemaForm.ts` reescrito: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt, resolveTitle, resolveDescription }`; defaults iniciales vía `root.getData()`.
+- `useSchemaToForm.ts` reescrito: `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt, resolveTitle, resolveDescription }`; defaults iniciales vía `root.getData()`.
 - `SchemaField.vue` (despacho por `classifyNode`, soporta nullable con `SchemaFieldNull`), `SchemaFieldNull.vue` (USwitch null), `SchemaFieldUnion.vue` (USelect de variantes, oneOf exclusivo), `SchemaFieldArray.vue` (lista + USelect de formato si `items.oneOf`, array uniforme), `SchemaFieldMap.vue` (patternProperties[0] → additionalProperties → any), `SchemaFieldAny.vue` (textarea JSON), `context.ts`.
 - `ComposeEditor.vue`: tabs desde `root.properties`, name/version aparte, `UBadge` con el draft, mismos sample/validate/generate.
 - Arreglos colaterales: `src/pages/dashboard/docker_composes/add.vue` (eliminado onSubmit/template muerto); recreado `src/components/form/editors/parts/ComposeFileForm.vue` como adaptador `ComposeFile ↔ ComposeEditor`.

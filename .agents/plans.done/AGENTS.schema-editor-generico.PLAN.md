@@ -25,7 +25,7 @@ El layout correcto ya existe y es genérico: `SchemaFieldObject.vue` (de la tare
 
 - `JsonSchemaEditor.vue` (nuevo, en `src/components/form/schema/`):
   - Props: `schema: JsonSchema`, `title?`, `description?`, `importLabel?` (default `form.schema_form.import_compose`), `importAccept?` (default `.yaml,.yml`), `resolveTitle?`, `resolveDescription?`, `resolveMessage?`, `icon?` (resolver de icono para tabs de contenedores de la raíz).
-  - Contiene: `defineModel<string|null>`, `useSchemaForm` + `provideSchemaFormContext`, watchers de sync model↔formData, alerts de error/warning, import de archivo, preview YAML, badge de draft.
+  - Contiene: `defineModel<string|null>`, `useSchemaToForm` + `provideSchemaFormContext`, watchers de sync model↔formData, alerts de error/warning, import de archivo, preview YAML, badge de draft.
   - Render de la raíz: `<SchemaFieldObject :node="form.root" path="" :icon="icon" />`.
 - `SchemaFieldObject.vue`: nuevo prop opcional `icon?: (name, node) => string | undefined` para las tabs de contenedores; si no se provee, usa los iconos por kind de `ICONS.schemaForm`. Así Compose conserva sus iconos (`ICONS.compose`) sin que el núcleo deje de ser agnóstico.
 - `ComposeEditor.vue`: queda como wrapper → `JsonSchemaEditor` con `composeJson = normalizeBooleanString(composeSpec)`, `resolveTitle`/`resolveDescription` de `form.compose_schema.*` e `icon` = `ICONS.compose[name]`. Se elimina todo el layout hardcodeado.
