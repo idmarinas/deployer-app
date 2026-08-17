@@ -29,7 +29,8 @@
 // Tipos
 // ---------------------------------------------------------------------------
 
-export type ModuleName = 'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks' | 'docker_composes'
+export type ModuleName =
+	'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks' | 'docker_composes'
 
 export type ModuleIconVariant = 'plural' | 'singular' | 'off'
 
@@ -209,7 +210,7 @@ export const ICONS = {
 		paypal: 'i-tabler-brand-paypal',
 		github: 'i-tabler-brand-github',
 		linkedin: 'i-tabler-brand-linkedin',
-    bitly: 'i-cib-bitly',
+		bitly: 'i-cib-bitly',
 	},
 
 	/** Misceláneos (galería de diseño, pestañas, etc.) */
@@ -222,6 +223,26 @@ export const ICONS = {
 		lockOpen: 'i-tabler-lock-open',
 		encrypt: 'i-tabler-key',
 		empty: 'i-tabler-circle-dashed',
+	},
+
+	/** Para las tabs de compose.yaml */
+	compose: {
+		include: 'i-tabler-file-import',
+		volumes: 'i-tabler-database',
+		services: 'i-tabler-package',
+		networks: 'i-tabler-network',
+		models: 'i-tabler-sparkles',
+		secrets: 'i-tabler-shield-lock',
+		configs: 'i-tabler-settings',
+	},
+
+	/** Iconos por kind para las pestañas de objetos anidados del formulario JSON-Schema */
+	schemaForm: {
+		object: 'i-tabler-box',
+		map: 'i-tabler-map',
+		array: 'i-tabler-list',
+		union: 'i-tabler-toggle-left',
+		any: 'i-tabler-code',
 	},
 } as const
 
