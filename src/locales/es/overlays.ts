@@ -34,7 +34,6 @@ export default {
 			nothing_to_upload: 'Ningún archivo válido para subir.',
 			action_add: 'Añadir',
 			action_replace: 'Sustituir',
-			action_compose: 'Sustituir compose.yaml',
 			action_reject_size: 'Rechazado: tamaño',
 			action_reject_type: 'Rechazado: tipo',
 			remove: 'Quitar de la importación',
