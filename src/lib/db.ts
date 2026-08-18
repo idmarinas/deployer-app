@@ -6,46 +6,163 @@ import * as tablesSchema from './schema'
 
 const schema = { ...tablesSchema, ...relationsSchema }
 
+// ====================================================================
+// Detección automática de campos cifrados desde el schema
+// ====================================================================
+
+interface EncryptedFieldInfo {
+  tableName: string
+  fieldName: string
+  type: 'always' | 'conditional'
+  conditionField?: string
+}
+
 /**
- * Proxy Drizzle → Tauri `query_raw`.
+ * Inspecciona el schema de Drizzle y detecta qué campos usan encryptedText.
  *
- * Drizzle genera el SQL en el frontend y lo delega al comando Rust `query_raw`,
- * que lo ejecuta sobre el SQLite local del usuario.
- *
- * Se pasa el schema completo (tablas + relaciones de relations.ts) para poder usar
- * el Relational Queries API: `db.query.projects.findFirst({ with: { hosts: true } })`.
- * Esto evita el problema de productos cartesianos al combinar varios leftJoin 1:N
- * manuales — Drizzle separa las queries y anida los resultados correctamente.
- *
- * `query_raw` devuelve un CommandResponse: { success, data, message_key, message_params }.
- * `data` es un array de filas, cada fila un array de valores en el orden de columnas
- * del SELECT (no un objeto), que es justo lo que el modo proxy de Drizzle espera.
+ * - Sin config → siempre cifrado (type: 'always')
+ * - Con config.condition → condicional (type: 'conditional')
  */
+function detectEncryptedFieldsFromSchema(): EncryptedFieldInfo[] {
+  const fields: EncryptedFieldInfo[] = []
+
+  for (const [tableName, table] of Object.entries(schema)) {
+    if (typeof table !== 'object' || table === null) continue
+
+    for (const [colName, col] of Object.entries(table)) {
+      const column = col as any
+
+      if (column?.columnType !== 'SQLiteCustomColumn') continue
+
+      const config = column.config
+
+      if (!config) {
+        fields.push({
+          tableName,
+          fieldName: colName,
+          type: 'always',
+        })
+      } else if (config.condition) {
+        fields.push({
+          tableName,
+          fieldName: colName,
+          type: 'conditional',
+          conditionField: config.condition,
+        })
+      }
+    }
+  }
+
+  return fields
+}
+
+const encryptedFieldsCache = detectEncryptedFieldsFromSchema()
+
+// ====================================================================
+// Helpers
+// ====================================================================
+
+function isWriteOperation(sql: string): boolean {
+  const upper = sql.trim().toUpperCase()
+  return upper.startsWith('INSERT') || upper.startsWith('UPDATE') || upper.startsWith('DELETE')
+}
+
+function isReadOperation(sql: string): boolean {
+  return sql.trim().toUpperCase().startsWith('SELECT')
+}
+
+function getEncryptedFieldsForSQL(sql: string): {
+  encrypt: string[]
+  conditionalEncrypt: { field: string, condition: string }[]
+} | null {
+  const upper = sql.toUpperCase()
+  const encrypt: string[] = []
+  const conditionalEncrypt: { field: string, condition: string }[] = []
+
+  for (const field of encryptedFieldsCache) {
+    if (upper.includes(field.tableName.toUpperCase())) {
+      if (field.type === 'always') {
+        encrypt.push(field.fieldName)
+      } else if (field.type === 'conditional' && field.conditionField) {
+        conditionalEncrypt.push({
+          field: field.fieldName,
+          condition: field.conditionField,
+        })
+      }
+    }
+  }
+
+  if (encrypt.length === 0 && conditionalEncrypt.length === 0) {
+    return null
+  }
+
+  return { encrypt, conditionalEncrypt }
+}
+
+// ====================================================================
+// Proxy Drizzle → Tauri
+// ====================================================================
+
 interface QueryRawResponse {
-	success: boolean
-	data: unknown[][] | null
-	message_key?: string
-	message_params?: Record<string, string>
+  success: boolean
+  data: unknown[][] | null
+  message_key?: string
+  message_params?: Record<string, string>
 }
 
 export const db = drizzle<typeof schema>(
-	async (sql, params, method) => {
-		const response = await invoke<QueryRawResponse>('query_raw', {
-			sql,
-			params: params ?? [],
-		})
+  async (sql, params, method) => {
+    const encryptedFields = getEncryptedFieldsForSQL(sql)
+    const hasEncryption = encryptedFields && (
+      encryptedFields.encrypt.length > 0 ||
+      encryptedFields.conditionalEncrypt.length > 0
+    )
 
-		if (!response.success) {
-			throw new Error(response.message_key ?? 'query_raw failed')
-		}
+    // Escritura con cifrado
+    if (hasEncryption && isWriteOperation(sql)) {
+      const response = await invoke<QueryRawResponse>('query_raw_with_encryption', {
+        sql,
+        params: params ?? [],
+        encryptFields: encryptedFields!.encrypt,
+        conditionalEncrypt: encryptedFields!.conditionalEncrypt,
+      })
 
-		const rows = response.data ?? []
+      if (!response.success) {
+        throw new Error(response.message_key ?? 'query_raw failed')
+      }
 
-		if (method === 'get') {
-			return { rows: rows[0] ?? [] }
-		}
+      const rows = response.data ?? []
+      return method === 'get' ? { rows: rows[0] ?? [] } : { rows }
+    }
 
-		return { rows }
-	},
-	{ schema },
+    // Lectura con descifrado
+    if (hasEncryption && isReadOperation(sql)) {
+      const response = await invoke<QueryRawResponse>('query_raw_with_encryption', {
+        sql,
+        params: params ?? [],
+        decryptFields: encryptedFields!.encrypt,
+      })
+
+      if (!response.success) {
+        throw new Error(response.message_key ?? 'query_raw failed')
+      }
+
+      const rows = response.data ?? []
+      return method === 'get' ? { rows: rows[0] ?? [] } : { rows }
+    }
+
+    // Sin cifrado → query_raw normal
+    const response = await invoke<QueryRawResponse>('query_raw', {
+      sql,
+      params: params ?? [],
+    })
+
+    if (!response.success) {
+      throw new Error(response.message_key ?? 'query_raw failed')
+    }
+
+    const rows = response.data ?? []
+    return method === 'get' ? { rows: rows[0] ?? [] } : { rows }
+  },
+  { schema },
 )
