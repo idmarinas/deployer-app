@@ -51,7 +51,7 @@ async function executeAction(action: 'up' | 'down' | 'ps' | 'logs' | 'restart' |
 		const input = { docker_compose_id: Number.parseInt(route.params.id) }
 
 		if (action === 'ps') {
-			const result = await invoke<CommandResponse<DockerComposeService[]>>(`docker_compose_${action}`, { input })
+			const result = await invoke<CommandResponse<DockerComposeService[]>>(`project_docker_compose_${action}`, { input })
 			if (result.success) {
 				services.value = result.data ?? []
 				output.value = t('pages.docker_composes.manage.status_updated')
@@ -64,7 +64,7 @@ async function executeAction(action: 'up' | 'down' | 'ps' | 'logs' | 'restart' |
 				toast.add({ title: t('overlays.toast.title.error'), description: result.message_key, color: 'error' })
 			}
 		} else {
-			const result = await invoke<CommandResponse<string>>(`docker_compose_${action}`, { input })
+			const result = await invoke<CommandResponse<string>>(`project_docker_compose_${action}`, { input })
 			if (result.success) {
 				output.value = result.data ?? ''
 				toast.add({

@@ -117,7 +117,7 @@ async function onSubmit(event: FormSubmitEvent<DockerComposeSchema>) {
 			}),
 		)
 
-		const sync = await invoke<CommandResponse<DockerComposeFile[]>>('sync_docker_compose_files', {
+		const sync = await invoke<CommandResponse<DockerComposeFile[]>>('sync_project_docker_compose_files', {
 			input: { module_id: result.data, files },
 		})
 		console.log(sync)

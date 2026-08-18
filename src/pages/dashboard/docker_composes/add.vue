@@ -92,7 +92,7 @@ async function onSubmit(event: FormSubmitEvent<DockerComposeSchema>) {
 			}),
 		)
 
-		const sync = await invoke<{ success: boolean; message_key?: string; message_params?: Record<string, string> }>('sync_docker_compose_files', {
+		const sync = await invoke<{ success: boolean; message_key?: string; message_params?: Record<string, string> }>('sync_project_docker_compose_files', {
 			input: { module_id: result.id, files },
 		})
 		if (!sync.success) {

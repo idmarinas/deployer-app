@@ -6,9 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-// Composables
-
-// Tauri related imports
+import { setDeployerSettings } from '@/composables/deployer/useDeployerSettings'
 import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -126,12 +124,20 @@ export function useConfigureDeployerApp() {
 				description: t('pages.setup.steps.description.idle.seed'),
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
-					return invoke<CommandResponse>('set_deployer_settings', {
-						settings: {
+					try {
+						await setDeployerSettings({
 							locale: locale.value,
 							theme_color: colorMode.value,
-						},
-					})
+						})
+						return { success: true, data: null, message_key: 'tauri.deployer_settings.success.saved', message_params: {} }
+					} catch (e) {
+						return {
+							success: false,
+							data: null,
+							message_key: 'tauri.deployer_settings.errors.save_failed',
+							message_params: { reason: String(e) },
+						}
+					}
 				},
 			},
 		]

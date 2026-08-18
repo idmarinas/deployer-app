@@ -31,7 +31,7 @@ export async function searchDockerHub(query: string): Promise<DockerHubImageResu
 	if (!trimmed) return []
 
 	try {
-		return await invoke<DockerHubImageResult[]>('get_docker_hub_search_cache', {
+		return await invoke<DockerHubImageResult[]>('cache_docker_search', {
 			query: trimmed,
 		})
 	} catch (e) {
@@ -49,7 +49,7 @@ export async function fetchDockerHubTags(imageName: string): Promise<DockerHubTa
 	if (!trimmed) return []
 
 	try {
-		return await invoke<DockerHubTagResult[]>('get_docker_hub_tags_cache', {
+		return await invoke<DockerHubTagResult[]>('cache_docker_tags', {
 			imageName: trimmed,
 		})
 	} catch (e) {
@@ -68,7 +68,7 @@ export async function fetchDockerHubTagExists(imageName: string, tag: string): P
 	if (!trimmedImage || !trimmedTag) return false
 
 	try {
-		const results = await invoke<DockerHubTagResult[]>('get_docker_hub_tags_cache', {
+		const results = await invoke<DockerHubTagResult[]>('cache_docker_tags', {
 			imageName: trimmedImage,
 			tag: trimmedTag,
 		})
@@ -111,10 +111,4 @@ export async function validateComposeImages(composeContent: string): Promise<str
 	return invalid
 }
 
-// ============================================================================
-// Cache cleanup
-// ============================================================================
 
-export async function cleanupDockerHubCache(olderThanHours = 24): Promise<void> {
-	await invoke('cleanup_docker_hub_cache', { olderThanHours }).catch(() => {})
-}

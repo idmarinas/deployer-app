@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { DeployerSetting } from './types/tauri-types'
-
 import * as locales from '@nuxt/ui/locale'
 import { useHead } from '@unhead/vue'
 import { useColorMode } from '@vueuse/core'
@@ -8,10 +6,9 @@ import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useDeployerShortcuts } from '@/composables/deployer/useDeployer'
+import { getDeployerSetting, setDeployerSetting } from '@/composables/deployer/useDeployerSettings'
 import { loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from '@/locales/_loader'
 import { registerExternalLinks } from '@/utils/externalLinks'
-import { invoke } from '@tauri-apps/api/core'
-import { CommandResponse } from './types/tauri-types'
 
 const colorMode = useColorMode()
 const i18n = useI18n()
@@ -27,10 +24,8 @@ useHead({
 })
 
 onBeforeMount(async () => {
-	// Restaurar idioma guardado en deployer_settings
 	try {
-		const response = await invoke<CommandResponse<DeployerSetting>>('get_deployer_setting', { key: 'locale' })
-		const savedLocale = response.data?.value
+		const savedLocale = await getDeployerSetting('locale')
 
 		if (savedLocale && savedLocale !== i18n.locale.value) {
 			const [messages, datetimeFormat, numberFormat] = await Promise.all([
@@ -55,20 +50,13 @@ onMounted(() => {
 })
 
 watch(colorMode, async newColor => {
-	await invoke<CommandResponse>('set_deployer_setting', {
-		key: 'theme_color',
-		value: newColor,
-	})
+	await setDeployerSetting('theme_color', newColor)
 })
 
 watch(i18n.locale, async newLocale => {
-	await invoke<CommandResponse>('set_deployer_setting', {
-		key: 'locale',
-		value: newLocale,
-	})
+	await setDeployerSetting('locale', newLocale)
 })
 
-// Definir shortcuts globales
 defineShortcuts(shortcuts)
 </script>
 
