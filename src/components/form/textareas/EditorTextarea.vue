@@ -9,7 +9,7 @@ import { upperFirst } from 'scule'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { SchemaSanitizer } from '@/utils/Tiptap/SchemaSanitizerExtension'
+import { SchemaSanitizer } from '@/utils/tiptap/SchemaSanitizerExtension'
 
 const { t, n } = useI18n()
 
