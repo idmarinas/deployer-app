@@ -1,9 +1,5 @@
-use deployer_macros::DbEntity;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-
-use crate::patch::Patch;
-use crate::commands::hosts::updates::HostServerUpdates;
 
 // ============================================================================
 // Enum AuthType
@@ -40,115 +36,6 @@ impl std::str::FromStr for AuthType {
             other => Err(format!("Tipo de autenticación no válido: '{}'", other)),
         }
     }
-}
-
-// ============================================================================
-// Entidad Host
-// ============================================================================
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS, DbEntity)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-#[db_table("deployer_hosts")]
-pub struct Host {
-    pub id: i64,
-    pub name: String,
-    pub host: String,
-    pub port: i64,
-    pub username: String,
-    pub auth_type: AuthType,
-    /// Cifrado siempre. El frontend nunca recibe este valor descifrado;
-    /// solo la usa Rust internamente para SSH.
-    #[db_encrypt]
-    pub password: Option<String>,
-    pub key_id: Option<i64>,
-    #[ts(type = "any")]
-    pub description: Option<sqlx::types::Json<serde_json::Value>>,
-    pub enabled: bool,
-    /// JSON con información del sistema detectada: package_manager, kernel, arch, distribution, etc.
-    #[ts(as = "Option<HostSystemInfo>")]
-    pub system_info: Option<sqlx::types::Json<HostSystemInfo>>,
-    /// JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
-    #[ts(as = "Option<HostStatusMetrics>")]
-    pub status_info: Option<sqlx::types::Json<HostStatusMetrics>>,
-    /// JSON con las actualizaciones de paquetes disponibles y la última comprobación.
-    #[ts(as = "Option<HostServerUpdates>")]
-    pub server_updates: Option<sqlx::types::Json<HostServerUpdates>>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-// ============================================================================
-// Input para crear un Host
-// ============================================================================
-
-#[derive(Debug, Default, Deserialize, TS)]
-#[serde(default)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct CreateHostInput {
-    pub name: String,
-    pub host: String,
-    pub port: Option<i64>,
-    pub username: String,
-    pub auth_type: AuthType,
-    pub password: Option<String>,
-    pub key_id: Option<i64>,
-    pub description: Option<String>,
-    pub enabled: Option<bool>,
-}
-
-impl CreateHostInput {
-    /// Convierte el input en una entidad `Host` lista para insertar.
-    /// Los campos `id`, `created_at` y `updated_at` se gestionan por SQLite.
-    pub fn into_host(self) -> Host {
-        Host {
-            id: 0,
-            name: self.name,
-            host: self.host,
-            port: self.port.unwrap_or(22),
-            username: self.username,
-            auth_type: self.auth_type,
-            password: self.password,
-            key_id: self.key_id,
-            description: self.description.and_then(|s| serde_json::from_str(&s).ok()).map(sqlx::types::Json),
-            enabled: self.enabled.unwrap_or(true),
-            system_info: Some(sqlx::types::Json(HostSystemInfo::default())),
-            status_info: Some(sqlx::types::Json(HostStatusMetrics::default())),
-            server_updates: Some(sqlx::types::Json(HostServerUpdates::default())),
-            created_at: String::new(),
-            updated_at: String::new(),
-        }
-    }
-}
-
-// ============================================================================
-// Input para actualizar un Host
-// ============================================================================
-
-#[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct UpdateHostInput {
-    #[ts(optional)]
-    pub name: Option<String>,
-    #[ts(optional)]
-    pub host: Option<String>,
-    #[ts(optional)]
-    pub port: Option<i64>,
-    #[ts(optional)]
-    pub username: Option<String>,
-    #[ts(optional)]
-    pub auth_type: Option<AuthType>,
-    /// `Unset` = no modificar; `Null` = eliminar la contraseña; `Value(v)` = cifrar y guardar.
-    #[serde(default)]
-    #[ts(optional = nullable)]
-    pub password: Patch<String>,
-    #[serde(default)]
-    #[ts(optional = nullable)]
-    pub key_id: Patch<i64>,
-    #[serde(default)]
-    #[ts(optional = nullable)]
-    pub description: Patch<String>,
-    #[ts(optional)]
-    pub enabled: Option<bool>,
 }
 
 // ============================================================================

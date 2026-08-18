@@ -9,8 +9,8 @@ use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
 use crate::helpers::configured_sqlite_options;
-use crate::commands::hosts::types::{AuthType, Host};
-use crate::ssh::{SshCredentials, SshSession};
+use crate::commands::hosts::types::AuthType;
+use crate::ssh::{HostCredentials, SshCredentials, SshSession};
 use crate::response::CommandResponse;
 use crate::crypto;
 use crate::params;
@@ -96,7 +96,7 @@ pub async fn export_public_key(
     };
 
     // 3. Obtener datos del host + credenciales de su passkey
-    let (mut host, mut host_key_content, mut host_passphrase) =
+    let (mut host_creds, mut host_key_content, mut host_passphrase) =
         match fetch_host_data(&db_path, input.host_id).await {
             Ok(Some(data)) => data,
             Ok(None) => {
@@ -114,9 +114,9 @@ pub async fn export_public_key(
         };
 
     // Descifrar credenciales del host
-    if let Some(ref pwd) = host.password {
+    if let Some(ref pwd) = host_creds.password {
         if crypto::is_encrypted(pwd) {
-            host.password = Some(
+            host_creds.password = Some(
                 crypto::decrypt(pwd, &master_key)
                     .map_err(|e| format!("Error al descifrar password: {}", e))?,
             );
@@ -182,13 +182,13 @@ pub async fn export_public_key(
     };
 
     // 6. Intentar conexión SSH — primero credenciales temporales, luego las de BD
-    let addr = format!("{}:{}", host.host, host.port);
+    let addr = format!("{}:{}", host_creds.host, host_creds.port);
 
     let connect_result = timeout(
         Duration::from_secs(SSH_TIMEOUT_SECS),
         try_connect_and_execute(
             &addr,
-            &host,
+            &host_creds,
             host_key_content.as_deref(),
             host_passphrase.as_deref(),
             input.temp_username.as_deref(),
@@ -234,7 +234,7 @@ pub async fn export_public_key(
 /// fallan o no se proporcionaron, usa las credenciales guardadas en BD.
 async fn try_connect_and_execute(
     addr: &str,
-    host: &Host,
+    host_creds: &HostCredentials,
     host_key_content: Option<&str>,
     host_passphrase: Option<&str>,
     temp_username: Option<&str>,
@@ -260,9 +260,9 @@ async fn try_connect_and_execute(
 
     // Intentar con las credenciales guardadas en BD
     let credentials = SshCredentials {
-        username: host.username.clone(),
-        auth_type: host.auth_type.clone(),
-        password: host.password.clone(),
+        username: host_creds.username.clone(),
+        auth_type: host_creds.auth_type.clone(),
+        password: host_creds.password.clone(),
         key_content: host_key_content.map(|s| s.to_string()),
         passphrase: host_passphrase.map(|s| s.to_string()),
     };
@@ -371,16 +371,13 @@ async fn run_channel_command(
 async fn fetch_host_data(
     db_path: &str,
     host_id: i64,
-) -> Result<Option<(Host, Option<String>, Option<String>)>, String> {
+) -> Result<Option<(HostCredentials, Option<String>, Option<String>)>, String> {
     let pool = open_pool(db_path).await?;
 
     let row = sqlx::query(
         r#"
         SELECT
-            h.id, h.name, h.host, h.port, h.username, h.auth_type,
-            h.password, h.key_id, h.description, h.enabled,
-            h.system_info, h.status_info,
-            h.created_at, h.updated_at,
+            h.host, h.port, h.username, h.auth_type, h.password,
             p.key_content, p.passphrase
         FROM deployer_hosts h
         LEFT JOIN deployer_passkeys p ON h.key_id = p.id
@@ -395,26 +392,16 @@ async fn fetch_host_data(
     pool.close().await;
 
     Ok(row.map(|r| {
-        let host = Host {
-            id: r.get("id"),
-            name: r.get("name"),
+        let host_creds = HostCredentials {
             host: r.get("host"),
             port: r.get("port"),
             username: r.get("username"),
             auth_type: r.get("auth_type"),
             password: r.try_get("password").ok().flatten(),
-            key_id: r.get("key_id"),
-            description: r.try_get("description").ok().flatten(),
-            enabled: r.get("enabled"),
-            system_info: r.try_get("system_info").ok().flatten(),
-            status_info: r.try_get("status_info").ok().flatten(),
-            server_updates: r.try_get("server_updates").ok().flatten(),
-            created_at: r.get("created_at"),
-            updated_at: r.get("updated_at"),
         };
         let key_content: Option<String> = r.try_get("key_content").ok().flatten();
         let passphrase: Option<String> = r.try_get("passphrase").ok().flatten();
-        (host, key_content, passphrase)
+        (host_creds, key_content, passphrase)
     }))
 }
 

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
 
-use crate::commands::hosts::types::{AuthType, Host};
+use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 
 /// Timeout por defecto para el establecimiento de la conexión SSH (segundos).
@@ -22,6 +22,15 @@ impl client::Handler for SshClientHandler {
     ) -> Result<bool, Self::Error> {
         Ok(true)
     }
+}
+
+/// Datos mínimos de credenciales SSH de un host, descifrados y listos para conectar.
+pub struct HostCredentials {
+    pub host: String,
+    pub port: i64,
+    pub username: String,
+    pub auth_type: AuthType,
+    pub password: Option<String>,
 }
 
 /// Datos de credenciales SSH ya descifrados, listos para autenticar.
@@ -104,7 +113,7 @@ impl SshSession {
 
 /// Descifra las credenciales del host usando la clave maestra.
 pub fn decrypt_host_credentials(
-    host: &Host,
+    host: &HostCredentials,
     key_content: Option<String>,
     passphrase: Option<String>,
     master_key: &[u8],

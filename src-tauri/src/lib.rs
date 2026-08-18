@@ -1,7 +1,5 @@
 mod commands;
 mod crypto;
-mod crud;
-mod description;
 mod helpers;
 mod patch;
 mod response;
@@ -13,18 +11,13 @@ use commands::database::{
     query_raw_with_encryption, execute_migrations, validate_database_sqlite,
 };
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
-use commands::deployer_settings::{
-    delete_deployer_setting, get_deployer_setting, list_deployer_settings, set_deployer_setting,
-    set_deployer_settings,
+use commands::projects::docker::compose::{
+    sync_project_docker_compose_files,
+    project_docker_compose_down, project_docker_compose_logs, project_docker_compose_ps,
+    project_docker_compose_pull, project_docker_compose_restart, project_docker_compose_up,
 };
-use commands::deployments::run_deployment;
-use commands::docker::compose::{
-    sync_docker_compose_files,
-    docker_compose_down, docker_compose_logs, docker_compose_ps, docker_compose_pull,
-    docker_compose_restart, docker_compose_up,
-};
-use commands::docker::hub_cache::{
-    get_docker_hub_search_cache, get_docker_hub_tags_cache, cleanup_docker_hub_cache,
+use commands::cache::docker::{
+    cache_docker_search, cache_docker_tags,
 };
 use commands::hosts::{
     host_check_system_info, host_check_metrics, host_check_updates, host_update_packages, test_connection,
@@ -75,27 +68,18 @@ pub fn run() {
             ssh_upload_file,
             ssh_download_file,
             ssh_cancel_remote_job,
-            // Deployer Settings
-            get_deployer_setting,
-            set_deployer_setting,
-            set_deployer_settings,
-            list_deployer_settings,
-            delete_deployer_setting,
-            // Deployments - Runner
-            run_deployment,
             // Docker Composes - Archivos
-            sync_docker_compose_files,
+            sync_project_docker_compose_files,
             // Docker Composes - Operaciones
-            docker_compose_up,
-            docker_compose_down,
-            docker_compose_ps,
-            docker_compose_logs,
-            docker_compose_restart,
-            docker_compose_pull,
+            project_docker_compose_up,
+            project_docker_compose_down,
+            project_docker_compose_ps,
+            project_docker_compose_logs,
+            project_docker_compose_restart,
+            project_docker_compose_pull,
             // Docker Hub Cache
-            get_docker_hub_search_cache,
-            get_docker_hub_tags_cache,
-            cleanup_docker_hub_cache,
+            cache_docker_search,
+            cache_docker_tags,
             // Database - Store
             get_database_path,
             set_database_path,

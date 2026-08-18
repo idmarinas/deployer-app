@@ -122,7 +122,7 @@ pub async fn host_check_system_info(
     host_id: i64,
 ) -> Result<CommandResponse<HostSystemInfo>, String> {
     // 1. Conectar al host
-    let (mut session, host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
+    let (mut session, _host_creds) = match connect_to_host_by_id(&app, host_id, 1, true).await {
         Ok(result) => result,
         Err(e) => {
             if e.contains("Timeout") {
@@ -139,10 +139,8 @@ pub async fn host_check_system_info(
     };
 
     // 2. Verificar cooldown de system_info
-    let cached_system_info: Option<HostSystemInfo> = host
-        .system_info
-        .as_ref()
-        .map(|j| j.0.clone());
+    let cached_system_info: Option<HostSystemInfo> =
+        fetch_host_json_field(&app, host_id, "system_info").await;
 
     let needs_refresh = match &cached_system_info {
         Some(sys) => match &sys.last_checked_at {
@@ -202,7 +200,7 @@ pub async fn host_check_metrics(
     host_id: i64,
 ) -> Result<CommandResponse<HostStatusMetrics>, String> {
     // 1. Conectar al host
-    let (mut session, host) = match connect_to_host_by_id(&app, host_id, 1, true).await {
+    let (mut session, _host_creds) = match connect_to_host_by_id(&app, host_id, 1, true).await {
         Ok(result) => result,
         Err(e) => {
             if e.contains("Timeout") {
@@ -219,10 +217,8 @@ pub async fn host_check_metrics(
     };
 
     // 2. Verificar cooldown de status_info
-    let cached_metrics: Option<HostStatusMetrics> = host
-        .status_info
-        .as_ref()
-        .map(|j| j.0.clone());
+    let cached_metrics: Option<HostStatusMetrics> =
+        fetch_host_json_field(&app, host_id, "status_info").await;
 
     if let Some(ref metrics) = cached_metrics {
         if let Some(ref last_checked) = metrics.last_checked_at {
@@ -384,4 +380,30 @@ async fn update_status_info(
 
     pool.close().await;
     Ok(())
+}
+
+/// Lee un campo JSON de deployer_hosts y lo deserializa.
+async fn fetch_host_json_field<T: serde::de::DeserializeOwned>(
+    app: &AppHandle,
+    host_id: i64,
+    field: &str,
+) -> Option<T> {
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
+        .ok()??;
+    let url = path_to_sqlite_url(&db_path);
+    let options = configured_sqlite_options(&url).ok()?;
+    let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;
+
+    let sql = format!("SELECT {} FROM deployer_hosts WHERE id = ?1", field);
+    let raw: Option<String> = sqlx::query_scalar(&sql)
+        .bind(host_id)
+        .fetch_optional(&pool)
+        .await
+        .ok()
+        .flatten()
+        .flatten();
+
+    pool.close().await;
+
+    raw.and_then(|json| serde_json::from_str(&json).ok())
 }

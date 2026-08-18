@@ -149,14 +149,40 @@ async fn connect_and_load_system_info(
     app: &AppHandle,
     host_id: i64,
 ) -> Result<(SshSession, HostSystemInfo), String> {
-    let (session, host) = connect_to_host_by_id(app, host_id, 1, true).await?;
+    let (session, _host_creds) = connect_to_host_by_id(app, host_id, 1, true).await?;
 
-    // Parsear system_info del Host
-    let system_info = host.system_info
-        .map(|j| j.0)
+    // Leer system_info directamente de la BD
+    let system_info = fetch_host_json_field::<HostSystemInfo>(app, host_id, "system_info")
+        .await
         .unwrap_or_default();
 
     Ok((session, system_info))
+}
+
+/// Lee un campo JSON de deployer_hosts y lo deserializa.
+async fn fetch_host_json_field<T: serde::de::DeserializeOwned>(
+    app: &AppHandle,
+    host_id: i64,
+    field: &str,
+) -> Option<T> {
+    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
+        .ok()??;
+    let url = path_to_sqlite_url(&db_path);
+    let options = configured_sqlite_options(&url).ok()?;
+    let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;
+
+    let sql = format!("SELECT {} FROM deployer_hosts WHERE id = ?1", field);
+    let raw: Option<String> = sqlx::query_scalar(&sql)
+        .bind(host_id)
+        .fetch_optional(&pool)
+        .await
+        .ok()
+        .flatten()
+        .flatten();
+
+    pool.close().await;
+
+    raw.and_then(|json| serde_json::from_str(&json).ok())
 }
 
 /// Ejecuta un comando SSH simple y devuelve el output.

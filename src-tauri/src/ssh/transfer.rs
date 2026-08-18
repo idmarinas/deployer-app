@@ -5,7 +5,7 @@
 //! `ResolvedTask`, `ProgressEvent` ni `Channel`: cada caller decide cómo
 //! consumir las líneas de output (acumularlas, enviarlas por un canal, etc.).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
 
@@ -368,18 +368,6 @@ where
         download_dir(sftp, src, dest, overwrite, exclude, cancel, on_output).await
     } else {
         download_single_file(sftp, src, dest, overwrite, cancel, on_output).await
-    }
-}
-
-/// Resuelve una ruta contra un working dir si es relativa.
-pub fn resolve_path(path: &str, working_dir: Option<&str>) -> PathBuf {
-    let p = Path::new(path);
-    if p.is_absolute() {
-        p.to_path_buf()
-    } else if let Some(wd) = working_dir {
-        Path::new(wd).join(p)
-    } else {
-        p.to_path_buf()
     }
 }
 

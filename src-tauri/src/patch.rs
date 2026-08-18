@@ -1,5 +1,4 @@
 use serde::{Deserialize, Deserializer};
-use serde_json::Value;
 use ts_rs::{Config, TypeVisitor, TS};
 
 /// Representa los 3 estados posibles de un campo `NULL`-able en un update
@@ -69,19 +68,7 @@ impl<T> Patch<T> {
         }
     }
 
-    /// Devuelve `Some(serde_json::Value)` si el campo debe incluirse en el `UPDATE`
-    /// dinámico (vino en el JSON, con valor o como `null`), o `None` si no se tocó
-    /// (`Unset`), en cuyo caso el campo se omite por completo de la query SQL.
-    pub fn to_field_value(&self) -> Option<Value>
-    where
-        T: serde::Serialize,
-    {
-        match self {
-            Patch::Unset => None,
-            Patch::Null => Some(Value::Null),
-            Patch::Value(v) => Some(serde_json::to_value(v).unwrap_or(Value::Null)),
-        }
-    }
+
 }
 
 /// Representación en TypeScript: idéntica a `Option<T>` (`T | null`).

@@ -5,10 +5,9 @@ use tokio::time::timeout;
 
 use crate::commands::database::path_to_sqlite_url;
 use crate::helpers::{configured_sqlite_options, open_crypto_context};
-use crate::commands::hosts::types::Host;
 use crate::commands::database::store::get_database_path_internal;
 
-use super::session::{decrypt_host_credentials, SshSession};
+use super::session::{decrypt_host_credentials, HostCredentials, SshSession};
 
 /// Timeout para la conexión SSH (segundos).
 const SSH_TIMEOUT_SECS: u64 = 15;
@@ -17,14 +16,13 @@ const SSH_TIMEOUT_SECS: u64 = 15;
 /// crypto context → SQL query (hosts + passkeys) → decrypt → SshSession::connect()
 ///
 /// Si `enabled_only` es `true`, solo acepta hosts con `enabled = 1`.
-/// Retorna la sesión SSH y el struct `Host` por si el caller necesita
-/// campos como `host.name`, `host.system_info`, etc.
+/// Retorna la sesión SSH y las credenciales descifradas del host.
 pub async fn connect_to_host_by_id(
     app: &AppHandle,
     host_id: i64,
     reconnect_attempts: u32,
     enabled_only: bool,
-) -> Result<(SshSession, Host), String> {
+) -> Result<(SshSession, HostCredentials), String> {
     let (_pool, key) = open_crypto_context(app).await?;
 
     let db_path = get_database_path_internal(app.clone())
@@ -73,29 +71,19 @@ pub async fn connect_to_host_by_id(
 
     let row = row.ok_or_else(|| "Host no encontrado".to_string())?;
 
-    let host = Host {
-        id: row.get("id"),
-        name: row.get("name"),
+    let host_creds = HostCredentials {
         host: row.get("host"),
         port: row.get("port"),
         username: row.get("username"),
         auth_type: row.get("auth_type"),
         password: row.try_get("password").ok().flatten(),
-        key_id: row.get("key_id"),
-        description: row.try_get("description").ok().flatten(),
-        enabled: row.get("enabled"),
-        system_info: row.try_get("system_info").ok().flatten(),
-        status_info: row.try_get("status_info").ok().flatten(),
-        server_updates: row.try_get("server_updates").ok().flatten(),
-        created_at: row.get("created_at"),
-        updated_at: row.get("updated_at"),
     };
 
     let key_content: Option<String> = row.try_get("key_content").ok().flatten();
     let passphrase: Option<String> = row.try_get("passphrase").ok().flatten();
 
-    let credentials = decrypt_host_credentials(&host, key_content, passphrase, &key)?;
-    let addr = format!("{}:{}", host.host, host.port);
+    let credentials = decrypt_host_credentials(&host_creds, key_content, passphrase, &key)?;
+    let addr = format!("{}:{}", host_creds.host, host_creds.port);
 
     let session = timeout(
         Duration::from_secs(SSH_TIMEOUT_SECS),
@@ -105,5 +93,5 @@ pub async fn connect_to_host_by_id(
     .map_err(|_| "Timeout al conectar con el servidor SSH".to_string())?
     .map_err(|e| format!("Error de conexión SSH: {}", e))?;
 
-    Ok((session, host))
+    Ok((session, host_creds))
 }
