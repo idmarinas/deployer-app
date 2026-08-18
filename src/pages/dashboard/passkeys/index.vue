@@ -11,6 +11,7 @@ import { isEncryptedValue } from '@/utils/crypto'
 import { ICONS } from '@/utils/icons'
 
 import { useTableColumns } from '@/composables/useTableColumns'
+import { useQuery } from '@/composables/useQuery'
 </script>
 
 <script setup lang="ts">
@@ -22,10 +23,11 @@ const UButton = resolveComponent('UButton')
 
 const { t, locale } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
+const { passkeys: passkeyQuery } = useQuery()
 
 const { tableColumnExpand, tableColumnActions } = useTableColumns<Passkey>({
 	moduleName: 'passkeys',
-	singularName: 'passkey',
+	deleteFn: passkeyQuery.remove,
 	onReload: reload,
 })
 

@@ -11,6 +11,7 @@ import { useRoute } from 'vue-router'
 import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useQuery } from '@/composables/useQuery'
 import useToaster from '@/composables/useToaster'
 import { useHostById } from '@/loaders/hosts'
 
@@ -37,11 +38,12 @@ const toaster = useToaster()
 
 const { t, n, d } = useI18n()
 const { data: hostData, isLoading, status, error, reload } = useHostById()
+const { hosts: hostQuery } = useQuery()
 
 const isOperating = ref(false)
 
 const isLoadingOrOperating = computed(() => isLoading.value || isOperating.value)
-const { useViewButtons, useButtons } = useToolbarButtons('hosts', isLoadingOrOperating)
+const { useViewButtons, useButtons } = useToolbarButtons('hosts', isLoadingOrOperating, hostQuery.remove)
 const { hosts: hostsButtons } = useButtons()
 
 const pageTitle = computed(() => hostData.value?.name || '')
@@ -251,6 +253,12 @@ function updatedEnabled(enabled: boolean) {
 	} as any
 }
 
+async function onToggleEnabled(input: { enabled: boolean }): Promise<boolean> {
+	if (!hostData.value?.id) return false
+	const result = await hostQuery.update(hostData.value.id, input)
+	return !!result
+}
+
 useToolbarContentTitle(pageTitle, toolbar, toolbarButtons)
 
 onMounted(() => {
@@ -289,7 +297,7 @@ provide<Ref<boolean>>('isOperating', isOperating)
 			:updated_at="hostData.updated_at"
 			:enabled="hostData.enabled"
 			:on-updated-enabled="updatedEnabled"
-			update-command="crud_update_host"
+			:on-toggle="onToggleEnabled"
 		>
 			<template #title-right>
 				<UBadge

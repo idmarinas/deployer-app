@@ -10,10 +10,8 @@ import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboar
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
 import { usePasskeyById } from '@/loaders/passkeys'
-import { CommandResponse, UpdatePasskeyInput } from '@/types/tauri-types'
+import { useQuery } from '@/composables/useQuery'
 import { sanitizeNulls } from '@/utils/sanitize'
-
-import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -44,14 +42,12 @@ useToolbarContentEdit(state, passkey, isLoading, form, toolbar)
 
 async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 	isLoading.value = true
-	const passkey: Partial<UpdatePasskeyInput> = event.data
+	const { passkeys } = useQuery()
+	const passkey = event.data as any
 
-	const result = await invoke<CommandResponse<number>>('crud_update_passkey', {
-		id: Number.parseInt(route.params.id),
-		input: passkey,
-	})
+	const result = await passkeys.update(Number.parseInt(route.params.id), passkey)
 
-	if (result.success) {
+	if (result) {
 		await queryCache.invalidateQueries({ key: ['passkeys'] }, 'all')
 
 		toast.add({
@@ -62,7 +58,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-passkeys' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: t(result.message_key, result.message_params), color: 'error' })
+		toast.add({ title: t('overlays.toast.title.error'), description: t('errors.passkeys.update_failed'), color: 'error' })
 		isLoading.value = false
 	}
 }

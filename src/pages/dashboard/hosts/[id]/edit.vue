@@ -7,11 +7,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useHostSchema, type HostSchema } from '@/composables/schemas/hosts'
-import { CommandResponse, UpdateHostInput } from '@/types/tauri-types'
+import { useQuery } from '@/composables/useQuery'
 import { sanitizeNulls } from '@/utils/sanitize'
 import { Form, FormSubmitEvent } from '@nuxt/ui'
 import { useQueryCache } from '@pinia/colada'
-import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -43,14 +42,12 @@ useToolbarContentEdit(state, host, isLoading, form, toolbar)
 
 async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	isLoading.value = true
-	const host: Partial<UpdateHostInput> = event.data
+	const { hosts } = useQuery()
+	const host = event.data as any
 
-	const result = await invoke<CommandResponse<number>>('crud_update_host', {
-		id: Number.parseInt(route.params.id),
-		input: host,
-	})
+	const result = await hosts.update(Number.parseInt(route.params.id), host)
 
-	if (result.success) {
+	if (result) {
 		await queryCache.invalidateQueries({ key: ['hosts'] }, 'all')
 
 		toast.add({
@@ -61,7 +58,7 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-hosts' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: result.message_key, color: 'error' })
+		toast.add({ title: t('overlays.toast.title.error'), description: t('errors.hosts.update_failed'), color: 'error' })
 		isLoading.value = false
 	}
 }

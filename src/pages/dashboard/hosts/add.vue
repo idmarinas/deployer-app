@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { CommandResponse, CreateHostInput } from '@/types/tauri-types'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -12,12 +11,11 @@ import {
 	type AuthPasswordSchema,
 	type HostSchema,
 } from '@/composables/schemas/hosts'
+import { useQuery } from '@/composables/useQuery'
 import { useToast } from '@nuxt/ui/composables/useToast'
 import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-
-import { invoke } from '@tauri-apps/api/core'
 
 definePage({
 	name: 'dashboard-hosts-add',
@@ -53,11 +51,12 @@ useToolbarContentCreate(state, initialState, isLoading, form, toolbar)
 
 async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	isLoading.value = true
-	const host: Partial<CreateHostInput> = event.data
+	const { hosts } = useQuery()
+	const host = event.data
 
-	const result = await invoke<CommandResponse<number>>('crud_create_host', { input: host })
+	const result = await hosts.create(host as any)
 
-	if (result.success) {
+	if (result) {
 		await queryCache.invalidateQueries({ key: ['hosts'] }, 'all')
 
 		toast.add({
@@ -68,7 +67,7 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-hosts' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: result.message_key, color: 'error' })
+		toast.add({ title: t('overlays.toast.title.error'), description: t('notifications.hosts.error', { name: host.name }), color: 'error' })
 		isLoading.value = false
 	}
 }

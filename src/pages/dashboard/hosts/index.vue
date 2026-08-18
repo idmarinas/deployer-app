@@ -11,6 +11,7 @@ import { useHostListAll } from '@/loaders/hosts'
 import { ICONS } from '@/utils/icons'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'
+import { useQuery } from '@/composables/useQuery'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 </script>
 
@@ -25,11 +26,12 @@ const { data: items, isLoading, status, reload, refresh } = useHostListAll()
 
 const { t } = useI18n()
 const router = useRouter()
-const { useButtons } = useToolbarButtons('hosts', isLoading)
+const { hosts: hostQuery } = useQuery()
+const { useButtons } = useToolbarButtons('hosts', isLoading, hostQuery.remove)
 const { hosts: hostsButtons } = useButtons()
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Host>({
 	moduleName: 'hosts',
-	singularName: 'host',
+	deleteFn: hostQuery.remove,
 	onReload: reload,
 })
 

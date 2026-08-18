@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useTableColumns } from '@/composables/useTableColumns'
-import { isMainComposeFile } from '@/lib/docker-compose/files'
+import { useQuery } from '@/composables/useQuery'
 import { useDockerComposeListAll } from '@/loaders/docker_composes'
 import { ICONS } from '@/utils/icons'
 
@@ -25,9 +25,10 @@ const router = useRouter()
 const { data: items, isLoading, status, reload, refresh } = useDockerComposeListAll()
 
 const { t } = useI18n()
+const { dockerComposes: dockerComposeQuery } = useQuery()
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<DockerComposeListItem>({
 	moduleName: 'docker_composes',
-	singularName: 'docker_compose',
+	deleteFn: dockerComposeQuery.remove,
 	onReload: reload,
 })
 
@@ -104,14 +105,10 @@ onMounted(() => {
 					</div>
 
 					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.docker_compose.compose_content') }}</span>
-						<span class="text-sm text-muted">{{
-							row.original.files?.some(
-								(f: { file_path: string; content: string | null }) => isMainComposeFile(f.file_path) && f.content,
-							)
-								? t('pages.docker_composes.content.available')
-								: t('pages.docker_composes.content.empty')
-						}}</span>
+						<span class="text-xs text-muted font-medium">{{ t('entity.docker_compose.files_count') }}</span>
+						<span class="text-sm text-muted flex items-center gap-2">
+							<UIcon name="i-tabler-files" /> {{ row.original.files_count }}
+						</span>
 					</div>
 				</div>
 			</ItemCard>

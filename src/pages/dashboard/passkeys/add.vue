@@ -1,6 +1,5 @@
 <script lang="ts">
 import type { PositionedButton } from '@/composables/usePositionedButtons'
-import type { CommandResponse, CreatePasskeyInput } from '@/types/tauri-types'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { h, onBeforeUnmount, onMounted, ref, resolveComponent, useTemplateRef, watch } from 'vue'
@@ -14,8 +13,7 @@ import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboar
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
-
-import { invoke } from '@tauri-apps/api/core'
+import { useQuery } from '@/composables/useQuery'
 </script>
 
 <script setup lang="ts">
@@ -88,11 +86,12 @@ useToolbarContentCreate(state, initialState, isLoading, form, toolbar, toolbarBu
 
 async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 	isLoading.value = true
-	const passkey: Partial<CreatePasskeyInput> = event.data
+	const { passkeys } = useQuery()
+	const passkey = event.data
 
-	const result = await invoke<CommandResponse<number>>('crud_create_passkey', { input: passkey })
+	const result = await passkeys.create(passkey as any)
 
-	if (result.success) {
+	if (result) {
 		await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
 
 		toast.add({
@@ -103,7 +102,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-passkeys' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: t(result.message_key, result.message_params), color: 'error' })
+		toast.add({ title: t('overlays.toast.title.error'), description: t('notifications.passkeys.error', { name: passkey.name }), color: 'error' })
 		isLoading.value = false
 	}
 }
