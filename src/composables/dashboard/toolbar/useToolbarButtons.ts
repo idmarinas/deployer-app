@@ -14,7 +14,7 @@ import { ICONS } from '@/utils/icons'
 
 import { invoke } from '@tauri-apps/api/core'
 
-export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
+export function useToolbarButtons(moduleName: string, loading: Ref<boolean>, deleteFn?: (id: number) => Promise<boolean>) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const { t } = useI18n()
@@ -63,10 +63,9 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>) {
 							{ duration: 0 },
 						)
 
-						// TODO: usar `crud_delete_${moduleName}` en vez de 'crud_delete_project' (bug preexistente)
-						const result = await invoke<CommandResponse>(`crud_delete_${moduleName}`, { id: item.value.id })
+						const deleteResult = deleteFn ? await deleteFn(item.value.id) : false
 
-						if (result.success) {
+						if (deleteResult) {
 							toaster.toast.update(
 								notice.id,
 								toaster.success(

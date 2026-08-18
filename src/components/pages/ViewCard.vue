@@ -11,7 +11,7 @@ const props = defineProps<{
 	description?: object
 	created_at: string
 	updated_at: string
-	updateCommand: string
+	onToggle?: (input: { enabled: boolean }) => Promise<boolean>
 	onUpdatedEnabled: (enabled: boolean) => void
 }>()
 
@@ -23,7 +23,7 @@ const { t, locale } = useI18n()
 		<template #title>
 			<div class="flex items-center gap-2">
 				<UBadge color="neutral" variant="soft"> ID: {{ id }} </UBadge>
-				<ToggleEnabled :enabled="enabled" :command="updateCommand" :id="id" @updated="onUpdatedEnabled" />
+				<ToggleEnabled :enabled="enabled" :on-toggle="onToggle" @updated="onUpdatedEnabled" />
 			</div>
 			<div class="flex items-center gap-2">
 				<slot name="title-right" />

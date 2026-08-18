@@ -1,12 +1,16 @@
-import { useVariablesQuery } from '@/composables/queries/global_variables'
-import { useProjectQuery } from '@/composables/queries/projects'
+import { useDockerComposeQuery } from '@/composables/queries/docker_composes'
+import { useHostQuery } from '@/composables/queries/hosts'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 
 export function useQuery() {
 	return {
-		// Projects (Drizzle Relational Queries)
-		projects: useProjectQuery(),
+		// Hosts
+		hosts: useHostQuery(),
 
-		// Global Variables (Drizzle Relational Queries)
-		globalVariables: useVariablesQuery(),
+		// Passkeys
+		passkeys: usePasskeyQuery(),
+
+		// Docker Composes
+		dockerComposes: useDockerComposeQuery(),
 	}
 }

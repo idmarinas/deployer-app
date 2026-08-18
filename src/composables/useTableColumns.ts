@@ -1,11 +1,8 @@
-import type { CommandResponse } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 
-import { useQueryCache } from '@pinia/colada'
 import { h } from 'vue'
 
 import { useConfirmDialog } from '@/composables/useDialog'
-import { invoke } from '@tauri-apps/api/core'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -18,7 +15,7 @@ import useToaster from './useToaster'
 
 export interface TableColumnsOptions {
 	moduleName?: string
-	singularName?: string
+	deleteFn?: (id: number) => Promise<boolean>
 	onReload?: () => Promise<void> | void
 }
 
@@ -27,7 +24,6 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const confirmDialog = useConfirmDialog()
-	const queryCache = useQueryCache()
 
 	const expandColumn: TableColumn<T> = {
 		id: 'expand',
@@ -63,7 +59,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 		cell: ({ row }) => {
 			const defaultButtons: PositionedButton[] = []
 
-			if (options?.moduleName && options?.singularName) {
+			if (options?.moduleName && options?.deleteFn) {
 				defaultButtons.push({
 					id: 'edit',
 					icon: ICONS.actions.edit,
@@ -105,11 +101,9 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 								},
 							)
 
-							const deleteResult = await invoke<CommandResponse>(`crud_delete_${options.singularName}`, {
-								id: (row.original as any).id,
-							})
+							const deleteResult = await options.deleteFn!((row.original as any).id)
 
-							if (deleteResult.success) {
+							if (deleteResult) {
 								toaster.toast.update(
 									notice.id,
 									toaster.success(
@@ -137,10 +131,6 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 										},
 									),
 								)
-							}
-
-							if (options.moduleName) {
-								await queryCache.invalidateQueries({ key: [options.moduleName] }, 'all')
 							}
 
 							if (options.onReload) {

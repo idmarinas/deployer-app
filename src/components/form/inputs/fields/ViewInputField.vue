@@ -7,14 +7,13 @@
 
 	2. Modo vista con edición inline puntual (isEditMode = false): muestra el valor
 	   como texto. Al pulsar el lápiz se activa edición SOLO de este campo, y al
-	   guardar (Enter / botón) se persiste con una llamada `invoke(command, ...)`
+	   guardar (Enter / botón) se persiste con la llamada `onUpdate(input)`
 	   independiente, enviando únicamente esta clave (compatible con el patrón
 	   Patch<T> del backend: el resto de campos no se tocan).
 
 	Requiere `isEditMode` inyectado (ref<boolean>) por el componente padre.
 -->
 <script lang="ts">
-import type { CommandResponse } from '@/types/tauri-types'
 import type { Ref } from 'vue'
 
 import { computed, inject, ref, watch } from 'vue'
@@ -23,8 +22,6 @@ import { useI18n } from 'vue-i18n'
 import useToaster from '@/composables/useToaster'
 import { ICONS } from '@/utils/icons'
 
-import { useQueryCache } from '@pinia/colada'
-import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 
 interface SelectItem {
@@ -48,12 +45,8 @@ const props = withDefaults(
 		/** Opciones para `as="select"`. */
 		items?: SelectItem[]
 		maxlength?: number
-		/** Comando Tauri a invocar para el guardado inline (ej. `crud_update_project`). Si falta, no se ofrece edición inline. */
-		command?: string
-		/** ID de la entidad a actualizar en el guardado inline. */
-		id?: number
-		/** Clave de invalidación de `pinia-colada` a refrescar tras guardar (ej. `['projects']`). */
-		invalidateKey?: string[]
+		/** Callback para el guardado inline. Si falta, no se ofrece edición inline. */
+		onUpdate?: (input: Record<string, any>) => Promise<boolean>
 	}>(),
 	{ as: 'input' },
 )
@@ -62,16 +55,8 @@ const value = defineModel<any>({ required: true })
 
 const { t } = useI18n()
 const toaster = useToaster()
-const queryCache = useQueryCache()
 
 const isEditMode = inject<Ref<boolean>>('isEditMode')
-// `project` (y otras entidades leídas por un loader de pinia-colada) se
-// exponen como shallowRef: `value.value = draft.value` actualiza este propio
-// componente (defineModel tiene su propio fallback local), pero NO se
-// propaga como cambio reactivo al objeto padre si este es una mutación
-// anidada. Recargar desde la BD tras guardar garantiza que toda la vista
-// (listados, otras tabs, etc.) queda consistente.
-const reloadProject = inject<(() => Promise<unknown>) | undefined>('reloadProject')
 
 const editingLocal = ref(false)
 const isSaving = ref(false)
@@ -95,7 +80,7 @@ const activeValue = computed<any>({
 	},
 })
 
-const canInlineEdit = computed(() => !!props.command && !!props.id)
+const canInlineEdit = computed(() => !!props.onUpdate)
 
 const displayValue = computed(() => {
 	if (props.as === 'select' && props.items) {
@@ -127,29 +112,16 @@ async function saveLocalEdit() {
 	isSaving.value = true
 
 	try {
-		const result = await invoke<CommandResponse>(props.command as string, {
-			id: props.id,
-			input: { [props.name]: draft.value },
-		})
+		if (props.onUpdate) {
+			const success = await props.onUpdate({ [props.name]: draft.value })
 
-		if (result.success) {
-			value.value = draft.value
-
-			if (props.invalidateKey) {
-				await queryCache.invalidateQueries({ key: props.invalidateKey }, 'all')
+			if (success) {
+				value.value = draft.value
+				toaster.success(t('overlays.toast.title.success'), t('overlays.toast.description.success'))
+				editingLocal.value = false
+			} else {
+				toaster.error(t('overlays.toast.title.error'), t('overlays.toast.description.error'))
 			}
-
-			await reloadProject?.()
-
-			toaster.success(t('overlays.toast.title.success'), t('overlays.toast.description.success'))
-			editingLocal.value = false
-		} else {
-			toaster.error(
-				t('overlays.toast.title.error'),
-				result.message_key
-					? t(result.message_key as any, result.message_params)
-					: t('overlays.toast.description.error'),
-			)
 		}
 	} finally {
 		isSaving.value = false
