@@ -5,6 +5,7 @@ pub mod get_migrations_info;
 pub mod has_migrations_pending;
 pub mod initialize_database;
 pub mod query_raw;
+pub mod query_raw_with_encryption;
 pub mod execute_migrations;
 pub mod store;
 pub mod validate_database_sqlite;
@@ -17,6 +18,7 @@ pub use get_migrations_info::get_migrations_info;
 pub use has_migrations_pending::has_migrations_pending;
 pub use initialize_database::initialize_database;
 pub use query_raw::query_raw;
+pub use query_raw_with_encryption::query_raw_with_encryption;
 pub use execute_migrations::execute_migrations;
 pub use validate_database_sqlite::validate_database_sqlite;
 
