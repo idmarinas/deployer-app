@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/lib/db'
-import { deployer_passkeys } from '@/lib/schema'
+import { passkeys as deployer_passkeys } from '@/lib/schema'
 import { Passkey } from '@/types/tauri-types'
 
 export function usePasskeyQuery() {
 	async function findAll(): Promise<Passkey[]> {
-		return db.select()
+		return db
+			.select()
 			.from(deployer_passkeys)
 			.then(rows => rows.map(row => row as unknown as Passkey))
 			.catch(e => {
@@ -16,7 +17,8 @@ export function usePasskeyQuery() {
 	}
 
 	async function find(id: number): Promise<Passkey | undefined> {
-		return db.select()
+		return db
+			.select()
 			.from(deployer_passkeys)
 			.where(eq(deployer_passkeys.id, id))
 			.then(rows => {
@@ -31,7 +33,8 @@ export function usePasskeyQuery() {
 	}
 
 	async function create(data: Omit<Passkey, 'id' | 'created_at' | 'updated_at'>): Promise<Passkey | undefined> {
-		return db.insert(deployer_passkeys)
+		return db
+			.insert(deployer_passkeys)
 			.values(data as any)
 			.returning()
 			.then(rows => {
@@ -45,8 +48,12 @@ export function usePasskeyQuery() {
 			})
 	}
 
-	async function update(id: number, data: Partial<Omit<Passkey, 'id' | 'created_at' | 'updated_at'>>): Promise<Passkey | undefined> {
-		return db.update(deployer_passkeys)
+	async function update(
+		id: number,
+		data: Partial<Omit<Passkey, 'id' | 'created_at' | 'updated_at'>>,
+	): Promise<Passkey | undefined> {
+		return db
+			.update(deployer_passkeys)
 			.set({ ...data, updated_at: new Date().toISOString() } as any)
 			.where(eq(deployer_passkeys.id, id))
 			.returning()
@@ -62,7 +69,8 @@ export function usePasskeyQuery() {
 	}
 
 	async function remove(id: number): Promise<boolean> {
-		return db.delete(deployer_passkeys)
+		return db
+			.delete(deployer_passkeys)
 			.where(eq(deployer_passkeys.id, id))
 			.then(() => true)
 			.catch(e => {

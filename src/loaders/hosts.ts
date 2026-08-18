@@ -1,7 +1,7 @@
 import type { Host } from '@/types/tauri-types'
 
 import { db } from '@/lib/db'
-import { deployer_hosts as hosts } from '@/lib/schema'
+import { hosts } from '@/lib/schema'
 import { asc, eq } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 

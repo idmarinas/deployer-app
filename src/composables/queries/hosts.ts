@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/lib/db'
-import { deployer_hosts } from '@/lib/schema'
+import { hosts as deployer_hosts } from '@/lib/schema'
 import { Host } from '@/types/tauri-types'
 
 export function useHostQuery() {
 	async function findAll(): Promise<Host[]> {
-		return db.select()
+		return db
+			.select()
 			.from(deployer_hosts)
 			.then(rows => rows.map(row => row as unknown as Host))
 			.catch(e => {
@@ -16,7 +17,8 @@ export function useHostQuery() {
 	}
 
 	async function find(id: number): Promise<Host | undefined> {
-		return db.select()
+		return db
+			.select()
 			.from(deployer_hosts)
 			.where(eq(deployer_hosts.id, id))
 			.then(rows => {
@@ -31,7 +33,8 @@ export function useHostQuery() {
 	}
 
 	async function create(data: Omit<Host, 'id' | 'created_at' | 'updated_at'>): Promise<Host | undefined> {
-		return db.insert(deployer_hosts)
+		return db
+			.insert(deployer_hosts)
 			.values(data as any)
 			.returning()
 			.then(rows => {
@@ -45,8 +48,12 @@ export function useHostQuery() {
 			})
 	}
 
-	async function update(id: number, data: Partial<Omit<Host, 'id' | 'created_at' | 'updated_at'>>): Promise<Host | undefined> {
-		return db.update(deployer_hosts)
+	async function update(
+		id: number,
+		data: Partial<Omit<Host, 'id' | 'created_at' | 'updated_at'>>,
+	): Promise<Host | undefined> {
+		return db
+			.update(deployer_hosts)
 			.set({ ...data, updated_at: new Date().toISOString() } as any)
 			.where(eq(deployer_hosts.id, id))
 			.returning()
@@ -62,7 +69,8 @@ export function useHostQuery() {
 	}
 
 	async function remove(id: number): Promise<boolean> {
-		return db.delete(deployer_hosts)
+		return db
+			.delete(deployer_hosts)
 			.where(eq(deployer_hosts.id, id))
 			.then(() => true)
 			.catch(e => {

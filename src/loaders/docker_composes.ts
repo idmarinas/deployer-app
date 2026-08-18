@@ -1,8 +1,8 @@
 import { db } from '@/lib/db'
 import {
-	deployer_docker_compose_files as docker_compose_files,
-	deployer_docker_composes as docker_composes,
-	deployer_hosts as hosts,
+	projects_docker_compose_files as docker_compose_files,
+	projects_docker_compose as docker_composes,
+	hosts,
 } from '@/lib/schema'
 import { asc, eq, getTableColumns } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
@@ -30,11 +30,11 @@ export interface DockerComposeSelectItem {
 export const useDockerComposeById = defineColadaLoader('dashboard-docker_composes-id', {
 	key: to => ['docker_composes', `docker_compose-${to.params.id}`],
 	query: async to =>
-		await db.query.deployer_docker_composes
+		await db.query.projects_docker_compose
 			.findFirst({
 				where: eq(docker_composes.id, Number.parseInt(to.params.id)),
 				with: {
-					deployer_docker_compose_files: true,
+					projects_docker_compose_files: true,
 					deployer_host: {
 						columns: {
 							name: true,
@@ -45,11 +45,11 @@ export const useDockerComposeById = defineColadaLoader('dashboard-docker_compose
 			.then(result => {
 				const data = {
 					...result,
-					files: result?.deployer_docker_compose_files,
+					files: result?.projects_docker_compose_files,
 					host_name: result?.deployer_host?.name,
 				}
 
-				delete data.deployer_docker_compose_files
+				delete data.projects_docker_compose_files
 				delete data.deployer_host
 
 				return data

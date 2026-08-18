@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm'
-import { deployer_settings } from '@/lib/schema'
 import { db } from '@/lib/db'
+import { settings as deployer_settings } from '@/lib/schema'
+import { eq } from 'drizzle-orm'
 
 export async function getDeployerSetting(key: string): Promise<string | null> {
-	const row = await db.select({ value: deployer_settings.value })
+	const row = await db
+		.select({ value: deployer_settings.value })
 		.from(deployer_settings)
 		.where(eq(deployer_settings.key, key))
 		.get()
@@ -12,7 +13,8 @@ export async function getDeployerSetting(key: string): Promise<string | null> {
 }
 
 export async function setDeployerSetting(key: string, value: string): Promise<void> {
-	await db.insert(deployer_settings)
+	await db
+		.insert(deployer_settings)
 		.values({ key, value })
 		.onConflictDoUpdate({
 			target: deployer_settings.key,
@@ -28,10 +30,11 @@ export async function setDeployerSettings(settings: Record<string, string>): Pro
 }
 
 export async function listDeployerSettings(): Promise<Record<string, string>> {
-	const rows = await db.select({
-		key: deployer_settings.key,
-		value: deployer_settings.value,
-	})
+	const rows = await db
+		.select({
+			key: deployer_settings.key,
+			value: deployer_settings.value,
+		})
 		.from(deployer_settings)
 		.all()
 
@@ -45,9 +48,7 @@ export async function listDeployerSettings(): Promise<Record<string, string>> {
 }
 
 export async function deleteDeployerSetting(key: string): Promise<boolean> {
-	const result = await db.delete(deployer_settings)
-		.where(eq(deployer_settings.key, key))
-		.run()
+	const result = await db.delete(deployer_settings).where(eq(deployer_settings.key, key)).run()
 
 	return (result as any).changes > 0
 }
