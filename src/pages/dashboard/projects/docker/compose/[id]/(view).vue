@@ -9,9 +9,9 @@ import { useRoute } from 'vue-router'
 import { useToast } from '@nuxt/ui/composables/useToast'
 import { invoke } from '@tauri-apps/api/core'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForProjectsDockerCompose } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { PositionedButton } from '@/composables/usePositionedButtons'
 import { useDockerComposeById } from '@/loaders/docker_composes'
 import { ICONS } from '@/utils/icons'
@@ -28,7 +28,7 @@ definePage({
 	},
 })
 
-const toolbar = useDashboardToolbar('docker_composes')
+const { toolbar } = useToolbarForProjectsDockerCompose()
 const route = useRoute('dashboard-docker_composes-id')
 const { t } = useI18n()
 const toast = useToast()
@@ -51,7 +51,9 @@ async function executeAction(action: 'up' | 'down' | 'ps' | 'logs' | 'restart' |
 		const input = { docker_compose_id: Number.parseInt(route.params.id) }
 
 		if (action === 'ps') {
-			const result = await invoke<CommandResponse<DockerComposeService[]>>(`project_docker_compose_${action}`, { input })
+			const result = await invoke<CommandResponse<DockerComposeService[]>>(`project_docker_compose_${action}`, {
+				input,
+			})
 			if (result.success) {
 				services.value = result.data ?? []
 				output.value = t('pages.docker_composes.manage.status_updated')

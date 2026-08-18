@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useDashboardToolbarProvider } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 const { t } = useI18n()
 const route = useRoute()
 
-const { toolbarContent } = useDashboardToolbarProvider('hosts')
+const { toolbarContent } = useToolbarForHostsModule()
 </script>
 
 <template>

@@ -4,8 +4,8 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForProjectsDockerCompose } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useDockerComposeSchema, type DockerComposeSchema } from '@/composables/schemas/docker_composes'
 import { validateComposeImages } from '@/lib/docker-compose/docker-hub'
 import { isMainComposeFile } from '@/lib/docker-compose/files'
@@ -35,7 +35,7 @@ definePage({
 const { t } = useI18n()
 const route = useRoute('dashboard-docker_composes-id-edit')
 const router = useRouter()
-const toolbar = useDashboardToolbar('docker_composes')
+const { toolbar } = useToolbarForProjectsDockerCompose()
 const toast = useToast()
 const { data: compose, isLoading, reload } = useDockerComposeById()
 const { dockerComposeSchema } = useDockerComposeSchema(Number.parseInt(route.params.id))

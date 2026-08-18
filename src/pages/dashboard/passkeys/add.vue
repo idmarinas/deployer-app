@@ -9,8 +9,8 @@ import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
 import { useQuery } from '@/composables/useQuery'
@@ -25,7 +25,7 @@ const UButton = resolveComponent('UButton')
 
 const { t } = useI18n()
 const router = useRouter()
-const toolbar = useDashboardToolbar('passkeys')
+const { toolbar } = useToolbarForPasskeysModule()
 const cacheQuery = useQueryCache()
 
 const toast = useToast()
@@ -102,7 +102,11 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-passkeys' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: t('notifications.passkeys.error', { name: passkey.name }), color: 'error' })
+		toast.add({
+			title: t('overlays.toast.title.error'),
+			description: t('notifications.passkeys.error', { name: passkey.name }),
+			color: 'error',
+		})
 		isLoading.value = false
 	}
 }

@@ -8,9 +8,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useQuery } from '@/composables/useQuery'
 import useToaster from '@/composables/useToaster'
 import { useHostById } from '@/loaders/hosts'
@@ -32,7 +32,7 @@ definePage({
 	},
 })
 
-const toolbar = useDashboardToolbar('hosts')
+const { toolbar } = useToolbarForHostsModule()
 const route = useRoute('dashboard-hosts-id')
 const toaster = useToaster()
 

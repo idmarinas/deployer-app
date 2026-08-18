@@ -3,8 +3,8 @@ import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import {
 	useHostSchema,
 	type AuthKeySchema,
@@ -22,8 +22,8 @@ definePage({
 })
 
 const { t } = useI18n()
+const { toolbar } = useToolbarForHostsModule()
 const router = useRouter()
-const toolbar = useDashboardToolbar('hosts')
 
 const toast = useToast()
 const { hostSchema } = useHostSchema()
@@ -67,7 +67,11 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-hosts' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: t('notifications.hosts.error', { name: host.name }), color: 'error' })
+		toast.add({
+			title: t('overlays.toast.title.error'),
+			description: t('notifications.hosts.error', { name: host.name }),
+			color: 'error',
+		})
 		isLoading.value = false
 	}
 }

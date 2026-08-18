@@ -6,11 +6,11 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
-import { usePasskeyById } from '@/loaders/passkeys'
 import { useQuery } from '@/composables/useQuery'
+import { usePasskeyById } from '@/loaders/passkeys'
 import { sanitizeNulls } from '@/utils/sanitize'
 </script>
 
@@ -28,7 +28,7 @@ definePage({
 const { t } = useI18n()
 const route = useRoute('dashboard-passkeys-id-edit')
 const router = useRouter()
-const toolbar = useDashboardToolbar('passkeys')
+const { toolbar } = useToolbarForPasskeysModule()
 const toast = useToast()
 const { data: passkey, isLoading, reload } = usePasskeyById()
 const { passkeySchema } = usePasskeySchema(Number.parseInt(route.params.id))
@@ -58,7 +58,11 @@ async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
 		isLoading.value = false
 		router.push({ name: 'dashboard-passkeys' })
 	} else {
-		toast.add({ title: t('overlays.toast.title.error'), description: t('errors.passkeys.update_failed'), color: 'error' })
+		toast.add({
+			title: t('overlays.toast.title.error'),
+			description: t('errors.passkeys.update_failed'),
+			color: 'error',
+		})
 		isLoading.value = false
 	}
 }

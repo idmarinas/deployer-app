@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useDashboardToolbarProvider } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { useToolbarForProjectsDockerCompose } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 const { t } = useI18n()
 const route = useRoute()
 
-const { toolbarContent } = useDashboardToolbarProvider('docker_composes')
+const { toolbarContent } = useToolbarForProjectsDockerCompose()
 </script>
 
 <template>

@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import type {
-	ComposeFileInput,
-} from '@/types/tauri-types'
+import type { ComposeFileInput } from '@/types/tauri-types'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useDockerComposeSchema, type DockerComposeSchema } from '@/composables/schemas/docker_composes'
 import { useToast } from '@nuxt/ui/composables/useToast'
@@ -14,6 +11,7 @@ import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useToolbarForProjectsDockerCompose } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useQuery } from '@/composables/useQuery'
 import { validateComposeImages } from '@/lib/docker-compose/docker-hub'
 import { isComposeFile } from '@/lib/files'
@@ -25,7 +23,7 @@ definePage({
 
 const { t } = useI18n()
 const router = useRouter()
-const toolbar = useDashboardToolbar('docker_composes')
+const { toolbar } = useToolbarForProjectsDockerCompose()
 
 const toast = useToast()
 const { dockerComposeSchema } = useDockerComposeSchema()
@@ -78,7 +76,18 @@ async function onSubmit(event: FormSubmitEvent<DockerComposeSchema>) {
 
 	if (result) {
 		const files: ComposeFileInput[] = (state.value.files ?? []).map(
-			(f: { id?: number; file_path: string; content?: string | null; is_binary: boolean; name?: string; mime_type?: string | null; size?: number | null; last_modified?: number | null; webkit_relative_path?: string | null; icon?: string | null }) => ({
+			(f: {
+				id?: number
+				file_path: string
+				content?: string | null
+				is_binary: boolean
+				name?: string
+				mime_type?: string | null
+				size?: number | null
+				last_modified?: number | null
+				webkit_relative_path?: string | null
+				icon?: string | null
+			}) => ({
 				id: f.id,
 				file_path: f.file_path,
 				content: f.content ?? null,
@@ -92,9 +101,12 @@ async function onSubmit(event: FormSubmitEvent<DockerComposeSchema>) {
 			}),
 		)
 
-		const sync = await invoke<{ success: boolean; message_key?: string; message_params?: Record<string, string> }>('sync_project_docker_compose_files', {
-			input: { module_id: result.id, files },
-		})
+		const sync = await invoke<{ success: boolean; message_key?: string; message_params?: Record<string, string> }>(
+			'sync_project_docker_compose_files',
+			{
+				input: { module_id: result.id, files },
+			},
+		)
 		if (!sync.success) {
 			toast.add({
 				title: t('overlays.toast.title.error'),

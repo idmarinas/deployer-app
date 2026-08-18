@@ -4,8 +4,8 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useDashboardToolbar } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
+import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useHostSchema, type HostSchema } from '@/composables/schemas/hosts'
 import { useQuery } from '@/composables/useQuery'
 import { sanitizeNulls } from '@/utils/sanitize'
@@ -27,7 +27,7 @@ definePage({
 const { t } = useI18n()
 const route = useRoute('dashboard-hosts-id-edit')
 const router = useRouter()
-const toolbar = useDashboardToolbar('hosts')
+const { toolbar } = useToolbarForHostsModule()
 const toast = useToast()
 const { data: host, isLoading, reload } = useHostById()
 const { hostSchema } = useHostSchema(Number.parseInt(route.params.id))
