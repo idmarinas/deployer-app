@@ -12,52 +12,7 @@ export type CommandResponse<T = null> = { success: boolean, data: T | null, mess
 
 export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, name: string, mime_type?: string | null, size?: number | null, last_modified?: number | null, webkit_relative_path?: string | null, icon?: string | null, };
 
-export type CreateDeploymentExecutionInput = { deployment_id: number, host_id: number, task_id: number, retry_attempt: number | null, };
-
-export type CreateDeploymentInput = { project_id: number, version: string, tag: string, build: number, triggered_by: string | null, notes: string | null, };
-
-export type CreateDeploymentRollbackInput = { deployment_id: number, rolled_back_to_deployment_id: number, reason: string | null, triggered_by: string | null, };
-
-export type CreateDockerComposeInput = { name: string, description: string | null, host_id: number | null, remote_path: string | null, enabled: boolean | null, };
-
-export type CreateFrameworkConfigInput = { project_id: number, framework: Framework, key: string, value: string, is_secret: boolean | null, data_type: DataType | null, description: string | null, };
-
-export type CreateGlobalVariableInput = { name: string, slug: string, value: string, is_secret: boolean | null, data_type: string | null, description: string | null, };
-
-export type CreateHostInput = { name: string, host: string, port: number | null, username: string, auth_type: AuthType, password: string | null, key_id: number | null, description: string | null, enabled: boolean | null, };
-
-export type CreatePasskeyInput = { name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: string | null, };
-
-export type CreateProjectHostInput = { project_id: number, host_id: number, deploy_order: number | null, enabled: boolean | null, };
-
-export type CreateProjectInput = { name: string, description: string | null, git_url: string | null, framework: string, local_working_dir: string | null, remote_working_dir: string | null, enabled: boolean | null, };
-
-export type CreateProjectTaskInput = { project_id: number, task_id: number, order_execution: number, enabled: boolean | null, condition: string | null, on_failure: OnFailure | null, config: string | null, local_working_dir: string | null, remote_working_dir: string | null, retry_count: number | null, retry_delay: number | null, };
-
-export type CreateProjectVariableInput = { project_id: number, name: string, slug: string, value: string, is_secret: boolean | null, data_type: string | null, description: string | null, };
-
-export type CreateTaskDependencyInput = { task_id: number, depends_on_task_id: number, dependency_type: DependencyType | null, };
-
-export type CreateTaskInput = { name: string, description: string | null, task_type: TaskType, command: string | null, timeout: number | null, retry_count: number | null, retry_delay: number | null, enabled: boolean | null, is_global: boolean | null, };
-
-export type DataType = "string" | "integer" | "boolean" | "json";
-
 export type DatabaseInfo = { path: string, file_size_bytes: number, table_count: number, tables: Array<TableInfo>, other_tables: OtherTablesInfo | null, page_count: number, page_size: number, };
-
-export type DependencyType = "success" | "failure" | "always";
-
-/**
- * Par clave-valor de la tabla `deployer_settings`.
- */
-export type DeployerSetting = { key: string, value: string | null, };
-
-export type Deployment = { id: number, project_id: number, version: string, tag: string, build: number, status: DeploymentStatus, started_at: string | null, finished_at: string | null, duration_seconds: number | null, triggered_by: string | null, notes: string | null, created_at: string, };
-
-export type DeploymentExecution = { id: number, deployment_id: number, host_id: number, task_id: number, status: ExecutionStatus, exit_code: number | null, output: string | null, error_message: string | null, started_at: string | null, finished_at: string | null, duration_seconds: number | null, retry_attempt: number, created_at: string, };
-
-export type DeploymentRollback = { id: number, deployment_id: number, rolled_back_to_deployment_id: number, status: DeploymentStatus, reason: string | null, triggered_by: string | null, started_at: string | null, finished_at: string | null, created_at: string, };
-
-export type DeploymentStatus = "pending" | "running" | "success" | "failed";
 
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
@@ -74,8 +29,6 @@ export type DockerHubSearchCache = { id: number, query: string, namespace: strin
 export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, version: string, variant: string, };
 
 export type DockerHubTagsCache = { id: number, namespace: string, repository: string, url_query: string, url_next: string | null, url_previous: string | null, count: number, tags: string, tags_versions: string, tags_variants: string, fetched_at: string, };
-
-export type ExecutionStatus = "pending" | "running" | "success" | "failed" | "skipped";
 
 export type ExportPublicKeyAction = "add" | "remove";
 
@@ -96,22 +49,6 @@ action: ExportPublicKeyAction,
  * Credenciales temporales opcionales.
  */
 temp_username: string | null, temp_password: string | null, };
-
-/**
- * Configuración de transferencia de archivo (Upload o Download).
- * Las rutas soportan interpolación de variables {{variable}}.
- */
-export type FileTransferConfig = { paths: Array<PathMapping>, 
-/**
- * Si false, se omite la transferencia de un archivo si el destino ya
- * existe (no aplica a directorios recursivos, donde siempre se
- * sobrescribe archivo a archivo). Por defecto true.
- */
-overwrite: boolean, };
-
-export type Framework = "symfony" | "laravel" | "nextjs" | "generic";
-
-export type FrameworkConfig = { id: number, project_id: number, framework: Framework, key: string, value: string, is_secret: boolean, data_type: DataType, description: any, created_at: string, updated_at: string, };
 
 export type GeneratePasskeyInput = { 
 /**
@@ -147,27 +84,6 @@ key_type: KeyType,
  * a `crud_create_passkey`. `None` si no se solicitó passphrase.
  */
 passphrase: string | null, };
-
-export type GlobalVariable = { id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: any, created_at: string, updated_at: string, };
-
-export type Host = { id: number, name: string, host: string, port: number, username: string, auth_type: AuthType, 
-/**
- * Cifrado siempre. El frontend nunca recibe este valor descifrado;
- * solo la usa Rust internamente para SSH.
- */
-password: string | null, key_id: number | null, description: any, enabled: boolean, 
-/**
- * JSON con información del sistema detectada: package_manager, kernel, arch, distribution, etc.
- */
-system_info: HostSystemInfo | null, 
-/**
- * JSON con métricas dinámicas del servidor: CPU%, RAM%, DISK%.
- */
-status_info: HostStatusMetrics | null, 
-/**
- * JSON con las actualizaciones de paquetes disponibles y la última comprobación.
- */
-server_updates: HostServerUpdates | null, created_at: string, updated_at: string, };
 
 export type HostPackage = { name: string, current_version: string, available_version: string, 
 /**
@@ -263,92 +179,7 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
 
-export type OnFailure = "stop" | "continue" | "retry";
-
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
-
-export type Passkey = { id: number, name: string, key_content: string, passphrase: string | null, key_type: KeyType | null, fingerprint: string | null, description: any, created_at: string, updated_at: string, };
-
-/**
- * Un mapeo individual origen -> destino dentro de una transferencia de
- * archivos. Una `FileTransferConfig` contiene una lista de estos, lo que
- * permite representar con la misma estructura:
- * - 1 archivo suelto -> `paths` con 1 elemento, `recursive: false`.
- * - Varios archivos sueltos -> `paths` con N elementos (cada uno su propio
- *   src/dest, ya que pueden ir a destinos distintos).
- * - 1 directorio completo -> `paths` con 1 elemento, `recursive: true`.
- */
-export type PathMapping = { 
-/**
- * Ruta de origen.
- * - UploadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
- * - DownloadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
- */
-src: string, 
-/**
- * Ruta de destino.
- * - UploadFile: ruta remota en el servidor (absoluta o relativa a remote_working_dir).
- * - DownloadFile: ruta local en el PC del usuario (absoluta o relativa a local_working_dir).
- */
-dest: string, 
-/**
- * Si true, transfiere `src` como directorio de forma recursiva. Por defecto false.
- */
-recursive: boolean, 
-/**
- * Patrones a excluir (solo aplica si `recursive` es true). Soporta `*` y
- * `?` como comodines simples (ej. "node_modules", ".git", "*.log").
- * Se compara contra el nombre de cada entrada (archivo o directorio),
- * no contra la ruta completa.
- */
-exclude?: Array<string> | null, 
-/**
- * Permisos octales a aplicar tras la transferencia (ej. "755", "644").
- * Solo tiene efecto en el lado remoto (chmod vía SFTP); en descargas se
- * ignora para el archivo local (no hay chmod portable Windows/Unix).
- */
-chmod?: string | null, };
-
-export type ProgressEvent = { "event": "deployment_started", deployment_id: number, total_tasks: number, } | { "event": "task_pending", execution_id: number, task_name: string, order: number, } | { "event": "task_started", execution_id: number, task_name: string, } | { "event": "output_chunk", execution_id: number, chunk: string, } | { "event": "task_retrying", execution_id: number, attempt: number, max_attempts: number, delay_secs: number, } | { "event": "task_finished", execution_id: number, task_name: string, status: ExecutionStatus, exit_code: number | null, duration_seconds: number, } | { "event": "task_skipped", execution_id: number, task_name: string, reason: string, } | { "event": "deployment_finished", deployment_id: number, status: DeploymentStatus, duration_seconds: number, } | { "event": "fatal_error", message: string, };
-
-export type Project = { id: number, name: string, description: any, git_url: string | null, framework: string, 
-/**
- * Ruta base local del proyecto en el PC del usuario.
- * Actúa como working_dir por defecto para tareas locales (UploadFile, DownloadFile).
- */
-local_working_dir: string | null, 
-/**
- * Ruta base del proyecto en el servidor remoto.
- * Actúa como working_dir por defecto para tareas remotas (Command, Script).
- */
-remote_working_dir: string | null, enabled: boolean, created_at: string, updated_at: string, };
-
-export type ProjectHost = { id: number, project_id: number, host_id: number, deploy_order: number | null, enabled: boolean, created_at: string, };
-
-export type ProjectTask = { id: number, project_id: number, task_id: number, order_execution: number, enabled: boolean, condition: string | null, on_failure: OnFailure, 
-/**
- * JSON serializado de TaskConfig. Solo requerido para UploadFile / DownloadFile.
- * Deserializado automáticamente desde la columna TEXT de SQLite.
- */
-config: TaskConfig | null, 
-/**
- * Sobreescribe local_working_dir del proyecto para esta task concreta.
- */
-local_working_dir: string | null, 
-/**
- * Sobreescribe remote_working_dir del proyecto para esta task concreta.
- */
-remote_working_dir: string | null, 
-/**
- * Sobreescribe retry_count de la task base. Si es None, hereda tasks.retry_count.
- */
-retry_count: number | null, 
-/**
- * Sobreescribe retry_delay de la task base. Si es None, hereda tasks.retry_delay.
- */
-retry_delay: number | null, created_at: string, updated_at: string, };
-
-export type ProjectVariable = { id: number, project_id: number, name: string, slug: string, value: string, is_secret: boolean, data_type: string, description: any, created_at: string, updated_at: string, };
 
 export type RemoteCommandInput = { host_id: number, 
 /**
@@ -434,71 +265,6 @@ recursive: boolean | null,
  */
 ssh_reconnect_attempts: number | null, };
 
-export type RunDeploymentInput = { deployment_id: number, 
-/**
- * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
- */
-ssh_reconnect_attempts: number | null, };
-
 export type SyncDockerComposeFilesInput = { module_id: number, files: Array<ComposeFileInput>, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
-
-export type Task = { id: number, name: string, description: any, type: TaskType, 
-/**
- * Comando a ejecutar (o contenido del script si task_type = Script).
- * Para UploadFile / DownloadFile este campo no se usa; la configuración
- * específica va en project_tasks.config (TaskConfig).
- */
-command: string | null, timeout: number, retry_count: number, 
-/**
- * Segundos de espera entre reintentos. Puede sobreescribirse en project_tasks.
- */
-retry_delay: number, enabled: boolean, is_global: boolean, created_at: string, updated_at: string, };
-
-/**
- * Configuración serializada en project_tasks.config.
- * Usa un tag "type" para identificar el variante al deserializar.
- * Command y Script no necesitan config adicional (usan tasks.command directamente).
- */
-export type TaskConfig = { "type": "upload_file" } & FileTransferConfig | { "type": "download_file" } & FileTransferConfig;
-
-export type TaskDependency = { id: number, task_id: number, depends_on_task_id: number, dependency_type: DependencyType, created_at: string, };
-
-export type TaskType = "command" | "upload_file" | "download_file" | "script";
-
-export type UpdateDeploymentExecutionInput = { status?: ExecutionStatus, exit_code?: number | null, output?: string | null, error_message?: string | null, started_at?: string | null, finished_at?: string | null, duration_seconds?: number | null, retry_attempt?: number, };
-
-export type UpdateDeploymentInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, duration_seconds?: number | null, notes?: string | null, };
-
-export type UpdateDeploymentRollbackInput = { status?: DeploymentStatus, started_at?: string | null, finished_at?: string | null, };
-
-export type UpdateDockerComposeInput = { name?: string, description?: string | null, host_id?: number, remote_path?: string, enabled?: boolean, };
-
-export type UpdateFrameworkConfigInput = { value?: string, is_secret?: boolean, data_type?: DataType, description?: string | null, };
-
-export type UpdateGlobalVariableInput = { name?: string, slug?: string, value?: string, is_secret?: boolean, data_type?: string, description?: string | null, };
-
-export type UpdateHostInput = { name?: string, host?: string, port?: number, username?: string, auth_type?: AuthType, 
-/**
- * `Unset` = no modificar; `Null` = eliminar la contraseña; `Value(v)` = cifrar y guardar.
- */
-password?: string | null, key_id?: number | null, description?: string | null, enabled?: boolean, };
-
-export type UpdatePasskeyInput = { name?: string, 
-/**
- * `NOT NULL` en BD: omitir = no modificar; valor = sustituir y volver a cifrar.
- */
-key_content?: string, passphrase?: string | null, key_type?: KeyType | null, fingerprint?: string | null, description?: string | null, };
-
-export type UpdateProjectHostInput = { deploy_order?: number | null, enabled?: boolean, };
-
-export type UpdateProjectInput = { name?: string, description?: string | null, git_url?: string | null, framework?: string, local_working_dir?: string | null, remote_working_dir?: string | null, enabled?: boolean, };
-
-export type UpdateProjectTaskInput = { order_execution?: number, enabled?: boolean, condition?: string | null, on_failure?: OnFailure, config?: string | null, local_working_dir?: string | null, remote_working_dir?: string | null, retry_count?: number | null, retry_delay?: number | null, };
-
-export type UpdateProjectVariableInput = { name?: string, slug?: string, value?: string, is_secret?: boolean, data_type?: string, description?: string | null, };
-
-export type UpdateTaskDependencyInput = { dependency_type: DependencyType, };
-
-export type UpdateTaskInput = { name?: string, description?: string | null, task_type?: TaskType, command?: string | null, timeout?: number, retry_count?: number, retry_delay?: number, enabled?: boolean, is_global?: boolean, };
