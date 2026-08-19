@@ -1,10 +1,10 @@
 import { invoke } from '@tauri-apps/api/core'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
 
-import * as relationsSchema from './relations'
+import { relations } from './relations'
 import * as tablesSchema from './schema'
 
-const schema = { ...tablesSchema, ...relationsSchema }
+const schema = tablesSchema
 
 // ====================================================================
 // Detección automática de campos cifrados desde el schema
@@ -110,7 +110,7 @@ interface QueryRawResponse {
   message_params?: Record<string, string>
 }
 
-export const db = drizzle<typeof schema>(
+export const db = drizzle(
   async (sql, params, method) => {
     const encryptedFields = getEncryptedFieldsForSQL(sql)
     const hasEncryption = encryptedFields && (
@@ -164,5 +164,5 @@ export const db = drizzle<typeof schema>(
     const rows = response.data ?? []
     return method === 'get' ? { rows: rows[0] ?? [] } : { rows }
   },
-  { schema },
+  { relations },
 )
