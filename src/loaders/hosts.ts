@@ -1,5 +1,3 @@
-import type { Host } from '@/types/tauri-types'
-
 import { db } from '@/lib/db'
 import { hosts } from '@/lib/schema'
 import { asc, eq } from 'drizzle-orm'
@@ -20,7 +18,7 @@ export const useHostById = defineColadaLoader('dashboard-hosts-id', {
 			.from(hosts)
 			.where(eq(hosts.id, Number.parseInt(to.params.id)))
 			.limit(1)
-			.then(data => data[0] as unknown as Host)
+			.then(data => data[0])
 			.catch(() => undefined),
 })
 
@@ -31,8 +29,8 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
 			.select()
 			.from(hosts)
 			.orderBy(asc(hosts.name))
-			.then(data => data as unknown as Host[])
-			.catch(() => [] as Host[]),
+			.then(data => data)
+			.catch(() => []),
 })
 
 export const useHostSelectPopulate = defineColadaLoader({
