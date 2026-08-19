@@ -9,7 +9,9 @@
 		"preview": "vite preview",
 		"tauri": "tauri",
 		"tauri:dev": "tauri dev -c src-tauri/tauri.conf.json -c src-tauri/tauri.dev.conf.json",
-		"i18n:types": "bun scripts/generate-i18n-schema.ts"
+		"i18n:types": "bun scripts/generate-i18n-schema.ts",
+		"drizzle:flatten": "bun scripts/flatten-drizzle-migrations.ts",
+		"drizzle:generate": "bun scripts/migrate-drizzle.ts"
 	},
 	"dependencies": {
 		"@iconify-json/cib": "^1.2.3",
@@ -23,7 +25,7 @@
 		"@tauri-apps/plugin-positioner": "~2.3.3",
 		"@tauri-apps/plugin-store": "~2.4.4",
 		"@tauri-apps/plugin-window-state": "~2.4.1",
-		"drizzle-orm": "^0.45.2",
+		"drizzle-orm": "^1.0.0-rc.4",
 		"json-schema-library": "^11.6.2",
 		"slugify": "^1.6.9",
 		"sortablejs": "^1.15.7",
@@ -39,7 +41,7 @@
 		"@types/node": "^26.2.0",
 		"@types/sortablejs": "^1.15.9",
 		"@vitejs/plugin-vue": "^6.0.8",
-		"drizzle-kit": "^0.31.10",
+		"drizzle-kit": "^1.0.0-rc.4",
 		"prettier-plugin-organize-imports": "^4.3.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "~6.0.3",
