@@ -27,11 +27,13 @@
 
 - **Idioma:** siempre español.
 - **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/` (salida de build) y el **historial personal**: archivos `.back` y todo archivo/carpeta con extensión `.dist` (p.ej. `_archived.dist/`). No incluirlos en búsquedas ni lecturas salvo que se pidan explícitamente como referencia; nunca modificarlos.
-- **Archivos autogenerados (no editar):** `drizzle/` (completo, excepto `README.md`), `src/lib/schema.ts`, `src/lib/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`.
+- **Archivos autogenerados (no editar):** `drizzle/` (completo, excepto `README.md`), `src/lib/schema.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`.
+- **`drizzle/migrations/`** — no borrar; Drizzle Kit lo usa para calcular diffs entre esquemas.
+- **`src-tauri/migrations/`** — archivos planos `.sql` generados por `drizzle:flatten`; sqlx los embebe en el binario.
 - **`src/constants/dbTables.ts`** está obsoleto (`.unused`). No importarlo.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
 - **Antes de crear comando `crud_get_*`/`crud_list_*`:** si la tabla no tiene campos cifrados, usar Drizzle.
-- **Migraciones SQL:** solo se genera una **nueva migración** si se cambia de versión (`src-tauri/tauri.conf.json`). Mientras la versión no cambie, los cambios de esquema se editan **en sitio** en la migración de la versión actual (p. ej. en `0.1.0`, editar `0001_initial_schema.up.sql`/`.down.sql`). Cada archivo de `src-tauri/migrations/` lleva en su cabecera el marcador `-- Version: X.Y.Z` (versión en la que se añadió). Para saber cuál es la migración en curso, no hace falta leer los archivos: buscar con `rg "Version:" src-tauri/migrations/`.
+- **Migraciones SQL:** Drizzle Kit genera subdirectorios (`<timestamp>_<nombre>/migration.sql`) en `drizzle/migrations/` (no tocar). `sqlx::migrate!()` solo acepta archivos `.sql` planos en `src-tauri/migrations/`. Tras `drizzle-kit generate`, ejecutar `bun run drizzle:flatten` para copiar el SQL a un archivo plano. sqlx extrae la versión del nombre del archivo (i64) y la descripción del resto.
 
 ## Lecturas Drizzle vs comandos Rust
 
@@ -52,15 +54,16 @@ bun run dev                    # i18n:types → vite
 bun run build                  # i18n:types → vue-tsc --noEmit → vite build
 bun run i18n:types             # Regenera typed-locale.d.ts
 bun run dev:db:generate        # Regenera schema Drizzle (create → migrate → introspect → copy)
+bun run drizzle:generate       # Genera migración en drizzle/migrations/ (--name <nombre> opcional)
+bun run drizzle:flatten        # Aplana migraciones a src-tauri/migrations/ (para sqlx)
+bun run drizzle:migrate        # generate + flatten (--name <nombre> opcional)
 ```
-
-No hay scripts de lint ni test en `package.json`.
 
 ## Gotchas
 
 - **Pinia Colada** expone `data` como `shallowRef`. Mutar propiedades anidadas NO dispara reactividad. Solo reasignar `.value` completo.
 - **`tauri_plugin_single_instance`** debe ser el primer plugin registrado en `lib.rs`.
-- **Schema Drizzle:** se edita la migración SQL (`src-tauri/migrations/`), luego `bun run dev:db:generate`. Nunca editar los archivos `.ts` de schema a mano.
+- **Schema Drizzle:** se edita la migración SQL (`drizzle/migrations/`), luego `bun run drizzle:flatten`. Nunca editar los archivos `.ts` de schema a mano.
 - **i18n:** backend devuelve claves i18n (nunca strings en español). Mensajes en `src/locales/es/`. Tipos autogenerados vía `bun run i18n:types`.
 - **Drag & drop (Tauri):** Sortable.js requiere `forceFallback: true` (HTML5 nativo no funciona en webviews). Contenedores condicionales requieren `watchElement: true`.
 - **Vite ignora `src-tauri/`** en el watch (configurado en `vite.config.ts`). Los cambios en Rust requieren rebuild explícito de Tauri.
