@@ -77,7 +77,7 @@ pub async fn validate_database_sqlite(
         "deployer_settings",
         "deployer_passkeys",
         "deployer_hosts",
-        "deployer_docker_composes",
+        "deployer_projects_docker_compose",
     ];
 
     for table in required_tables {
