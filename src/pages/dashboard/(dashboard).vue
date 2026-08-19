@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { useDashboardButton } from '@/composables/useNavigationMenu'
 import { db } from '@/lib/db'
-import {
-	deployer_docker_composes as composes,
-	deployer_hosts as hosts,
-	deployer_passkeys as passkeys,
-} from '@/lib/schema'
+import { projects_docker_compose as composes, hosts, passkeys } from '@/lib/schema'
 import { getModuleIcon } from '@/utils/icons'
 import { count, desc, eq } from 'drizzle-orm'
 import { computed, onMounted, ref } from 'vue'
