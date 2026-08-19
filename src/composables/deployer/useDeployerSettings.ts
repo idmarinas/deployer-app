@@ -2,14 +2,10 @@ import { db } from '@/lib/db'
 import { settings as deployer_settings } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 
-export async function getDeployerSetting(key: string): Promise<string | null> {
-	const row = await db
-		.select({ value: deployer_settings.value })
-		.from(deployer_settings)
-		.where(eq(deployer_settings.key, key))
-		.get()
+export async function getDeployerSetting(key: string, _default: string | null = null): Promise<string | null> {
+	const row = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get()
 
-	return row?.value ?? null
+	return row?.value ?? _default
 }
 
 export async function setDeployerSetting(key: string, value: string): Promise<void> {
