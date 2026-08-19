@@ -125,11 +125,17 @@ export function useConfigureDeployerApp() {
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
 					try {
-						await setDeployerSettings({
-							locale: locale.value,
-							theme_color: colorMode.value,
-						})
-						return { success: true, data: null, message_key: 'tauri.deployer_settings.success.saved', message_params: {} }
+						await setDeployerSettings([
+							{ key: 'locale', value: locale.value },
+							{ key: 'theme_color', value: colorMode.value },
+						])
+
+						return {
+							success: true,
+							data: null,
+							message_key: 'tauri.deployer_settings.success.saved',
+							message_params: {},
+						}
 					} catch (e) {
 						return {
 							success: false,
