@@ -8,13 +8,11 @@ use crate::helpers::open_pool;
 use crate::response::CommandResponse;
 use crate::params;
 
-/// Ejecuta una query SELECT arbitraria desde el frontend (Drizzle proxy).
+/// Ejecuta una query SQL arbitraria desde el frontend (Drizzle proxy).
 ///
-/// - Solo permite sentencias SELECT. Cualquier otra instrucción es rechazada.
+/// - SELECT: devuelve las filas como array de arrays JSON.
+/// - INSERT/UPDATE/DELETE: ejecuta la mutación y devuelve filas afectadas.
 /// - Los parámetros se pasan como array JSON y se unen a la query con `bind`.
-/// - Devuelve las filas como array de arrays JSON, en el mismo orden de columnas
-///   que el SELECT (requerido por el modo proxy de Drizzle, que mapea por posición,
-///   no por nombre de clave — un HashMap/objeto no garantizaría el orden).
 ///
 /// NOTA: Los valores cifrados se reemplazan por `BLANK_VALUE` para que el
 /// frontend nunca reciba datos cifrados ni descifrados.
@@ -24,16 +22,6 @@ pub async fn query_raw(
     sql: String,
     params: Option<Vec<Value>>,
 ) -> Result<CommandResponse<Vec<Vec<Value>>>, String> {
-
-    // Validar que sea un SELECT
-    let trimmed = sql.trim().to_lowercase();
-    if !trimmed.starts_with("select") {
-        let preview: String = sql.chars().take(80).collect();
-        return Ok(CommandResponse::err(
-            "tauri.database.errors.query_raw_not_select",
-            params!("sql" => preview),
-        ));
-    }
 
     let (pool, _) = match open_pool(&app).await {
         Ok(v) => v,
@@ -46,6 +34,7 @@ pub async fn query_raw(
     };
 
     let bind_params = params.unwrap_or_default();
+    let is_select = sql.trim().to_lowercase().starts_with("select");
 
     // Construir la query y bindear parámetros
     let mut query = sqlx::query(&sql);
@@ -68,31 +57,49 @@ pub async fn query_raw(
         };
     }
 
-    let rows = match query.fetch_all(&pool).await {
-        Ok(r) => r,
-        Err(e) => {
-            return Ok(CommandResponse::err(
-                "tauri.database.errors.query_raw_execution_failed",
-                params!("reason" => e.to_string()),
-            ))
+    if is_select {
+        let rows = match query.fetch_all(&pool).await {
+            Ok(r) => r,
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "tauri.database.errors.query_raw_execution_failed",
+                    params!("reason" => e.to_string()),
+                ))
+            }
+        };
+
+        // Convertir las filas a Vec<Vec<Value>>, respetando el orden de columnas del SELECT
+        let mut result: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
+
+        for row in &rows {
+            let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
+
+            for col in row.columns() {
+                let ord = col.ordinal();
+                values.push(decode_column_value(row, ord));
+            }
+
+            result.push(values);
         }
-    };
 
-    // Convertir las filas a Vec<Vec<Value>>, respetando el orden de columnas del SELECT
-    let mut result: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
+        Ok(CommandResponse::ok(result, "tauri.database.success.query_raw_executed"))
+    } else {
+        let result = match query.execute(&pool).await {
+            Ok(r) => r,
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "tauri.database.errors.query_raw_execution_failed",
+                    params!("reason" => e.to_string()),
+                ))
+            }
+        };
 
-    for row in &rows {
-        let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
-
-        for col in row.columns() {
-            let ord = col.ordinal();
-            values.push(decode_column_value(row, ord));
-        }
-
-        result.push(values);
+        let affected = result.rows_affected() as i64;
+        Ok(CommandResponse::ok(
+            vec![vec![Value::Number(affected.into())]],
+            "tauri.database.success.query_raw_executed",
+        ))
     }
-
-    Ok(CommandResponse::ok(result, "tauri.database.success.query_raw_executed"))
 }
 
 /// Decodifica el valor de una columna SQLite sin fiarse de `type_info()`.
