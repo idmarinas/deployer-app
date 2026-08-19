@@ -4,7 +4,7 @@ import {
 	projects_docker_compose as docker_composes,
 	hosts,
 } from '@/lib/schema'
-import { asc, eq, getTableColumns } from 'drizzle-orm'
+import { asc, eq, getColumns } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export interface DockerComposeListItem {
@@ -32,10 +32,10 @@ export const useDockerComposeById = defineColadaLoader('dashboard-docker_compose
 	query: async to =>
 		await db.query.projects_docker_compose
 			.findFirst({
-				where: eq(docker_composes.id, Number.parseInt(to.params.id)),
+				where: { id: Number.parseInt(to.params.id) },
 				with: {
-					projects_docker_compose_files: true,
-					deployer_host: {
+					docker_compose_files: true,
+					host: {
 						columns: {
 							name: true,
 						},
@@ -45,12 +45,12 @@ export const useDockerComposeById = defineColadaLoader('dashboard-docker_compose
 			.then(result => {
 				const data = {
 					...result,
-					files: result?.projects_docker_compose_files,
-					host_name: result?.deployer_host?.name,
+					files: result?.docker_compose_files,
+					host_name: result?.host?.name,
 				}
 
-				delete data.projects_docker_compose_files
-				delete data.deployer_host
+				delete data.docker_compose_files
+				delete data.host
 
 				return data
 			})
@@ -62,7 +62,7 @@ export const useDockerComposeListAll = defineColadaLoader('dashboard-docker_comp
 	query: async () =>
 		await db
 			.select({
-				...getTableColumns(docker_composes),
+				...getColumns(docker_composes),
 				host_name: hosts.name,
 				files_count: db.$count(docker_compose_files, eq(docker_compose_files.module_id, docker_composes.id)),
 			})
