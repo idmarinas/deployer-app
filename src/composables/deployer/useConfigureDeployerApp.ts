@@ -271,7 +271,7 @@ export function useConfigureDeployerApp() {
 				if (!success) {
 					toast.add({
 						title: t('overlays.toast.title.error'),
-						description: t(result?.message_key, result?.message_params),
+						description: t(result?.message_key, result?.message_params, { escapeParameter: false }),
 						color: 'error',
 					})
 				}
@@ -282,7 +282,7 @@ export function useConfigureDeployerApp() {
 				if (!success) {
 					toast.add({
 						title: t('overlays.toast.title.error'),
-						description: t(result?.message_key, result?.message_params),
+						description: t(result?.message_key, result?.message_params, { escapeParameter: false }),
 						color: 'error',
 					})
 				}
