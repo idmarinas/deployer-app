@@ -299,7 +299,7 @@ export function useConfigureDeployerApp() {
 		return true
 	}
 
-	function completeSetup(all_steps_completed: boolean) {
+	async function completeSetup(all_steps_completed: boolean) {
 		if (all_steps_completed) {
 			toast.add({
 				title: t('overlays.toast.title.success'),
@@ -325,6 +325,9 @@ export function useConfigureDeployerApp() {
 
 			router.push('/dashboard')
 		} else {
+			// Si falla en algún punto borrar el path por si se ha guardado.
+			await invoke('set_database_path', { path: '' })
+
 			buttons.value = {
 				select: {
 					disabled: true,
