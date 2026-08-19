@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
-import { settings as deployer_settings } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
+import { settings } from '@/lib/schema'
+import { eq, sql } from 'drizzle-orm'
 
 export async function getDeployerSetting(key: string, _default: string | null = null): Promise<string | null> {
 	const row = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get()
@@ -32,10 +32,10 @@ export async function setDeployerSettings(values: { key: string; value: string }
 export async function listDeployerSettings(): Promise<Record<string, string>> {
 	const rows = await db
 		.select({
-			key: deployer_settings.key,
-			value: deployer_settings.value,
+			key: settings.key,
+			value: settings.value,
 		})
-		.from(deployer_settings)
+		.from(settings)
 		.all()
 
 	const result: Record<string, string> = {}
@@ -48,7 +48,7 @@ export async function listDeployerSettings(): Promise<Record<string, string>> {
 }
 
 export async function deleteDeployerSetting(key: string): Promise<boolean> {
-	const result = await db.delete(deployer_settings).where(eq(deployer_settings.key, key)).run()
+	const result = await db.delete(settings).where(eq(settings.key, key)).run()
 
 	return (result as any).changes > 0
 }
