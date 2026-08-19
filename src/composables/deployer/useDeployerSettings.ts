@@ -14,19 +14,23 @@ export async function getDeployerSetting(key: string): Promise<string | null> {
 
 export async function setDeployerSetting(key: string, value: string): Promise<void> {
 	await db
-		.insert(deployer_settings)
+		.insert(settings)
 		.values({ key, value })
 		.onConflictDoUpdate({
-			target: deployer_settings.key,
-			set: { value },
+			target: settings.key,
+			set: { value: sql.raw(`excluded.${settings.value.name}`) },
 		})
 		.run()
 }
 
-export async function setDeployerSettings(settings: Record<string, string>): Promise<void> {
-	for (const [key, value] of Object.entries(settings)) {
-		await setDeployerSetting(key, value)
-	}
+export async function setDeployerSettings(values: { key: string; value: string }[]): Promise<void> {
+	await db
+		.insert(settings)
+		.values(values)
+		.onConflictDoUpdate({
+			target: settings.key,
+			set: { value: sql.raw(`excluded.${settings.value.name}`) },
+		})
 }
 
 export async function listDeployerSettings(): Promise<Record<string, string>> {
