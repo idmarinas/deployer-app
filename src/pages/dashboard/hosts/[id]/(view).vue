@@ -1,5 +1,6 @@
 <script lang="ts">
-import type { CommandResponse, Host, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import type { CommandResponse, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import type { Host } from '@/types/entities'
 import type { Ref, VNode } from 'vue'
 
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'

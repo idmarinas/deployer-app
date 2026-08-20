@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Passkey } from '@/types/tauri-types'
+import type { Passkey } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h, onMounted, resolveComponent } from 'vue'
@@ -10,8 +10,8 @@ import { usePasskeysListAll } from '@/loaders/passkeys'
 import { isEncryptedValue } from '@/utils/crypto'
 import { ICONS } from '@/utils/icons'
 
-import { useTableColumns } from '@/composables/useTableColumns'
 import { useQuery } from '@/composables/useQuery'
+import { useTableColumns } from '@/composables/useTableColumns'
 </script>
 
 <script setup lang="ts">

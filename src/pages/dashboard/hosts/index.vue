@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Host } from '@/types/tauri-types'
+import type { Host } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h, onMounted, resolveComponent } from 'vue'
