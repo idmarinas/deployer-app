@@ -1,5 +1,6 @@
 <script lang="ts">
-import type { CommandResponse, ExportPublicKeyInput, Passkey } from '@/types/tauri-types'
+import type { Passkey } from '@/types/entities'
+import type { CommandResponse, ExportPublicKeyInput } from '@/types/tauri-types'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 import { ref, useTemplateRef } from 'vue'

@@ -1,4 +1,5 @@
-import type { GeneratedPasskey, Passkey } from '@/types/tauri-types'
+import type { GeneratedPasskey } from '@/types/tauri-types'
+import type { Passkey } from '@/types/entities'
 
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
 import CopyPasskeyToServerDialog from '@/components/overlay/forms/CopyPasskeyToServerDialog.vue'
