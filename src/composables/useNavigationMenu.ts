@@ -9,20 +9,22 @@ export function useSideberMenu() {
 
 	const navigationMenu: NavigationMenuItem[][] = [
 		[
-			// Docker Composes
+			// Proyectos
 			{
-				label: t('components.sidebar.docker_composes'),
-				icon: getModuleIcon('docker_composes'),
-				to: { name: 'dashboard-docker_composes' },
+				label: t('components.sidebar.projects'),
+				icon: getModuleIcon('projects'),
+				defaultOpen: true,
+				children: [
+					// Docker Composes
+					{
+						label: t('components.sidebar.docker_composes'),
+						icon: getModuleIcon('docker_composes'),
+						to: { name: 'dashboard-docker_composes' },
+					},
+				],
 			},
 		],
 		[
-			// Proyectos
-			// {
-			//   label: t('components.sidebar.projects'),
-			//   icon: getModuleIcon('projects'),
-			//   to: {name: 'dashboard-projects'},
-			// },
 			// Claves de acceso
 			{
 				label: t('components.sidebar.passkeys'),
@@ -131,6 +133,17 @@ export function useDashboardButton() {
 	const { t } = useI18n()
 
 	const items: DropdownMenuItem[] = [
+		{
+			label: t('components.sidebar.projects'),
+			type: 'label',
+		},
+		{
+			label: t('components.navigation.add.docker_compose.label'),
+			description: t('components.navigation.add.docker_compose.description'),
+			icon: getModuleIcon('docker_composes'),
+			to: { name: 'dashboard-docker_composes-add' },
+			kbds: ['shift', 'D'],
+		},
 		// {
 		//   label: t('components.navigation.add.project.label'),
 		//   description: t('components.navigation.add.project.description'),
@@ -146,17 +159,20 @@ export function useDashboardButton() {
 		//   kbds: ['shift', 'T']
 		// },
 		{
+			type: 'separator',
+		},
+		{
 			label: t('components.navigation.add.passkey.label'),
 			description: t('components.navigation.add.passkey.description'),
 			icon: getModuleIcon('passkeys'),
-			to: '/dashboard/passkeys/add',
+			to: { name: 'dashboard-passkeys-add' },
 			kbds: ['shift', 'K'],
 		},
 		{
 			label: t('components.navigation.add.host.label'),
 			description: t('components.navigation.add.host.description'),
 			icon: getModuleIcon('hosts', 'singular'),
-			to: '/dashboard/hosts/add',
+			to: { name: 'dashboard-hosts-add' },
 			kbds: ['shift', 'H'],
 		},
 		// {
@@ -166,13 +182,6 @@ export function useDashboardButton() {
 		//   to: '/dashboard/variables/add',
 		//   kbds: ['shift', 'V']
 		// },
-		{
-			label: t('components.navigation.add.docker_compose.label'),
-			description: t('components.navigation.add.docker_compose.description'),
-			icon: getModuleIcon('docker_composes'),
-			to: '/dashboard/docker_composes/add',
-			kbds: ['shift', 'D'],
-		},
 	]
 
 	return items
