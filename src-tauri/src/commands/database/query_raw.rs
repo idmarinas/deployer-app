@@ -1,155 +1,136 @@
 use serde_json::Value;
 use sqlx::Column;
 use sqlx::Row;
-use sqlx::ValueRef;
 use tauri::AppHandle;
 
-use crate::helpers::open_pool;
-use crate::response::CommandResponse;
+use crate::crypto;
+use crate::helpers::{open_crypto_context, open_pool};
 use crate::params;
+use crate::response::CommandResponse;
+
+use super::helpers;
+
+// ====================================================================
+// Comando unificado
+// ====================================================================
 
 /// Ejecuta una query SQL arbitraria desde el frontend (Drizzle proxy).
 ///
-/// - SELECT: devuelve las filas como array de arrays JSON.
-/// - INSERT/UPDATE/DELETE: ejecuta la mutación y devuelve filas afectadas.
-/// - Los parámetros se pasan como array JSON y se unen a la query con `bind`.
-///
-/// NOTA: Los valores cifrados se reemplazan por `BLANK_VALUE` para que el
-/// frontend nunca reciba datos cifrados ni descifrados.
+/// Comportamiento:
+/// - Siempre usa `fetch_all()` para devolver filas reales (SELECT e
+///   INSERT/UPDATE/DELETE con RETURNING).
+/// - Cifra campos en INSERT/UPDATE cuando se provee `encrypt_mask`.
+/// - Descifra campos en SELECT cuando se provee `decrypt_fields`.
+/// - Sin cifrado: se abre solo el pool. Con cifrado: se abre crypto context.
 #[tauri::command]
 pub async fn query_raw(
     app: AppHandle,
     sql: String,
     params: Option<Vec<Value>>,
+    encrypt_mask: Option<Vec<bool>>,
+    decrypt_fields: Option<Vec<String>>,
+    is_write: bool,
+    is_read: bool,
 ) -> Result<CommandResponse<Vec<Vec<Value>>>, String> {
+    let needs_encryption = is_write && encrypt_mask.as_ref().is_some_and(|m| m.iter().any(|&b| b));
+    let needs_decryption = is_read && decrypt_fields.as_ref().is_some_and(|f| !f.is_empty());
 
-    let (pool, _) = match open_pool(&app).await {
-        Ok(v) => v,
+    // ── Abrir contexto ─────────────────────────────────────────────
+    let (pool, master_key) = if needs_encryption || needs_decryption {
+        match open_crypto_context(&app).await {
+            Ok(v) => v,
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "tauri.database.errors.query_raw_open_pool_failed",
+                    params!("reason" => e),
+                ))
+            }
+        }
+    } else {
+        match open_pool(&app).await {
+            Ok((pool, _)) => (pool, Vec::new()),
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "tauri.database.errors.query_raw_open_pool_failed",
+                    params!("reason" => e),
+                ))
+            }
+        }
+    };
+
+    let mut final_params = params.unwrap_or_default();
+
+    // ── Cifrado en INSERT/UPDATE ───────────────────────────────────
+    // encrypt_mask[i] == true → final_params[i] se cifra
+    if needs_encryption {
+        if let Some(ref mask) = encrypt_mask {
+            for (i, should_encrypt) in mask.iter().enumerate() {
+                if !should_encrypt {
+                    continue;
+                }
+                if let Some(param) = final_params.get_mut(i) {
+                    if let Some(value_str) = param.as_str() {
+                        if !value_str.is_empty()
+                            && !value_str.starts_with(crypto::keyring::ENCRYPTED_PREFIX)
+                        {
+                            *param = Value::String(
+                                crypto::cipher::encrypt(value_str, &master_key)?,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Ejecutar SQL ───────────────────────────────────────────────
+    let mut query = sqlx::query(&sql);
+    query = helpers::bind_params(query, &final_params);
+
+    let rows = match query.fetch_all(&pool).await {
+        Ok(r) => r,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "tauri.database.errors.query_raw_open_pool_failed",
-                params!("reason" => e),
+                "tauri.database.errors.query_raw_execution_failed",
+                params!("reason" => e.to_string()),
             ))
         }
     };
 
-    let bind_params = params.unwrap_or_default();
-    let is_select = sql.trim().to_lowercase().starts_with("select");
+    // ── Convertir filas ────────────────────────────────────────────
+    // Para SELECTs con descifrado, necesitamos los nombres de columna
+    // para mapear los campos cifrados a sus ordinales correctos.
+    if is_read && needs_decryption {
+        if let Some(ref fields) = decrypt_fields {
+            let mut result: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
 
-    // Construir la query y bindear parámetros
-    let mut query = sqlx::query(&sql);
-    for param in &bind_params {
-        query = match param {
-            Value::Null => query.bind(None::<String>),
-            Value::Bool(b) => query.bind(*b),
-            Value::Number(n) => {
-                if let Some(i) = n.as_i64() {
-                    query.bind(i)
-                } else if let Some(f) = n.as_f64() {
-                    query.bind(f)
-                } else {
-                    query.bind(n.to_string())
+            for row in &rows {
+                let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
+                for col in row.columns() {
+                    let ord = col.ordinal();
+                    let mut value = helpers::decode_column_value(row, ord);
+
+                    if fields.contains(&col.name().to_string()) {
+                        value = helpers::maybe_decrypt(&value, &master_key)?;
+                    }
+
+                    values.push(value);
                 }
-            }
-            Value::String(s) => query.bind(s.clone()),
-            // Arrays y objetos se serializan como JSON string
-            other => query.bind(other.to_string()),
-        };
-    }
 
-    if is_select {
-        let rows = match query.fetch_all(&pool).await {
-            Ok(r) => r,
-            Err(e) => {
-                return Ok(CommandResponse::err(
-                    "tauri.database.errors.query_raw_execution_failed",
-                    params!("reason" => e.to_string()),
-                ))
-            }
-        };
-
-        // Convertir las filas a Vec<Vec<Value>>, respetando el orden de columnas del SELECT
-        let mut result: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
-
-        for row in &rows {
-            let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
-
-            for col in row.columns() {
-                let ord = col.ordinal();
-                values.push(decode_column_value(row, ord));
+                result.push(values);
             }
 
-            result.push(values);
+            return Ok(CommandResponse::ok(
+                result,
+                "tauri.database.success.query_raw_executed",
+            ));
         }
-
-        Ok(CommandResponse::ok(result, "tauri.database.success.query_raw_executed"))
-    } else {
-        let result = match query.execute(&pool).await {
-            Ok(r) => r,
-            Err(e) => {
-                return Ok(CommandResponse::err(
-                    "tauri.database.errors.query_raw_execution_failed",
-                    params!("reason" => e.to_string()),
-                ))
-            }
-        };
-
-        let affected = result.rows_affected() as i64;
-        Ok(CommandResponse::ok(
-            vec![vec![Value::Number(affected.into())]],
-            "tauri.database.success.query_raw_executed",
-        ))
-    }
-}
-
-/// Decodifica el valor de una columna SQLite sin fiarse de `type_info()`.
-///
-/// SQLite es de tipado dinámico: para columnas calculadas (subqueries,
-/// expresiones, agregados) `type_info()` a menudo viene vacío o con un tipo
-/// que no refleja el dato real almacenado. En vez de decidir por tipo
-/// declarado, se comprueba primero si el valor crudo es NULL (con
-/// `try_get_raw().is_null()`) — comprobación explícita, no inferida — y solo
-/// si no lo es, se prueba la decodificación en cascada: entero, real,
-/// booleano, texto.
-///
-/// IMPORTANTE: este orden es deliberado. Probar `try_get::<i64, _>` (u otros
-/// tipos no-Option) directamente sobre una columna NULL puede no fallar como
-/// se espera con algunas combinaciones tipo/valor en sqlx-sqlite, devolviendo
-/// `Ok(0)` en vez de `Err` — causando que NULL se decodifique como `0` en
-/// vez de `null`. Comprobar `is_null()` explícitamente antes evita ese caso.
-fn decode_column_value(row: &sqlx::sqlite::SqliteRow, ordinal: usize) -> Value {
-    let is_null = row
-        .try_get_raw(ordinal)
-        .map(|raw| raw.is_null())
-        .unwrap_or(true);
-
-    if is_null {
-        return Value::Null;
     }
 
-    if let Ok(v) = row.try_get::<i64, _>(ordinal) {
-        return Value::Number(v.into());
-    }
-    if let Ok(v) = row.try_get::<f64, _>(ordinal) {
-        return serde_json::Number::from_f64(v)
-            .map(Value::Number)
-            .unwrap_or(Value::Null);
-    }
-    if let Ok(v) = row.try_get::<bool, _>(ordinal) {
-        return Value::Bool(v);
-    }
-    if let Ok(v) = row.try_get::<String, _>(ordinal) {
-        if v.starts_with(crate::crypto::keyring::ENCRYPTED_PREFIX) {
-            return Value::String(crate::crypto::BLANK_VALUE.to_string());
-        }
-        let trimmed = v.trim_start();
-        if (trimmed.starts_with('{') || trimmed.starts_with('['))
-            && serde_json::from_str::<Value>(&v).is_ok()
-        {
-            return serde_json::from_str(&v).unwrap_or(Value::String(v));
-        }
-        return Value::String(v);
-    }
+    let result = helpers::rows_to_values(&rows);
 
-    Value::Null
+    Ok(CommandResponse::ok(
+        result,
+        "tauri.database.success.query_raw_executed",
+    ))
 }
