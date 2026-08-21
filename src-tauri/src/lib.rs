@@ -8,7 +8,7 @@ mod ssh;
 use commands::database::{
     create_database_file, get_app_info, get_database_info,
     get_migrations_info, has_migrations_pending, initialize_database, query_raw,
-    query_raw_with_encryption, execute_migrations, validate_database_sqlite,
+    execute_migrations, validate_database_sqlite,
 };
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
 use commands::projects::docker::compose::{
@@ -23,7 +23,7 @@ use commands::hosts::{
     host_check_system_info, host_check_metrics, host_check_updates, host_update_packages, test_connection,
 };
 use commands::passkeys::{
-    export_public_key, generate_passkey,
+    derive_passkey_info, export_public_key, generate_passkey,
 };
 use commands::remote::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file,
@@ -61,6 +61,7 @@ pub fn run() {
             host_check_updates,
             host_update_packages,
             // Passkeys - non-CRUD
+            derive_passkey_info,
             export_public_key,
             generate_passkey,
             // Consola remota
@@ -89,7 +90,6 @@ pub fn run() {
             create_database_file,
             validate_database_sqlite,
             query_raw,
-            query_raw_with_encryption,
             get_app_info,
             get_database_info,
             get_migrations_info,
