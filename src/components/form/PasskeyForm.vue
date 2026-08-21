@@ -1,4 +1,6 @@
 <script lang="ts">
+import type { JSONContent } from '@tiptap/vue-3'
+
 import { usePasskeySchema } from '@/composables/schemas/passkeys'
 import { isEncryptedValue } from '@/utils/crypto'
 import { useI18n } from 'vue-i18n'
@@ -7,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const state = defineModel<{
 	name: string
-	description?: string
+	description?: JSONContent
 	key_type: 'rsa' | 'ed25519' | 'ecdsa'
 	key_content: string
 	passphrase: string

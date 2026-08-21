@@ -1,6 +1,8 @@
 <!-- Componente usando en las páginas de vistas (view).vue -->
 
 <script lang="ts">
+import type { JSONContent } from '@tiptap/vue-3'
+
 import { useI18n } from 'vue-i18n'
 </script>
 
@@ -8,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 const props = defineProps<{
 	id: number
 	enabled: boolean
-	description?: object
+	description?: JSONContent
 	created_at: string
 	updated_at: string
 	onToggle?: (input: { enabled: boolean }) => Promise<boolean>
