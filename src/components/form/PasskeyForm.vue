@@ -9,10 +9,10 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const state = defineModel<{
 	name: string
-	description?: JSONContent
+	description: JSONContent
 	key_type: 'rsa' | 'ed25519' | 'ecdsa'
 	key_content: string
-	passphrase: string
+	passphrase: string | null
 	fingerprint: string
 }>({ required: true })
 
