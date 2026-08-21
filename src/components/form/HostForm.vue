@@ -1,4 +1,6 @@
 <script lang="ts">
+import type { JSONContent } from '@tiptap/vue-3'
+
 import { useHostSchema } from '@/composables/schemas/hosts'
 import { useI18n } from 'vue-i18n'
 </script>
@@ -6,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const state = defineModel<{
 	name: string
-	description?: string
+	description?: JSONContent
 	host: string
 	port: number
 	auth_type: 'password' | 'key'

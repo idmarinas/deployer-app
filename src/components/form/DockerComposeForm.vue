@@ -1,4 +1,6 @@
 <script lang="ts">
+import type { JSONContent } from '@tiptap/vue-3'
+
 import type { ManagedFile } from '@/lib/files'
 
 import { useI18n } from 'vue-i18n'
@@ -7,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const state = defineModel<{
 	name: string
-	description?: string
+	description?: JSONContent
 	host_id?: number
 	remote_path: string
 	enabled: boolean
