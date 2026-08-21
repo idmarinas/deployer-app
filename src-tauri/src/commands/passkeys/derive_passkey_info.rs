@@ -27,7 +27,7 @@ pub struct DerivePasskeyInfoInput {
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
-pub struct PasskeyInfo {
+pub struct DerivePasskeyInfo {
     /// Fingerprint SHA-256 derivado de la clave (formato `SHA256:...`).
     pub fingerprint: Option<String>,
     /// Tipo real del algoritmo de la clave.
@@ -46,7 +46,7 @@ pub struct PasskeyInfo {
 #[tauri::command]
 pub async fn derive_passkey_info(
     input: DerivePasskeyInfoInput,
-) -> Result<CommandResponse<PasskeyInfo>, String> {
+) -> Result<CommandResponse<DerivePasskeyInfo>, String> {
     // 1) Parsear la clave OpenSSH — valida que sea una clave válida
     let key = match PrivateKey::from_openssh(input.key_content.as_bytes()) {
         Ok(k) => k,
@@ -103,7 +103,7 @@ pub async fn derive_passkey_info(
     let fingerprint = key.fingerprint(HashAlg::Sha256).to_string();
 
     Ok(CommandResponse::ok(
-        PasskeyInfo {
+        DerivePasskeyInfo {
             fingerprint: Some(fingerprint),
             key_type: Some(key_type),
         },
