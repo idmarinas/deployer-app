@@ -1,4 +1,4 @@
-import { ref, inject, provide, type VNode, isVNode } from 'vue'
+import { inject, isVNode, provide, ref, type VNode } from 'vue'
 
 export type ToolbarContent = VNode[] | undefined
 export type ToolbarManager = {
@@ -10,7 +10,7 @@ export type ToolbarManager = {
 }
 
 // Crear una key única por módulo
-function createToolbarKey(moduleName: string = 'default'): string {
+export function createToolbarKey(moduleName: string = 'default'): string {
 	return `dashboard:toolbar:${moduleName}`
 }
 
