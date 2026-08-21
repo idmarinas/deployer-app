@@ -14,6 +14,26 @@ export type ComposeFileInput = { id?: number, file_path: string, content?: strin
 
 export type DatabaseInfo = { path: string, file_size_bytes: number, table_count: number, tables: Array<TableInfo>, other_tables: OtherTablesInfo | null, page_count: number, page_size: number, };
 
+export type DerivePasskeyInfo = { 
+/**
+ * Fingerprint SHA-256 derivado de la clave (formato `SHA256:...`).
+ */
+fingerprint: string | null, 
+/**
+ * Tipo real del algoritmo de la clave.
+ */
+key_type: KeyType | null, };
+
+export type DerivePasskeyInfoInput = { 
+/**
+ * Contenido de la clave privada OpenSSH (texto plano).
+ */
+key_content: string, 
+/**
+ * Passphrase para descifrar la clave si está protegida.
+ */
+passphrase: string | null, };
+
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
 export type DockerComposeFile = { id: number, module_id: number, file_path: string, content: string | null, is_binary: boolean, name: string, mime_type: string | null, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string | null, created_at: string, updated_at: string, };
