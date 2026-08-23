@@ -34,13 +34,18 @@ export default function useToaster() {
 	}
 
 	function info(title?: string, description?: string, options: ToasterOptions = {}): Toast {
-		return toast.add({
-			title: title,
-			description: description,
-			color: 'info',
-			icon: 'i-tabler-info-circle',
-			...options,
-		})
+		return toast.add(build('info', title, description, options))
+	}
+
+	function update(
+		id: string | number,
+		type: ToasterType,
+		title?: string,
+		description?: string,
+		options: ToasterOptions = {},
+	): void {
+		options.id = id
+		toast.update(id, build(type, title, description, options))
 	}
 
 	return {
@@ -49,5 +54,6 @@ export default function useToaster() {
 		error,
 		warning,
 		info,
+		update,
 	}
 }
