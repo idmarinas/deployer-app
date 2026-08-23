@@ -3,7 +3,7 @@
  * @returns
  */
 
-import { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
+import type { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
 
 type ToasterOptions = Partial<Omit<Toast, 'title' | 'description'>>
 
