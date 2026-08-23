@@ -10,7 +10,7 @@ type ToasterOptions = Partial<Omit<Toast, 'title' | 'description'>>
 export default function useToaster() {
 	const toast = useToast()
 
-	function success(title?: string, description?: string, options: ToasterOptions = {}) {
+	function success(title?: string, description?: string, options: ToasterOptions = {}): Toast {
 		return toast.add({
 			title: title,
 			description: description,
@@ -20,7 +20,7 @@ export default function useToaster() {
 		})
 	}
 
-	function error(title?: string, description?: string, options: ToasterOptions = {}) {
+	function error(title?: string, description?: string, options: ToasterOptions = {}): Toast {
 		return toast.add({
 			title: title,
 			description: description,
@@ -30,7 +30,7 @@ export default function useToaster() {
 		})
 	}
 
-	function warning(title?: string, description?: string, options: ToasterOptions = {}) {
+	function warning(title?: string, description?: string, options: ToasterOptions = {}): Toast {
 		return toast.add({
 			title: title,
 			description: description,
@@ -40,7 +40,7 @@ export default function useToaster() {
 		})
 	}
 
-	function info(title?: string, description?: string, options: ToasterOptions = {}) {
+	function info(title?: string, description?: string, options: ToasterOptions = {}): Toast {
 		return toast.add({
 			title: title,
 			description: description,
