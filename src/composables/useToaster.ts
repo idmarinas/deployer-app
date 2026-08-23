@@ -3,10 +3,14 @@
  * @returns
  */
 
+import { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
+
+type ToasterOptions = Partial<Omit<Toast, 'title' | 'description'>>
+
 export default function useToaster() {
 	const toast = useToast()
 
-	function success(title?: string, description?: string, options = {}) {
+	function success(title?: string, description?: string, options: ToasterOptions = {}) {
 		return toast.add({
 			title: title,
 			description: description,
@@ -16,7 +20,7 @@ export default function useToaster() {
 		})
 	}
 
-	function error(title?: string, description?: string, options = {}) {
+	function error(title?: string, description?: string, options: ToasterOptions = {}) {
 		return toast.add({
 			title: title,
 			description: description,
@@ -26,7 +30,7 @@ export default function useToaster() {
 		})
 	}
 
-	function warning(title?: string, description?: string, options = {}) {
+	function warning(title?: string, description?: string, options: ToasterOptions = {}) {
 		return toast.add({
 			title: title,
 			description: description,
@@ -36,7 +40,7 @@ export default function useToaster() {
 		})
 	}
 
-	function info(title?: string, description?: string, options = {}) {
+	function info(title?: string, description?: string, options: ToasterOptions = {}) {
 		return toast.add({
 			title: title,
 			description: description,
