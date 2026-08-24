@@ -3,13 +3,13 @@ import type { AppInfo, CommandResponse, DatabaseInfo, MigrationInfo } from '@/ty
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 import useToaster from '@/composables/useToaster'
+import { i18n } from '@/i18n'
 import { invoke } from '@tauri-apps/api/core'
-import { useI18n } from 'vue-i18n'
 
 export const useDeployerAppMigrations = defineColadaLoader('dashboard-app', {
 	key: ['app', 'config', 'migrations'],
 	query: async () => {
-		const { t } = useI18n()
+		const { t } = i18n.global
 		const toaster = useToaster()
 
 		return await invoke<CommandResponse<MigrationInfo[]>>('get_migrations_info')
@@ -46,7 +46,7 @@ const appInfoDefault: AppInfo = {
 export const useDeployerAppInfo = defineColadaLoader('dashboard-app', {
 	key: ['app', 'config', 'app-info'],
 	query: async () => {
-		const { t } = useI18n()
+		const { t } = i18n.global
 		const toaster = useToaster()
 
 		return await invoke<CommandResponse<AppInfo>>('get_app_info')
@@ -80,7 +80,7 @@ const databaseInfoDefault: DatabaseInfo = {
 export const useDeployerAppDatabaseInfo = defineColadaLoader('dashboard-app', {
 	key: ['app', 'config', 'database-info', 'app-db'],
 	query: async () => {
-		const { t } = useI18n()
+		const { t } = i18n.global
 		const toaster = useToaster()
 
 		return await invoke<CommandResponse<DatabaseInfo>>('get_database_info')
