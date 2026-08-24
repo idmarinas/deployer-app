@@ -23,7 +23,7 @@ export default {
 			'after:border-b-secondary-500/40 after:border-r-secondary-500/40',
 			'after:rounded-br-[1px]',
 		].join(' '),
-		base: 'min-w-full border-separate border-spacing-0',
+		base: 'table-auto min-w-full border-separate border-spacing-0',
 		caption: 'text-sm text-(--ui-text-dimmed) font-pcb mt-2',
 		thead: [
 			'sticky top-0 z-10',
