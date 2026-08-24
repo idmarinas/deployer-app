@@ -115,7 +115,12 @@ for (const p of paths) {
 	// fusiona sus mensajes en el padre en vez de anidarse bajo la clave 'index'.
 	// ej: 'pages/index' -> result.pages (no result.pages.index)
 	const isIndex = p.endsWith('/index') || p === 'index'
-	const parts = isIndex ? p.replace(/\/index$/, '').split('/').filter(Boolean) : p.split('/')
+	const parts = isIndex
+		? p
+				.replace(/\/index$/, '')
+				.split('/')
+				.filter(Boolean)
+		: p.split('/')
 
 	if (parts.length === 0) {
 		// 'index.ts' suelto en la raíz de es/: no hay padre al que fusionar, se omite
@@ -132,21 +137,21 @@ function render(obj: TypeTree, indent = 2): string {
 		.filter(([key]) => key !== '__index')
 		.map(([key, value]) => {
 			if (typeof value === 'string') {
-				return `${pad}${key}: ${value}`
+				return `${pad}${key}: NormalizeMessages<${value}>`
 			}
-			
+
 			const treeVal = value as TypeTree
 			const indexRef = treeVal.__index
 			const childKeys = Object.keys(treeVal).filter(k => k !== '__index')
-			
+
 			if (childKeys.length === 0) {
-				return `${pad}${key}: ${indexRef ?? '{}'}`
+				return indexRef ? `${pad}${key}: NormalizeMessages<${indexRef}>` : `${pad}${key}: {}`
 			}
-			
+
 			const nestedObjStr = `{\n${render(treeVal, indent + 2)}\n${pad}}`
-			
+
 			if (indexRef) {
-				return `${pad}${key}: ${indexRef} & ${nestedObjStr}`
+				return `${pad}${key}: NormalizeMessages<${indexRef} & ${nestedObjStr}>`
 			}
 			return `${pad}${key}: ${nestedObjStr}`
 		})
@@ -161,6 +166,26 @@ const content = `// ------------------------------------------------------------
 // Se regenera en cada "bun run dev" / "bun run build" (o "bun run i18n:types").
 // ---------------------------------------------------------------------------
 ${imports}
+
+/**
+ * Normaliza el árbol de mensajes para que el autocompletado de claves de
+ * vue-i18n incluya las claves cuyo valor es una función.
+ *
+ * vue-i18n v11 calcula las claves válidas de t() (Composition API) con el tipo
+ * JsonPaths (@intlify/core-base), que recursa dentro de cualquier valor que
+ * extienda Record<string, any> — y una función de mensaje ((ctx) => string)
+ * sí lo extiende. Eso hace que JsonPaths "entre" en la función y genere rutas
+ * basura (apply, call, name...), excluyendo la clave original del autocompletado.
+ * Convertir las hojas función a \`string\` las marca como mensajes terminales.
+ * Es un cambio types-only: no altera los mensajes en runtime ni el retorno de t().
+ */
+type NormalizeMessages<T> = {
+	[K in keyof T]: T[K] extends (...args: never[]) => unknown
+		? string
+		: T[K] extends Record<string, unknown>
+			? NormalizeMessages<T[K]>
+			: T[K]
+}
 
 export interface MessageSchema {
 ${render(tree)}
