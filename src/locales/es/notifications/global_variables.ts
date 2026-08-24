@@ -1,10 +1,44 @@
-import type { LocaleMessageValue } from 'vue-i18n'
+import type { LocaleMessageValue, MessageContext } from 'vue-i18n'
 
 export default {
-	added: 'Variable global "{name}" añadida correctamente.',
-	updated: 'Variable global "{name}" actualizada correctamente.',
-	deleted: 'Variable global "{name}" eliminada correctamente.',
+	create: {
+		loading: {
+			title: 'Añadiendo variable global...',
+			description: 'Guardando la variable global en la base de datos...',
+		},
+		success: {
+			title: 'Variable global añadida correctamente.',
+			description: 'Variable global "{name}" añadida correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al añadir la variable global.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al añadir la variable global "${ctx.named('name')}" en la base de datos.`
 
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	update: {
+		loading: {
+			title: 'Actualizando variable global...',
+			description: 'Actualizando la variable global en la base de datos...',
+		},
+		success: {
+			title: 'Variable global actualizada correctamente.',
+			description: 'Variable global "{name}" actualizada correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al actualizar la variable global.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al actualizar la variable global "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
 	delete: {
 		loading: {
 			title: 'Eliminando variable global...',
@@ -16,7 +50,12 @@ export default {
 		},
 		error: {
 			title: 'Error al eliminar la variable global.',
-			description: 'Error al eliminar la variable global "{name}" de la base de datos.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al eliminar la variable global "${ctx.named('name')}" de la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
 		},
 	},
 } satisfies LocaleMessageValue

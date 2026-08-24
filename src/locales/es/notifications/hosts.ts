@@ -1,9 +1,44 @@
 import type { LocaleMessageValue, MessageContext } from 'vue-i18n'
 
 export default {
-	added: 'Servidor "{name}" añadido correctamente.',
-	updated: 'Servidor "{name}" actualizado correctamente.',
-	deleted: 'Servidor "{name}" eliminado correctamente.',
+	create: {
+		loading: {
+			title: 'Añadiendo servidor...',
+			description: 'Guardando el servidor en la base de datos...',
+		},
+		success: {
+			title: 'Servidor añadido correctamente.',
+			description: 'Servidor "{name}" añadido correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al añadir el servidor.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al añadir el servidor "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	update: {
+		loading: {
+			title: 'Actualizando servidor...',
+			description: 'Actualizando el servidor en la base de datos...',
+		},
+		success: {
+			title: 'Servidor actualizado correctamente.',
+			description: 'Servidor "{name}" actualizado correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al actualizar el servidor.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al actualizar el servidor "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
 
 	delete: {
 		loading: {
@@ -17,14 +52,10 @@ export default {
 		error: {
 			title: 'Error al eliminar el servidor.',
 			description: (ctx: MessageContext) => {
-				let msg = `Error al eliminar el servidor "${ctx.named('name')}" de la base de datos`
-				const reason = ctx.named('reason')
+				const details = ctx.named('details')
+				const base = `Error al eliminar el servidor "${ctx.named('name')}" de la base de datos.`
 
-				if (reason) {
-					msg = `${msg}.\nRazón: ${reason}`
-				}
-
-				return msg
+				return details ? `${base} Detalles: ${details}` : base
 			},
 		},
 	},
