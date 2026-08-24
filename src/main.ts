@@ -7,7 +7,6 @@ import { PiniaColada } from '@pinia/colada'
 import { createHead } from '@unhead/vue/client'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-import { createI18n } from 'vue-i18n'
 import { createRouter, createWebHistory } from 'vue-router'
 import { handleHotUpdate, routes } from 'vue-router/auto-routes'
 import { DataLoaderPlugin } from 'vue-router/experimental'
@@ -15,39 +14,12 @@ import { DataLoaderPlugin } from 'vue-router/experimental'
 // Tauri related
 import { invoke } from '@tauri-apps/api/core'
 
-import { availableLocales, loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from './locales/_loader'
-
 import App from './App.vue'
-
-const DEFAULT_LOCALE = navigator.language.split('-')[0] // "es-ES" → "es"
-
-// Carga inicial: solo el idioma por defecto
-const [messages, datetimeFormat, numberFormat] = await Promise.all([
-	loadLocaleMessages(DEFAULT_LOCALE),
-	loadDatetimeFormat(DEFAULT_LOCALE),
-	loadNumberFormat(DEFAULT_LOCALE),
-])
+import { i18n } from './i18n'
 
 const router = createRouter({
 	routes,
 	history: createWebHistory(),
-})
-
-const i18n = createI18n({
-	escapeParameter: true,
-	legacy: false,
-	locale: DEFAULT_LOCALE,
-	fallbackLocale: DEFAULT_LOCALE,
-	availableLocales,
-	messages: {
-		[DEFAULT_LOCALE]: messages,
-	} as any,
-	datetimeFormats: {
-		[DEFAULT_LOCALE]: datetimeFormat ?? {},
-	},
-	numberFormats: {
-		[DEFAULT_LOCALE]: numberFormat ?? {},
-	},
 })
 
 async function bootstrap() {
