@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { PasskeySchema } from '@/composables/schemas/passkeys'
 import type { PositionedButton } from '@/composables/usePositionedButtons'
+import type { Passkey } from '@/types/entities'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { h, onBeforeUnmount, onMounted, ref, resolveComponent, useTemplateRef, watch } from 'vue'
@@ -91,7 +92,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeyValidationInsertType>) {
 
 	await passkeyQuery
 		.create(event.data)
-		.then(async data => {
+		.then(async (data?: Passkey) => {
 			if (data !== undefined && data.id) {
 				await router.push({ name: 'dashboard-passkeys' })
 			}
