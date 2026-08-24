@@ -1,19 +1,19 @@
 <script lang="ts">
+import type { PasskeySchema } from '@/composables/schemas/passkeys'
 import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { h, onBeforeUnmount, onMounted, ref, resolveComponent, useTemplateRef, watch } from 'vue'
 
-import { useToast } from '@nuxt/ui/composables/useToast'
-import { useQueryCache } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
 import { useQuery } from '@/composables/useQuery'
+import { useSchemaValidation } from '@/composables/useSchemaValidation'
+import { PasskeyValidationInsertType } from '@/composables/validation/usePasskeyValidation'
 </script>
 
 <script setup lang="ts">
@@ -23,21 +23,23 @@ definePage({
 
 const UButton = resolveComponent('UButton')
 
-const { t } = useI18n()
 const router = useRouter()
+const { t } = useI18n()
 const { toolbar } = useToolbarForPasskeysModule()
-const cacheQuery = useQueryCache()
+const { passkeys: passkeySchema } = useSchemaValidation()
+const { passkeys: passkeyQuery } = useQuery()
 
-const toast = useToast()
-const { passkeySchema } = usePasskeySchema()
-
-const initialState: PasskeySchema = {
+const initialState: PasskeyValidationInsertType = {
 	name: '',
-	description: undefined,
+	description: {},
+	enabled: false,
 	key_type: 'ed25519',
 	key_content: '',
-	passphrase: '',
-	fingerprint: undefined,
+	passphrase: null,
+	fingerprint: null,
+	updated_at: '',
+	created_at: '',
+	deleted_at: null,
 }
 const state = ref<any>({ ...initialState })
 const checkPasswordStrength = ref(true)
@@ -84,31 +86,19 @@ const toolbarButtons: PositionedButton[] = [
 // Generar contenido del toolbar
 useToolbarContentCreate(state, initialState, isLoading, form, toolbar, toolbarButtons)
 
-async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
+async function onSubmit(event: FormSubmitEvent<PasskeyValidationInsertType>) {
 	isLoading.value = true
-	const { passkeys } = useQuery()
-	const passkey = event.data
 
-	const result = await passkeys.create(passkey as any)
-
-	if (result) {
-		await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
-
-		toast.add({
-			title: t('overlays.toast.title.success'),
-			description: t('notifications.passkeys.added', { name: passkey.name }),
-			color: 'success',
+	await passkeyQuery
+		.create(event.data)
+		.then(async data => {
+			if (data !== undefined && data.id) {
+				await router.push({ name: 'dashboard-passkeys' })
+			}
 		})
-		isLoading.value = false
-		router.push({ name: 'dashboard-passkeys' })
-	} else {
-		toast.add({
-			title: t('overlays.toast.title.error'),
-			description: t('notifications.passkeys.error', { name: passkey.name }),
-			color: 'error',
+		.finally(() => {
+			isLoading.value = false
 		})
-		isLoading.value = false
-	}
 }
 
 // Inyectar contenido en el toolbar cuando se monta el componente
@@ -130,7 +120,7 @@ watch(isLoading, () => toolbar?.updateToolbar())
 		ref="form"
 		:disabled="isLoading"
 		id="form-host-create"
-		:schema="passkeySchema"
+		:schema="passkeySchema.insert"
 		:state="state"
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
 		@submit="onSubmit"
