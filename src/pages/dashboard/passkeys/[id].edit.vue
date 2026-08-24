@@ -1,15 +1,14 @@
 <script lang="ts">
+import type { PasskeyValidationUpdateType } from '@/composables/validation/usePasskeyValidation'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
-import { useQueryCache } from '@pinia/colada'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { usePasskeySchema, type PasskeySchema } from '@/composables/schemas/passkeys'
 import { useQuery } from '@/composables/useQuery'
+import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { usePasskeyById } from '@/loaders/passkeys'
 import { sanitizeNulls } from '@/utils/sanitize'
 </script>
@@ -25,46 +24,32 @@ definePage({
 	},
 })
 
-const { t } = useI18n()
 const route = useRoute('dashboard-passkeys-id-edit')
 const router = useRouter()
 const { toolbar } = useToolbarForPasskeysModule()
-const toast = useToast()
 const { data: passkey, isLoading, reload } = usePasskeyById()
-const { passkeySchema } = usePasskeySchema(Number.parseInt(route.params.id))
-const queryCache = useQueryCache()
+const { passkeys: passkeySchema } = useSchemaValidation(Number.parseInt(route.params.id))
+const { passkeys: passkeyQuery } = useQuery()
 
 const state = ref<any>({})
-const form = useTemplateRef<Form<PasskeySchema>>('form')
+const form = useTemplateRef<Form<PasskeyValidationUpdateType>>('form')
 
 // Generar contenido del toolbar
 useToolbarContentEdit(state, passkey, isLoading, form, toolbar)
 
-async function onSubmit(event: FormSubmitEvent<PasskeySchema>) {
+async function onSubmit(event: FormSubmitEvent<PasskeyValidationUpdateType>) {
 	isLoading.value = true
-	const { passkeys } = useQuery()
-	const passkey = event.data as any
 
-	const result = await passkeys.update(Number.parseInt(route.params.id), passkey)
-
-	if (result) {
-		await queryCache.invalidateQueries({ key: ['passkeys'] }, 'all')
-
-		toast.add({
-			title: t('overlays.toast.title.success'),
-			description: t('schemas.passkeys.updated', { name: passkey.name }),
-			color: 'success',
+	await passkeyQuery
+		.update(Number.parseInt(route.params.id), event.data)
+		.then(async result => {
+			if (result !== undefined) {
+				await router.push({ name: 'dashboard-passkeys' })
+			}
 		})
-		isLoading.value = false
-		router.push({ name: 'dashboard-passkeys' })
-	} else {
-		toast.add({
-			title: t('overlays.toast.title.error'),
-			description: t('errors.passkeys.update_failed'),
-			color: 'error',
+		.finally(() => {
+			isLoading.value = false
 		})
-		isLoading.value = false
-	}
 }
 
 // Inyectar contenido en el toolbar cuando se monta el componente
@@ -92,13 +77,11 @@ watch(isLoading, () => toolbar?.updateToolbar())
 </script>
 
 <template>
-	<USkeleton v-if="isLoading" class="size-9 rounded-full" />
 	<UForm
-		v-else
 		ref="form"
 		:disabled="isLoading"
 		id="form-host-edit"
-		:schema="passkeySchema"
+		:schema="passkeySchema.update"
 		:state="state"
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
 		@submit="onSubmit"
