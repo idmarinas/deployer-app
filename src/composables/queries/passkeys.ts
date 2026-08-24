@@ -5,7 +5,7 @@ import { useQueryCache } from '@pinia/colada'
 import { invoke } from '@tauri-apps/api/core'
 import { eq } from 'drizzle-orm'
 
-import { toQueryRawError } from '@/composables/queries/shared'
+import { createQueryNotifier, firstRow, invalidateCacheQueries } from '@/composables/queries/shared'
 import useToaster from '@/composables/useToaster'
 import { PasskeyValidationInsertType, usePasskeyValidation } from '@/composables/validation/usePasskeyValidation'
 import { i18n } from '@/i18n'
@@ -18,44 +18,26 @@ export function usePasskeyQuery() {
 	const toaster = useToaster()
 	// Composer global: seguro fuera de setup (loaders, invalidateQueries)
 	const { t } = i18n.global
+	const notify = createQueryNotifier({ toaster, t })
 
 	async function findAll(): Promise<Passkey[]> {
-		return db
-			.select()
-			.from(passkeys)
-			.then(rows => rows.map(row => row as unknown as Passkey))
-			.catch(e => {
-				const queryError = toQueryRawError(e)
-
-				if (queryError) {
-					toaster.error(t(queryError.message_key, queryError.message_params))
-				} else {
-					toaster.error(t('overlays.toast.title.error'), t('overlays.toast.description.error'))
-				}
-				return []
+		return db.query.passkeys.findMany().catch(e => {
+			notify.fail(e, {
+				title: t('overlays.toast.title.error'),
+				description: t('overlays.toast.description.error'),
 			})
+			return []
+		})
 	}
 
 	async function find(id: number): Promise<Passkey | undefined> {
-		return await db
-			.select()
-			.from(passkeys)
-			.where(eq(passkeys.id, id))
-			.then(rows => {
-				const row = rows[0]
-				if (!row) return undefined
-				return row as unknown as Passkey
+		return await db.query.passkeys.findFirst({ where: { id } }).catch(e => {
+			notify.fail(e, {
+				title: t('overlays.toast.title.error'),
+				description: t('overlays.toast.description.error'),
 			})
-			.catch(e => {
-				const queryError = toQueryRawError(e)
-
-				if (queryError) {
-					toaster.error(t(queryError.message_key, queryError.message_params))
-				} else {
-					toaster.error(t('overlays.toast.title.error'), t('overlays.toast.description.error'))
-				}
-				return undefined
-			})
+			return undefined
+		})
 	}
 
 	async function create(data: Omit<Passkey, 'id' | 'created_at' | 'updated_at'>): Promise<Passkey | undefined> {
@@ -66,10 +48,9 @@ export function usePasskeyQuery() {
 			passphrase: parsed.passphrase ?? null,
 		}
 
-		const notice = toaster.warning(
+		const notice = notify.loading(
 			t('notifications.passkeys.validation.loading.title'),
 			t('notifications.passkeys.validation.loading.description'),
-			{ duration: 0 },
 		)
 
 		const response = await invoke<CommandResponse<DerivePasskeyInfo>>('derive_passkey_info', { input })
@@ -79,12 +60,10 @@ export function usePasskeyQuery() {
 			throw new Error(response.message_key ?? 'derive_passkey_info failed')
 		}
 
-		toaster.update(
+		notify.phase(
 			notice.id,
-			'warning',
 			t('notifications.passkeys.create.loading.title'),
 			t('notifications.passkeys.create.loading.description'),
-			{ duration: 0 },
 		)
 		const enriched = {
 			...parsed,
@@ -96,14 +75,13 @@ export function usePasskeyQuery() {
 			.values(enriched)
 			.returning()
 			.then(async rows => {
-				const row = rows[0]
+				const row = firstRow(rows)
 				if (!row) return undefined
 
-				await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
+				await invalidateCacheQueries(cacheQuery, ['passkeys'])
 
-				toaster.update(
+				notify.success(
 					notice.id,
-					'success',
 					t('notifications.passkeys.create.success.title'),
 					t('notifications.passkeys.create.success.description', { id: row.id, name: row.name }),
 				)
@@ -111,18 +89,14 @@ export function usePasskeyQuery() {
 				return row
 			})
 			.catch(e => {
-				const queryError = toQueryRawError(e)
-
-				if (queryError) {
-					toaster.update(notice.id, 'error', t(queryError.message_key, queryError.message_params))
-				} else {
-					toaster.update(
-						notice.id,
-						'error',
-						t('notifications.passkeys.create.error.title'),
-						t('notifications.passkeys.create.error.description', { name: enriched.name, details: e }),
-					)
-				}
+				notify.fail(
+					e,
+					{
+						title: t('notifications.passkeys.create.error.title'),
+						description: t('notifications.passkeys.create.error.description', { name: enriched.name, details: e }),
+					},
+					notice.id,
+				)
 
 				return undefined
 			})
@@ -132,10 +106,9 @@ export function usePasskeyQuery() {
 		id: number,
 		data: Partial<Omit<Passkey, 'id' | 'created_at' | 'updated_at'>>,
 	): Promise<Passkey | undefined> {
-		const notice = toaster.warning(
+		const notice = notify.loading(
 			t('notifications.passkeys.update.loading.title'),
 			t('notifications.passkeys.update.loading.description'),
-			{ duration: 0 },
 		)
 
 		return await db
@@ -144,14 +117,13 @@ export function usePasskeyQuery() {
 			.where(eq(passkeys.id, id))
 			.returning()
 			.then(async rows => {
-				const row = rows[0]
+				const row = firstRow(rows)
 				if (!row) return undefined
 
-				await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
+				await invalidateCacheQueries(cacheQuery, ['passkeys'])
 
-				toaster.update(
+				notify.success(
 					notice.id,
-					'success',
 					t('notifications.passkeys.update.success.title'),
 					t('notifications.passkeys.update.success.description', { name: row.name }),
 				)
@@ -159,31 +131,26 @@ export function usePasskeyQuery() {
 				return row
 			})
 			.catch(e => {
-				const queryError = toQueryRawError(e)
-
-				if (queryError) {
-					toaster.update(notice.id, 'error', t(queryError.message_key, queryError.message_params))
-				} else {
-					toaster.update(
-						notice.id,
-						'error',
-						t('notifications.passkeys.update.error.title'),
-						t('notifications.passkeys.update.error.description', { name: data.name, details: e }),
-					)
-				}
+				notify.fail(
+					e,
+					{
+						title: t('notifications.passkeys.update.error.title'),
+						description: t('notifications.passkeys.update.error.description', { name: data.name, details: e }),
+					},
+					notice.id,
+				)
 				return undefined
 			})
 	}
 
 	async function remove(id: number): Promise<boolean> {
-		const notice = toaster.warning(
+		const notice = notify.loading(
 			t('notifications.passkeys.delete.loading.title'),
 			t('notifications.passkeys.delete.loading.description'),
-			{ duration: 0 },
 		)
 
 		return await db.query.passkeys
-			.findFirst({ where: { id: id } })
+			.findFirst({ where: { id } })
 			.then(async row => {
 				if (!row) {
 					return false
@@ -193,11 +160,10 @@ export function usePasskeyQuery() {
 					.delete(passkeys)
 					.where(eq(passkeys.id, id))
 					.then(async () => {
-						await cacheQuery.invalidateQueries({ key: ['passkeys'] }, 'all')
+						await invalidateCacheQueries(cacheQuery, ['passkeys'])
 
-						toaster.update(
+						notify.success(
 							notice.id,
-							'success',
 							t('notifications.passkeys.delete.success.title'),
 							t('notifications.passkeys.delete.success.description', { name: row.name }),
 						)
@@ -205,22 +171,19 @@ export function usePasskeyQuery() {
 						return true
 					})
 					.catch(e => {
-						const queryError = toQueryRawError(e)
-
-						if (queryError) {
-							toaster.update(notice.id, 'error', t(queryError.message_key, queryError.message_params))
-						} else {
-							toaster.update(
-								notice.id,
-								'error',
-								t('notifications.passkeys.delete.error.title'),
-								t('notifications.passkeys.delete.error.description', { name: row.name, details: e }),
-							)
-						}
+						notify.fail(
+							e,
+							{
+								title: t('notifications.passkeys.delete.error.title'),
+								description: t('notifications.passkeys.delete.error.description', { name: row.name, details: e }),
+							},
+							notice.id,
+						)
 						return false
 					})
 			})
 			.catch(e => {
+				// Igual que el original: este catch (findFirst vía API relacional) no pasa por toQueryRawError
 				toaster.update(
 					notice.id,
 					'error',
