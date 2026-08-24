@@ -1,12 +1,11 @@
 <script lang="ts">
 import { isEncryptedValue } from '@/utils/crypto'
-import { ICONS } from '@/utils/icons'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
-const password = defineModel<string>({ required: true })
+const password = defineModel<string | null>({ required: true })
 const props = withDefaults(
 	defineProps<{
 		name: string
@@ -26,6 +25,7 @@ const props = withDefaults(
 
 const { t } = useI18n()
 
+const passwordToAnalyze = computed((): string => (password === null ? '' : (password as unknown as string)))
 const showPassword = ref(false)
 const showPasswordConfig = ref(false)
 const passConfig = ref({
@@ -48,7 +48,7 @@ function checkStrength(str: string) {
 	return requirements.map(req => ({ met: req.regex.test(str), text: req.text }))
 }
 
-const strength = computed(() => checkStrength(password.value))
+const strength = computed(() => checkStrength(passwordToAnalyze.value))
 const score = computed(() => strength.value.filter(req => req.met).length)
 
 const color = computed(() => {
@@ -87,7 +87,7 @@ function generatePassword(length: number, useUpper: boolean, useNumbers: boolean
 	<div>
 		<UFormField :name="props.name" :label="props.label" :help="props.help" :required="!optional">
 			<UInput
-				v-model="password"
+				v-model="password as string"
 				:placeholder="t('form.shared.placeholder.password.input')"
 				autocomplete="off"
 				:color="color"
@@ -127,7 +127,7 @@ function generatePassword(length: number, useUpper: boolean, useNumbers: boolean
 						"
 					/>
 					<UButton
-						:icon="ICONS.app.settings"
+						:icon="showPasswordConfig ? 'i-tabler-settings-off' : 'i-tabler-settings'"
 						variant="link"
 						size="sm"
 						color="secondary"
@@ -150,8 +150,8 @@ function generatePassword(length: number, useUpper: boolean, useNumbers: boolean
 
 		<div
 			v-if="
-				((props.checkStrength && props.optional && password.length > 0) || !props.optional) &&
-				!isEncryptedValue(password)
+				((props.checkStrength && props.optional && passwordToAnalyze.length > 0) || !props.optional) &&
+				!isEncryptedValue(passwordToAnalyze)
 			"
 			class="mt-2 space-y-2"
 		>
