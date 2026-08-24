@@ -108,6 +108,7 @@ export default defineConfig(async () => ({
 						'i-vscode-icons-file-type-image',
 						'i-vscode-icons-file-type-editorconfig',
 						'i-vscode-icons-file-type-composer',
+						'i-vscode-icons-file-type-docker',
 						'i-vscode-icons-file-type-docker2',
 						'i-vscode-icons-file-type-css',
 						'i-vscode-icons-file-type-js',
