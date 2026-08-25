@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
-const password = defineModel<string | null>({ required: true })
+const password = defineModel<string | null | undefined>({ required: true })
 const props = withDefaults(
 	defineProps<{
 		name: string
@@ -25,7 +25,7 @@ const props = withDefaults(
 
 const { t } = useI18n()
 
-const passwordToAnalyze = computed((): string => (password === null ? '' : (password as unknown as string)))
+const passwordToAnalyze = computed((): string => (!password ? '' : (password as unknown as string)))
 const showPassword = ref(false)
 const showPasswordConfig = ref(false)
 const passConfig = ref({
