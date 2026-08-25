@@ -2,6 +2,14 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (25 ago 2026 — migración SQL de Rust a Drizzle)
+
+**Nota del usuario en `AGENTS.todo.md`**: _Trasladar la lógica de SQL (select, insert, update, delete) de Rust a Drizzle, manteniendo el cifrado/descifrado en Rust (Opción D Híbrido)._ Plan y detalle en `AGENTS.migrate-to-drizzle.PLAN.md`.
+
+**Resultado:** Ver plan para detalle completo de cambios.
+
+---
+
 ## Tareas completadas (16 ago 2026 - mensajes informativos del selector de archivos TreeFiles)
 
 **Nota del usuario en `AGENTS.todo.md`**: _Mensajes informativos según la combinación de capacidades (Editar/Subir/Crear) y si hay archivos o no. La alerta de compose faltante debe sustituir el placeholder. Vista previa de solo lectura cuando canEdit = false._ Plan y detalle en `AGENTS.tree-files-select-hint.PLAN.md`.
