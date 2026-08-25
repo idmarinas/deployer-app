@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { PasskeySchema } from '@/composables/schemas/passkeys'
 import type { PositionedButton } from '@/composables/usePositionedButtons'
+import type { PasskeyValidationInsertType } from '@/composables/validation/usePasskeyValidation'
 import type { Passkey } from '@/types/entities'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
@@ -14,7 +15,6 @@ import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/use
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
 import { useQuery } from '@/composables/useQuery'
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
-import { PasskeyValidationInsertType } from '@/composables/validation/usePasskeyValidation'
 </script>
 
 <script setup lang="ts">
@@ -91,7 +91,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeyValidationInsertType>) {
 	isLoading.value = true
 
 	await passkeyQuery
-		.create(event.data)
+		.create(event.data as any)
 		.then(async (data?: Passkey) => {
 			if (data !== undefined && data.id) {
 				await router.push({ name: 'dashboard-passkeys' })
