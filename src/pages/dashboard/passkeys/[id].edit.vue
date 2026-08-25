@@ -10,7 +10,6 @@ import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/use
 import { useQuery } from '@/composables/useQuery'
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { usePasskeyById } from '@/loaders/passkeys'
-import { sanitizeNulls } from '@/utils/sanitize'
 </script>
 
 <script setup lang="ts">
@@ -67,7 +66,7 @@ watch(
 	passkey,
 	newPasskey => {
 		if (newPasskey) {
-			state.value = sanitizeNulls(newPasskey)
+			state.value = newPasskey
 		}
 	},
 	{ immediate: true },
