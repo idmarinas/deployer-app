@@ -20,7 +20,13 @@ export default {
 	description: {
 		max: 'La descripción debe tener menos de 1000 caracteres.',
 	},
+	passkey_id: {
+		required: 'Debes seleccionar una clave de acceso.',
+	},
 	host: {
-		required: 'Debes seleccionar un servidor',
+		required: 'Debes seleccionar un servidor.',
+	},
+	action: {
+		required: 'Debes seleccionar una acción.',
 	},
 } satisfies LocaleMessageValue
