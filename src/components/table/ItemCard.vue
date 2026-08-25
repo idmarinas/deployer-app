@@ -1,4 +1,6 @@
 <script lang="ts">
+import type { JSONContent } from '@tiptap/core'
+
 import { useI18n } from 'vue-i18n'
 </script>
 
@@ -6,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 const props = defineProps<{
 	id: number
 	name: string
-	description?: string
+	description?: JSONContent
 	enabled?: boolean
 	created_at: string
 	updated_at: string

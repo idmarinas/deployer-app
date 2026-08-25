@@ -11,7 +11,7 @@ const extensions = [StarterKit]
 <script setup lang="ts">
 const props = withDefaults(
 	defineProps<{
-		value?: JSONContent | string | null
+		value?: JSONContent
 		placeholder?: string
 	}>(),
 	{
@@ -21,12 +21,9 @@ const props = withDefaults(
 
 const html = computed(() => {
 	if (!props.value) return ''
-	const content = typeof props.value === 'string'
-		? (() => { try { return JSON.parse(props.value) as JSONContent } catch { return null } })()
-		: props.value
-	if (!content) return ''
+
 	try {
-		return generateHTML(content, extensions)
+		return generateHTML(props.value, extensions)
 	} catch {
 		return ''
 	}
