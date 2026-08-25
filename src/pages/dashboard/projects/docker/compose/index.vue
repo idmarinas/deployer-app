@@ -6,8 +6,8 @@ import { h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { useTableColumns } from '@/composables/useTableColumns'
 import { useQuery } from '@/composables/useQuery'
+import { useTableColumns } from '@/composables/useTableColumns'
 import { useDockerComposeListAll } from '@/loaders/docker_composes'
 import { ICONS } from '@/utils/icons'
 
