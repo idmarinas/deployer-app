@@ -104,7 +104,7 @@ function generatePassword(length: number, useUpper: boolean, useNumbers: boolean
 						variant="link"
 						size="sm"
 						:icon="showPassword ? 'i-tabler-eye-off' : 'i-tabler-eye'"
-						:aria-label="showPassword ? t('form.shared.hide.password') : t('form.shared.showPassword.password')"
+						:aria-label="showPassword ? t('form.shared.hide.password') : t('form.shared.show.password')"
 						:aria-pressed="showPassword"
 						aria-controls="password"
 						:disabled="disabled"
