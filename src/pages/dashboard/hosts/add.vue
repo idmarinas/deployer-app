@@ -12,20 +12,15 @@ import {
 	type HostSchema,
 } from '@/composables/schemas/hosts'
 import { useQuery } from '@/composables/useQuery'
-import { useToast } from '@nuxt/ui/composables/useToast'
-import { useQueryCache } from '@pinia/colada'
-import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 definePage({
 	name: 'dashboard-hosts-add',
 })
 
-const { t } = useI18n()
 const { toolbar } = useToolbarForHostsModule()
 const router = useRouter()
 
-const toast = useToast()
 const { hostSchema } = useHostSchema()
 
 type HostFullSchema = HostSchema & (AuthPasswordSchema | AuthKeySchema)
@@ -44,7 +39,6 @@ const initialState: HostFullSchema = {
 const state = ref<any>({ ...initialState })
 const form = useTemplateRef<Form<HostSchema>>('form')
 const isLoading = ref(false)
-const queryCache = useQueryCache()
 
 // Generar contenido del toolbar
 useToolbarContentCreate(state, initialState, isLoading, form, toolbar)
@@ -54,26 +48,16 @@ async function onSubmit(event: FormSubmitEvent<HostSchema>) {
 	const { hosts } = useQuery()
 	const host = event.data
 
-	const result = await hosts.create(host as any)
-
-	if (result) {
-		await queryCache.invalidateQueries({ key: ['hosts'] }, 'all')
-
-		toast.add({
-			title: t('overlays.toast.title.success'),
-			description: t('notifications.hosts.added', { name: host.name }),
-			color: 'success',
+	await hosts
+		.create(host as any)
+		.then(async result => {
+			if (result !== undefined) {
+				await router.push({ name: 'dashboard-hosts' })
+			}
 		})
-		isLoading.value = false
-		router.push({ name: 'dashboard-hosts' })
-	} else {
-		toast.add({
-			title: t('overlays.toast.title.error'),
-			description: t('notifications.hosts.error', { name: host.name }),
-			color: 'error',
+		.finally(() => {
+			isLoading.value = false
 		})
-		isLoading.value = false
-	}
 }
 
 // Inyectar contenido en el toolbar cuando se monta el componente
