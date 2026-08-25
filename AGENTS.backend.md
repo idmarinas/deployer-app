@@ -317,10 +317,14 @@ Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspo
 ### Principio de funcionamiento
 
 - El frontend opera **siempre en texto plano**.
-- Rust cifra los valores sensibles al guardar y los descifra al leer, de forma automática.
+- Rust cifra los valores sensibles al guardar (`encrypt_mask` en `query_raw`) y enmascara al leer (`mask_fields`).
 - Los valores cifrados en SQLite tienen el prefijo `ENC:` seguido del valor en base64.
 - Si un valor ya tiene el prefijo `ENC:` al llegar a Rust, **no se vuelve a cifrar**.
 - Los campos vacíos se almacenan como string vacío, nunca como `ENC:`.
+- **Lecturas sin descifrado**: `query_raw` recibe `mask_fields` y sustituye valores `ENC:` por `BLANK_VALUE` (sin abrir crypto context).
+- **Lecturas con descifrado**: `query_raw` recibe `decrypt_fields` y descifra con la master key.
+- **Escrituras**: `db.ts` aplica `stripEncryptedValues` antes del invoke para eliminar asignaciones con centinela/ENC:; `encrypt_mask` cifra los params marcados.
+- `generate_passkey` devuelve passphrase en claro; el INSERT vía `encrypt_mask` cifra al persistir.
 
 ### Algoritmo
 

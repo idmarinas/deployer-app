@@ -269,8 +269,9 @@ Al añadir o modificar cualquier theme file, verificar:
 ### Acceso a la base de datos
 
 - Todas las escrituras van por comandos Rust CRUD (`invoke('crud_*')`).
-- Las lecturas sin cifrado van por Drizzle (`src/lib/db.ts` vía `invoke('query_raw')`).
-- Las lecturas con cifrado van por comandos Rust (`invoke('crud_get_*' | 'crud_list_*')`).
+- Las lecturas van por Drizzle (`src/lib/db.ts` vía `invoke('query_raw')`).
+  - Por defecto (`_decryptEnabled == false`), el proxy envía `maskFields` y el backend sustituye `ENC:` por `BLANK_VALUE`.
+  - Con `withDecryption(true, fn)`, el proxy envía `decryptFields` y el backend descifra con la master key.
 - No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
 
 ---
@@ -467,7 +468,7 @@ Vive en la edición de la Task del catálogo, no en la tab de proyecto, porque l
 A diferencia de Hosts/Tasks, `project_variables` no tiene catálogo que asignar: la variable pertenece directamente al proyecto (CRUD simple 1:N, sin tabla de relación). Mismo principio que las demás tabs: no depende de `isEditMode` global, alta/edición/baja siempre disponibles con guardado inmediato y mutación local del array.
 
 - Edición por fila con toggle vista/edición local (patrón similar a `ProjectTabInfo`, pero por item de una lista en vez de para toda la entidad).
-- `is_secret`: el valor llega ya en texto plano desde `crud_get_project` (Rust descifra al leer), pero en la UI se enmascara por defecto (`••••••••`) con un botón de "ojo" para revelar/ocultar client-side — el cifrado real en BD lo gestiona `crud_update_project_variable` según el flag `is_secret`.
+- `is_secret`: el valor llega enmascarado como `BLANK_VALUE` desde `query_raw` (via `mask_fields`, el frontend nunca ve `ENC:`), y en la UI se muestra como `••••••••` con un botón de "ojo" para revelar/ocultar client-side — el cifrado real en BD lo gestiona `crud_update_project_variable` según el flag `is_secret`.
 - Cada variable tiene `name` (visual) y `slug` (para interpolación `{{slug}}`). El slug es único por proyecto. La vista muestra `slug` como texto principal y `name` como paréntesis.
 
 ### `@vueuse/integrations` (`useSortable`): importar SIEMPRE el submódulo directo
