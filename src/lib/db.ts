@@ -225,6 +225,90 @@ function getEncryptedFieldsForSQL(sql: string): {
 }
 
 // ====================================================================
+// Strip de valores cifrados en escrituras
+// ====================================================================
+
+const BLANK_VALUE = '__BLANK__e5362baf-c777-4d57-a609-6eaf1f9e87f6'
+const ENC_PREFIX = 'ENC:'
+
+/**
+ * Determina si un valor es un placeholder/sentinel que debe ser ignorado
+ * en escrituras (no persistir en BD).
+ */
+function isEncryptedPlaceholder(val: unknown): boolean {
+	if (typeof val !== 'string') return false
+	return val === BLANK_VALUE || val.startsWith(ENC_PREFIX)
+}
+
+/**
+ * Elimina de una query de UPDATE las asignaciones a
+ * columnas cifradas cuyo valor sea centinela o `ENC:*`, y reindexa los
+ * params para mantener la alineación con los `?` restantes.
+ *
+ * IMPORTANTE: Drizzle cita identificadores con `"`.
+ */
+function stripEncryptedValues(
+	sql: string,
+	params: unknown[],
+	encryptedFieldsInfo: {
+		encrypt: string[]
+		conditionalEncrypt: { field: string; condition: string }[]
+	},
+): { sql: string; params: unknown[] } {
+	const columnNames = parseColumnNamesFromSQL(sql)
+	if (columnNames.length === 0) return { sql, params }
+
+	const allEncrypted = [...encryptedFieldsInfo.encrypt, ...encryptedFieldsInfo.conditionalEncrypt.map(c => c.field)]
+
+	const upper = sql.trim().toUpperCase()
+	if (!upper.startsWith('UPDATE')) return { sql, params }
+
+	return stripUpdate(sql, params, columnNames, allEncrypted)
+}
+
+function stripUpdate(
+	sql: string,
+	params: unknown[],
+	columnNames: string[],
+	encryptedColumns: string[],
+): { sql: string; params: unknown[] } {
+	const upper = sql.toUpperCase()
+	const setPos = upper.indexOf(' SET ')
+	const start = setPos + 5
+	const wherePos = upper.indexOf(' WHERE ', start)
+	const whereClause = wherePos === -1 ? '' : sql.slice(wherePos)
+	const setSection = wherePos === -1 ? sql.slice(start) : sql.slice(start, wherePos)
+
+	const setParts = setSection.split(',')
+	const keptParts: string[] = []
+	const keptParams: unknown[] = []
+
+	for (let i = 0; i < columnNames.length; i++) {
+		const col = columnNames[i]
+		const val = params[i]
+
+		if (encryptedColumns.includes(col) && isEncryptedPlaceholder(val)) {
+			continue
+		}
+
+		keptParts.push(setParts[i])
+		keptParams.push(val)
+	}
+
+	if (keptParts.length === columnNames.length) {
+		return { sql, params }
+	}
+
+	const newSet = keptParts.join(', ')
+	const prefix = sql.slice(0, start)
+	const newSql = `${prefix}${newSet}${whereClause}`
+
+	const whereParams = params.slice(columnNames.length)
+
+	return { sql: newSql, params: [...keptParams, ...whereParams] }
+}
+
+// ====================================================================
 // Control de descifrado (global + por operación)
 // ====================================================================
 
@@ -235,9 +319,16 @@ let _decryptEnabled = DEFAULT_DECRYPT
 /**
  * Ejecuta una función con control explícito del descifrado.
  *
+ * - `false` → el backend enmascara campos cifrados con `BLANK_VALUE`
+ *   (el frontend nunca ve `ENC:`).
+ * - `true` → el backend descifra y devuelve texto plano.
+ *
  * @example
- * /// Sin descifrado — devuelve strings cifrados tal cual
- * const raw = await withDecryption(false, () =>
+ * // Con enmascaramiento (valor por defecto)
+ * const rows = await db.select().from(hosts)...
+ *
+ * // Con descifrado explícito
+ * const raw = await withDecryption(true, () =>
  *   db.select().from(passkeys)...
  * )
  */
@@ -289,13 +380,30 @@ export const db = drizzle(
 		const isWrite = isWriteOperation(sql)
 		const isRead = isReadOperation(sql)
 
-		const encryptMask = hasEncryption && isWrite ? buildEncryptMask(sql, params ?? [], encryptedFields!) : null
+		let finalSql = sql
+		let finalParams = params ?? []
+
+		// Escrituras: strip de valores centinela/ENC: antes del invoke
+		if (hasEncryption && isWrite) {
+			const stripped = stripEncryptedValues(finalSql, finalParams, encryptedFields!)
+			finalSql = stripped.sql
+			finalParams = stripped.params
+		}
+
+		const encryptMask = hasEncryption && isWrite ? buildEncryptMask(finalSql, finalParams, encryptedFields!) : null
+
+		// Lecturas: maskFields cuando no hay descifrado explícito
+		const maskFields =
+			hasEncryption && isRead && !_decryptEnabled
+				? [...encryptedFields!.encrypt, ...encryptedFields!.conditionalEncrypt.map(c => c.field)]
+				: null
 
 		const response = await invoke<QueryRawResponse>('query_raw', {
-			sql,
-			params: params ?? [],
+			sql: finalSql,
+			params: finalParams,
 			encryptMask,
 			decryptFields: hasEncryption && isRead && _decryptEnabled ? encryptedFields!.encrypt : null,
+			maskFields,
 			isWrite,
 			isRead,
 		})
