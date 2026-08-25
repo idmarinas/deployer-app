@@ -9,8 +9,6 @@ import { upperFirst } from 'scule'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { SchemaSanitizer } from '@/utils/tiptap/SchemaSanitizerExtension'
-
 const { t, n } = useI18n()
 
 const props = withDefaults(
@@ -24,7 +22,7 @@ const props = withDefaults(
 	},
 )
 
-const state = defineModel<JSONContent | undefined>()
+const state = defineModel<JSONContent>()
 
 const selectedNode = ref<{ node: JSONContent; pos: number }>()
 
@@ -237,7 +235,7 @@ const dropdownItems = (editor: Editor): DropdownMenuItem[][] => {
 }
 
 const characterLimit: number = 1000
-const tiptapExtensions = [SchemaSanitizer, CharacterCount.configure({ limit: characterLimit })]
+const tiptapExtensions = [CharacterCount.configure({ limit: characterLimit })]
 
 const starterKitOpts: Partial<StarterKitOptions> = {
 	link: false,
