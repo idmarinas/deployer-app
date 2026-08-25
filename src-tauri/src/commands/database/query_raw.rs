@@ -21,7 +21,10 @@ use super::helpers;
 ///   INSERT/UPDATE/DELETE con RETURNING).
 /// - Cifra campos en INSERT/UPDATE cuando se provee `encrypt_mask`.
 /// - Descifra campos en SELECT cuando se provee `decrypt_fields`.
-/// - Sin cifrado: se abre solo el pool. Con cifrado: se abre crypto context.
+/// - Enmascara campos en SELECT cuando se provee `mask_fields` (sin descifrar,
+///   sustituye `ENC:` por `BLANK_VALUE`). `decrypt_fields` y `mask_fields`
+///   son excluyentes.
+/// - Sin cifrado/descifrado/enmascaramiento: se abre solo el pool.
 #[tauri::command]
 pub async fn query_raw(
     app: AppHandle,
@@ -29,16 +32,28 @@ pub async fn query_raw(
     params: Option<Vec<Value>>,
     encrypt_mask: Option<Vec<bool>>,
     decrypt_fields: Option<Vec<String>>,
+    mask_fields: Option<Vec<String>>,
     is_write: bool,
     is_read: bool,
 ) -> Result<CommandResponse<Vec<Vec<Value>>>, String> {
     let needs_encryption = is_write && encrypt_mask.as_ref().is_some_and(|m| m.iter().any(|&b| b));
     let needs_decryption = is_read && decrypt_fields.as_ref().is_some_and(|f| !f.is_empty());
+    let needs_masking = is_read && mask_fields.as_ref().is_some_and(|f| !f.is_empty()) && !needs_decryption;
 
     // ── Abrir contexto ─────────────────────────────────────────────
     let (pool, master_key) = if needs_encryption || needs_decryption {
         match open_crypto_context(&app).await {
             Ok(v) => v,
+            Err(e) => {
+                return Ok(CommandResponse::err(
+                    "tauri.database.errors.query_raw_open_pool_failed",
+                    params!("reason" => e),
+                ))
+            }
+        }
+    } else if needs_masking {
+        match open_pool(&app).await {
+            Ok((pool, _)) => (pool, Vec::new()),
             Err(e) => {
                 return Ok(CommandResponse::err(
                     "tauri.database.errors.query_raw_open_pool_failed",
@@ -112,6 +127,41 @@ pub async fn query_raw(
 
                     if fields.contains(&col.name().to_string()) {
                         value = helpers::maybe_decrypt(&value, &master_key)?;
+                    }
+
+                    values.push(value);
+                }
+
+                result.push(values);
+            }
+
+            return Ok(CommandResponse::ok(
+                result,
+                "tauri.database.success.query_raw_executed",
+            ));
+        }
+    }
+
+    // ── Enmascaramiento en SELECT ──────────────────────────────────
+    // Sustituye valores con prefijo ENC: por BLANK_VALUE en las
+    // columnas listadas en mask_fields. No necesita master key.
+    if needs_masking {
+        if let Some(ref fields) = mask_fields {
+            let mut result: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
+
+            for row in &rows {
+                let mut values: Vec<Value> = Vec::with_capacity(row.columns().len());
+                for col in row.columns() {
+                    let ord = col.ordinal();
+                    let value = helpers::decode_column_value(row, ord);
+
+                    if fields.contains(&col.name().to_string()) {
+                        if let Some(s) = value.as_str() {
+                            if s.starts_with(crypto::keyring::ENCRYPTED_PREFIX) {
+                                values.push(Value::String(crypto::BLANK_VALUE.to_string()));
+                                continue;
+                            }
+                        }
                     }
 
                     values.push(value);
