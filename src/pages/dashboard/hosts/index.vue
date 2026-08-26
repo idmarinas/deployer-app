@@ -11,8 +11,8 @@ import { useHostListAll } from '@/loaders/hosts'
 import { ICONS } from '@/utils/icons'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'
-import { useQuery } from '@/composables/useQuery'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
+import { useQuery } from '@/composables/useQuery'
 </script>
 
 <script setup lang="ts">
@@ -22,7 +22,7 @@ definePage({
 
 const UBadge = resolveComponent('UBadge')
 
-const { data: items, isLoading, status, reload, refresh } = useHostListAll()
+const { data: items, isLoading, status, reload } = useHostListAll()
 
 const { t } = useI18n()
 const router = useRouter()
@@ -94,7 +94,7 @@ const columns: TableColumn<Host>[] = [
 ]
 
 onMounted(() => {
-	refresh()
+	reload()
 })
 </script>
 
