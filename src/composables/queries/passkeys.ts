@@ -7,14 +7,12 @@ import { eq } from 'drizzle-orm'
 
 import { createQueryNotifier, firstRow, invalidateCacheQueries } from '@/composables/queries/shared'
 import useToaster from '@/composables/useToaster'
-import { PasskeyValidationInsertType, usePasskeyValidation } from '@/composables/validation/usePasskeyValidation'
 import { i18n } from '@/i18n'
 import { db } from '@/lib/db'
 import { passkeys } from '@/lib/schema'
 
 export function usePasskeyQuery() {
 	const cacheQuery = useQueryCache()
-	const validation = usePasskeyValidation()
 	const toaster = useToaster()
 	// Composer global: seguro fuera de setup (loaders, invalidateQueries)
 	const { t } = i18n.global
@@ -40,12 +38,10 @@ export function usePasskeyQuery() {
 		})
 	}
 
-	async function create(data: Omit<Passkey, 'id' | 'created_at' | 'updated_at'>): Promise<Passkey | undefined> {
-		const parsed: PasskeyValidationInsertType = validation.insert.parse(data)
-
+	async function create(data: Omit<Passkey, 'id'>): Promise<Passkey | undefined> {
 		const input: DerivePasskeyInfoInput = {
-			key_content: parsed.key_content,
-			passphrase: parsed.passphrase ?? null,
+			key_content: data.key_content,
+			passphrase: data.passphrase ?? null,
 		}
 
 		const notice = notify.loading(
@@ -66,9 +62,11 @@ export function usePasskeyQuery() {
 			t('notifications.passkeys.create.loading.description'),
 		)
 		const enriched = {
-			...parsed,
-			fingerprint: response.data.fingerprint || parsed.fingerprint?.trim(),
-			key_type: response.data.key_type || parsed.key_type,
+			...data,
+			fingerprint: response.data.fingerprint || data.fingerprint?.trim(),
+			key_type: response.data.key_type || data.key_type,
+			updated_at: new Date().toISOString(),
+			created_at: new Date().toISOString(),
 		}
 		return await db
 			.insert(passkeys)
@@ -102,14 +100,13 @@ export function usePasskeyQuery() {
 			})
 	}
 
-	async function update(
-		id: number,
-		data: Partial<Omit<Passkey, 'id' | 'created_at' | 'updated_at'>>,
-	): Promise<Passkey | undefined> {
+	async function update(id: number, data: Partial<Omit<Passkey, 'created_at'>>): Promise<Passkey | undefined> {
 		const notice = notify.loading(
 			t('notifications.passkeys.update.loading.title'),
 			t('notifications.passkeys.update.loading.description'),
 		)
+
+		data.updated_at = new Date().toISOString()
 
 		return await db
 			.update(passkeys)
