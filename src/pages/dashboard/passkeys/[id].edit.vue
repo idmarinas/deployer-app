@@ -40,7 +40,7 @@ async function onSubmit(event: FormSubmitEvent<PasskeyValidationUpdateType>) {
 	isLoading.value = true
 
 	await passkeyQuery
-		.update(Number.parseInt(route.params.id), event.data)
+		.update(Number.parseInt(route.params.id), event.data as any)
 		.then(async result => {
 			if (result !== undefined) {
 				await router.push({ name: 'dashboard-passkeys' })
@@ -52,8 +52,8 @@ async function onSubmit(event: FormSubmitEvent<PasskeyValidationUpdateType>) {
 }
 
 // Inyectar contenido en el toolbar cuando se monta el componente
-onMounted(() => {
-	reload()
+onMounted(async () => {
+	await reload()
 	toolbar?.updateToolbar()
 })
 
