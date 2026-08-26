@@ -6,7 +6,7 @@ export const useSelectPasskeys = defineColadaLoader({
 	query: async () => {
 		const { passkeys } = useQuery()
 		const items = await passkeys.findAll()
-		return items.map(item => ({ label: item.name, id: item.id }))
+		return items.map(item => ({ label: item.name, id: item.id, key_type: item.key_type }))
 	},
 })
 
