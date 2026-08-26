@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 
 import { invoke } from '@tauri-apps/api/core'
 
-import { usePasskeySchema } from '@/composables/schemas/passkeys'
+import { useSchemaValidation } from '@/composables/useSchemaValidation'
 </script>
 
 <script setup lang="ts">
@@ -19,7 +19,7 @@ const props = defineProps<{
 	passkey: Passkey
 }>()
 
-const { passkeyToServerSchema } = usePasskeySchema()
+const { passkeys: passkeySchema } = useSchemaValidation()
 const { t } = useI18n()
 const toast = useToast()
 
@@ -75,7 +75,7 @@ async function onSubmit(event: FormSubmitEvent<Partial<ExportPublicKeyInput>>) {
 			<UForm
 				ref="form-copy-passkey"
 				:state="state as any"
-				:schema="passkeyToServerSchema"
+				:schema="passkeySchema.passkeyToServerSchema"
 				:disabled="isLoading"
 				@submit="onSubmit"
 			>
