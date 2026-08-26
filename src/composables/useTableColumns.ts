@@ -11,7 +11,6 @@ import UButton from '@nuxt/ui/components/Button.vue'
 
 import { usePositionedButtons, type PositionedButton } from '@/composables/usePositionedButtons'
 import { ICONS } from '@/utils/icons'
-import useToaster from './useToaster'
 
 export interface TableColumnsOptions {
 	moduleName?: string
@@ -22,7 +21,6 @@ export interface TableColumnsOptions {
 export function useTableColumns<T>(options?: TableColumnsOptions) {
 	const { t } = useI18n()
 	const router = useRouter()
-	const toaster = useToaster()
 	const confirmDialog = useConfirmDialog()
 
 	const expandColumn: TableColumn<T> = {
@@ -90,48 +88,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 						})
 
 						if (result) {
-							const notice = toaster.warning(
-								t(`notifications.${options.moduleName}.delete.loading.title`),
-								t(`notifications.${options.moduleName}.delete.loading.description`, {
-									name: (row.original as any).name,
-								}),
-								{
-									icon: ICONS.actions.delete,
-									duration: 0,
-								},
-							)
-
-							const deleteResult = await options.deleteFn!((row.original as any).id)
-
-							if (deleteResult) {
-								toaster.toast.update(
-									notice.id,
-									toaster.success(
-										t(`notifications.${options.moduleName}.delete.success.title`),
-										t(`notifications.${options.moduleName}.delete.success.description`, {
-											name: (row.original as any).name,
-										}),
-										{
-											id: notice.id,
-											duration: undefined,
-										},
-									),
-								)
-							} else {
-								toaster.toast.update(
-									notice.id,
-									toaster.error(
-										t(`notifications.${options.moduleName}.delete.error.title`),
-										t(`notifications.${options.moduleName}.delete.error.description`, {
-											name: (row.original as any).name,
-										}),
-										{
-											id: notice.id,
-											duration: undefined,
-										},
-									),
-								)
-							}
+							await options.deleteFn!((row.original as any).id)
 
 							if (options.onReload) {
 								await options.onReload()
