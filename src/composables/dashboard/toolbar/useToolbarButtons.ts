@@ -57,32 +57,8 @@ export function useToolbarButtons(moduleName: string, loading: Ref<boolean>, del
 					})
 
 					if (result) {
-						const notice = toaster.warning(
-							t(`notifications.${moduleName}.delete.loading.title`),
-							t(`notifications.${moduleName}.delete.loading.description`, { name: item.value.name }),
-							{ duration: 0 },
-						)
-
-						const deleteResult = deleteFn ? await deleteFn(item.value.id) : false
-
-						if (deleteResult) {
-							toaster.toast.update(
-								notice.id,
-								toaster.success(
-									t(`notifications.${moduleName}.delete.success.title`),
-									t(`notifications.${moduleName}.delete.success.description`, { name: item.value.name }),
-									{ id: notice.id, duration: undefined },
-								),
-							)
-						} else {
-							toaster.toast.update(
-								notice.id,
-								toaster.error(
-									t(`notifications.${moduleName}.delete.error.title`),
-									t(`notifications.${moduleName}.delete.error.description`, { name: item.value.name }),
-									{ id: notice.id, duration: undefined },
-								),
-							)
+						if (deleteFn) {
+							await deleteFn(item.value.id)
 						}
 
 						await router.push({ name: `dashboard-${moduleName}` as any })
