@@ -13,6 +13,11 @@
 10. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
 11. Sistema de cifrado:
     1. Estudiar usar Stronghold para guardar las claves de des/cifrado se seguiría usando el keychain para la clave maestra que desbloquea el vault de Stronghold.
+12. Página de lista:
+    1. En las páginas de lista, cambiar la forma en la que se borran los items.
+        1. Cuando se borra un item, marcar dicho item de la lista (destacandolo) y luego borrar solo ese item, sin necesidad de recargar toda la lista.
+13. Cambiar base de datos:
+    1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
 
   ```ts
   async function changeDatabasePath() {
