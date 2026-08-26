@@ -9,7 +9,7 @@ export function useSchemaValidation(id?: number) {
 				compose: useProjectDockerComposeValidation(id),
 			},
 		},
-		host: useHostValidation(id),
+		hosts: useHostValidation(id),
 		passkeys: usePasskeyValidation(id),
 	}
 }
