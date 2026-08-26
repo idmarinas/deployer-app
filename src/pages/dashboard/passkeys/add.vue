@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { PasskeySchema } from '@/composables/schemas/passkeys'
 import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { PasskeyValidationInsertType } from '@/composables/validation/usePasskeyValidation'
 import type { Passkey } from '@/types/entities'
@@ -45,7 +44,7 @@ const initialState: PasskeyValidationInsertType = {
 const state = ref<any>({ ...initialState })
 const checkPasswordStrength = ref(true)
 const disabledPassword = ref(false)
-const form = useTemplateRef<Form<PasskeySchema>>('form')
+const form = useTemplateRef<Form<PasskeyValidationInsertType>>('form')
 const isLoading = ref(false)
 
 const toolbarButtons: PositionedButton[] = [
