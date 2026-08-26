@@ -56,10 +56,19 @@ export function usePasskeyValidation(id?: number) {
 		deleted_at: z => z.nullish(),
 	})
 
+	const passkeyToServerSchema = z.object({
+		passkey_id: z.number(t('validation.passkeys.passkey_id.required')),
+		host_id: z.number(t('validation.passkeys.host.required')),
+		action: z.enum(['add', 'remove'], t('validation.passkeys.action.required')),
+		temp_password: z.string().optional(),
+		temp_username: z.string().optional(),
+	})
+
 	return {
 		insert,
 		select,
 		update,
+		passkeyToServerSchema,
 	}
 }
 
