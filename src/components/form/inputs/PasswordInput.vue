@@ -25,7 +25,7 @@ const props = withDefaults(
 
 const { t } = useI18n()
 
-const passwordToAnalyze = computed((): string => (!password ? '' : (password as unknown as string)))
+const passwordToAnalyze = computed((): string => (!password.value ? '' : (password.value as unknown as string)))
 const showPassword = ref(false)
 const showPasswordConfig = ref(false)
 const passConfig = ref({
