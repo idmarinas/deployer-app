@@ -75,31 +75,37 @@ function useToolbarContent(
 		return
 	}
 
-	manager.setToolbarFn(() => [
-		h('h2', { class: 'flex gap-2 items-center' }, [
-			h(USwitch, {
-				modelValue: state.value.enabled,
-				...getModuleSwitchIcons(manager.moduleName),
-				loading: loading.value,
-				size: 'xl',
-				'onUpdate:modelValue': (value: unknown) => {
-					state.value.enabled = value as boolean
-					manager.updateToolbar()
-				},
-			}),
-			h('span', { class: 'flex flex-col' }, [
-				h('span', {}, t(`form.${manager.moduleName}.title.${type}`)),
-				h(
-					'span',
-					{
-						class: `text-sm ${state.value.enabled ? 'text-green-600' : 'text-red-600'}`,
+	manager.setToolbarFn(() => {
+		let titleSlot = h('h2', { class: 'flex gap-2 items-center' }, [
+			h(Icon, { icon: getModuleIcon(manager.moduleName, 'singular', true), class: 'size-5' }),
+			h('span', {}, t(`form.${manager.moduleName}.title.${type}`)),
+		])
+
+		if (typeof state.value.enabled === 'boolean') {
+			titleSlot = h('h2', { class: 'flex gap-2 items-center' }, [
+				h(USwitch, {
+					modelValue: state.value.enabled,
+					...getModuleSwitchIcons(manager.moduleName),
+					loading: loading.value,
+					size: 'xl',
+					'onUpdate:modelValue': (value: unknown) => {
+						state.value.enabled = value as boolean
+						manager.updateToolbar()
 					},
-					state.value.enabled ? t('common.status.active') : t('common.status.inactive'),
-				),
-			]),
-		]),
-		h('div', { class: 'flex gap-2 items-center' }, resolveButtons(defaultButtons, extraButtons)),
-	])
+				}),
+				h('span', { class: 'flex flex-col' }, [
+					h('span', {}, t(`form.${manager.moduleName}.title.${type}`)),
+					h(
+						'span',
+						{ class: `text-sm ${state.value.enabled ? 'text-green-600' : 'text-red-600'}` },
+						state.value.enabled ? t('common.status.active') : t('common.status.inactive'),
+					),
+				]),
+			])
+		}
+
+		return [titleSlot, h('div', { class: 'flex gap-2 items-center' }, resolveButtons(defaultButtons, extraButtons))]
+	})
 }
 
 // ---------------------------------------------------------------------------
