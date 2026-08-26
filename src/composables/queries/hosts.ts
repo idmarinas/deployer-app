@@ -1,80 +1,161 @@
+import type { Host } from '@/types/entities'
+
+import { useQueryCache } from '@pinia/colada'
 import { eq } from 'drizzle-orm'
 
+import { createQueryNotifier, firstRow, invalidateCacheQueries } from '@/composables/queries/shared'
+import useToaster from '@/composables/useToaster'
+import { i18n } from '@/i18n'
 import { db } from '@/lib/db'
 import { hosts as deployer_hosts } from '@/lib/schema'
-import { Host } from '@/types/tauri-types'
 
 export function useHostQuery() {
+	const cacheQuery = useQueryCache()
+	const toaster = useToaster()
+	// Composer global: seguro fuera de setup (loaders, invalidateQueries)
+	const { t } = i18n.global
+	const notify = createQueryNotifier({ toaster, t })
+
 	async function findAll(): Promise<Host[]> {
-		return db
-			.select()
-			.from(deployer_hosts)
-			.then(rows => rows.map(row => row as unknown as Host))
-			.catch(e => {
-				console.error('[hosts] findAll error:', e)
-				return []
+		return db.query.hosts.findMany().catch(e => {
+			notify.fail(e, {
+				title: t('overlays.toast.title.error'),
+				description: t('overlays.toast.description.error'),
 			})
+			return []
+		})
 	}
 
 	async function find(id: number): Promise<Host | undefined> {
-		return db
-			.select()
-			.from(deployer_hosts)
-			.where(eq(deployer_hosts.id, id))
-			.then(rows => {
-				const row = rows[0]
-				if (!row) return undefined
-				return row as unknown as Host
+		return await db.query.hosts.findFirst({ where: { id } }).catch(e => {
+			notify.fail(e, {
+				title: t('overlays.toast.title.error'),
+				description: t('overlays.toast.description.error'),
 			})
-			.catch(e => {
-				console.error('[hosts] find error:', e)
-				return undefined
-			})
+			return undefined
+		})
 	}
 
-	async function create(data: Omit<Host, 'id' | 'created_at' | 'updated_at'>): Promise<Host | undefined> {
-		return db
+	async function create(data: Omit<Host, 'id'>): Promise<Host | undefined> {
+		const notice = notify.loading(
+			t('notifications.hosts.create.loading.title'),
+			t('notifications.hosts.create.loading.description'),
+		)
+
+		data.created_at = new Date().toISOString()
+		data.updated_at = new Date().toISOString()
+
+		return await db
 			.insert(deployer_hosts)
 			.values(data as any)
 			.returning()
-			.then(rows => {
-				const row = rows[0]
+			.then(async rows => {
+				const row = firstRow(rows)
 				if (!row) return undefined
-				return row as unknown as Host
+
+				await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+				notify.success(
+					notice.id,
+					t('notifications.hosts.create.success.title'),
+					t('notifications.hosts.create.success.description', { name: row.name }),
+				)
+
+				return row
 			})
 			.catch(e => {
-				console.error('[hosts] create error:', e)
+				notify.fail(
+					e,
+					{
+						title: t('notifications.hosts.create.error.title'),
+						description: t('notifications.hosts.create.error.description', { name: data.name, details: e }),
+					},
+					notice.id,
+				)
+
 				return undefined
 			})
 	}
 
-	async function update(
-		id: number,
-		data: Partial<Omit<Host, 'id' | 'created_at' | 'updated_at'>>,
-	): Promise<Host | undefined> {
-		return db
+	async function update(id: number, data: Partial<Omit<Host, 'id' | 'created_at'>>): Promise<Host | undefined> {
+		const notice = notify.loading(
+			t('notifications.hosts.update.loading.title'),
+			t('notifications.hosts.update.loading.description'),
+		)
+
+		data.updated_at = new Date().toISOString()
+
+		return await db
 			.update(deployer_hosts)
-			.set({ ...data, updated_at: new Date().toISOString() } as any)
+			.set(data)
 			.where(eq(deployer_hosts.id, id))
 			.returning()
-			.then(rows => {
-				const row = rows[0]
+			.then(async rows => {
+				const row = firstRow(rows)
 				if (!row) return undefined
-				return row as unknown as Host
+
+				await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+				notify.success(
+					notice.id,
+					t('notifications.hosts.update.success.title'),
+					t('notifications.hosts.update.success.description', { name: row.name }),
+				)
+
+				return row
 			})
 			.catch(e => {
-				console.error('[hosts] update error:', e)
+				notify.fail(
+					e,
+					{
+						title: t('notifications.hosts.update.error.title'),
+						description: t('notifications.hosts.update.error.description', { name: data.name, details: e }),
+					},
+					notice.id,
+				)
 				return undefined
 			})
 	}
 
 	async function remove(id: number): Promise<boolean> {
-		return db
+		// Pre-check fuera del flujo de notificación: el loading necesita {name}
+		const found = await db.query.hosts.findFirst({ where: { id } }).catch((e): Host | undefined => {
+			notify.fail(e, { title: t('notifications.hosts.delete.error.title') })
+			return undefined
+		})
+
+		if (!found) {
+			return false
+		}
+
+		const notice = notify.loading(
+			t('notifications.hosts.delete.loading.title'),
+			t('notifications.hosts.delete.loading.description', { name: found.name }),
+		)
+
+		return await db
 			.delete(deployer_hosts)
 			.where(eq(deployer_hosts.id, id))
-			.then(() => true)
+			.then(async () => {
+				await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+				notify.success(
+					notice.id,
+					t('notifications.hosts.delete.success.title'),
+					t('notifications.hosts.delete.success.description', { name: found.name }),
+				)
+
+				return true
+			})
 			.catch(e => {
-				console.error('[hosts] delete error:', e)
+				notify.fail(
+					e,
+					{
+						title: t('notifications.hosts.delete.error.title'),
+						description: t('notifications.hosts.delete.error.description', { name: found.name, details: e }),
+					},
+					notice.id,
+				)
 				return false
 			})
 	}
