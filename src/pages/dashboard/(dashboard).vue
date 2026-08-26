@@ -336,7 +336,7 @@ onMounted(async () => {
 							<router-link
 								v-for="key in recentPasskeys"
 								:key="key.id"
-								:to="`/dashboard/passkeys/${key.id}.edit`"
+								:to="{ name: 'dashboard-passkeys-id-edit', params: { id: key.id } }"
 								class="flex items-center justify-between px-3 py-2.5 hover:bg-(--ui-bg-elevated)/50 rounded-sm transition-colors"
 							>
 								<div class="flex items-center gap-2 min-w-0">
