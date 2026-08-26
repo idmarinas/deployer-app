@@ -32,7 +32,7 @@ const { passkeys: passkeyQuery } = useQuery()
 
 const initialState: PasskeyValidationInsertType = {
 	name: '',
-	description: {},
+	description: { type: 'doc', content: [{ type: 'paragraph' }] },
 	enabled: false,
 	key_type: 'ed25519',
 	key_content: '',
