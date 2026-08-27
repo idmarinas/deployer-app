@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { JSONContent } from '@tiptap/vue-3'
 
-import { usePasskeySchema } from '@/composables/schemas/passkeys'
+import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { isEncryptedValue } from '@/utils/crypto'
 import { useI18n } from 'vue-i18n'
 </script>
@@ -29,7 +29,7 @@ const props = withDefaults(
 	},
 )
 
-const { passkeySchema: schema } = usePasskeySchema()
+const { passkeys: schema } = useSchemaValidation()
 const { t, n } = useI18n()
 </script>
 
@@ -40,11 +40,11 @@ const { t, n } = useI18n()
 			autocomplete="off"
 			class="w-full"
 			:ui="{ trailing: 'pointer-events-none' }"
-			:maxlength="schema.shape.name.maxLength || undefined"
+			:maxlength="schema.select.shape.name.maxLength || undefined"
 		>
 			<template #trailing>
 				<div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
-					{{ n(state.name?.length ?? 0, 'n') }}/{{ n(schema.shape.name.maxLength || 0, 'n') }}
+					{{ n(state.name?.length ?? 0, 'n') }}/{{ n(schema.select.shape.name.maxLength || 0, 'n') }}
 				</div>
 			</template>
 		</UInput>
