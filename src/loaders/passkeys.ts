@@ -1,12 +1,20 @@
 import { useQuery } from '@/composables/useQuery'
+
+import { db } from '@/lib/db'
+import { passkeys as passkeysSchema } from '@/lib/schema'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export const useSelectPasskeys = defineColadaLoader({
 	key: ['passkeys', 'select'],
 	query: async () => {
-		const { passkeys } = useQuery()
-		const items = await passkeys.findAll()
-		return items.map(item => ({ label: item.name, id: item.id, key_type: item.key_type, enabled: item.enabled }))
+		return await db
+			.select({
+				label: passkeysSchema.name,
+				id: passkeysSchema.id,
+				key_type: passkeysSchema.key_type,
+				enabled: passkeysSchema.enabled,
+			})
+			.from(passkeysSchema)
 	},
 })
 
