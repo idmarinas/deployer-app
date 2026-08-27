@@ -6,97 +6,74 @@
 
 ## 1. Estructura de Comandos
 
-Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend**. La infraestructura compartida (`helpers`, `response`, `patch`, `macros`, `description`, `ssh`) vive en `src-tauri/src/` (raíz del crate).
+Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend** (lógica de backend que Drizzle no puede cubrir: SSH/SFTP, cripto de claves, caché Docker Hub, operaciones/gestión de BD). La infraestructura compartida (`helpers`, `response`, `patch`, `ssh`, `crypto`) vive en `src-tauri/src/` (raíz del crate).
 
 ### Estructura del crate
 
 ```
 src-tauri/src/
 ├── commands/              ← solo comandos frontend (#[tauri::command])
-│   ├── database/
-│   │   ├── store/         ← get_database_path, set_database_path, check_database_exists
-│   │   ├── has_pending_migrations.rs
-│   │   ├── run_migrations.rs
-│   │   ├── query_raw.rs   ← Comando genérico de solo lectura (SELECT) para Drizzle
-│   │   └── ... (initialize_database, create_database_file, etc.)
-│   ├── deployer_settings/
-│   │   └── helpers.rs     ← re-exporta open_pool desde crate::helpers
-│   ├── deployments/
-│   │   ├── crud/
-│   │   ├── executions/
-│   │   ├── rollbacks/
-│   │   ├── run/           ← Runner universal de deployments
-│   │   │   ├── mod.rs     ← Comando #[tauri::command] run_deployment
-│   │   │   ├── types.rs   ← RunDeploymentInput, ProgressEvent, VariableSnapshot, ResolvedTask
-│   │   │   ├── runner.rs  ← Orquestador principal
-│   │   │   ├── session.rs ← Sesión SSH única con reconexión automática
-│   │   │   ├── interpolator.rs ← build_snapshot() + evaluate_condition()
-│   │   │   ├── ssh_executor.rs ← execute_command() + execute_script()
-│   │   │   └── sftp_executor.rs ← upload_file() + download_file() (delegan en ssh::transfer)
-│   │   ├── mod.rs
-│   │   └── types.rs
-│   ├── remote/             ← Comandos SSH "sueltos" (no asociados a deployments)
-│   │   ├── mod.rs         ← re-exporta ssh_execute_command, ssh_upload_file, ssh_download_file, ssh_cancel_remote_job, RemoteJobCancel
-│   │   ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
-│   │   ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code, cancelable)
-│   │   ├── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer, cancelables)
-│   │   └── cancel.rs      ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
-│   ├── docker/
-│   │   ├── compose/       ← CRUD + operaciones Docker Compose
-│   │   │   ├── crud.rs
-│   │   │   ├── operations.rs
-│   │   │   └── types.rs
-│   │   └── hub_cache/     ← Caché de Docker Hub (search + tags)
-│   │       ├── commands.rs
-│   │       ├── mod.rs
-│   │       └── types.rs
-│   ├── global_variables/
-│   ├── hosts/
-│   │   ├── crud.rs
-│   │   ├── status.rs      ← host_check_status (estático) + host_check_metrics (dinámico)
+│   ├── cache/
+│   │   └── docker/        ← Caché de Docker Hub (search + tags)
+│   │       ├── search.rs  ← cache_docker_search
+│   │       ├── tags.rs    ← cache_docker_tags
+│   │       ├── types.rs   ← DockerHubSearchCache/TagsCache, DockerHubImageResult/TagResult
+│   │       └── mod.rs
+│   ├── database/          ← Gestión/inicialización de BD + query_raw (proxy Drizzle)
+│   │   ├── store.rs       ← get_database_path, set_database_path, check_database_exists
+│   │   ├── initialize_database.rs
+│   │   ├── create_database_file.rs
+│   │   ├── validate_database_sqlite.rs
+│   │   ├── execute_migrations.rs
+│   │   ├── has_migrations_pending.rs
+│   │   ├── get_migrations_info.rs
+│   │   ├── get_database_info.rs
+│   │   ├── get_app_info.rs
+│   │   ├── query_raw.rs   ← Comando genérico de lectura Y escritura para Drizzle
+│   │   ├── helpers.rs     ← bind_params/rows conversion + path_to_sqlite_url
+│   │   └── mod.rs
+│   ├── hosts/             ← Comandos no-CRUD de hosts (el CRUD usa Drizzle)
 │   │   ├── test_connection.rs
-│   │   ├── types.rs
-│   │   └── updates.rs
-│   ├── passkeys/
+│   │   ├── status.rs      ← host_check_system_info (cooldown 24h) + host_check_metrics (15m)
+│   │   ├── updates.rs     ← host_check_updates + host_update_packages
+│   │   ├── types.rs       ← HostSystemInfo, HostStatusMetrics
+│   │   └── mod.rs
+│   ├── passkeys/          ← Comandos no-CRUD de claves (el CRUD usa Drizzle)
+│   │   ├── generate_passkey.rs
+│   │   ├── derive_passkey_info.rs
+│   │   ├── export_public_key.rs
+│   │   ├── types.rs       ← KeyType (rsa | ed25519 | ecdsa)
+│   │   └── mod.rs
 │   ├── projects/
-│   │   ├── crud/
-│   │   ├── framework_configs/
-│   │   ├── hosts/
-│   │   ├── tasks/
-│   │   │   └── types.rs   ← TaskConfig, OnFailure, ProjectTask
-│   │   ├── variables/
-│   │   ├── mod.rs
-│   │   └── types.rs       ← Project con local_working_dir, remote_working_dir
-│   └── tasks/
-│       ├── crud/
-│       ├── dependencies/
-│       ├── mod.rs
-│       └── types.rs       ← TaskType; retry_delay; sin working_dir
-├── crypto/                ← Cifrado AES-256-GCM
-├── crud/                  ← Infraestructura CRUD genérica (insert, update_fields, delete, fetch_*, DbEntity)
-│   ├── crud.rs
-│   ├── entity.rs
+│   │   └── docker/
+│   │       └── compose/   ← Módulo compose (archivos + operaciones)
+│   │           ├── files_commands.rs ← sync_project_docker_compose_files (transacción)
+│   │           ├── files_types.rs    ← DockerComposeFile, SyncDockerComposeFilesInput
+│   │           ├── operations.rs     ← up/down/ps/logs/restart/pull
+│   │           ├── types.rs          ← DockerCompose, DockerComposeOperationInput, DockerComposeService
+│   │           └── mod.rs
+│   └── remote/            ← Comandos SSH/SFTP "sueltos" (consola remota)
+│       ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code)
+│       ├── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
+│       ├── cancel.rs      ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
+│       ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
+│       └── mod.rs
+├── crypto/                ← Cifrado AES-256-GCM + master key (keychain SO)
+│   ├── cipher.rs          ← encrypt/decrypt/is_encrypted, constante BLANK_VALUE
+│   ├── keyring.rs         ← get_or_create_master_key(), ENCRYPTED_PREFIX = "ENC:"
 │   └── mod.rs
-├── description.rs         ← ValidateDescription trait + validación JSONContent
 ├── helpers.rs             ← open_pool(), get_master_key(), open_crypto_context(), configured_sqlite_options()
-├── macros.rs              ← crud_commands! macro (genera los 5 comandos CRUD)
-├── patch.rs               ← Patch<T> para updates parciales (Unset/Null/Value)
+├── patch.rs               ← Patch<T> (Unset/Null/Value) para updates parciales
 ├── response.rs            ← CommandResponse<T>
 └── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, transferencias genéricas)
-    ├── connect.rs
-    ├── glob.rs            ← Glob simple (matches_any) para exclude en file transfer
-    ├── helpers.rs
     ├── mod.rs
-    ├── session.rs
-    └── transfer.rs        ← upload/download genéricos con callback de progreso (sin tipos de commands/)
+    ├── types.rs           ← SshSession, credenciales resueltas desde host/passkey
+    └── (helpers de conexión, sesión y transfer)
 ```
 
-### Convenciones de comandos CRUD
+### Registro en `lib.rs`
 
-- Los comandos CRUD se prefijan con `crud_` para identificación clara desde el frontend.
-- Se organizan en una subcarpeta `crud/` dentro de la carpeta de cada entidad.
-- Los errores se devuelven mediante `CommandResponse<T>` — nunca `unwrap()` ni `?` al frontend.
-- Los comandos void devuelven `CommandResponse<()>` usando `ok_empty`.
+Todos los comandos se registran en el `invoke_handler!` de `src-tauri/src/lib.rs`, agrupados por dominio y comentados. No existe ninguna macro generadora: cada comando se añade a mano.
 
 ### Orden de implementación (obligatorio)
 
@@ -105,7 +82,7 @@ src-tauri/src/
 
 ### Registro de plugins en `lib.rs`
 
-El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en registrarse.
+El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en registrarse (gotcha de `AGENTS.md`). El estado `RemoteJobCancel` se gestiona con `.manage(...)` para que la consola remota sea cancelable.
 
 ---
 
@@ -113,202 +90,64 @@ El plugin `tauri_plugin_single_instance` debe ser **siempre el primero** en regi
 
 ### Acceso desde el frontend
 
-- Las lecturas SELECT sobre tablas **sin campos cifrados** se hacen desde el frontend con **Drizzle en modo proxy** (`src/lib/db.ts`), que delega la ejecución al comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
-- `query_raw` valida que el SQL recibido sea un `SELECT` (rechaza cualquier otra instrucción) y devuelve las filas como JSON, sin aplicar descifrado.
-- Las tablas con campos sensibles que deban descifrarse, y **todas las escrituras** (INSERT/UPDATE/DELETE), deben usar los comandos Tauri CRUD específicos — nunca pasar por `query_raw`.
-- Antes de crear un nuevo comando `crud_get_*` / `crud_list_*`, comprobar si la tabla tiene campos cifrados o lógica especial. Si no los tiene, usar Drizzle en su lugar (ver tabla de decisión en `AGENTS.md` sección 6).
+- **Todas las lecturas y escrituras** sobre las tablas de negocio se hacen desde el frontend con **Drizzle en modo proxy** (`src/lib/db.ts`), que delega en el comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
+- `query_raw` acepta **lecturas y escrituras** (ver §6): cifra/descifra/enmascara los campos que el frontend declara como `encryptedText(...)`. No hay comandos Rust `crud_*` por entidad.
+- **Los comandos Rust solo existen para lógica de backend** que Drizzle no puede cubrir: SSH/SFTP (`hosts/`, `remote/`, `projects/docker/compose/operations.rs`), cripto de claves (`passkeys/`), caché de Docker Hub (`cache/docker/`), y gestión/inicialización de BD (`database/`).
+- Antes de crear un comando Rust nuevo, comprobar si la lógica puede cubrirse con Drizzle (vía `query_raw`). Ver la tabla de decisión en `AGENTS.md`.
 
 ### Nombres de tablas
 
-Todas las tablas llevan el prefijo `deployer_`. No hay un archivo centralizado de constants — el nombre de tabla se define en el esquema SQL (`src-tauri/migrations/`) y en el atributo `#[db_table("...")]` del struct.
-
-### Patrón: escritura batch (varios upserts en una transacción)
-
-Para tablas tipo clave-valor (ej. `deployer_settings`), además del comando singular (`set_deployer_setting`, un solo `key`/`value`) existe un comando plural (`set_deployer_settings`) que acepta un `HashMap<String, String>` con 1 o varios pares y los aplica con `pool.begin()` / `tx.commit()` en una única transacción. Si algún upsert falla, se hace `tx.rollback()` y se devuelve error sin dejar cambios parciales.
-
-El frontend solo debe llamar al comando plural (incluso para guardar un único ajuste, pasando un objeto de una clave); evita múltiples invocaciones IPC sueltas cuando hay que guardar varios valores a la vez (p. ej. un formulario completo de configuración). Mismo patrón a reutilizar si aparece otra tabla clave-valor o de ajustes en bloque.
+Todas las tablas llevan el prefijo `deployer_`. El nombre de tabla se define en la migración SQL (`src-tauri/migrations/`, fuente de verdad del esquema) y en las entidades Drizzle de `src/lib/entities/`.
 
 ### Tablas actuales y campos destacados
 
-| Tabla                   | Campos destacados                                                                                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `projects`              | `local_working_dir`, `remote_working_dir`                                                                                                              |
-| `tasks`                 | `type`, `command`, `timeout`, `retry_count`, `retry_delay` (sin `working_dir`)                                                                         |
-| `project_tasks`         | `config` (JSON TaskConfig), `local_working_dir`, `remote_working_dir`, `retry_count`, `retry_delay`                                                    |
-| `deployment_executions` | `status`, `exit_code`, `output`, `retry_attempt`                                                                                                       |
-| `hosts`                 | `auth_type`, `password` (cifrado), `key_id`, `system_info` (JSON), `status_info` (JSON)                                                          |
-| `passkeys`              | `key_content` (cifrado), `passphrase` (cifrado)                                                                                                        |
-| `framework_configs`     | Configuraciones clave-valor específicas por framework (ej. clave de secrets de Symfony). `value` acepta `is_secret` para cifrado condicional.          |
-| `task_dependencies`     | Dependencias entre `project_tasks` (no entre `tasks` globales). `dependency_type`: `success` (esperar éxito), `failure` (ejecutar si falla), `always`. |
+| Tabla                                | Campo(s) destacado(s)                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `deployer_hosts`                     | `host`, `port`, `username`, `auth_type` (`password`/`key`), `password` (cifrado), `key_id`, `system_info` (JSON), `status_info` (JSON), `server_updates` (JSON) |
+| `deployer_passkeys`                  | `key_content` (cifrado), `passphrase` (cifrado), `key_type`, `fingerprint`                                |
+| `deployer_settings`                  | Clave-valor: PK `key` + `value`                                                                           |
+| `deployer_projects_docker_compose`   | `name`, `enabled`, `host_id`, `remote_path` (dir remoto del compose, default `/opt/docker-compose/`)      |
+| `deployer_projects_docker_compose_files` | `module_id` (FK al compose, `ON DELETE CASCADE`), `file_path`, `content`, `is_binary`, `mime_type`, `size` |
+| `deployer_cache_projects_docker_search` | Caché de búsqueda de imágenes Docker Hub (TTL 1 h)                                                    |
+| `deployer_cache_projects_docker_tags`   | Caché de tags Docker Hub (una fila por página consultada, TTL 24 h)                                    |
 
-### Caché de Docker Hub (`commands/docker/hub_cache/`)
+Tablas con cifrado declarado (vía `encryptedText` en `src/lib/schema-types.ts`): `deployer_hosts.password`, `deployer_passkeys.key_content`, `deployer_passkeys.passphrase`.
 
-- `deployer_docker_hub_search_cache` — caché de la búsqueda de imágenes (una fila por imagen, TTL 1 h).
-- `deployer_docker_hub_tags_cache` — caché de tags con una **fila por página consultada** (no por tag), TTL 24 h:
+### Caché de Docker Hub (`commands/cache/docker/`)
+
+- `deployer_cache_projects_docker_search` — caché de la búsqueda de imágenes (una fila por consulta).
+- `deployer_cache_projects_docker_tags` — caché de tags con **una fila por página consultada** (no por tag):
 
 | Columna          | Contenido |
 | ---------------- | --------- |
-| `url_query`      | URL exacta usada para la petición (clave de la caché, UNIQUE con `namespace`+`repository`) |
+| `url_query`      | URL exacta usada para la petición (clave de la caché) |
 | `url_next` / `url_previous` | URLs de paginación devueltas por la API |
 | `count`          | Total de tags (de la API) |
-| `tags`           | JSON de `results` filtrados (`content_type == "image"`, sin `images`/`digest`/`content_type`/`media_type`) y **enriquecido** con `version`/`variant` por tag |
-| `tags_versions` / `tags_variants` | JSON arrays de valores únicos en orden de aparición (orden de la API = `last_updated` desc) |
+| `tags`           | JSON de `results` filtrados y **enriquecido** con `version`/`variant` por tag |
+| `tags_versions` / `tags_variants` | JSON arrays de valores únicos en orden de aparición |
 
-- `get_docker_hub_tags_cache(image_name, tag?)`:
-  - Sin `tag` → devuelve la **página 1** (base: `page_size=100&ordering=last_updated`) para el dropdown.
-  - Con `tag` → recorre `url_next` (límite `MAX_TAG_PAGES`) consultando la caché por `url_query` y haciendo HTTP solo cuando falta una página fresca; devuelve los tags coincidentes o `[]`.
-- `parse_tag()` es la misma lógica que `parseTag()` del frontend (versión = parte anterior al primer `-`, variante = resto o `""`). El frontend ya no parsea: consume `version`/`variant` del resultado.
-- Regenerar `src/types/tauri-types.d.ts` con `cargo test export_bindings` (con `TS_RS_EXPORT_DIR=../src/types`).
+- `cache_docker_search` / `cache_docker_tags`: consultan primero la caché y hacen HTTP solo cuando falta una página fresca (respetando TTL).
+- `parse_tag()` (en el backend) es la misma lógica que `parseTag()` del frontend (versión = parte anterior al primer `-`, variante = resto o `""`). El frontend consume `version`/`variant` del resultado en vez de parsear.
+- Los tipos de estos comandos se exportan a `src/types/tauri-types.d.ts` con `#[ts(export, export_to = "tauri-types.d.ts")]` (ts-rs).
 
 ---
 
-## 3. Proc-Macro `DbEntity`
+## 3. Entidades Drizzle y declaración de campos cifrados
 
-El crate `deployer-macros` proporciona el derive macro `DbEntity` que genera automáticamente la implementación del trait homónimo.
+El esquema Drizzle vive en `src/lib/entities/*` y **es la fuente de la configuración de cifrado/enmascaramiento** que el frontend envía a `query_raw`. Las entidades se generan y no se editan a mano (ver `AGENTS.md`); el cifrado se declara con el customType `encryptedText(...)` de `src/lib/schema-types.ts`.
 
-### Atributos disponibles
+### Columnas con timestamps
 
-| Atributo                                         | Nivel  | Descripción                                                                                                                                                                                                 |
-| ------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `#[db_table("nombre")]`                          | Struct | **Obligatorio.** Nombre de la tabla SQLite.                                                                                                                                                                 |
-| `#[db_encrypt]`                                  | Campo  | Cifra siempre el campo. `expose = false` por defecto.                                                                                                                                                       |
-| `#[db_encrypt(expose = true)]`                   | Campo  | Cifra siempre; descifra y expone el valor al frontend al leer.                                                                                                                                              |
-| `#[db_conditional_encrypt(condition = "campo")]` | Campo  | Cifra solo si `campo` es `true` en la misma fila.                                                                                                                                                           |
-| `#[db_rename("columna")]`                        | Campo  | El campo Rust usa un nombre de columna SQLite distinto. Imprescindible cuando el nombre natural de columna es palabra reservada de Rust (ej. `type`) y el campo se llama `task_type`/`r#type` en el struct. |
+`src/lib/columns.helpers.ts` define un helper de columnas `timestamps` que añade `created_at` / `updated_at` con:
 
-### CRÍTICO: sin `#[db_rename]`, el nombre de columna SIEMPRE es el nombre del campo Rust
+- `created_at`: `$default` a `CURRENT_TIMESTAMP`.
+- `updated_at`: `$default` **y** `$onUpdate` a `CURRENT_TIMESTAMP`.
 
-`from_row()`, `to_fields()`, `to_fields_all()` y `from_fields()` generados por el macro usan **literalmente el identificador del campo Rust** como nombre de columna SQL (vía `field.try_get("nombre_campo")` y como clave en el `INSERT`/`UPDATE` dinámico de `db::insert`/`db::update_fields`). Si el nombre de campo Rust no coincide exactamente con el nombre de columna real del esquema SQL, falla en **create, update Y read** (no solo en el punto donde se notó el error) porque todas esas operaciones pasan por el mismo `DbEntity`.
+**No existen triggers SQL** para `updated_at`: la actualización automática la gestiona Drizzle con `$onUpdate` al generar el `UPDATE`. Al añadir una tabla nueva, usar el helper `timestamps` en lugar de crear ningún trigger.
 
-Caso real (sesión de julio 2026): `Task.task_type` tenía `#[serde(rename = "type")]` (para que el JSON/TypeScript expusiera el campo como `type`), pero **eso es solo un rename de serialización**, no de columna DB — son mecanismos completamente independientes. El macro siguía generando `row.try_get("task_type")` y `INSERT INTO tasks (task_type, ...)`, mientras la columna real (esquema SQL) se llama `type`. Síntoma: crear una task fallaba con "no such column: task_type". Fix: añadir soporte a `#[db_rename("columna")]` en el macro y aplicarlo en el campo (`#[db_rename("type")] pub task_type: TaskType`), **además** de corregir a mano cualquier lugar que construya `Vec<(String, Value)>` manualmente para un `UPDATE` parcial (ej. `crud_update_task.rs` tenía `"task_type".to_string()` hardcodeado en vez de `"type".to_string()` — el macro no puede arreglar ese código manual, hay que revisarlo caso a caso).
+### Gestión de borrado lógico (`deleted_at`)
 
-**Regla al añadir un campo cuyo nombre Rust deseado choca con una palabra reservada, o simplemente quieres que difiera del nombre de columna:** usar siempre `#[db_rename("columna_real")]` junto al campo, y grep del nombre de columna literal (`"columna_real".to_string()`) en cualquier comando `crud_update_*` que construya el `Vec<(String, Value)>` a mano en vez de vía `to_fields()`.
-
-### Métodos generados
-
-- `table_name()` — nombre de la tabla.
-- `encrypted_fields()` — campos con `#[db_encrypt]`.
-- `conditional_encrypted_fields()` — campos con `#[db_conditional_encrypt]`.
-- `from_row()` — construye el struct desde una `SqliteRow`.
-- `to_fields()` — serializa campos **excluyendo** `id`, `created_at`, `updated_at`.
-- `to_fields_all()` — igual pero incluyendo todos los campos.
-- `from_fields()` — reconstruye el struct desde un mapa de pares (tras descifrado).
-
-### Patrón para campos con `#[db_conditional_encrypt]`
-
-`db::fetch_all` solo descifra por `encryption_config`, no resuelve campos condicionales. Usar siempre el patrón manual:
-
-```rust
-let sql = format!("SELECT * FROM {}", MyEntity::table_name());
-let rows = sqlx::query(&sql).fetch_all(pool).await?;
-for row in rows {
-    let mut entity = MyEntity::from_row(&row)?;
-    let mut fields = entity.to_fields_all();
-    db::apply_decryption::<MyEntity>(&mut fields, cache, pool, key).await?;
-    entity = MyEntity::from_fields(fields)?;
-}
-```
-
----
-
-## 3.1 Updates parciales: `Patch<T>` + `db::update_fields`
-
-### Problema que resuelve
-
-Los `UpdateXInput` con campos `Option<T>` y merge `.or(current.campo)` **nunca pueden poner a `NULL` un campo opcional**: tanto la clave ausente en el JSON como un `null` explícito deserializan a `None`, así que `.or()` siempre conserva el valor actual. Es imposible borrar un campo nullable una vez que tiene valor.
-
-### Solución: `Patch<T>` (en `commands/patch.rs`)
-
-`Patch<T>` distingue los 3 estados posibles de un campo en un update parcial:
-
-```rust
-pub enum Patch<T> {
-    Unset,      // la clave no vino en el JSON -> no tocar
-    Null,       // vino como `null`           -> borrar (NULL en BD)
-    Value(T),   // vino con un valor           -> actualizar
-}
-```
-
-Se usa **solo en campos `NULL`-ables** de `UpdateXInput`. Los campos `NOT NULL` siguen usando `Option<T>` simple (no necesitan distinguir "borrar", solo "actualizar o no tocar").
-
-```rust
-#[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct UpdateProjectInput {
-    pub name: Option<String>,           // NOT NULL -> Option simple
-    #[serde(default)]
-    #[ts(optional = nullable)]
-    pub description: Patch<String>,     // NULLABLE -> Patch
-    pub enabled: Option<bool>,          // NOT NULL -> Option simple
-}
-```
-
-- `#[serde(default)]` es **obligatorio** en cada campo `Patch<T>`: hace que, si la clave no aparece en el JSON, el campo se rellene con `Patch::Unset` vía `Default`, sin invocar al `Deserialize` de `Patch` (que nunca devuelve `Unset` por sí mismo).
-- `#[ts(optional = nullable)]` es **obligatorio** para que `ts-rs` genere `campo?: T | null` en vez de un tipo obligatorio.
-- `tauri-types.d.ts` se regenera con `cargo test export_bindings` (ts-rs exporta los tipos en un test generado, **no** durante `cargo build`).
-
-### TypeScript generado
-
-```ts
-export interface UpdateProjectInput {
-	name?: string
-	description?: string | null
-	enabled?: boolean
-}
-```
-
-Desde el frontend: omitir la clave = no tocar; `null` = borrar; valor = actualizar. Tauri serializa el `invoke` igual que `JSON.stringify`, así que esto funciona sin lógica adicional en Vue.
-
-### Comando: sin `fetch_one` previo, `UPDATE` dinámico
-
-Los comandos `crud_update_*` que migren a este patrón **dejan de hacer `fetch_one` + reconstruir la entidad completa**. En su lugar, construyen un `Vec<(String, serde_json::Value)>` solo con los campos presentes y llaman a `db::update_fields::<E>`:
-
-```rust
-let mut fields: Vec<(String, Value)> = Vec::new();
-
-if let Some(name) = input.name {
-    fields.push(("name".to_string(), Value::String(name)));
-}
-if let Some(v) = input.description.to_field_value() {
-    fields.push(("description".to_string(), v));
-}
-
-match db::update_fields::<Project>(&pool, id, fields, cache, &key).await {
-    Ok(true) => Ok(CommandResponse::ok_empty("projects.success.updated")),
-    Ok(false) => Ok(CommandResponse::err("projects.errors.not_found", ...)),
-    Err(e) => Ok(CommandResponse::err("projects.errors.update_failed", ...)),
-}
-```
-
-`db::update_fields` (en `db/crud.rs`) construye un `UPDATE ... SET` únicamente con las columnas presentes en `fields` (principio de "dirty tracking", igual que Doctrine/Drizzle: solo se tocan las columnas indicadas explícitamente), aplica cifrado igual que `db::update`, y devuelve `Ok(false)` si no existe ninguna fila con ese `id` (en vez de error). **Nunca incluye `updated_at`** en el `SET`: esa columna se actualiza sola vía trigger SQL (ver §3.2), así que `update_fields` sirve igual para tablas con o sin esa columna.
-
-### Estado de la refactorización a `Patch<T>`
-
-- ✅ Migradas a `Patch<T>` + `db::update_fields`: `projects`, `hosts`, `passkeys`, `global_variables`, `project_variables`, `framework_configs`, `tasks`, `project_tasks`, `project_hosts`, `deployments`, `deployment_executions`, `deployment_rollbacks`.
-- `task_dependencies` **sí existe** como entidad (CRUD completo implementado en `commands/tasks/dependencies/`), pero no usa `Patch<T>`: su único campo editable (`dependency_type`) es `NOT NULL`, así que `UpdateTaskDependencyInput` usa `DependencyType` directo (sin `Option`/`Patch`).
-- Nota especial: `global_variables.value`, `project_variables.value` y `framework_configs.value` tienen `#[db_conditional_encrypt(condition = "is_secret")]`. Si se actualiza `value` sin enviar `is_secret` en el mismo `input`, el comando consulta el `is_secret` actual en BD antes de construir `fields`, para que `apply_encryption` evalúe bien la condición (que solo mira el `Vec<(String, Value)>` que se le pasa, no el resto de la fila).
-
----
-
-## 3.2 `updated_at` automático vía trigger SQL
-
-Las 4 tablas con columna `updated_at` (`deployer_settings`, `deployer_passkeys`, `deployer_hosts`, `deployer_docker_composes`) tienen un trigger `AFTER UPDATE` definido en `src-tauri/migrations/0001_initial_schema.up.sql`:
-
-```sql
-CREATE TRIGGER deployer_hosts_trg_set_updated_at
-AFTER UPDATE ON deployer_hosts
-FOR EACH ROW
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-UPDATE deployer_hosts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-END;
-```
-
-La condición `WHEN NEW.updated_at = OLD.updated_at` evita la recursión infinita: la propia `UPDATE` del trigger vuelve a disparar el trigger, pero en esa segunda pasada `NEW.updated_at` (el `CURRENT_TIMESTAMP` recién puesto) ya no coincide con `OLD.updated_at`, así que la condición es falsa y no se repite.
-
-Gracias a esto, **el código Rust nunca toca `updated_at`** en ningún `UPDATE`: ni `db::update_fields` lo añade, ni hace falta una variante separada para las tablas sin esa columna (`deployer_docker_hub_search_cache`, `deployer_docker_hub_tags_cache` simplemente no tienen trigger y `update_fields` funciona igual para ellas).
-
-Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspondiente junto a su `CREATE TABLE` (y el `DROP TRIGGER` en el `.down.sql`).
+Las tablas de negocio tienen columna `deleted_at` (nullable) y el esquema Drizzle mapea el filtro de filas "no borradas" en las consultas. Al consultar con Drizzle hay que filtrar por `isNull(deleted_at)` según el patrón de cada entidad.
 
 ---
 
@@ -316,127 +155,71 @@ Si se añade una tabla nueva con `updated_at`, hay que crear su trigger correspo
 
 ### Principio de funcionamiento
 
-- El frontend opera **siempre en texto plano**.
-- Rust cifra los valores sensibles al guardar (`encrypt_mask` en `query_raw`) y enmascara al leer (`mask_fields`).
+- El frontend opera **siempre en texto plano**; delega el cifrado/descifrado/enmascaramiento a `query_raw` declarando qué campos son `encryptedText(...)`.
+- Rust cifra los valores sensibles al guardar (`encrypt_mask` en `query_raw`, para INSERT/UPDATE) y enmascara o descifra al leer (`mask_fields` / `decrypt_fields`).
 - Los valores cifrados en SQLite tienen el prefijo `ENC:` seguido del valor en base64.
 - Si un valor ya tiene el prefijo `ENC:` al llegar a Rust, **no se vuelve a cifrar**.
 - Los campos vacíos se almacenan como string vacío, nunca como `ENC:`.
-- **Lecturas sin descifrado**: `query_raw` recibe `mask_fields` y sustituye valores `ENC:` por `BLANK_VALUE` (sin abrir crypto context).
+- **Lecturas sin descifrado**: `query_raw` recibe `mask_fields` y sustituye valores `ENC:` por `BLANK_VALUE` (sin abrir contexto cripto).
 - **Lecturas con descifrado**: `query_raw` recibe `decrypt_fields` y descifra con la master key.
 - **Escrituras**: `db.ts` aplica `stripEncryptedValues` antes del invoke para eliminar asignaciones con centinela/ENC:; `encrypt_mask` cifra los params marcados.
-- `generate_passkey` devuelve passphrase en claro; el INSERT vía `encrypt_mask` cifra al persistir.
+
+### Clave maestra
+
+La master key (32 bytes) se guarda en el keychain del SO (`keyring` crate) bajo servicio `deployer-app` / cuenta `master-key`. `get_or_create_master_key()` la genera (CSPRNG del SO) y persiste la primera vez. `open_crypto_context()` devuelve `(pool, master_key)`; `open_pool()` devuelve solo el pool (para consultas sin cripto).
 
 ### Algoritmo
 
 AES-256-GCM con nonce aleatorio de 12 bytes por cada cifrado.
 
-### Configuración de campos cifrados (`encryption_config`)
+### Configuración de campos cifrados (`encryptedText(...)` en `src/lib/schema-types.ts`)
 
-| Tabla      | Campo         | encrypt | expose |
-| ---------- | ------------- | ------- | ------ |
-| `hosts`    | `password`    | 1       | 0      |
-| `passkeys` | `key_content` | 1       | 0      |
-| `passkeys` | `passphrase`  | 1       | 0      |
+| Tabla                     | Campo          | Uso |
+| ------------------------- | -------------- | --- |
+| `deployer_hosts`          | `password`     | Se cifra al escribir; se enmascara (no se expone en claro) al leer |
+| `deployer_passkeys`       | `key_content`  | Se cifra al escribir; se enmascara al leer |
+| `deployer_passkeys`       | `passphrase`   | Se cifra al escribir; se enmascara al leer |
+
+> `generate_passkey` devuelve la passphrase en claro al frontend; el INSERT vía `encrypt_mask` la cifra al persistir.
 
 ---
 
-## 5. Runner Universal (`run_deployment`)
+## 5. Operaciones Docker Compose (`commands/projects/docker/compose/`)
 
-### Diseño
+Módulo que orquesta el despliegue remoto de `docker compose` sobre un host. Combina **SFTP** (subir archivos) + **SSH** (ejecutar docker).
 
-Comando Tauri que ejecuta un deployment completo. Usa un **IPC Channel** (Tauri 2) para emitir eventos de progreso en tiempo real al frontend, punto a punto por invocación.
+### Flujo común (`operations.rs`)
 
-```ts
-// Frontend — uso típico
-import { Channel, invoke } from '@tauri-apps/api/core'
-import type { ProgressEvent } from '@/tauri-types'
+1. `load_compose_with_files(app, docker_compose_id)`: abre contexto cripto, carga el compose (`host_id`, `remote_path`), carga sus archivos y conecta al host (`connect_to_host_by_id(..., attempts: 3, enabled_only: true)`).
+2. `upload_all_compose_files()`: sube **todos** los archivos del compose vía SFTP al `remote_path`, creando directorios padre si hace falta. Los archivos `is_binary` se almacenan en BD como base64 y se decodifican al subir. Los archivos sin `content` se saltan.
+3. Resuelve el nombre del archivo compose (`compose.yaml`/`compose.yml`/`docker-compose.yaml`/`docker-compose.yml`) con `find_compose_file_name()` (default `compose.yaml`).
+4. Ejecuta el comando `docker compose -f <archivo>` en el directorio remoto con `run_in_dir()` (prefija `cd <dir> &&`, timeout 300 s).
+5. Devuelve `CommandResponse` con clave i18n según éxito (`tauri.docker_composes.operations.*`).
 
-const channel = new Channel<ProgressEvent>()
-channel.onmessage = event => {
-	/* actualizar UI */
-}
-await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
-```
+### Comandos
 
-### Eventos emitidos (`ProgressEvent`)
+- `project_docker_compose_up(input)` — sube archivos + `docker compose up -d`. Aplica `exit_code_message()` (exit 0 → `ok`, else `err` con `output`).
+- `project_docker_compose_down(input)` — `docker compose down`.
+- `project_docker_compose_ps(input)` → `CommandResponse<Vec<DockerComposeService>>` — parsea `docker compose ps --format json` (`parse_ps_output`, una línea = un JSON). Si exit != 0 devuelve `err`.
+- `project_docker_compose_logs(input)` → `CommandResponse<String>` — `docker compose logs --tail 50`.
+- `project_docker_compose_restart(input)` — `docker compose restart`.
+- `project_docker_compose_pull(input)` — `docker compose pull`.
 
-| Evento                | Descripción                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| `deployment_started`  | Inicio; incluye `total_tasks`                                      |
-| `task_pending`        | Task en cola antes de ejecutarse                                   |
-| `task_started`        | Task comenzando ejecución                                          |
-| `output_chunk`        | Fragmento de output acumulado (~100ms)                             |
-| `task_retrying`       | Task reintentándose; incluye `attempt`, `delay_secs`               |
-| `task_finished`       | Task finalizada; incluye `status`, `exit_code`, `duration_seconds` |
-| `task_skipped`        | Task saltada; incluye `reason`                                     |
-| `deployment_finished` | Deployment finalizado; incluye `status`, `duration_seconds`        |
-| `fatal_error`         | Error que impide continuar                                         |
+`input` es `DockerComposeOperationInput { docker_compose_id }` (ver `types.rs`).
 
-### Interpolación de variables (`{{variable}}`)
+### Sincronización de archivos (`files_commands.rs`)
 
-Las tablas `global_variables` y `project_variables` tienen dos campos de identificación:
+`sync_project_docker_compose_files(input: SyncDockerComposeFilesInput)` sincroniza la lista de archivos de un compose **en una única transacción**:
 
-- **`name`**: nombre visual para la interfaz (no se usa en interpolación).
-- **`slug`**: identificador para interpolación en `{{slug}}`. Es único (global en `global_variables`, por proyecto en `project_variables`). Validado en frontend con regex `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+- Insertar los nuevos (`file.id` ausente) y actualizar los existentes (`file.id` presente; si el id no pertenece al compose, se inserta).
+- Borrar los que ya no están (los presentes se conservan por id).
+- Devuelve la lista final de archivos con sus ids.
 
-Precedencia (mayor sobreescribe):
+---
 
-1. Variables de proyecto (`project_variables`)
-2. Variables globales (`global_variables`)
-3. Variables de sistema (inyectadas automáticamente)
+## 5.1 Consola remota (`commands/remote/`)
 
-Variables de sistema disponibles:
-
-| Variable                 | Valor                           |
-| ------------------------ | ------------------------------- |
-| `{{deployment_id}}`      | ID del deployment               |
-| `{{version}}`            | Versión del deployment          |
-| `{{tag}}`                | Tag del deployment              |
-| `{{build}}`              | Número de build                 |
-| `{{host}}`               | Hostname/IP del servidor        |
-| `{{host_user}}`          | Usuario SSH                     |
-| `{{remote_working_dir}}` | Working dir remoto del proyecto |
-| `{{local_working_dir}}`  | Working dir local del proyecto  |
-
-### `TaskConfig` — configuración por tipo
-
-Almacenado como JSON en `project_tasks.config`. Solo requerido para `UploadFile` y `DownloadFile`.
-
-`FileTransferConfig` usa una lista de `PathMapping` (`paths`) en vez de un único `src`/`dest`, para representar con la misma estructura 1 archivo, varios archivos sueltos, o un directorio completo:
-
-```json
-{
-	"type": "upload_file",
-	"overwrite": true,
-	"paths": [
-		{
-			"src": "{{local_working_dir}}/dist",
-			"dest": "{{remote_working_dir}}/public",
-			"recursive": true,
-			"exclude": ["*.map", ".git"],
-			"chmod": "755"
-		},
-		{
-			"src": "{{local_working_dir}}/.env.production",
-			"dest": "{{remote_working_dir}}/.env",
-			"recursive": false,
-			"chmod": "600"
-		}
-	]
-}
-```
-
-- `paths`: lista de mapeos; 1 elemento = archivo suelto o directorio (`recursive: true`); N elementos = varios archivos/directorios en la misma task, cada uno con su propio origen/destino.
-- `overwrite` (a nivel de `FileTransferConfig`, no por mapeo): si `false`, se omite un archivo si el destino ya existe. Por defecto `true`. En directorios recursivos aplica archivo a archivo dentro del árbol.
-- `exclude` (por mapeo, solo relevante si `recursive: true`): patrones glob simples (`*`, `?`) comparados contra el **nombre** de cada entrada, no la ruta completa (ver `ssh/glob.rs`, sin dependencias externas).
-- `chmod` (por mapeo): permisos octales (ej. `"755"`, `"600"`) aplicados tras subir el archivo al servidor remoto. Solo tiene efecto en `UploadFile` (no hay chmod portable para el lado local Windows/Unix en descargas).
-- Tipos Rust: `PathMapping` y `FileTransferConfig` en `commands/projects/tasks/types.rs`.
-
-> **Verificado (cargo check/test OK):** las API de `russh-sftp` usadas en `ssh/transfer.rs` (`set_metadata` con `FileAttributes`, `read_dir` con `.file_name()`/`.file_type().is_dir()`) compilan correctamente con la versión actual del crate.
-
-### Comandos SSH sueltos (`commands/remote/`)
-
-Comandos para ejecutar operaciones SSH/SFTP sin asociarlas a un deployment (los usa la consola remota del frontend):
+Comandos SSH/SFTP "sueltos" (no asociados a un compose) que usa la consola remota del frontend vía `useRemoteCommand.ts`:
 
 - `ssh_execute_command(input, channel)`: abre sesión SSH + canal, ejecuta el comando con streaming de output por `Channel<RemoteConsoleEvent>` (eventos `output_chunk`, `finished` con `exit_code`, `error`). Acepta `working_dir` y `timeout_secs` (default 300). Devuelve `CommandResponse<RemoteCommandResult>` con `success: true` incluso si el comando remoto falla (exit != 0); el `exit_code` viaja en `data`. Si el exit code es desconocido se devuelve `-1`.
 - `ssh_upload_file(input, channel)`: sube un archivo o directorio local (`local_path`) a `remote_path` vía SFTP. Auto-detecta archivo/directorio salvo que `recursive` sea `Some(true)`. Aplica `chmod` octal si se indica. Emite progreso por el mismo Channel.
@@ -444,75 +227,54 @@ Comandos para ejecutar operaciones SSH/SFTP sin asociarlas a un deployment (los 
 - Todos toman `channel: Channel<RemoteConsoleEvent>` **obligatorio** (no es opcional: `Channel` no implementa `Deserialize`).
 - Errores de transporte (conexión, timeout) → `success: false` con `message_key` (`tauri.remote.errors.*`); el mensaje humanizado también se emite como evento `error` por el Channel.
 - Estos comandos usan `connect_to_host_by_id(..., enabled_only: true)`.
-- **Cancelación:** los tres comandos registran un `CancellationToken` en el estado `RemoteJobCancel` (compartido, `commands/remote/cancel.rs`) al empezar, y `ssh_cancel_remote_job` (sin args) cancela el job en curso. En `exec.rs` la cancelación se espera con `tokio::select!` sobre `token.cancelled()`; en `ssh/transfer.rs` todas las funciones aceptan `cancel: Option<&CancellationToken>` (`None` = nunca cancela, así lo usa el runner de deployments) y comprueban el flag antes y entre operaciones. Al cancelar devuelven error con clave `tauri.remote.errors.cancelled` (`CANCELLED_MSG`). El frontend no debe lanzar varios jobs a la vez: el estado solo guarda el último token.
-
-### Herencia de campos (project_task > project)
-
-| Campo                | Fuente prioritaria                 | Fallback                      |
-| -------------------- | ---------------------------------- | ----------------------------- |
-| `local_working_dir`  | `project_tasks.local_working_dir`  | `projects.local_working_dir`  |
-| `remote_working_dir` | `project_tasks.remote_working_dir` | `projects.remote_working_dir` |
-| `retry_count`        | `project_tasks.retry_count`        | `tasks.retry_count`           |
-| `retry_delay`        | `project_tasks.retry_delay`        | `tasks.retry_delay`           |
-
-### Reanudación automática
-
-Si el deployment tiene executions previas en `success`, el runner las salta. Si todas están en `success`, devuelve error informativo.
-
-### Logs de output
-
-Output completo en: `{local_working_dir}/.deployer/logs/execution_{id}.log`
-En BD: truncado a 64 KB con nota si fue truncado.
-
-### Sesión SSH
-
-- Una única sesión SSH por host durante todo el deployment.
-- Reconexión automática con backoff lineal de 2s.
-- Intentos configurables via `RunDeploymentInput.ssh_reconnect_attempts` (por defecto: 3).
-
-### Condiciones de task
-
-```
-"{{version}} == 1.0.0"   -> ejecutar solo si version es 1.0.0
-"{{tag}} != hotfix"      -> ejecutar si tag no es hotfix
-```
-
-Si la condición no puede parsearse, se ejecuta la task (safe default).
+- **Cancelación:** los tres comandos registran un `CancellationToken` en el estado `RemoteJobCancel` (compartido, `commands/remote/cancel.rs`) al empezar, y `ssh_cancel_remote_job` (sin args) cancela el job en curso. En `exec.rs` la cancelación se espera con `tokio::select!` sobre `token.cancelled()`; en `ssh/transfer.rs` todas las funciones aceptan `cancel: Option<&CancellationToken>` (`None` = nunca cancela) y comprueban el flag antes y entre operaciones. Al cancelar devuelven error con clave `tauri.remote.errors.cancelled`. **El frontend no debe lanzar varios jobs a la vez**: el estado solo guarda el último token.
 
 ---
 
-## 6. Comando `query_raw` (lecturas para Drizzle)
+## 6. Comando `query_raw` (proxy Drizzle para lecturas Y escrituras)
 
 ### Propósito
 
-Único punto de entrada que permite al frontend ejecutar SELECTs arbitrarios generados por Drizzle (modo proxy), sin necesidad de crear un comando Rust específico para cada consulta.
+Único punto de entrada que permite al frontend ejecutar SQL arbitrario generado por Drizzle (modo proxy), tanto lecturas como escrituras, con cifrado/descifrado/enmascaramiento transparente de los campos declarados. Ver `src/lib/db.ts` para cómo el frontend lo invoca.
 
-### Reglas de implementación
+### Firma
 
-- Solo acepta sentencias que empiecen por `SELECT` (case-insensitive); cualquier otra instrucción se rechaza con error.
-- No aplica descifrado: las filas devueltas son los valores crudos de SQLite. Por eso solo debe usarse desde el frontend para tablas sin campos cifrados, o para campos cifrados que el frontend no necesita ver en claro.
-- Los parámetros llegan como `Vec<serde_json::Value>` y se bindean en orden a la query con `sqlx::query(&sql).bind(...)`.
-- El resultado se devuelve como `Vec<HashMap<String, serde_json::Value>>`, con conversión de tipos SQLite → JSON (INTEGER → number, REAL → number, TEXT/BLOB → string, NULL → null).
-- Disponible tanto en desarrollo como en producción (no usar `#[cfg(debug_assertions)]`), ya que es necesario para el funcionamiento normal de la app.
+```rust
+query_raw(app, sql, params, encrypt_mask, decrypt_fields, mask_fields, is_write, is_read)
+```
 
-### Lo que NUNCA debe hacer `query_raw`
+- `sql`: sentencia SQL generada por Drizzle (con placeholders `?`).
+- `params`: `Option<Vec<JsonValue>>` bindeado en orden a la query.
+- `encrypt_mask`: `Option<Vec<bool>>` — por cada parámetro, si `true` se cifra (solo aplica cuando `is_write`).
+- `decrypt_fields`: `Option<Vec<String>>` — nombres de columna a descifrar (solo cuando `is_read`).
+- `mask_fields`: `Option<Vec<String>>` — nombres de columna a enmascarar (solo cuando `is_read`). **Excluyente** con `decrypt_fields`.
+- `is_write` / `is_read`: flags que indican el tipo de operación.
 
-- Ejecutar INSERT, UPDATE, DELETE, ni ningún DDL.
-- Descifrar campos cifrados.
-- Saltarse la validación de que el SQL es un SELECT.
+### Comportamiento
+
+- Abre el contexto cripto (`open_crypto_context`) **solo** si hay cifrado o descifrado; para el resto abre solo el pool (`open_pool`).
+- **Cifrado en INSERT/UPDATE** (`is_write && encrypt_mask`): cada parámetro marcado se cifra con `crypto::cipher::encrypt` si no está vacío y no empieza ya por `ENC:`.
+- **Ejecuta siempre con `fetch_all()`** — devuelve filas reales (SELECT e INSERT/UPDATE/DELETE con `RETURNING`).
+- **Descifrado en SELECT** (`is_read && decrypt_fields`): recorre las columnas y descifra las listadas con la master key.
+- **Enmascaramiento en SELECT** (`is_read && mask_fields`): sustituye los valores con prefijo `ENC:` por `BLANK_VALUE` (sin master key). El frontend reconoce `BLANK_VALUE` y muestra un placeholder.
+- Sin cripto: devuelve las filas convertidas a `Vec<Vec<JsonValue>>` (`rows_to_values`, convirtiendo tipos SQLite → JSON).
+
+### Errores
+
+Devuelve `CommandResponse::err` con claves `tauri.database.errors.query_raw_*` (open_pool_failed, execution_failed) — el SQL siempre se ejecuta dentro de `query_raw`; el frontend traduce los errores (y las restricciones UNIQUE/FK) a mensajes de usuario.
 
 ---
 
 ## 7. Dependencias Rust — Notas de Compatibilidad
 
-| Crate             | Versión | Límite              | Motivo                                                                                                                                                                                                                     |
-| ----------------- | ------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rand`            | `0.10`  | No bajar            | Requiere feature `sys_rng` para `OsRng`. `SysRng` implementa `CryptoRng` directamente — no necesita `UnwrapErr`.                                                                                                           |
-| `rand_core`       | `0.10`  | Alineado con `rand` | `rand 0.10` requiere `rand_core 0.10`; declarar `0.6` causaría conflictos de traits.                                                                                                                                       |
-| `keyring`         | `4.1`   | —                   | `v1` (default) re-exporta `Entry`/`Error` en raíz. `Error` es `#[non_exhaustive]` — siempre usar catch-all en match. Feature `v1` incluye `windows-native-keyring-store` automáticamente en Windows. Datos v3 compatibles. |
-| `russh`           | `0.62`  | —                   | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum. Solo se usa lado **cliente** (`client::Handler`); el breaking change de 0.62 en `channel_open_*` (server-side) no aplica.                 |
-| `russh-sftp`      | `2.3`   | —                   | `ReadDir` auto-filtra `.`/`..`. Patrón: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`.                                                                  |
-| `aes-gcm`         | `0.11`  | —                   | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`.                                                   |
-| `chrono`          | `0.4`   | —                   | Timestamps RFC3339 para `started_at`/`finished_at`.                                                                                                                                                                        |
-| `sqlx`            | `0.8.6` | —                   | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`.                                                                                                                                    |
-| `deployer-macros` | local   | —                   | Proc-macro crate del workspace. Provee `ident_concat!` (reemplaza `paste`) y `DbEntity` derive.                                                                                                                            |
+| Crate        | Versión | Límite              | Motivo                                                                                                                                                                                                                     |
+| ------------ | ------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rand`       | `0.10`  | No bajar            | Requiere feature `sys_rng` para `OsRng`/`SysRng`.                                                                                                          |
+| `rand_core`  | `0.10`  | Alineado con `rand` | `rand 0.10` requiere `rand_core 0.10`; declarar `0.6` causaría conflictos de traits.                                                                                                                                       |
+| `keyring`    | `4.1`   | —                   | `v1` (default) re-exporta `Entry`/`Error` en raíz. `Error` es `#[non_exhaustive]` — siempre usar catch-all en match. Feature `v1` incluye `windows-native-keyring-store` automáticamente en Windows. Datos v3 compatibles. |
+| `russh`      | `0.62`  | —                   | `authenticate_publickey` requiere `PrivateKeyWithHashAlg`; `AuthResult` es enum. Solo se usa lado **cliente** (`client::Handler`); el breaking change de 0.62 en `channel_open_*` (server-side) no aplica.                 |
+| `russh-sftp` | `2.3`   | —                   | `ReadDir` auto-filtra `.`/`..`. Patrón: `channel_open_session()` → `channel.request_subsystem(true, "sftp")` → `SftpSession::new(channel.into_stream())`.                                                                  |
+| `aes-gcm`    | `0.11`  | —                   | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`.                                                   |
+| `chrono`     | `0.4`   | —                   | Timestamps RFC3339 (p.ej. `last_checked_at`, `fetched_at`).                                                                                                                                                               |
+| `sqlx`       | `0.8.6` | —                   | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`.                                                                                                                                    |
+| `ts-rs`      | —       | —                   | Exporta los tipos de input/result de los comandos a `src/types/tauri-types.d.ts` (`#[ts(export, export_to = "tauri-types.d.ts")]`) en tiempo de build/check.                              |

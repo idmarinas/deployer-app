@@ -13,12 +13,17 @@ src/
 │       ├── main.css     <- Paleta + tokens semánticos + utilidades PCB
 │       ├── fonts.css    <- @font-face de Inter y JetBrains Mono (autohospedadas)
 │       └── fonts/        <- Archivos .woff2 de las fuentes
-├── components/          <- Componentes reutilizables de UI
-├── loaders/           <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
-├── pages/               <- Vistas de la aplicación
+├── components/          <- Componentes reutilizables de UI (form/, pages/, table/, remote/...)
+├── composables/         <- Lógica con reactividad de Vue (useSchemaToForm, useRemoteCommand, queries/, ...)
+├── lib/                 <- Capa de datos: db.ts (Drizzle proxy), schema.ts/relations.ts (auto), schema-types.ts, entities/, docker-compose/
+├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
+├── locales/             <- i18n (es/, _loader.ts)
+├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,projects/docker/compose,console,theme}, deployer/)
+├── schemas/             <- JSON Schema de edición (compose-spec.json, composer-schema.json)
+├── types/               <- Tipos (entities.ts, tauri-types.d.ts auto-generados)
 └── utils/               <- Funciones puras sin reactividad de Vue
 
-theme/                   <- Temas personalizados de componentes Nuxt UI
+theme/                   <- Temas personalizados de componentes Nuxt UI (raíz del proyecto)
 ├── index.ts             <- Barrel de re-exports
 ├── alert.ts
 ├── badge.ts
@@ -27,12 +32,14 @@ theme/                   <- Temas personalizados de componentes Nuxt UI
 ├── checkbox.ts
 ├── contextMenu.ts
 ├── dashboardNavbar.ts
+├── dashboardPanel.ts
 ├── dashboardSidebar.ts
 ├── dropdownMenu.ts
 ├── input.ts
 ├── modal.ts
 ├── navigationMenu.ts
 ├── progress.ts
+├── radioGroup.ts
 ├── select.ts
 ├── separator.ts
 ├── switch.ts
@@ -42,6 +49,8 @@ theme/                   <- Temas personalizados de componentes Nuxt UI
 ├── toast.ts
 └── tooltip.ts
 ```
+
+> **Nota sobre el historial:** los catálogos de `projects`, `tasks`, `variables` y `deployments` de versiones anteriores se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar). Los loaders activos de datos son `deployerApp.ts`, `docker_composes.ts`, `hosts.ts` y `passkeys.ts`.
 
 ---
 
@@ -181,6 +190,7 @@ ui({
     modal: theme.modal,
     navigationMenu: theme.navigationMenu,
     progress: theme.progress,
+    radioGroup: theme.radioGroup,
     select: theme.select,
     separator: theme.separator,
     switch: theme.switchTheme,   // ← alias: "switch" es palabra reservada en JS
@@ -190,6 +200,7 @@ ui({
     toast: theme.toast,
     tooltip: theme.tooltip,
     dashboardNavbar: theme.dashboardNavbar,
+    dashboardPanel: theme.dashboardPanel,
     dashboardSidebar: theme.dashboardSidebar,
   },
 })
@@ -243,11 +254,11 @@ Al añadir o modificar cualquier theme file, verificar:
 
 - **`/composables`**: Solo para lógica que usa reactividad de Vue (`ref`, `computed`, `onMounted`, etc.).
 - **`/utils`**: Para funciones puras sin reactividad. Si una función no necesita Vue, va aquí.
-- **`/loaders`**: Loaders de datos creados con `defineColadaLoader` de `vue-router/experimental/pinia-colada`. Cada loader exporta una función (ej. `useProjectById`) que se usa en el `<script setup>` de la página. Los loaders son **lazy** por defecto y exponen `data`, `isLoading`, `error`.
+- **`/loaders`**: Loaders de datos creados con `defineColadaLoader` de `vue-router/experimental/pinia-colada`. Cada loader exporta una función (ej. `useHostById`) que se usa en el `<script setup>` de la página. Los loaders son **lazy** por defecto y exponen `data`, `isLoading`, `error`.
 
 ### Composables de datos (`useQuery.ts`)
 
-- **Lecturas de datos**: los loaders en `src/loaders/` usan `defineColadaLoader` de `pinia-colada` y se consumen directamente en las páginas (ej. `useProjectById()`). No hay barrel intermedio.
+- **Lecturas de datos**: los loaders en `src/loaders/` usan `defineColadaLoader` de `pinia-colada` y se consumen directamente en las páginas (ej. `useHostById()`, `useDockerComposeListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`). No hay barrel intermedio.
 - La validación de unicidad de los schemas Zod (`composables/schemas/*.ts`) usa `countWhere(table, condition)` de `composables/queries/shared.ts` directamente. Construye la condición con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/lib/schema` — nunca SQL manual interpolado.
 
   ```ts
@@ -264,14 +275,16 @@ Al añadir o modificar cualquier theme file, verificar:
     return exist <= 0
   }, t('validation.hosts.name.not_unique'))
   ```
-- Los **tipos** de las entidades (ej. `ProjectRow`, `HostRow`) se importan desde los loaders o desde `@/tauri-types` (tipos auto-generados por `ts-rs`).
-- **Ninguna escritura (CRUD) vive en un loader.** Los `invoke('crud_create_*' | 'crud_update_*' | 'crud_delete_*' | 'set_*', ...)` se llaman siempre directamente en el sitio de uso (página, composable de página, o `useTableColumns.ts` para las acciones de tabla) — nunca a través de un wrapper intermedio. Si aparece una tabla clave-valor o de ajustes en bloque, seguir el patrón de `invoke` directo.
+- Los **tipos** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/lib/schema`); los tipos generados por Rust (entidades `Host`, `DockerCompose`, y los inputs/respuestas de comandos) se importan desde `@/types/entities` y `@/types/tauri-types` (auto-generados por `ts-rs`).
+- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/lib/db.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, caché Docker Hub, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
+
 ### Acceso a la base de datos
 
-- Todas las escrituras van por comandos Rust CRUD (`invoke('crud_*')`).
-- Las lecturas van por Drizzle (`src/lib/db.ts` vía `invoke('query_raw')`).
+- Todo el acceso a datos (lecturas **y** escrituras) va por **Drizzle en modo proxy** (`src/lib/db.ts`), que delega en el comando Tauri `query_raw`.
   - Por defecto (`_decryptEnabled == false`), el proxy envía `maskFields` y el backend sustituye `ENC:` por `BLANK_VALUE`.
   - Con `withDecryption(true, fn)`, el proxy envía `decryptFields` y el backend descifra con la master key.
+  - En escrituras, el proxy detecta los campos cifrados desde el schema (via `detectEncryptedFieldsFromSchema`) y construye el `encryptMask`; elimina además los valores centinela/`ENC:` antes del invoke (`stripEncryptedValues`).
+- Los comandos Rust `invoke('...')` solo se usan para operaciones con lógica de backend (SSH/SFTP, cripto de claves, caché Docker Hub, gestión de BD).
 - No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
 
 ---
@@ -286,7 +299,7 @@ import { ICONS, getModuleIcon, getModuleSwitchIcons, toIconify } from '@/utils/i
 
 ### `MODULE_ICONS` / `getModuleIcon(moduleName, variant?, isIconify?)`
 
-Un set `{ plural, singular, off }` por cada módulo (`hosts`, `projects`, `deployments`, `variables`, `passkeys`, `tasks`):
+Un set `{ plural, singular, off }` por cada módulo (`hosts`, `projects`, `deployments`, `variables`, `global_variables`, `passkeys`, `tasks`, `docker_composes`):
 
 - `plural` — icono de listado/navegación/módulo (sidebar, `UDashboardNavbar`, `UEmpty`).
 - `singular` — icono de un elemento individual activo.
@@ -307,7 +320,9 @@ getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, pa
 
 ### Migración completada
 
-Las tablas de `pages/dashboard/{hosts,projects,passkeys}/index.vue` (columnas de acciones, badges de auth_type, iconos de fecha en filas expandidas) y las páginas de error `[...path].vue` de los 6 módulos (`hosts`, `projects`, `passkeys`, `tasks`, `variables`, `deployments`) ya usan `ICONS`/`getModuleIcon`. No queda ningún `i-tabler-...` hardcodeado conocido fuera de archivos no tocados aún (revisar al editar cualquier archivo nuevo que use iconos).
+Las páginas activas (`pages/dashboard/{app,hosts,passkeys,projects/docker/compose}/...`) ya usan `ICONS`/`getModuleIcon`. No queda ningún `i-tabler-...` hardcodeado conocido fuera de archivos no tocados (revisar al editar cualquier archivo nuevo que use iconos).
+
+> `getModuleIcon` cubre el `ModuleName` completo (8 módulos), sin importar que algunos (deployments, variables, global_variables, tasks) ya no tengan páginas propias en el código activo.
 
 ---
 
@@ -353,7 +368,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 - `scripts/generate-i18n-schema.ts` recorre `src/locales/es/**` (misma exclusión de `formats/` y misma regla de `index.ts` que `_loader.ts`) y genera `typed-locale.d.ts` en la raíz del proyecto: un `import type` + `typeof` por cada archivo, compuestos en una interfaz `MessageSchema` que aumenta `DefineLocaleMessage` de `vue-i18n` vía `declare module`.
 - **Claves con función** (`(ctx: MessageContext) => ...`, ej. `overlays.toast.description.error`): el generador las normaliza a `string` en el schema vía el tipo `NormalizeMessages`. Motivo: vue-i18n v11 calcula las claves válidas de `t()` del Composition API con `JsonPaths` (`@intlify/core-base`), que recursa dentro de cualquier valor que extienda `Record<string, any>` — una función también lo extiende — excluyendo del autocompletado la clave original. Normalizarlas a hojas `string` las restaura; es types-only (no afecta al runtime ni al retorno de `t()`).
-- `typed-locale.d.ts` es un archivo **autogenerado** (está en `.gitignore`) — nunca editarlo a mano. Se regenera automáticamente en `bun run dev` y `bun run build` (ambos scripts ejecutan `bun run i18n:types` antes de arrancar Vite/`vue-tsc`); también se puede regenerar manualmente con `bun run i18n:types`.
+- `typed-locale.d.ts` es un archivo **autogenerado** (está en `.gitignore`) — nunca editarlo a mano. Se regenera automáticamente en `bun run dev` (que ejecuta `i18n:types`); también se puede regenerar manualmente con `bun run i18n:types`. **Nota:** `bun run build` actualmente **no** ejecuta `i18n:types` (solo `vue-tsc --noEmit && vite build`), por lo que si se añaden claves hay que lanzar `i18n:types` antes del build.
 - Gracias a la augmentation global, `t('common.active')`, `useI18n().t(...)` y `$t(...)` en plantillas quedan autocompletados y validados en toda la app sin tipar cada `useI18n()` manualmente.
 - Al añadir un archivo de mensajes nuevo en `es/`, no hace falta tocar `typed-locale.d.ts` — se regenera solo en el siguiente `dev`/`build`/`i18n:types`. El idioma `en` no tiene su propio schema: solo `es` se usa como referencia de tipos (igual que es la referencia para `warnMissingKeys` en runtime).
 
@@ -361,52 +376,56 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ## 6. Llamadas a comandos Tauri
 
-### Patrón estándar (CRUD)
+### Acceso a datos: Drizzle proxy (recomendado para CRUD)
+
+Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/lib/db.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/lib/schema-types.ts`), emite el SQL, y delega en el comando `query_raw` de Rust, que se encarga de cifrar (escrituras), descifrar (lecturas con `withDecryption`) o enmascarar (lecturas por defecto) los campos.
+
+```ts
+import { db } from '@/lib/db'
+import { hosts, projects_docker_compose } from '@/lib/schema'
+import { eq } from 'drizzle-orm'
+import { withDecryption } from '@/lib/db'
+
+// Lectura sin descifrado (los campos cifrados llegan como BLANK_VALUE)
+const row = await db.select().from(hosts).where(eq(hosts.id, id)).limit(1)
+
+// Lectura con descifrado explícito
+const raw = await withDecryption(true, () =>
+	db.select().from(hosts).where(eq(hosts.id, id)).limit(1),
+)
+
+// Escritura
+await db.insert(projects_docker_compose).values({ name, host_id })
+```
+
+### Comandos `invoke` (lógica de backend)
+
+Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, caché Docker Hub, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
+
+- **Hosts:** `test_connection`, `host_updates`, `host_check_system_info`, `host_check_metrics`, `host_update_packages`.
+- **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
+- **Docker Hub:** `cache_docker_search`, `cache_docker_tags`.
+- **Docker Compose remoto:** `sync_project_docker_compose_files`, `project_docker_compose_up/down/ps/logs/restart/pull`.
+- **BD / setup (deployer):** `get_database_path`, `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
+- **Consola remota (SSH suelto):** `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job`.
 
 ```ts
 import { invoke } from '@tauri-apps/api/core'
+import type { CommandResponse } from '@/types/tauri-types'
 
-const result = await invoke<CommandResponse<T>>('crud_get_project', { id: 1 })
+const result = await invoke<CommandResponse<GeneratedPasskey>>('generate_passkey', { input })
 if (result.success) {
 	// result.data
 }
 ```
 
-### Patrón con Channel (runner de deployments)
-
-```ts
-import { Channel, invoke } from '@tauri-apps/api/core'
-import type { ProgressEvent } from '@/tauri-types'
-
-const channel = new Channel<ProgressEvent>()
-channel.onmessage = event => {
-	// deployment_started | task_pending | task_started |
-	// output_chunk | task_retrying | task_finished |
-	// task_skipped | deployment_finished | fatal_error
-}
-
-await invoke('run_deployment', { input: { deployment_id: 123 }, channel })
-```
-
-### Eventos del runner
-
-| Evento                | Campos clave                                                           |
-| --------------------- | ---------------------------------------------------------------------- |
-| `deployment_started`  | `deployment_id`, `total_tasks`                                         |
-| `task_pending`        | `execution_id`, `task_name`, `order`                                   |
-| `task_started`        | `execution_id`, `task_name`                                            |
-| `output_chunk`        | `execution_id`, `chunk`                                                |
-| `task_retrying`       | `execution_id`, `attempt`, `max_attempts`, `delay_secs`                |
-| `task_finished`       | `execution_id`, `task_name`, `status`, `exit_code`, `duration_seconds` |
-| `task_skipped`        | `execution_id`, `task_name`, `reason`                                  |
-| `deployment_finished` | `deployment_id`, `status`, `duration_seconds`                          |
-| `fatal_error`         | `message`                                                              |
+Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT/UPDATE/DELETE sobre entidades se usa `db` (ver arriba).
 
 ### Consola remota (`commands/remote/` + `useRemoteCommand`)
 
 Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con streaming por Channel:
 
-- Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` § "Comandos SSH sueltos").
+- Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` § 5.1 «Consola remota»).
 - Frontend: `useRemoteCommand` (`src/composables/useRemoteCommand.ts`) encapsula la creación del `Channel<RemoteConsoleEvent>` y el `invoke`. Expone:
   - Estado reactivo: `output`, `isRunning`, `lastExitCode`, `errorMessage`.
   - Acciones: `execute(input)`, `upload(input)`, `download(input)` (devuelven `CommandResponse<T> | null`; `null` = rechazo del invoke).
@@ -417,59 +436,9 @@ Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con stream
 - `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
 - Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`).
 
+> Los catálogos de `projects`, `tasks`, `variables` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`.
+
 ---
-
-### Tabs de relaciones N:M (ej. `ProjectTabHosts.vue`)
-
-Para relaciones tipo `project_hosts` (N:M con datos propios: `deploy_order`, `enabled`), la tab **no** depende del `isEditMode` global de la pantalla — alta, orden, activar/desactivar y baja son acciones siempre disponibles con guardado inmediato por acción (no hay un modo "edición" separado):
-
-- Los datos de la relación ya vienen anidados en la entidad padre (`project.project_hosts`, cargados por Drizzle en `useProjectQuery`), no hace falta query aparte.
-- El catálogo de la entidad relacionada (ej. lista de hosts para el selector de alta) se resuelve con los loaders `useXSelectPopulate` ya existentes (ej. `useHostSelectPopulate`).
-- Alta/baja/actualización llaman a `crud_create_*` / `crud_delete_*` / `crud_update_*` directamente y mutan el array local (`project.value.project_hosts`) en el mismo `then`, sin depender de invalidar caché de `pinia-colada` para refrescar la UI (más inmediato, evita refetch innecesario).
-- `ToggleEnabled.vue` se reutiliza para el campo `enabled` de la relación; como invalida una key de caché fija (`['projects','list']`) pensada para el toggle de proyectos, en este contexto se ignora ese efecto y se escucha su evento `@updated` para mutar el estado local en su lugar.
-
-### Catálogo de Tasks (`pages/dashboard/tasks/`)
-
-Sigue exactamente el mismo patrón CRUD que `hosts` (`useTaskSchema`, `loaders/tasks.ts`, `TaskForm.vue`, `index/add/[id].edit.vue`, toolbar via `useToolbarContentCreate`/`Edit`), con una particularidad a tener en cuenta siempre que se toque:
-
-- La entidad `Task` expone el campo `type: TaskType`, pero `CreateTaskInput`/`UpdateTaskInput` (y por tanto el schema Zod y `TaskForm.vue`) usan la clave `task_type`. Al cargar una task existente en `[id].edit.vue` hay que remapear `type` → `task_type` en el `state` (`const { type, ...rest } = task; state.value = { ...rest, task_type: type }`). Al enviar el formulario no hace falta remapeo inverso, porque los comandos ya esperan `task_type`.
-- El campo `command` de la task solo es obligatorio para `task_type` `command`/`script` (validado con `.refine()` en `useTaskSchema`); para `upload_file`/`download_file` el `command` no se usa — esa configuración (rutas origen/destino) vive en `project_tasks.config` (ver `TaskConfig`/`FileTransferConfig`), porque depende de cada proyecto, no de la task global.
-- `is_global` se fija siempre a `true` al crear desde este catálogo (no se expone en `TaskForm.vue`); si en el futuro se permiten tasks no globales (propias de un proyecto), habrá que revisar este punto.
-- Iconos por `task_type` centralizados en `ICONS.taskType` (`utils/icons.ts`).
-
-### `ProjectTabTasks.vue`: asignación de tasks con ajustes avanzados por asignación
-
-Implementado siguiendo **exactamente** el mismo patrón que `ProjectTabHosts.vue`: sin copia local (`localTasks`), sin `isEditMode`, y toda mutación reasigna `project.value` completo con spread (nunca `reloadProject()` ni mutación en profundidad). El dato de cada task asignada viene embebido vía Drizzle Relational Query, igual que `host` en `project_hosts`:
-
-- `useProjectQuery().find()` incluye `project_tasks: { with: { task: { columns: {...} } } }`; el tipo `ProjectTaskRow = ProjectTask & { task: Partial<Task> }` vive en `composables/queries/projects.ts` junto a `ProjectHostRow`.
-- Alta: `crud_create_project_task` + `findProjectTaskById(id)` (análogo a `findProjectHostById`) para traer la fila recién creada ya con `task` embebido, luego `project.value = { ...project.value, project_tasks: [...] }`.
-- Baja: `filter` + reasignación completa.
-- Orden (drag & drop): idéntico a Hosts — `splice` en el propio array de `project.value.project_tasks`, recalcular `order_execution`, `invoke` por cada item que cambió, y **al final** `project.value = { ...project.value, project_tasks: reordered }`.
-- Toggle `enabled`: igual que Hosts, inline en el `@updated` de `ToggleEnabled`, construyendo un array nuevo con el item sustituido y reasignando `project.value` completo (nunca mutar `projectTask.enabled` directamente).
-- Panel de "ajustes avanzados" (botón `ICONS.app.settings`): plegable con `on_failure`, `condition`, overrides de `local_working_dir`/`remote_working_dir`/`retry_count`/`retry_delay`, y (solo si `projectTask.task.type` es `upload_file`/`download_file`) una sección de transferencia de archivos que edita `TaskConfig::UploadFile/DownloadFile` (`FileTransferConfig { paths: PathMapping[], overwrite }`, ver `AGENTS.backend.md`):
-  - Checkbox `overwrite` a nivel de toda la config.
-  - Lista repetible de `paths` (botón "Añadir ruta"): cada fila es un `PathMapping` (`src`, `dest`, `recursive`, `exclude` como input de texto con patrones separados por coma, `chmod`). Al editar, `exclude` se guarda internamente como string separado por comas y se convierte a `string[]` (filtrando vacíos) solo al serializar en `saveSettings`.
-  - `chmod` deshabilitado si la task es `download_file` (no aplica, solo tiene efecto en el lado remoto tras subir); `exclude` deshabilitado si `recursive` es false (no aplica a un archivo suelto).
-  - Selector de carpeta (icono `ICONS.actions.folder`) junto a `src` en `upload_file` (lado local) y junto a `dest` en `download_file` (lado local), usando `@tauri-apps/plugin-dialog`.
-  - Al guardar, se filtran filas con `src`/`dest` vacíos antes de serializar a JSON.
-- Al guardar el panel completo, se sustituye el item en el array (`project.value.project_tasks.map(...)`) y se reasigna `project.value` completo — no `Object.assign` sobre el objeto existente.
-- **Por qué no `reloadProject()` aquí:** aunque es la alternativa "más simple" descrita en §7c, dispara una consulta completa a la BD (con `isLoading` de por medio) por cada toggle/edición puntual, lo cual se percibía como si la pantalla "recargara" al activar/desactivar una task — algo que Hosts nunca hacía porque siempre reasignaba `project.value` con los datos que ya tenía en memoria. Usar `reloadProject()` solo para casos donde de verdad hace falta releer todo desde BD (ej. tras una migración de datos compleja), no como sustituto por defecto de razonar la reasignación.
-
-### `task_dependencies` (`TaskDependencies.vue`, dentro de `tasks/[id].edit.vue`)
-
-Vive en la edición de la Task del catálogo, no en la tab de proyecto, porque las dependencias son entre tasks globales (no entre asignaciones `project_tasks`). Particularidades:
-
-- La **lectura** es un `SELECT` directo vía Drizzle (`query_raw`), porque `task_dependencies` no tiene datos cifrados ni comando `crud_list_*` dedicado; las **mutaciones** (alta/baja/cambio de `dependency_type`) sí van por `invoke` a `crud_create_task_dependency` / `crud_update_task_dependency` / `crud_delete_task_dependency`.
-- `UpdateTaskDependencyInput` solo permite cambiar `dependency_type`; para cambiar la task de la que se depende hay que borrar y crear de nuevo (no hay endpoint de "mover").
-- El selector de "añadir dependencia" excluye la propia task (`taskId`) y las tasks de las que ya depende, usando el catálogo de `useTaskSelectPopulate`.
-
-### `ProjectTabVariables.vue`
-
-A diferencia de Hosts/Tasks, `project_variables` no tiene catálogo que asignar: la variable pertenece directamente al proyecto (CRUD simple 1:N, sin tabla de relación). Mismo principio que las demás tabs: no depende de `isEditMode` global, alta/edición/baja siempre disponibles con guardado inmediato y mutación local del array.
-
-- Edición por fila con toggle vista/edición local (patrón similar a `ProjectTabInfo`, pero por item de una lista en vez de para toda la entidad).
-- `is_secret`: el valor llega enmascarado como `BLANK_VALUE` desde `query_raw` (via `mask_fields`, el frontend nunca ve `ENC:`), y en la UI se muestra como `••••••••` con un botón de "ojo" para revelar/ocultar client-side — el cifrado real en BD lo gestiona `crud_update_project_variable` según el flag `is_secret`.
-- Cada variable tiene `name` (visual) y `slug` (para interpolación `{{slug}}`). El slug es único por proyecto. La vista muestra `slug` como texto principal y `name` como paréntesis.
 
 ### `@vueuse/integrations` (`useSortable`): importar SIEMPRE el submódulo directo
 
@@ -483,15 +452,14 @@ Además, **siempre** pasar `watchElement: true` en las opciones cuando el conten
 
 **`forceFallback: true` es OBLIGATORIO en Tauri.** Sortable.js usa por defecto la API nativa HTML5 Drag & Drop (`dragstart`/`dragover`/...), que **no funciona de forma fiable dentro de webviews embebidos** (WebView2 en Windows, WebKit en macOS/Linux vía Tauri; el mismo problema afecta a Electron). Síntoma: nada de código da error, pero arrastrar no hace absolutamente nada (el navegador del sistema operativo sí lo haría bien, la app empaquetada no). Solución: pasar siempre `forceFallback: true` en las opciones de `useSortable`, que hace que Sortable.js use eventos de ratón normales en vez de la API nativa.
 
-## 6c. CRÍTICO: `project` (y cualquier `data` de un loader de `pinia-colada`) es un `shallowRef`
+## 6c. CRÍTICO: cualquier `data` de un loader de `pinia-colada` es un `shallowRef`
 
-`useProjectById()` (como cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pinia-colada`, que usa `@pinia/colada` por debajo) expone `data` como **`shallowRef`**, por diseño de la librería (rendimiento con datasets grandes). Esto tiene una consecuencia que hay que tener SIEMPRE presente en cualquier componente que reciba `project` (vía `inject('project')`):
+Cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pinia-colada` (que usa `@pinia/colada` por debajo) expone `data` como **`shallowRef`**, por diseño de la librería (rendimiento con datasets grandes). Esto tiene una consecuencia que hay que tener SIEMPRE presente en componentes que muten ese objeto (p.ej. la entidad cargada en una vista):
 
-- **Mutar una propiedad anidada del objeto NO dispara reactividad.** Ejemplos de código que NO actualizan la vista, aunque el dato en memoria sí cambie: `project.value.project_hosts = [...]`, `project.value.project_hosts[i].enabled = x`, `Object.assign(project.value, patch)`, `projectTask.enabled = value` (si `projectTask` es un elemento leído directamente de `project.value.project_tasks`, sin copia local). Ninguno de estos lanza error: el dato queda correctamente actualizado en el objeto JS, pero Vue no se entera porque el objeto al que apunta `.value` no está envuelto en un Proxy reactivo (solo el propio `.value` lo está).
-- **Solo reasignar `.value` completo dispara reactividad**: `project.value = { ...project.value, project_hosts: nuevoArray }`. Este es el patrón que hay que usar siempre que se necesite ver el cambio reflejado inmediatamente sin recargar.
-- **Alternativa más simple, pero más lenta**: `(view).vue` hace `provide('reloadProject', reload)` (el `reload` del propio loader). Cualquier tab/componente puede inyectarlo (`inject<(() => Promise<unknown>) | undefined>('reloadProject')`) y llamarlo (`await reloadProject?.()`) tras un `invoke` exitoso, en vez de razonar la reasignación manual. Correcto, pero dispara una consulta completa a la BD (con `isLoading` de por medio) en cada llamada — usar solo donde la frecuencia de uso es baja (ej. el submit del formulario completo en `ProjectTabInfo.vue`) o donde no hay una forma sencilla de construir el objeto actualizado en memoria. **Nunca** usarlo para acciones frecuentes/instantáneas (toggles, drag&drop) porque el usuario percibe el `isLoading` como si la pantalla "recargara" — ver el caso real documentado en `ProjectTabTasks.vue` más abajo, que se migró de `reloadProject()` a reasignación manual por este motivo.
-- **Patrón preferido para tabs de relaciones (Hosts, Tasks):** reasignar `project.value` completo con spread en cada mutación, usando los datos que ya tenemos en memoria + lo que devuelve el propio `invoke` (o un `findProjectXById` de `useProjectQuery` para traer la fila recién creada con sus relaciones embebidas). Más código que llamar a `reloadProject()`, pero instantáneo y sin round-trip a BD.
-- **Regla práctica:** después de cualquier `invoke` que cree/actualice/borre algo dentro de `project` (hosts, tasks, variables, campos propios), o (a) reasignar `project.value` completo con spread, o (b) llamar a `reloadProject()`. Nunca dejar solo una mutación anidada como única fuente de verdad para el render.
+- **Mutar una propiedad anidada del objeto NO dispara reactividad.** Ejemplos de código que NO actualizan la vista, aunque el dato en memoria sí cambie: `obj.prop = x`, `obj.items = [...]`, `Object.assign(obj, patch)`. Ninguno lanza error: el dato queda correctamente actualizado en el objeto JS, pero Vue no se entera porque el objeto al que apunta `.value` no está envuelto en un Proxy reactivo.
+- **Solo reasignar `.value` completo dispara reactividad**: `data.value = { ...data.value, prop: nuevo }`. Este es el patrón que hay que usar para ver el cambio reflejado sin recargar.
+- **Alternativa más simple, pero más lenta**: usar el `reload` del propio loader (o `invalidate`/refetch de `pinia-colada`) tras la mutación. Correcto, pero dispara una consulta completa a la BD (con `isLoading` de por medio) en cada llamada — usar solo donde la frecuencia es baja.
+- **Regla práctica:** después de crear/actualizar/borrar algo que afecte a un objeto ya cargado en un loader, o reasignar `.value` completo con spread usando los datos en memoria, o hacer refetch del loader. Nunca dejar solo una mutación anidada como única fuente de verdad para el render.
 
 ---
 
@@ -503,7 +471,7 @@ La pantalla de carga se gestiona en `index.html`. Cuando Vue monta la aplicació
 
 ## 8. Formularios JSON-Schema (basado en `json-schema-library`)
 
-Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema (p.ej. `compose.yaml` vía `ComposeEditor.vue`, `composer.json`). El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa `compose-spec.json` ni `composer-schema.json`. `JsonSchemaEditor.vue` es el editor genérico de documento (raíz con layout de objeto genérico); `ComposeEditor.vue` y `ComposerEditor.vue` son wrappers finos que le pasan schema + i18n + iconos (los únicos que importan los JSON de esquema).
+Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema (p.ej. `compose.yaml` vía `ComposeJsonSchema.vue`, `composer.json`). El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa `compose-spec.json` ni `composer-schema.json`. `JsonSchemaEditor.vue` es el editor genérico de documento (raíz con layout de objeto genérico); `ComposeJsonSchema.vue` y `ComposerJsonSchema.vue` son wrappers finos que le pasan schema + i18n + iconos (los únicos que importan los JSON de esquema).
 
 ### Utilidades (`src/utils/schema-form/*`)
 
@@ -516,7 +484,7 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
   - `preferredVariant(node)`, `variantDefault(node)` (vía `getData()`), `variantLabel(node)`.
 - `paths.ts` → `getAt`/`setAt`/`deleteAt` por ruta de formulario `a.b[0]` y conversión `pathToPointer`/`pointerToPath`.
 - `validate.ts` → `validateWithJsl(root, data, resolveMessage?)` → `{ ok, errors: Record<ruta, string[]> }`. Cada error mapea el JSON pointer → ruta de formulario y el código de jsl → clave i18n `form.schema_form.errors.<código>` (ver tabla en `validate.ts`). El resolver por defecto usa `useI18n()`; sin resolver se devuelve la clave.
-- `normalize.ts` → sistema de **normalizadores por schema**. `SchemaNormalizer = (schema: Record<string, any>, pointer: string) => Record<string, any> | undefined` (transforma **un solo nodo** y recibe su JSON pointer, raíz `#`; `undefined` = sin cambios; los normalizadores con menos parámetros siguen siendo válidos). `booleanStringNormalizer` convierte las uniones exactas `boolean | string` (cualquier orden) en `boolean` (en compose el `string` solo existe para que ciertos parsers no fallen al leer `true`/`false` como texto). `normalizeSchema(schema, ...normalizers)` clona y recorre todo el esquema (`properties`, `patternProperties`, `$defs`, `definitions`, `oneOf`/`anyOf`/`allOf`/`prefixItems`, `items`, `additionalProperties`, `not`, `contains`) aplicando los normalizadores en orden a cada nodo (el pointer se escapa: `~`→`~0`, `/`→`~1`); **sin normalizadores devuelve el schema sin recorrerlo**. Cada editor elige los suyos: `ComposeEditor.vue` → `normalizeSchema(composeSpec, booleanStringNormalizer, widgetsNormalizer(...))`; `ComposerEditor.vue` → `normalizeSchema(composerSpec)` (sin normalizadores: su `abandoned` es `boolean|string` con el `string` como valor real, no se normaliza). Añadir un normalizador nuevo = una función de nodo, sin tocar el walker.
+- `normalize.ts` → sistema de **normalizadores por schema**. `SchemaNormalizer = (schema: Record<string, any>, pointer: string) => Record<string, any> | undefined` (transforma **un solo nodo** y recibe su JSON pointer, raíz `#`; `undefined` = sin cambios; los normalizadores con menos parámetros siguen siendo válidos). `booleanStringNormalizer` convierte las uniones exactas `boolean | string` (cualquier orden) en `boolean` (en compose el `string` solo existe para que ciertos parsers no fallen al leer `true`/`false` como texto). `normalizeSchema(schema, ...normalizers)` clona y recorre todo el esquema (`properties`, `patternProperties`, `$defs`, `definitions`, `oneOf`/`anyOf`/`allOf`/`prefixItems`, `items`, `additionalProperties`, `not`, `contains`) aplicando los normalizadores en orden a cada nodo (el pointer se escapa: `~`→`~0`, `/`→`~1`); **sin normalizadores devuelve el schema sin recorrerlo**. Cada editor elige los suyos: `ComposeJsonSchema.vue` → `normalizeSchema(composeSpec, booleanStringNormalizer, widgetsNormalizer(...))`; `ComposerJsonSchema.vue` → `normalizeSchema(composerSpec)` (sin normalizadores: su `abandoned` es `boolean|string` con el `string` como valor real, no se normaliza). Añadir un normalizador nuevo = una función de nodo, sin tocar el walker.
 - `WIDGET_KEY = 'x-widget'` y `widgetsNormalizer(map: Record<pointer, nombre>)` en `normalize.ts`: marcan un nodo para renderizarlo con un widget concreto (`{ ...schema, 'x-widget': nombre }` solo si su pointer está en el mapa). jsl **ignora las claves `x-*`** (`SchemaNode.addKeywords`), así que el marcado no genera warnings. El nombre se resuelve contra el mapa `widgets` del formulario (núcleo agnóstico; los wrappers aportan los componentes: Compose → `ComposeImagePicker` para `#/$defs/service/properties/image`).
 
 ### Composable y componentes
@@ -526,7 +494,7 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
   - `SchemaField.vue` — clasifica con `classifyNode` y despacha al componente adecuado; cualquier tipo nullable se rodea con `SchemaFieldNull`. Si el schema del nodo tiene `x-widget` (vía `WIDGET_KEY`) y `form.widgets[nombre]` existe, la rama escalar renderiza `<component :is="widget" v-model="model" />` en vez del input genérico. Los objetos delegan el cuerpo en `SchemaFieldObject` (la cabecera con label/help/remove/add queda aquí).
   - `SchemaFieldObject.vue` — render de los hijos de un objeto: **simples primero** (obligatorias delante de opcionales) y **contenedores** (`array`/`map`/`object`/uniones con variante contenedora) como **pestañas** (icono por kind + punto rojo/ámbar de error/warning). Cuando hay muchas simples opcionales (>10) se pliegan tras el botón "Mostrar campos": **inicialmente solo se ven las obligatorias** (en `service`, sin `required`, la sección simple queda plegada y lo primero visible son las pestañas: build, deploy, healthcheck…). Prop opcional `icon?: (name, node) => string | undefined`: resolver de icono por tab de contenedor; si no se provee usa `ICONS.schemaForm[kind]`. Así el núcleo sigue agnóstico y Compose conserva sus iconos (`ICONS.compose`).
   - `JsonSchemaEditor.vue` — editor genérico de documento (widget de diálogo): `defineModel<string|null>` (texto serializado en el formato elegido), `schema`, `title?`, `description?`, `formatOutput?: 'yaml' | 'json'` (default `'yaml'`; de él se infiere parseo `parseYaml`/`JSON.parse`, serialización `toYaml`/`JSON.stringify(data, null, 2)` y extensiones de import `.yaml,.yml`/`.json`), `importLabel?` (default `form.schema_form.import_file`), `resolveTitle?`/`resolveDescription?`/`resolveMessage?`, `icon?`, `widgets?: Record<string, Component>`. Internamente: `useSchemaToForm` + `provideSchemaFormContext`, sync model↔formData (los mismos watchers con `lastModel`/`syncingFromModel`/`nextTick`), alerts de error/warning, import de archivo, preview y badge de draft. La raíz se renderiza con `<SchemaFieldObject :node="form.root" path="" :icon="icon" />` → layout genérico (simples inline, contenedores como pestañas), sin hardcodeo de claves (`name`/`version` no se tratan aparte).
-  - `ComposeEditor.vue` / `ComposerEditor.vue` — wrappers finos sobre `JsonSchemaEditor`: solo pasan `schema` (normalizado con `normalizeSchema` + sus normalizers), title/description y resolvers (Compose: `formatOutput="yaml"` + `form.compose_schema.*` + `icon = ICONS.compose[name]` + label de import específico + `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` + `widgets={'compose-image': ComposeImagePicker}` → el campo `image` de cada servicio usa el picker de Docker Hub en vez de un string plano; Composer: `formatOutput="json"`, sin resolvers). Crear un editor nuevo = wrapper de configuración, no una copia.
+  - `ComposeJsonSchema.vue` / `ComposerJsonSchema.vue` — wrappers finos sobre `JsonSchemaEditor`: solo pasan `schema` (normalizado con `normalizeSchema` + sus normalizers), title/description y resolvers (Compose: `formatOutput="yaml"` + `form.compose_schema.*` + `icon = ICONS.compose[name]` + label de import específico + `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` + `widgets={'compose-image': ComposeImagePicker}` → el campo `image` de cada servicio usa el picker de Docker Hub en vez de un string plano; Composer: `formatOutput="json"`, sin resolvers). Crear un editor nuevo = wrapper de configuración, no una copia.
   - `SchemaFieldNull.vue` — `USwitch` para activar/desactivar el valor `null` (activar → `set(path, null)`; desactivar → `remove(path)`).
   - `SchemaFieldUnion.vue` — `USelect` de variantes (`oneOf`/`anyOf`/type-array) + editor de la variante activa. **oneOf es exclusivo**: solo se edita el formato elegido.
   - `SchemaFieldArray.vue` — lista de items; si los items resueltos (`classifyNode(resolveNode(items))`) son una unión (`items.oneOf`, `$ref`→unión o `type` array) → `USelect` de formato del array (**array uniforme: solo UN formato**, todos los items con la misma variante, no se mezclan); default del item vía `variantDefault`.
