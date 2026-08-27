@@ -2,6 +2,19 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (27 ago 2026 — revisión de los archivos AGENTS)
+
+**Nota del usuario en `AGENTS.todo.md`**: _Revisión de los archivos AGENTS.md, AGENTS.frontend.md y AGENTS.backend.md. Hay que buscar inconsistencias de lo que dice el AGENTS con el estado real del proyecto._ Plan y detalle en `AGENTS.agentes-revision.PLAN.md`.
+
+1. **`AGENTS.md`**: tabla Stack actualizada (`vite ^8.2.2`, `build` sin `i18n:types`); "Comandos" reescrita (sin `dev:db:generate` ni `drizzle:migrate`; `drizzle:generate` = generate + flatten); "Propósito del Backend" y "Acceso a datos" actualizados a Drizzle proxy para lecturas **y** escrituras vía `query_raw` (`is_write`, cifrado/descifrado/enmascarado); reglas y gotchas ajustados (sin `src/constants/dbTables.ts`, `docker_composes` → `docker_compose`, nombres reales del JSON-Schema).
+2. **`AGENTS.frontend.md`**: §1 árbol de `src/` ampliado; §1 `theme/` añade `dashboardPanel.ts` y `radioGroup.ts`; §4b iconos = 8 módulos + migración solo con páginas reales; §5 i18n nota de `build`; §6 reescrito (catálogos projects/tasks/variables/deployments y runner universal marcados como **archivados** `.back`/`_archived.dist/`; se conservan consola remota, `ToggleEnabled.vue`, `countWhere`/`shared.ts`, esquema hosts); §8 nombres reales `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue`.
+3. **`AGENTS.backend.md`** (reescrito): §1 estructura real del crate (`commands/{cache/docker, database, hosts, passkeys, projects/docker/compose, remote}`, `crypto/`, `ssh/`, `helpers.rs`, `patch.rs`, `response.rs`); §2 las 7 tablas reales + caché Docker Hub; §3 entidades Drizzle (`encryptedText(...)`, timestamps `$onUpdate`, `deleted_at`); §4 cifrado con configuración en frontend; §5 operaciones Docker Compose + §5.1 consola remota; §6 `query_raw` real (lecturas Y escrituras); §7 sin `deployer-macros`, añadido `ts-rs`.
+4. **Revisión final**: coherencia cruzada verificada entre los 3 documentos; sin restos de `run_deployment`/`ProgressEvent`/`DbEntity`/`deployer-macros` como sistemas activos.
+
+**Resultado:** Solo cambios de documentación (no se tocó código ni migraciones). Verificado por grep que no quedan referencias a sistemas archivados como activos.
+
+---
+
 ## Tareas completadas (25 ago 2026 — migración SQL de Rust a Drizzle)
 
 **Nota del usuario en `AGENTS.todo.md`**: _Trasladar la lógica de SQL (select, insert, update, delete) de Rust a Drizzle, manteniendo el cifrado/descifrado en Rust (Opción D Híbrido)._ Plan y detalle en `AGENTS.migrate-to-drizzle.PLAN.md`.
