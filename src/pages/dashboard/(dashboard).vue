@@ -7,7 +7,7 @@ import { count, desc, eq } from 'drizzle-orm'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { t, d } = useI18n()
+const { t } = useI18n()
 
 definePage({
 	name: 'dashboard-home',
@@ -302,12 +302,6 @@ onMounted(async () => {
 								</UBadge>
 							</router-link>
 						</div>
-
-						<template #footer v-if="recentHosts.length > 0">
-							<div class="text-xs text-dimmed pt-1">
-								{{ d(recentHosts[recentHosts.length - 1].createdAt, 'short') }}
-							</div>
-						</template>
 					</UCard>
 
 					<!-- Recent passkeys -->
