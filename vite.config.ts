@@ -152,6 +152,7 @@ export default defineConfig(async () => ({
 			'drizzle-orm/relations',
 			'drizzle-orm/sqlite-core',
 			'drizzle-orm/sqlite-proxy',
+			'drizzle-orm/zod',
 			'json-schema-library',
 			'vue-router/experimental/pinia-colada',
 			'scule',
