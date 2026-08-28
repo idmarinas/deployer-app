@@ -1,14 +1,13 @@
 <script lang="ts">
 import type { JSONContent } from '@tiptap/vue-3'
 
-import { useHostSchema } from '@/composables/schemas/hosts'
 import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
 const state = defineModel<{
 	name: string
-	description?: JSONContent
+	description: JSONContent
 	host: string
 	port: number
 	auth_type: 'password' | 'key'
@@ -23,8 +22,6 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-
-const { authPasswordSchema, authKeySchema } = useHostSchema()
 </script>
 
 <template>
@@ -95,31 +92,24 @@ const { authPasswordSchema, authKeySchema } = useHostSchema()
 			/>
 		</UFormField>
 
-		<UForm
+		<PasswordInput
 			v-if="state.auth_type === 'password'"
-			:disabled="isLoading"
-			:schema="authPasswordSchema"
-			class="space-y-4"
-			nested
+			name="password"
+			v-model="state.password!"
+			:label="t('form.hosts.password.label')"
+			:help="t('form.hosts.password.help')"
+			:required="state.auth_type === 'password'"
+			:optional="state.auth_type !== 'password'"
+		/>
+
+		<UFormField
+			v-else-if="state.auth_type === 'key'"
+			name="key_id"
+			:label="t('form.hosts.key.label')"
+			:help="t('form.hosts.key.help')"
+			:required="state.auth_type === 'key'"
 		>
-			<PasswordInput
-				name="password"
-				v-model="state.password!"
-				:label="t('form.hosts.password.label')"
-				:help="t('form.hosts.password.help')"
-				:required="state.auth_type === 'password'"
-				:optional="state.auth_type !== 'password'"
-			/>
-		</UForm>
-		<UForm v-else-if="state.auth_type === 'key'" :disabled="isLoading" :schema="authKeySchema" class="space-y-4" nested>
-			<UFormField
-				name="key_id"
-				:label="t('form.hosts.key.label')"
-				:help="t('form.hosts.key.help')"
-				:required="state.auth_type === 'key'"
-			>
-				<SelectKeypass v-model="state.key_id" class="w-full" />
-			</UFormField>
-		</UForm>
+			<SelectKeypass v-model="state.key_id as number" class="w-full" />
+		</UFormField>
 	</div>
 </template>
