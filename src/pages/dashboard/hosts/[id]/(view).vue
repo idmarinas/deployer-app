@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { CommandResponse, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
 import type { Host } from '@/types/entities'
+import type { CommandResponse, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
 import type { Ref, VNode } from 'vue'
 
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
@@ -362,31 +362,31 @@ provide<Ref<boolean>>('isOperating', isOperating)
 				</div>
 				<USeparator class="my-4" />
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-2 gap-x-6">
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.distribution') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.distribution || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.kernel') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.kernel || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.arch') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.arch || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.package_manager') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.package_manager || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.cpu_cores') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.cpu_cores || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.memory_total') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.memory_total || '-' }}</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
+					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.disk_total') }}</span>
 						<span class="text-sm font-mono">{{ hostData.system_info?.disk_total || '-' }}</span>
 					</div>
@@ -450,24 +450,24 @@ provide<Ref<boolean>>('isOperating', isOperating)
 				</div>
 				<USeparator class="my-4" />
 				<div class="grid grid-cols-3 gap-3">
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
-						<span class="text-xs text-muted font-medium flex gap-2">
+					<div class="flex items-center justify-between rounded-lg">
+						<span class="text-muted font-medium flex items-center gap-2">
 							<UIcon name="i-tabler-cpu" /> {{ t('pages.hosts.manage.metrics.cpu_usage') }}
 						</span>
 						<span class="text-sm font-mono">
 							{{ hostData.status_info?.cpu_usage ? n(Number(hostData.status_info.cpu_usage) / 100, 'percent') : '-' }}
 						</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
-						<span class="text-xs text-muted font-medium flex gap-2">
+					<div class="flex items-center justify-between rounded-lg">
+						<span class="text-muted font-medium flex items-center gap-2">
 							<UIcon name="i-tabler-device-sd-card" /> {{ t('pages.hosts.manage.metrics.ram_usage') }}
 						</span>
 						<span class="text-sm font-mono">
 							{{ hostData.status_info?.ram_usage ? n(Number(hostData.status_info.ram_usage) / 100, 'percent') : '-' }}
 						</span>
 					</div>
-					<div class="flex items-center justify-between rounded-lg bg-muted/50">
-						<span class="text-xs text-muted font-medium flex gap-2">
+					<div class="flex items-center justify-between rounded-lg">
+						<span class="text-muted font-medium flex items-center gap-2">
 							<UIcon name="i-tabler-device-floppy" /> {{ t('pages.hosts.manage.metrics.disk_usage') }}
 						</span>
 						<span class="text-sm font-mono">
