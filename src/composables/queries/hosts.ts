@@ -45,6 +45,30 @@ export function useHostQuery() {
 		data.created_at = new Date().toISOString()
 		data.updated_at = new Date().toISOString()
 
+		data.system_info = {
+			package_manager: '',
+			package_manager_version: '',
+			kernel: '',
+			arch: '',
+			distribution: '',
+			cpu_cores: '',
+			memory_total: '',
+			disk_total: '',
+			os_release: '',
+			last_checked_at: null,
+		}
+		data.status_info = {
+			cpu_usage: '',
+			ram_usage: '',
+			disk_usage: '',
+			last_checked_at: null,
+		}
+		data.server_updates = {
+			packages: [],
+			summary: { total: 0, security: 0, major: 0, minor: 0, patch: 0 },
+			last_checked_at: null,
+		}
+
 		return await db
 			.insert(deployer_hosts)
 			.values(data as any)
