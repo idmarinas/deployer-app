@@ -96,8 +96,10 @@ Se centra en los módulos:
    - Se puede guardar en la tabla, para evitar tener que calcularla cada vez.
 2. Comprobar si se le puede poner una duración a la clave.
    - No se puede hacer. La clave no permite esto.
-   - Alternativa: usar un campo expire en la BD para que la App deje de usar una clave expirada.
-     - También puede ser como orientación para renovar la clave e inutilizar la antigua.
+   - Alternativa: Usar el campo `created_at` como orientación para aconsejar un cambio.
+     - Recomendación de 180 días para entornos de alta seguridad.
+     - 1 año para entornos menos exigentes
+     - Se podrá configurar el tiempo recomendado, para rotar claves.
 3. Incluir que servidores están usando la clave de acceso.
 4. Poder des/activar una clave de acceso, para permitir borrarla
    - Cuando una clave de acceso está desactivada, el host no la puede usar.
@@ -106,7 +108,8 @@ Se centra en los módulos:
 
 1. Hosts (Servidores) agregar el poder manejar ciertos aspectos del servidor:
    - Comprobar si hay actualizaciones
-     - Actualizar el paquete seleccionado o varios.
+     - Actualizar el paquete seleccionado o varios. (ya se puede, pero hay que mejorarlo)
+       - Cuando se actualiza un paquete, hay que actualizar la lista, comprobar que paquetes se pueden actualizar.
      - Comprobar el espacio en disco usado (¿poder liberar espacio?)
    - Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
 2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
