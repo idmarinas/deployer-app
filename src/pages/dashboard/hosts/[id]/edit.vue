@@ -1,14 +1,15 @@
 <script lang="ts">
+import type { HostValidationUpdateType } from '@/composables/validation/useHostValidation'
 import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
-import { useHostById } from '@/loaders/hosts'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { useHostSchema, type HostSchema } from '@/composables/schemas/hosts'
 import { useQuery } from '@/composables/useQuery'
+import { useHostValidation } from '@/composables/validation/useHostValidation'
+import { useHostById } from '@/loaders/hosts'
 </script>
 
 <script setup lang="ts">
@@ -24,21 +25,21 @@ definePage({
 
 const route = useRoute('dashboard-hosts-id-edit')
 const router = useRouter()
+const hostSchema = useHostValidation(Number.parseInt(route.params.id))
 const { toolbar } = useToolbarForHostsModule()
 const { data: host, isLoading, reload } = useHostById()
-const { hostSchema } = useHostSchema(Number.parseInt(route.params.id))
+const { hosts: hostsQuery } = useQuery()
 
 const state = ref<any>({})
-const form = useTemplateRef<Form<HostSchema>>('form')
+const form = useTemplateRef<Form<HostValidationUpdateType>>('form')
 
 // Generar contenido del toolbar
 useToolbarContentEdit(state, host, isLoading, form, toolbar)
 
-async function onSubmit(event: FormSubmitEvent<HostSchema>) {
+async function onSubmit(event: FormSubmitEvent<HostValidationUpdateType>) {
 	isLoading.value = true
-	const { hosts } = useQuery()
 
-	await hosts
+	await hostsQuery
 		.update(Number.parseInt(route.params.id), event.data as any)
 		.then(async result => {
 			if (result !== undefined) {
@@ -81,7 +82,7 @@ watch(isLoading, () => {
 		ref="form"
 		id="form-host-edit"
 		:disabled="isLoading"
-		:schema="hostSchema"
+		:schema="hostSchema.update"
 		:state="state"
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
 		@submit="onSubmit"
