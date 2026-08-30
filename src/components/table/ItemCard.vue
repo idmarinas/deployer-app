@@ -5,14 +5,19 @@ import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
-const props = defineProps<{
-	id: number
-	name: string
-	description?: JSONContent
-	enabled?: boolean
-	created_at: string
-	updated_at: string
-}>()
+const props = withDefaults(
+	defineProps<{
+		id: number
+		name: string
+		description?: JSONContent
+		enabled?: boolean
+		created_at: string
+		updated_at: string
+	}>(),
+	{
+		enabled: undefined,
+	},
+)
 
 const { t, locale } = useI18n()
 </script>
@@ -22,7 +27,7 @@ const { t, locale } = useI18n()
 		<template #title>
 			<div class="flex items-center justify-between">
 				<div class="flex gap-3 items-center">
-					<UChip :color="enabled ? 'success' : 'error'" size="md" :show="enabled !== undefined">
+					<UChip :color="enabled ? 'success' : 'error'" :show="!(enabled === undefined)">
 						<span class="text-lg font-semibold">{{ name }}</span>
 					</UChip>
 					<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ id }} </UBadge>
