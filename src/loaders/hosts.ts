@@ -28,7 +28,6 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
 		await db
 			.select()
 			.from(hosts)
-			.orderBy(asc(hosts.name))
 			.then(data => data)
 			.catch(() => []),
 })
