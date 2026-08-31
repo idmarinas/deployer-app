@@ -256,21 +256,28 @@ function iconForExtension(ext: string): string {
 }
 
 function iconForName(name: string): string | undefined {
-	const icons: Record<string, string> = {
-		'composer.json': 'i-vscode-icons-file-type-composer',
-		'compose.yaml': 'i-vscode-icons-file-type-docker2',
-		'compose.yml': 'i-vscode-icons-file-type-docker2',
-		'docker-compose.yaml': 'i-vscode-icons-file-type-docker2',
-		'docker-compose.yml': 'i-vscode-icons-file-type-docker2',
-		'.editorconfig': 'i-vscode-icons-file-type-editorconfig',
-		'package.json': 'i-vscode-icons-file-type-npm',
-		'bun.lock': 'i-vscode-icons-file-type-bun',
-		'agents.md': 'i-vscode-icons-file-type-agents',
-		'.gitignore': 'i-vscode-icons-file-type-git',
-		'.gitkeep': 'i-vscode-icons-file-type-git',
+	switch (name) {
+		case 'composer.json':
+			return 'i-vscode-icons-file-type-composer'
+		case 'compose.yaml':
+		case 'compose.yml':
+		case 'docker-compose.yaml':
+		case 'docker-compose.yml':
+			return 'i-vscode-icons-file-type-docker2'
+		case '.editorconfig':
+			return 'i-vscode-icons-file-type-editorconfig'
+		case 'package.json':
+			return 'i-vscode-icons-file-type-npm'
+		case 'bun.lock':
+			return 'i-vscode-icons-file-type-bun'
+		case 'agents.md':
+			return 'i-vscode-icons-file-type-agents'
+		case '.gitignore':
+		case '.gitkeep':
+			return 'i-vscode-icons-file-type-git'
+		default:
+			return undefined
 	}
-
-	return icons[name] ?? undefined
 }
 
 export function isImageEntry(entry: FileEntryLike): boolean {
