@@ -20,7 +20,7 @@ const { toolbarContent } = useToolbarForProjectsDockerCompose()
 				<template #right>
 					<UButton
 						v-if="!route.path.endsWith('/add')"
-						to="/dashboard/docker_composes/add"
+						:to="{ name: 'dashboard-docker_composes-add' }"
 						icon="i-tabler-plus"
 						variant="outline"
 						:label="t('components.navigation.add.docker_compose.label')"
