@@ -125,7 +125,9 @@ const versionOptions = computed<VersionOption[]>(() => {
 		opt.variantCount = variants.size + (opt.tags.some(t => !t.variant) ? 1 : 0)
 	}
 
-	const specials = arr.filter(o => o.special).sort((a, b) => SPECIAL_VERSIONS.indexOf(a.version) - SPECIAL_VERSIONS.indexOf(b.version))
+	const specials = arr
+		.filter(o => o.special)
+		.sort((a, b) => SPECIAL_VERSIONS.indexOf(a.version) - SPECIAL_VERSIONS.indexOf(b.version))
 	const semvers = arr.filter(o => !o.special).sort((a, b) => semverCompareDesc(a.version, b.version))
 
 	return [...specials, ...semvers]
@@ -265,9 +267,13 @@ const doFetchTags = useDebounceFn(async () => {
 // Init from model
 // ============================================================================
 
-watch(model, val => {
-	parseModelValue(val)
-}, { immediate: true })
+watch(
+	model,
+	val => {
+		parseModelValue(val)
+	},
+	{ immediate: true },
+)
 
 // ============================================================================
 // Selection
@@ -283,7 +289,9 @@ function selectImage(imageName: string) {
 	variantInput.value = ''
 	parsedTags.value = []
 	model.value = undefined
-	nextTick(() => { doFetchTags() })
+	nextTick(() => {
+		doFetchTags()
+	})
 }
 
 function selectVersion(version: string) {
@@ -317,9 +325,15 @@ function clearImage() {
 // Click outside
 // ============================================================================
 
-onClickOutside(imageDropdownRef, () => { showImageDropdown.value = false })
-onClickOutside(versionDropdownRef, () => { showVersionDropdown.value = false })
-onClickOutside(variantDropdownRef, () => { showVariantDropdown.value = false })
+onClickOutside(imageDropdownRef, () => {
+	showImageDropdown.value = false
+})
+onClickOutside(versionDropdownRef, () => {
+	showVersionDropdown.value = false
+})
+onClickOutside(variantDropdownRef, () => {
+	showVariantDropdown.value = false
+})
 </script>
 
 <template>
@@ -332,9 +346,13 @@ onClickOutside(variantDropdownRef, () => { showVariantDropdown.value = false })
 					class="flex-1 font-mono"
 					:icon="isSearching ? 'i-tabler-loader-2' : 'i-tabler-search'"
 					:loading="isSearching"
-					:placeholder="t('form.docker_composes.service.image.placeholder')"
+					:placeholder="t('form.projects.docker.compose.service.image.placeholder')"
 					autocomplete="off"
-					@focus="() => { if (searchResults.length > 0) showImageDropdown = true }"
+					@focus="
+						() => {
+							if (searchResults.length > 0) showImageDropdown = true
+						}
+					"
 				/>
 				<UButton v-if="selectedImage" icon="i-tabler-x" color="neutral" variant="ghost" size="sm" @click="clearImage" />
 			</div>
@@ -365,18 +383,26 @@ onClickOutside(variantDropdownRef, () => { showVariantDropdown.value = false })
 					class="w-full font-mono"
 					:icon="isLoadingTags ? 'i-tabler-loader-2' : 'i-tabler-tag'"
 					:loading="isLoadingTags"
-					:placeholder="selectedImage
-						? t('form.docker_composes.service.image.version_placeholder')
-						: t('form.docker_composes.service.image.version_disabled')"
+					:placeholder="
+						selectedImage
+							? t('form.projects.docker.compose.service.image.version_placeholder')
+							: t('form.projects.docker.compose.service.image.version_disabled')
+					"
 					:disabled="!selectedImage"
 					autocomplete="off"
-					@focus="() => {
-						if (parsedTags.length > 0) {
-							showVersionDropdown = true
-							if (!parsedTags.length) doFetchTags()
+					@focus="
+						() => {
+							if (parsedTags.length > 0) {
+								showVersionDropdown = true
+								if (!parsedTags.length) doFetchTags()
+							}
 						}
-					}"
-					@input="() => { if (selectedImage && parsedTags.length === 0) doFetchTags() }"
+					"
+					@input="
+						() => {
+							if (selectedImage && parsedTags.length === 0) doFetchTags()
+						}
+					"
 				/>
 
 				<div
@@ -390,8 +416,10 @@ onClickOutside(variantDropdownRef, () => { showVariantDropdown.value = false })
 						@click="selectVersion(opt.version)"
 					>
 						<span class="font-mono text-sm">{{ opt.version }}</span>
-					<span v-if="opt.special" class="shrink-0 text-xs text-primary font-semibold">{{ opt.version }}</span>
-					<span class="ml-auto shrink-0 text-xs text-muted">{{ t('form.docker_composes.service.image.variant_count', { count: opt.variantCount }) }}</span>
+						<span v-if="opt.special" class="shrink-0 text-xs text-primary font-semibold">{{ opt.version }}</span>
+						<span class="ml-auto shrink-0 text-xs text-muted">{{
+							t('form.projects.docker.compose.service.image.variant_count', { count: opt.variantCount })
+						}}</span>
 					</button>
 				</div>
 			</div>
@@ -402,12 +430,18 @@ onClickOutside(variantDropdownRef, () => { showVariantDropdown.value = false })
 					v-model="variantInput"
 					class="w-full font-mono"
 					icon="i-tabler-layer-slash"
-					:placeholder="selectedVersion && filteredVariants.length > 0
-						? t('form.docker_composes.service.image.variant_placeholder')
-						: t('form.docker_composes.service.image.variant_empty')"
+					:placeholder="
+						selectedVersion && filteredVariants.length > 0
+							? t('form.projects.docker.compose.service.image.variant_placeholder')
+							: t('form.projects.docker.compose.service.image.variant_empty')
+					"
 					:disabled="!selectedVersion || filteredVariants.length === 0"
 					autocomplete="off"
-					@focus="() => { if (filteredVariants.length > 0) showVariantDropdown = true }"
+					@focus="
+						() => {
+							if (filteredVariants.length > 0) showVariantDropdown = true
+						}
+					"
 				/>
 
 				<div

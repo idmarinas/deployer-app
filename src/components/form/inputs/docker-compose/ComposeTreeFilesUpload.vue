@@ -53,7 +53,7 @@ function isProtectedFile(entry: ManagedFile): boolean {
 }
 
 function onBeforeCreate(path: string): string | undefined {
-	if (isMainComposeFile(path)) return t('form.docker_composes.files.create.compose_already_exists')
+	if (isMainComposeFile(path)) return t('form.projects.docker.compose.files.create.compose_already_exists')
 }
 </script>
 
@@ -68,7 +68,7 @@ function onBeforeCreate(path: string): string | undefined {
 		:on-before-create="onBeforeCreate"
 	>
 		<template #actions>
-			<UTooltip v-if="canCreateFile && !hasMainCompose" :text="t('form.docker_composes.files.create_compose')">
+			<UTooltip v-if="canCreateFile && !hasMainCompose" :text="t('form.projects.docker.compose.files.create_compose')">
 				<UButton icon="i-tabler-brand-docker" variant="ghost" size="xs" @click.stop="createMainComposeFile" />
 			</UTooltip>
 		</template>
@@ -81,8 +81,8 @@ function onBeforeCreate(path: string): string | undefined {
 				:color="isMainComposeFile(item.key) ? 'primary' : 'info'"
 				:label="
 					isMainComposeFile(item.key)
-						? t('form.docker_composes.files.principal')
-						: t('form.docker_composes.files.secondary')
+						? t('form.projects.docker.compose.files.principal')
+						: t('form.projects.docker.compose.files.secondary')
 				"
 			/>
 		</template>
@@ -92,15 +92,15 @@ function onBeforeCreate(path: string): string | undefined {
 				<UBadge
 					:color="isMainComposeFile(entry.file_path) ? 'primary' : 'info'"
 					variant="subtle"
-					:label="t('form.docker_composes.files.compose_label')"
+					:label="t('form.projects.docker.compose.files.compose_label')"
 				/>
 				<UBadge
 					color="neutral"
 					variant="subtle"
 					:label="
 						isMainComposeFile(entry.file_path)
-							? t('form.docker_composes.files.principal')
-							: t('form.docker_composes.files.secondary')
+							? t('form.projects.docker.compose.files.principal')
+							: t('form.projects.docker.compose.files.secondary')
 					"
 				/>
 			</template>
@@ -110,7 +110,7 @@ function onBeforeCreate(path: string): string | undefined {
 				v-else-if="isEnvFile(entry.name)"
 				color="info"
 				variant="subtle"
-				:label="t('form.docker_composes.files.env_label')"
+				:label="t('form.projects.docker.compose.files.env_label')"
 			/>
 		</template>
 

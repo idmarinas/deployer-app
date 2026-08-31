@@ -29,16 +29,16 @@ function switchMode(mode: ComposeMode) {
 <template>
 	<div class="flex flex-col gap-3">
 		<div class="flex items-center justify-end gap-3">
-			<UBadge variant="subtle" color="secondary">{{ t('form.docker_composes.mode.label') }}</UBadge>
+			<UBadge variant="subtle" color="secondary">{{ t('form.projects.docker.compose.mode.label') }}</UBadge>
 			<div class="flex gap-1 p-1 bg-muted rounded-lg w-fit">
 				<UButton
-					:label="t('form.docker_composes.mode.form')"
+					:label="t('form.projects.docker.compose.mode.form')"
 					:variant="editMode === 'form' ? 'solid' : 'ghost'"
 					:color="editMode === 'form' ? 'primary' : 'neutral'"
 					@click="switchMode('form')"
 				/>
 				<UButton
-					:label="t('form.docker_composes.mode.yaml')"
+					:label="t('form.projects.docker.compose.mode.yaml')"
 					:variant="editMode === 'yaml' ? 'solid' : 'ghost'"
 					:color="editMode === 'yaml' ? 'primary' : 'neutral'"
 					@click="switchMode('yaml')"

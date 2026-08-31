@@ -9,7 +9,7 @@ const { t } = useI18n()
 		color="warning"
 		variant="soft"
 		icon="i-tabler-brand-docker"
-		:title="t('form.docker_composes.files.compose_missing')"
-		:description="t('form.docker_composes.files.compose_missing_hint')"
+		:title="t('form.projects.docker.compose.files.compose_missing')"
+		:description="t('form.projects.docker.compose.files.compose_missing_hint')"
 	/>
 </template>

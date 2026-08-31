@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
-
 const model = defineModel<string | null>({ required: true })
 
 const { t } = useI18n()
@@ -14,8 +13,8 @@ const envEntries = computed({
 		if (!model.value) return []
 		return model.value
 			.split('\n')
-			.filter((line) => line.trim() && !line.startsWith('#'))
-			.map((line) => {
+			.filter(line => line.trim() && !line.startsWith('#'))
+			.map(line => {
 				const idx = line.indexOf('=')
 				if (idx === -1) return { key: line.trim(), value: '' }
 				return { key: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() }
@@ -23,8 +22,8 @@ const envEntries = computed({
 	},
 	set(entries: Array<{ key: string; value: string }>) {
 		model.value = entries
-			.filter((e) => e.key.trim())
-			.map((e) => `${e.key}=${e.value}`)
+			.filter(e => e.key.trim())
+			.map(e => `${e.key}=${e.value}`)
 			.join('\n')
 	},
 })
@@ -66,19 +65,13 @@ function updateValue(index: number, value: string) {
 				placeholder="value"
 				@update:model-value="(v: string) => updateValue(index, v)"
 			/>
-			<UButton
-				icon="i-tabler-trash"
-				color="error"
-				variant="ghost"
-				size="xs"
-				@click="remove(index)"
-			/>
+			<UButton icon="i-tabler-trash" color="error" variant="ghost" size="xs" @click="remove(index)" />
 		</div>
 		<UButton
 			icon="i-tabler-plus"
 			variant="outline"
 			size="xs"
-			:label="t('form.docker_composes.files.env_add')"
+			:label="t('form.projects.docker.compose.files.env_add')"
 			@click="add"
 		/>
 	</div>

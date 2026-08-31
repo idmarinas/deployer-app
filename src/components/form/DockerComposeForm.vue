@@ -25,8 +25,8 @@ const { t } = useI18n()
 <template>
 	<UFormField
 		name="name"
-		:label="t('form.docker_composes.name.label')"
-		:help="t('form.docker_composes.name.help')"
+		:label="t('form.projects.docker.compose.name.label')"
+		:help="t('form.projects.docker.compose.name.help')"
 		required
 	>
 		<UInput
@@ -46,8 +46,8 @@ const { t } = useI18n()
 
 	<UFormField
 		name="description"
-		:label="t('form.docker_composes.description.label')"
-		:help="t('form.docker_composes.description.help')"
+		:label="t('form.projects.docker.compose.description.label')"
+		:help="t('form.projects.docker.compose.description.help')"
 		:hint="t('form.shared.hint.optional')"
 	>
 		<DescriptionEditor v-model="state.description" />
@@ -55,16 +55,16 @@ const { t } = useI18n()
 
 	<UFormField
 		name="host_id"
-		:label="t('form.docker_composes.host_id.label')"
-		:help="t('form.docker_composes.host_id.help')"
+		:label="t('form.projects.docker.compose.host_id.label')"
+		:help="t('form.projects.docker.compose.host_id.help')"
 	>
 		<SelectHost v-model="state.host_id" class="w-full" />
 	</UFormField>
 
 	<UFormField
 		name="remote_path"
-		:label="t('form.docker_composes.remote_path.label')"
-		:help="t('form.docker_composes.remote_path.help')"
+		:label="t('form.projects.docker.compose.remote_path.label')"
+		:help="t('form.projects.docker.compose.remote_path.help')"
 		required
 	>
 		<UInput v-model="state.remote_path" class="w-full font-mono" placeholder="/opt/docker-compose/" />
