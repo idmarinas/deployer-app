@@ -11,7 +11,8 @@
 		"tauri:dev": "tauri dev -c src-tauri/tauri.conf.json -c src-tauri/tauri.dev.conf.json",
 		"i18n:types": "bun scripts/generate-i18n-schema.ts",
 		"drizzle:flatten": "bun scripts/flatten-drizzle-migrations.ts",
-		"drizzle:generate": "bun scripts/migrate-drizzle.ts"
+		"drizzle:generate": "bun scripts/migrate-drizzle.ts",
+		"tables:generate": "bun scripts/generate-table-names.ts"
 	},
 	"dependencies": {
 		"@iconify-json/cib": "^1.2.3",
