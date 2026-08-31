@@ -186,21 +186,21 @@ onMounted(async () => {
 							<UButton
 								:icon="getModuleIcon('hosts', 'singular')"
 								:label="t('components.navigation.add.host.label')"
-								to="/dashboard/hosts/add"
+								:to="{ name: 'dashboard-hosts-add' }"
 								color="primary"
 								variant="solid"
 							/>
 							<UButton
 								:icon="getModuleIcon('passkeys')"
 								:label="t('components.navigation.add.passkey.label')"
-								to="/dashboard/passkeys/add"
+								:to="{ name: 'dashboard-passkeys-add' }"
 								color="primary"
 								variant="outline"
 							/>
 							<UButton
 								:icon="getModuleIcon('docker_composes')"
 								:label="t('components.navigation.add.docker_compose.label')"
-								to="/dashboard/docker_composes/add"
+								:to="{ name: 'dashboard-docker_composes-add' }"
 								color="primary"
 								variant="outline"
 							/>
