@@ -25,10 +25,14 @@ const router = useRouter()
 const { data: items, isLoading, status, reload, refresh } = useDockerComposeListAll()
 
 const { t } = useI18n()
-const { dockerComposes: dockerComposeQuery } = useQuery()
+const {
+	projects: {
+		docker: { compose: composeQuery },
+	},
+} = useQuery()
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<DockerComposeListItem>({
 	moduleName: 'docker_composes',
-	deleteFn: dockerComposeQuery.remove,
+	deleteFn: composeQuery.remove,
 	onReload: reload,
 })
 
