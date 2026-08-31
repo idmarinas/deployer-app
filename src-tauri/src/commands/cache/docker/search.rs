@@ -2,6 +2,7 @@ use tauri::AppHandle;
 use serde::Deserialize;
 
 use crate::helpers::open_pool;
+use crate::tables;
 use super::types::{DockerHubImageResult, DockerHubSearchCache};
 
 const SEARCH_CACHE_TTL_SECONDS: i64 = 3600;
@@ -50,10 +51,11 @@ pub async fn cache_docker_search(
 ) -> Result<Vec<DockerHubImageResult>, String> {
     let (pool, _) = open_pool(&app).await?;
 
-    let cached: Vec<DockerHubSearchCache> = sqlx::query_as(
+    let cached: Vec<DockerHubSearchCache> = sqlx::query_as(&format!(
         "SELECT id, query, namespace, repository, description, pull_count, star_count, fetched_at
-         FROM deployer_docker_hub_search_cache WHERE query = ?1",
-    )
+         FROM {} WHERE query = ?1",
+        tables::TABLE_CACHE_PROJECTS_DOCKER_SEARCH
+    ))
     .bind(&query)
     .fetch_all(&pool)
     .await
@@ -117,17 +119,21 @@ pub async fn cache_docker_search(
         let results_clone = results.clone();
         let now = now_iso();
         tokio::spawn(async move {
-            let _ = sqlx::query("DELETE FROM deployer_docker_hub_search_cache WHERE query = ?1")
-                .bind(&query_clone)
-                .execute(&pool_clone)
-                .await;
+            let _ = sqlx::query(&format!(
+                "DELETE FROM {} WHERE query = ?1",
+                tables::TABLE_CACHE_PROJECTS_DOCKER_SEARCH
+            ))
+            .bind(&query_clone)
+            .execute(&pool_clone)
+            .await;
 
             for r in &results_clone {
                 let (ns, repo) = parse_image_name(&r.name);
-                let _ = sqlx::query(
-                    "INSERT INTO deployer_docker_hub_search_cache (query, namespace, repository, description, pull_count, star_count, fetched_at)
+                let _ = sqlx::query(&format!(
+                    "INSERT INTO {} (query, namespace, repository, description, pull_count, star_count, fetched_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                )
+                    tables::TABLE_CACHE_PROJECTS_DOCKER_SEARCH
+                ))
                 .bind(&query_clone)
                 .bind(&ns)
                 .bind(&repo)

@@ -2,6 +2,7 @@ use sqlx::SqlitePool;
 use tauri::AppHandle;
 
 use crate::helpers::open_pool;
+use crate::tables;
 use super::types::{DockerHubTagsCache, DockerHubTagResult};
 
 const TAGS_CACHE_TTL_SECONDS: i64 = 86400;
@@ -82,10 +83,11 @@ async fn get_or_fetch_tags_page(
     repository: &str,
     url: &str,
 ) -> Result<TagsPage, String> {
-    let cached: Option<DockerHubTagsCache> = sqlx::query_as(
+    let cached: Option<DockerHubTagsCache> = sqlx::query_as(&format!(
         "SELECT id, namespace, repository, url_query, url_next, url_previous, count, tags, tags_versions, tags_variants, fetched_at
-         FROM deployer_docker_hub_tags_cache WHERE url_query = ?1",
-    )
+         FROM {} WHERE url_query = ?1",
+        tables::TABLE_CACHE_PROJECTS_DOCKER_TAGS
+    ))
     .bind(url)
     .fetch_optional(pool)
     .await
@@ -177,8 +179,8 @@ async fn get_or_fetch_tags_page(
     let count = data.count;
     let fetched_at = now_iso();
 
-    sqlx::query(
-        "INSERT INTO deployer_docker_hub_tags_cache
+    sqlx::query(&format!(
+        "INSERT INTO {} 
             (namespace, repository, url_query, url_next, url_previous, count, tags, tags_versions, tags_variants, fetched_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
          ON CONFLICT (namespace, repository, url_query) DO UPDATE SET
@@ -189,7 +191,8 @@ async fn get_or_fetch_tags_page(
             tags_versions = excluded.tags_versions,
             tags_variants = excluded.tags_variants,
             fetched_at = excluded.fetched_at",
-    )
+        tables::TABLE_CACHE_PROJECTS_DOCKER_TAGS
+    ))
     .bind(namespace)
     .bind(repository)
     .bind(url)

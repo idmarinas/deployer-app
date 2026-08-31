@@ -4,6 +4,7 @@ mod helpers;
 mod patch;
 mod response;
 mod ssh;
+pub mod tables;
 
 use commands::database::{
     create_database_file, get_app_info, get_database_info,

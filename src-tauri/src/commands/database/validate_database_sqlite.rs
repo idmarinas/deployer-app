@@ -74,10 +74,10 @@ pub async fn validate_database_sqlite(
 
     // 3. Validar tablas requeridas
     let required_tables = [
-        "deployer_settings",
-        "deployer_passkeys",
-        "deployer_hosts",
-        "deployer_projects_docker_compose",
+        crate::tables::TABLE_SETTINGS,
+        crate::tables::TABLE_PASSKEYS,
+        crate::tables::TABLE_HOSTS,
+        crate::tables::TABLE_PROJECTS_DOCKER_COMPOSE,
     ];
 
     for table in required_tables {

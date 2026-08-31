@@ -7,6 +7,7 @@ use crate::commands::projects::docker::compose::files_types::{
 };
 use crate::helpers::open_crypto_context;
 use crate::response::CommandResponse;
+use crate::tables;
 
 // ============================================================================
 // Comandos Tauri
@@ -49,9 +50,10 @@ pub async fn sync_project_docker_compose_files(
 
         let result = match file.id {
             Some(id) => {
-                let result = sqlx::query(
-                    "UPDATE deployer_docker_compose_files SET file_path = ?1, content = ?2, is_binary = ?3, name = ?4, mime_type = ?5, size = ?6, last_modified = ?7, webkit_relative_path = ?8, icon = ?9 WHERE id = ?10 AND module_id = ?11"
-                )
+                let result = sqlx::query(&format!(
+                    "UPDATE {} SET file_path = ?1, content = ?2, is_binary = ?3, name = ?4, mime_type = ?5, size = ?6, last_modified = ?7, webkit_relative_path = ?8, icon = ?9 WHERE id = ?10 AND module_id = ?11",
+                    tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+                ))
                 .bind(&file.file_path)
                 .bind(&file.content)
                 .bind(file.is_binary)
@@ -70,9 +72,10 @@ pub async fn sync_project_docker_compose_files(
                     Ok(r) if r.rows_affected() > 0 => Ok(id),
                     Ok(_) => {
                         // El id no pertenecía a este compose: se inserta.
-                        sqlx::query(
-                            "INSERT INTO deployer_docker_compose_files (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"
-                        )
+                        sqlx::query(&format!(
+                            "INSERT INTO {} (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                            tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+                        ))
                         .bind(input.module_id)
                         .bind(&file.file_path)
                         .bind(&file.content)
@@ -91,9 +94,10 @@ pub async fn sync_project_docker_compose_files(
                 }
             }
             None => {
-                sqlx::query(
-                    "INSERT INTO deployer_docker_compose_files (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"
-                )
+                sqlx::query(&format!(
+                    "INSERT INTO {} (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                    tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+                ))
                 .bind(input.module_id)
                 .bind(&file.file_path)
                 .bind(&file.content)
@@ -123,7 +127,7 @@ pub async fn sync_project_docker_compose_files(
     }
 
     let mut delete_sql =
-        String::from("DELETE FROM deployer_docker_compose_files WHERE module_id = ?1");
+        format!("DELETE FROM {} WHERE module_id = ?1", tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES);
     if !submitted_ids.is_empty() {
         let placeholders = submitted_ids
             .iter()
@@ -153,9 +157,10 @@ pub async fn sync_project_docker_compose_files(
         ));
     }
 
-    let rows = sqlx::query(
-        "SELECT * FROM deployer_docker_compose_files WHERE module_id = ?1 ORDER BY id ASC",
-    )
+    let rows = sqlx::query(&format!(
+        "SELECT * FROM {} WHERE module_id = ?1 ORDER BY id ASC",
+        tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+    ))
     .bind(input.module_id)
     .fetch_all(&pool)
     .await

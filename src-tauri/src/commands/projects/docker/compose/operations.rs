@@ -14,6 +14,7 @@ use crate::ssh::{
 };
 use crate::response::CommandResponse;
 use crate::params;
+use crate::tables;
 
 // ============================================================================
 // Helpers
@@ -25,7 +26,10 @@ async fn load_docker_compose(
 ) -> Result<DockerCompose, String> {
     use sqlx::Row;
 
-    let row = sqlx::query("SELECT * FROM deployer_docker_composes WHERE id = ?1")
+    let row = sqlx::query(&format!(
+        "SELECT * FROM {} WHERE id = ?1",
+        tables::TABLE_PROJECTS_DOCKER_COMPOSE
+    ))
         .bind(id)
         .fetch_optional(pool)
         .await
@@ -48,7 +52,10 @@ async fn load_compose_files(
     pool: &sqlx::SqlitePool,
     docker_compose_id: i64,
 ) -> Result<Vec<DockerComposeFile>, String> {
-    let rows = sqlx::query("SELECT * FROM deployer_docker_compose_files WHERE module_id = ?1")
+    let rows = sqlx::query(&format!(
+        "SELECT * FROM {} WHERE module_id = ?1",
+        tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+    ))
         .bind(docker_compose_id)
         .fetch_all(pool)
         .await
