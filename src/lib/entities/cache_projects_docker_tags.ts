@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { index, integer, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const cache_projects_docker_tags = sqliteTable(
 	'deployer_cache_projects_docker_tags',
@@ -7,16 +6,21 @@ export const cache_projects_docker_tags = sqliteTable(
 		id: integer().primaryKey({ autoIncrement: true }),
 		namespace: text().notNull(),
 		repository: text().notNull(),
-		url_query: text('url_query').notNull(),
-		url_next: text('url_next'),
-		url_previous: text('url_previous'),
-		count: integer().default(0).notNull(),
-		tags: text().notNull(),
-		tags_versions: text('tags_versions').notNull(),
-		tags_variants: text('tags_variants').notNull(),
-		fetched_at: numeric('fetched_at')
-			.default(sql`(CURRENT_TIMESTAMP)`)
-			.notNull(),
+		url_query: text().notNull(),
+		url_next: text(),
+		url_previous: text(),
+		count: integer().notNull().default(0),
+		tags: text({ mode: 'json' }).notNull().default({}),
+		tags_versions: text({ mode: 'json' }).notNull().default({}),
+		tags_variants: text({ mode: 'json' }).notNull().default({}),
+		fetched_at: text()
+			.notNull()
+			.$default(() => new Date().toISOString()),
 	},
-	table => [index('deployer_docker_hub_tags_cache_idx_ns_repo').on(table.namespace, table.repository)],
+	table => [
+		index('deployer_cache_projects_docker_tags_idx_ns_repo').on(table.namespace, table.repository),
+		index('deployer_cache_projects_docker_tags_idx_url_query').on(table.url_query),
+		index('deployer_cache_projects_docker_tags_idx_url_next').on(table.url_next),
+		index('deployer_cache_projects_docker_tags_idx_url_previous').on(table.url_previous),
+	],
 )

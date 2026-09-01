@@ -1,30 +1,38 @@
-import { sql } from 'drizzle-orm'
-import { index, integer, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { encryptedText } from '../schema-types'
 import { passkeys } from './passkeys'
+
+import { HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import { description, enabled, timestamps } from '../columns.helpers'
 
 export const hosts = sqliteTable(
 	'deployer_hosts',
 	{
 		id: integer().primaryKey({ autoIncrement: true }),
-		name: text().notNull(),
+		name: text().unique('deployer_host_unq_name').notNull(),
+		description,
+		enabled,
 		host: text().notNull(),
-		port: integer().default(22).notNull(),
-		username: text().default('').notNull(),
-		auth_type: text().notNull(),
+		port: integer().notNull().default(22),
+		username: text().notNull().default(''),
+		auth_type: text({ enum: ['key', 'password'] })
+			.notNull()
+			.default('password'),
 		password: encryptedText('password'),
 		key_id: integer().references(() => passkeys.id, { onDelete: 'set null' }),
-		description: text(),
-		enabled: integer({ mode: 'boolean' }).notNull().default(true),
-		system_info: text('system_info').default('{}').notNull(),
-		status_info: text('status_info').default('{}').notNull(),
-		server_updates: text('server_updates').default('{}').notNull(),
-		created_at: numeric('created_at')
-			.default(sql`(CURRENT_TIMESTAMP)`)
-			.notNull(),
-		updated_at: numeric('updated_at')
-			.default(sql`(CURRENT_TIMESTAMP)`)
-			.notNull(),
+		system_info: text({ mode: 'json' })
+			.$type<HostSystemInfo>()
+			.notNull()
+			.default({} as HostSystemInfo),
+		status_info: text({ mode: 'json' })
+			.$type<HostStatusMetrics>()
+			.notNull()
+			.default({} as HostStatusMetrics),
+		server_updates: text({ mode: 'json' })
+			.$type<HostServerUpdates>()
+			.notNull()
+			.default({} as HostServerUpdates),
+		...timestamps,
 	},
-	table => [index('deployer_hosts_idx_key_id').on(table.key_id), index('deployer_hosts_idx_enabled').on(table.enabled)],
+	table => [index('deployer_host_idx_key_id').on(table.key_id), index('deployer_host_idx_enabled').on(table.enabled)],
 )
