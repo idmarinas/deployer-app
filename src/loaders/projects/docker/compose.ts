@@ -4,7 +4,7 @@ import {
 	projects_docker_compose as docker_composes,
 	hosts,
 } from '@/lib/schema'
-import { asc, eq, getColumns } from 'drizzle-orm'
+import { eq, getColumns } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export interface DockerComposeListItem {
@@ -68,7 +68,6 @@ export const useDockerComposeListAll = defineColadaLoader('dashboard-docker_comp
 			})
 			.from(docker_composes)
 			.leftJoin(hosts, eq(docker_composes.host_id, hosts.id))
-			.orderBy(asc(docker_composes.name))
 			.then(data => data as unknown as DockerComposeListItem[])
 			.catch(() => [] as DockerComposeListItem[]),
 })
@@ -84,7 +83,6 @@ export const useDockerComposeSelectPopulate = defineColadaLoader({
 				enabled: docker_composes.enabled,
 			})
 			.from(docker_composes)
-			.orderBy(asc(docker_composes.name))
 			.then(data => data as unknown as DockerComposeSelectItem[])
 			.catch(() => [] as DockerComposeSelectItem[]),
 })
