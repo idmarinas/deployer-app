@@ -36,7 +36,10 @@ passphrase: string | null, };
 
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
 
-export type DockerComposeFile = { id: number, module_id: number, file_path: string, content: string | null, is_binary: boolean, name: string, mime_type: string | null, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string | null, created_at: string, updated_at: string, };
+/**
+ * Struct común de retorno para las tablas con patrón "_files".
+ */
+export type ModuleFile = { id: number, module_id: number, file_path: string, content: string | null, is_binary: boolean, name: string, mime_type: string | null, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string | null, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
@@ -100,8 +103,8 @@ fingerprint: string,
  */
 key_type: KeyType, 
 /**
- * Passphrase ya cifrada con AES-256-GCM, lista para pasar directamente
- * a `crud_create_passkey`. `None` si no se solicitó passphrase.
+ * Passphrase en texto plano. El INSERT vía `encrypt_mask` del proxy
+ * Drizzle cifra al persistir en BD. `None` si no se solicitó passphrase.
  */
 passphrase: string | null, };
 
