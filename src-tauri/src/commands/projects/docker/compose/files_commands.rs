@@ -1,13 +1,10 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
-use sqlx::Row;
 
-use crate::commands::projects::docker::compose::files_types::{
-    DockerComposeFile, SyncDockerComposeFilesInput,
-};
+use crate::commands::projects::docker::compose::files_types::SyncDockerComposeFilesInput;
+use crate::files::{self, ModuleFile};
 use crate::helpers::open_crypto_context;
 use crate::response::CommandResponse;
-use crate::tables;
 
 // ============================================================================
 // Comandos Tauri
@@ -16,11 +13,26 @@ use crate::tables;
 /// Sincroniza la lista de archivos de un compose en una única transacción:
 /// inserta los nuevos, actualiza los existentes y elimina los que ya no
 /// estén presentes. Devuelve la lista final de archivos con sus ids.
+///
+/// El SQL se construye dinámicamente a partir del schema de tabla `_files`
+/// (crate::files), de modo que si cambia el nombre de la tabla o la columna
+/// FK basta con regenerar `files.rs` (bun run tables:generate).
 #[tauri::command]
 pub async fn sync_project_docker_compose_files(
     app: AppHandle,
     input: SyncDockerComposeFilesInput,
-) -> Result<CommandResponse<Vec<DockerComposeFile>>, String> {
+) -> Result<CommandResponse<Vec<ModuleFile>>, String> {
+    let schema = &files::DOCKER_COMPOSE_FILES;
+
+    // Columnas editables, excluyendo la FK (module_id), que se gestiona aparte.
+    let edit_cols: Vec<&str> = files::FILES_EDITABLE
+        .iter()
+        .copied()
+        .filter(|c| *c != schema.fk)
+        .collect();
+
+    let edit_sql_cols = edit_cols.join(", ");
+
     let (pool, _key) = match open_crypto_context(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
@@ -48,69 +60,102 @@ pub async fn sync_project_docker_compose_files(
             continue;
         }
 
+        // Los timestamps se gestionan aquí (formato RFC3339 = new Date().toISOString()).
+        // En INSERT se fijan created_at y updated_at; en UPDATE solo updated_at.
+        let now = chrono::Utc::now().to_rfc3339();
+
         let result = match file.id {
             Some(id) => {
-                let result = sqlx::query(&format!(
-                    "UPDATE {} SET file_path = ?1, content = ?2, is_binary = ?3, name = ?4, mime_type = ?5, size = ?6, last_modified = ?7, webkit_relative_path = ?8, icon = ?9 WHERE id = ?10 AND module_id = ?11",
-                    tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
-                ))
-                .bind(&file.file_path)
-                .bind(&file.content)
-                .bind(file.is_binary)
-                .bind(&file.name)
-                .bind(&file.mime_type)
-                .bind(file.size)
-                .bind(file.last_modified)
-                .bind(&file.webkit_relative_path)
-                .bind(&file.icon)
-                .bind(id)
-                .bind(input.module_id)
-                .execute(&mut *tx)
-                .await;
+                // UPDATE ... SET col1 = ?, ..., colN = ?, updated_at = ? WHERE id = ? AND fk = ?
+                let mut update_set = edit_cols
+                    .iter()
+                    .map(|col| format!("{} = ?", col))
+                    .collect::<Vec<_>>();
+                update_set.push("updated_at = ?".to_string());
 
-                match result {
+                let sql = format!(
+                    "UPDATE {} SET {} WHERE id = ? AND {} = ?",
+                    schema.table,
+                    update_set.join(", "),
+                    schema.fk
+                );
+
+                let mut q = sqlx::query(&sql);
+                q = q
+                    .bind(&file.file_path)
+                    .bind(&file.content)
+                    .bind(file.is_binary)
+                    .bind(&file.name)
+                    .bind(&file.mime_type)
+                    .bind(file.size)
+                    .bind(file.last_modified)
+                    .bind(&file.webkit_relative_path)
+                    .bind(&file.icon)
+                    .bind(&now)
+                    .bind(id)
+                    .bind(input.module_id);
+
+                match q.execute(&mut *tx).await {
                     Ok(r) if r.rows_affected() > 0 => Ok(id),
                     Ok(_) => {
                         // El id no pertenecía a este compose: se inserta.
-                        sqlx::query(&format!(
-                            "INSERT INTO {} (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-                            tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
-                        ))
-                        .bind(input.module_id)
-                        .bind(&file.file_path)
-                        .bind(&file.content)
-                        .bind(file.is_binary)
-                        .bind(&file.name)
-                        .bind(&file.mime_type)
-                        .bind(file.size)
-                        .bind(file.last_modified)
-                        .bind(&file.webkit_relative_path)
-                        .bind(&file.icon)
-                        .execute(&mut *tx)
-                        .await
-                        .map(|r| r.last_insert_rowid() as i64)
+                        let placeholders =
+                            std::iter::repeat_n("?", edit_cols.len() + 3).collect::<Vec<_>>().join(", ");
+
+                        let sql = format!(
+                            "INSERT INTO {} ({}, {}, created_at, updated_at) VALUES ({})",
+                            schema.table, schema.fk, edit_sql_cols, placeholders
+                        );
+
+                        let mut q = sqlx::query(&sql);
+                        q = q
+                            .bind(input.module_id)
+                            .bind(&file.file_path)
+                            .bind(&file.content)
+                            .bind(file.is_binary)
+                            .bind(&file.name)
+                            .bind(&file.mime_type)
+                            .bind(file.size)
+                            .bind(file.last_modified)
+                            .bind(&file.webkit_relative_path)
+                            .bind(&file.icon)
+                            .bind(&now)
+                            .bind(&now);
+
+                        q.execute(&mut *tx)
+                            .await
+                            .map(|r| r.last_insert_rowid() as i64)
                     }
                     Err(e) => Err(e),
                 }
             }
             None => {
-                sqlx::query(&format!(
-                    "INSERT INTO {} (module_id, file_path, content, is_binary, name, mime_type, size, last_modified, webkit_relative_path, icon) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-                    tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
-                ))
-                .bind(input.module_id)
-                .bind(&file.file_path)
-                .bind(&file.content)
-                .bind(file.is_binary)
-                .bind(&file.name)
-                .bind(&file.mime_type)
-                .bind(file.size)
-                .bind(file.last_modified)
-                .bind(&file.webkit_relative_path)
-                .bind(&file.icon)
-                .execute(&mut *tx)
-                .await
-                .map(|r| r.last_insert_rowid() as i64)
+                let placeholders =
+                    std::iter::repeat_n("?", edit_cols.len() + 3).collect::<Vec<_>>().join(", ");
+
+                let sql = format!(
+                    "INSERT INTO {} ({}, {}, created_at, updated_at) VALUES ({})",
+                    schema.table, schema.fk, edit_sql_cols, placeholders
+                );
+
+                let mut q = sqlx::query(&sql);
+                q = q
+                    .bind(input.module_id)
+                    .bind(&file.file_path)
+                    .bind(&file.content)
+                    .bind(file.is_binary)
+                    .bind(&file.name)
+                    .bind(&file.mime_type)
+                    .bind(file.size)
+                    .bind(file.last_modified)
+                    .bind(&file.webkit_relative_path)
+                    .bind(&file.icon)
+                    .bind(&now)
+                    .bind(&now);
+
+                q.execute(&mut *tx)
+                    .await
+                    .map(|r| r.last_insert_rowid() as i64)
             }
         };
 
@@ -126,14 +171,9 @@ pub async fn sync_project_docker_compose_files(
         }
     }
 
-    let mut delete_sql =
-        format!("DELETE FROM {} WHERE module_id = ?1", tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES);
+    let mut delete_sql = format!("DELETE FROM {} WHERE {} = ?", schema.table, schema.fk);
     if !submitted_ids.is_empty() {
-        let placeholders = submitted_ids
-            .iter()
-            .map(|_| "?")
-            .collect::<Vec<_>>()
-            .join(", ");
+        let placeholders = submitted_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
         delete_sql.push_str(&format!(" AND id NOT IN ({})", placeholders));
     }
 
@@ -157,33 +197,14 @@ pub async fn sync_project_docker_compose_files(
         ));
     }
 
-    let rows = sqlx::query(&format!(
-        "SELECT * FROM {} WHERE module_id = ?1 ORDER BY id ASC",
-        tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
+    let files = sqlx::query_as::<_, ModuleFile>(&format!(
+        "SELECT * FROM {} WHERE {} = ? ORDER BY id ASC",
+        schema.table, schema.fk
     ))
     .bind(input.module_id)
     .fetch_all(&pool)
     .await
     .map_err(|e| format!("Error al cargar archivos sincronizados: {}", e))?;
-
-    let files = rows
-        .iter()
-        .map(|row| DockerComposeFile {
-            id: row.get("id"),
-            module_id: row.get("module_id"),
-            file_path: row.get("file_path"),
-            content: row.get("content"),
-            is_binary: row.get("is_binary"),
-            name: row.get("name"),
-            mime_type: row.get("mime_type"),
-            size: row.get("size"),
-            last_modified: row.get("last_modified"),
-            webkit_relative_path: row.get("webkit_relative_path"),
-            icon: row.get("icon"),
-            created_at: row.get("created_at"),
-            updated_at: row.get("updated_at"),
-        })
-        .collect::<Vec<_>>();
 
     Ok(CommandResponse::ok(
         files,

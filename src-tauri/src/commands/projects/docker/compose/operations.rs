@@ -1,13 +1,12 @@
 use std::path::Path;
 use tauri::AppHandle;
 use tokio::io::AsyncWriteExt;
-use sqlx::Row;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
-use crate::commands::projects::docker::compose::files_types::DockerComposeFile;
 use crate::commands::projects::docker::compose::types::{
     DockerCompose, DockerComposeOperationInput, DockerComposeService,
 };
+use crate::files::{self, ModuleFile};
 use crate::helpers::open_crypto_context;
 use crate::ssh::{
     connect_to_host_by_id, open_sftp_session, run_ssh_command, shell_escape, SshSession,
@@ -51,34 +50,17 @@ async fn load_docker_compose(
 async fn load_compose_files(
     pool: &sqlx::SqlitePool,
     docker_compose_id: i64,
-) -> Result<Vec<DockerComposeFile>, String> {
-    let rows = sqlx::query(&format!(
-        "SELECT * FROM {} WHERE module_id = ?1",
-        tables::TABLE_PROJECTS_DOCKER_COMPOSE_FILES
-    ))
-        .bind(docker_compose_id)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| format!("Error al cargar archivos del compose: {}", e))?;
+) -> Result<Vec<ModuleFile>, String> {
+    let schema = &files::DOCKER_COMPOSE_FILES;
 
-    let mut files = Vec::new();
-    for row in rows {
-        files.push(DockerComposeFile {
-            id: row.get("id"),
-            module_id: row.get("module_id"),
-            file_path: row.get("file_path"),
-            content: row.get("content"),
-            is_binary: row.get("is_binary"),
-            name: row.get("name"),
-            mime_type: row.get("mime_type"),
-            size: row.get("size"),
-            last_modified: row.get("last_modified"),
-            webkit_relative_path: row.get("webkit_relative_path"),
-            icon: row.get("icon"),
-            created_at: row.get("created_at"),
-            updated_at: row.get("updated_at"),
-        });
-    }
+    let files = sqlx::query_as::<_, ModuleFile>(&format!(
+        "SELECT * FROM {} WHERE {} = ?",
+        schema.table, schema.fk
+    ))
+    .bind(docker_compose_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| format!("Error al cargar archivos del compose: {}", e))?;
 
     Ok(files)
 }
@@ -87,7 +69,7 @@ async fn load_compose_files(
 async fn upload_all_compose_files(
     session: &mut SshSession,
     remote_dir: &str,
-    files: &[DockerComposeFile],
+    files: &[ModuleFile],
 ) -> Result<(), String> {
     let sftp = open_sftp_session(session).await?;
 
@@ -163,7 +145,7 @@ fn exit_code_message(exit_code: i64, action: &str) -> String {
 async fn load_compose_with_files(
     app: &AppHandle,
     docker_compose_id: i64,
-) -> Result<(sqlx::SqlitePool, DockerCompose, Vec<DockerComposeFile>, SshSession), String> {
+) -> Result<(sqlx::SqlitePool, DockerCompose, Vec<ModuleFile>, SshSession), String> {
     let (pool, _key) = open_crypto_context(app).await?;
     let compose = load_docker_compose(&pool, docker_compose_id).await?;
     let files = load_compose_files(&pool, docker_compose_id).await?;
@@ -441,7 +423,7 @@ pub async fn project_docker_compose_pull(
 
 /// Devuelve el nombre del archivo compose.yaml o docker-compose.yaml
 /// dentro de la lista de archivos.
-fn find_compose_file_name(files: &[DockerComposeFile]) -> Option<String> {
+fn find_compose_file_name(files: &[ModuleFile]) -> Option<String> {
     files
         .iter()
         .find(|f| {

@@ -1,23 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use ts_rs::TS;
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct DockerComposeFile {
-    pub id: i64,
-    pub module_id: i64,
-    pub file_path: String,
-    pub content: Option<String>,
-    pub is_binary: bool,
-    pub name: String,
-    pub mime_type: Option<String>,
-    pub size: Option<i64>,
-    pub last_modified: Option<i64>,
-    pub webkit_relative_path: Option<String>,
-    pub icon: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
 
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]

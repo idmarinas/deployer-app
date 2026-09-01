@@ -1,5 +1,6 @@
 mod commands;
 mod crypto;
+mod files;
 mod helpers;
 mod patch;
 mod response;
