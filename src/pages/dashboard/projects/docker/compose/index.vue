@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { DockerComposeListItem } from '@/loaders/docker_composes'
+import type { DockerComposeListItem } from '@/loaders/projects/docker/compose'
 import type { TableColumn } from '@nuxt/ui'
 
 import { h, onMounted, resolveComponent } from 'vue'
@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router'
 
 import { useQuery } from '@/composables/useQuery'
 import { useTableColumns } from '@/composables/useTableColumns'
-import { useDockerComposeListAll } from '@/loaders/docker_composes'
+import { useDockerComposeListAll } from '@/loaders/projects/docker/compose'
 import { ICONS } from '@/utils/icons'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'

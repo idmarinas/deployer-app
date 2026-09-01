@@ -13,7 +13,7 @@ import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarBut
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForProjectsDockerCompose } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { PositionedButton } from '@/composables/usePositionedButtons'
-import { useDockerComposeById } from '@/loaders/docker_composes'
+import { useDockerComposeById } from '@/loaders/projects/docker/compose'
 import { ICONS } from '@/utils/icons'
 </script>
 
