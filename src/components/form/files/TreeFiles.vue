@@ -7,7 +7,9 @@ import {
 	buildTree,
 	byteSize,
 	collectFolderKeys,
+	completeManagedFile,
 	getFileIcon,
+	needsCompletion,
 	type ManagedFile,
 	type ManagedTreeNode,
 	type TreeFilesConfig,
@@ -77,6 +79,16 @@ watch(
 	{ immediate: true },
 )
 
+const loadedFiles = computed(() => props.modelValue)
+watch(
+	loadedFiles,
+	files => {
+		if (!files?.length || !files.some(needsCompletion)) return
+		emit('update:modelValue', files.map(completeManagedFile))
+	},
+	{ deep: true },
+)
+
 const selectedPath = computed(() => (selected.value?.type === 'file' ? selected.value.key : null))
 
 const selectedEntry = computed(() => props.modelValue.find(f => f.file_path === selectedPath.value))
@@ -96,7 +108,14 @@ const selectedContent = computed({
 		emit(
 			'update:modelValue',
 			props.modelValue.map(f =>
-				f.file_path === selectedPath.value ? { ...f, content: value, size: f.is_binary ? f.size : byteSize(value) } : f,
+				f.file_path === selectedPath.value
+					? completeManagedFile({
+							...f,
+							content: value,
+							size: f.is_binary ? f.size : byteSize(value),
+							last_modified: Date.now(),
+						})
+					: f,
 			),
 		)
 	},
@@ -120,11 +139,12 @@ const existingPaths = computed(() => props.modelValue.map(f => f.file_path))
 function handleFilesSelected(entries: ManagedFile[]) {
 	let next = [...props.modelValue]
 	for (const e of entries) {
+		const completed = completeManagedFile(e)
 		const idx = next.findIndex(f => f.file_path === e.file_path)
 		if (idx >= 0) {
-			next = next.map(f => (f.file_path === e.file_path ? { ...f, ...e, id: f.id } : f))
+			next = next.map(f => (f.file_path === e.file_path ? { ...completed, id: f.id } : f))
 		} else {
-			next = [...next, e]
+			next = [...next, completed]
 		}
 	}
 	emit('update:modelValue', next)
@@ -253,12 +273,7 @@ function confirmCreateFile(fileName: string, folder: string): string | undefined
 					</div>
 
 					<template v-if="canEdit">
-						<slot
-							name="editor"
-							:entry="selectedEntry"
-							:content="selectedContent"
-							:update-content="updateContent"
-						>
+						<slot name="editor" :entry="selectedEntry" :content="selectedContent" :update-content="updateContent">
 							<FileContentEditor :entry="selectedEntry" v-model="selectedContent" />
 						</slot>
 					</template>
