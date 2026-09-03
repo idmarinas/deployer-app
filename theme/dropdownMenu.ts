@@ -1,19 +1,10 @@
-// theme/dropdownMenu.ts
-// Estilo "Command Module": panel tipo "readout de sistema" con dot-grid de
-// instrumentos, L-bracket en esquina, y bisel interior. Items con borde-traza
-// izquierdo que se energiza en hover.
+// theme/dropdownMenu.ts — Panel readout Command Module
 export default {
 	slots: {
 		content: [
 			'rounded-md border border-(--ui-border) bg-(--ui-bg-elevated)/95 backdrop-blur-xl overflow-hidden p-1',
-			'shadow-2xl',
-			'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.035)_1px,transparent_0)] bg-[size:20px_20px]',
-			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.06),0_4px_24px_rgba(0,0,0,0.25)]',
-			'relative before:absolute before:top-[6px] before:right-[6px]',
-			'before:size-[10px]',
-			'before:border-t-2 before:border-r-2',
-			'before:border-t-primary-500/35 before:border-r-primary-500/35',
-			'before:rounded-tr-[1px]',
+			'pcb-panel-grid pcb-inset-bevel pcb-bracket-tl-sm relative',
+			'shadow-[inset_0_0_0_1px_var(--pcb-inset-border),0_4px_24px_color-mix(in_srgb,black_25%,transparent)]',
 		].join(' '),
 		group: 'p-0',
 		label: 'text-xs font-pcb uppercase tracking-wider text-(--ui-text-dimmed) px-2 py-1.5',

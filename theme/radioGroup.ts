@@ -1,8 +1,4 @@
-// theme/radioGroup.ts
-// Estilo "Command Module": selector de modo como panel de circuito.
-// list/card: radio como pad (hundido → energizado con gradiente + glow).
-// table: segmented control de panel PCB — celdas con dot-grid y bisel,
-// la celda activa se "enciende" con gradiente de marca + glow + texto blanco.
+// theme/radioGroup.ts — Selector de modo Command Module
 export default {
 	slots: {
 		fieldset: 'flex gap-x-2',
@@ -11,21 +7,16 @@ export default {
 		base: [
 			'shrink-0 rounded-full border transition-all duration-200 cursor-pointer',
 			'bg-(--ui-bg-elevated) border-(--ui-border)',
-			'shadow-[inset_0_1px_3px_rgba(0,0,0,0.12)]',
+			'shadow-[inset_0_1px_3px_color-mix(in_srgb,black_12%,transparent)]',
 			'focus-visible:outline-none focus-visible:ring-2',
 			'hover:border-(--ui-border-accented)',
 			'data-[state=checked]:border-transparent',
-			'data-[state=checked]:bg-linear-to-br data-[state=checked]:from-primary-500 data-[state=checked]:to-secondary-500',
-			'data-[state=checked]:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_10px_rgba(10,141,255,0.45)]',
+			'data-[state=checked]:pcb-gradient-brand',
+			'data-[state=checked]:shadow-[inset_0_1px_0_color-mix(in_srgb,white_20%,transparent),0_0_10px_var(--pcb-trace-glow)]',
 			'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none',
 		].join(' '),
 		indicator:
-			'flex items-center justify-center size-full after:rounded-full after:bg-white after:shadow-[0_0_4px_rgba(255,255,255,0.6)]',
-		// 'text-(--ui-text-toned)' reemplaza el 'text-default' fijo que trae el theme
-		// por defecto de Nuxt UI para este slot: al ser ambas utilities de color,
-		// twMerge elimina text-default y el label deja de pisar el color heredado.
-		// El blanco en checked se aplica aquí mismo vía el group nombrado 'rg' del item
-		// (group-has-data-[state=checked]), anclado solo a la variante 'table'.
+			'flex items-center justify-center size-full after:rounded-full after:bg-white after:shadow-[0_0_4px_color-mix(in_srgb,white_60%,transparent)]',
 		label: 'cursor-pointer select-none text-(--ui-text-toned) has-disabled:cursor-not-allowed has-disabled:opacity-60',
 		description: 'text-xs text-(--ui-text-dimmed) mt-0.5 font-pcb',
 	},
@@ -46,16 +37,14 @@ export default {
 			card: {
 				item: [
 					'text-(--ui-text-toned) rounded-lg',
-					'border border-(--ui-border) bg-(--ui-bg-elevated)',
-					'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.04)]',
+					'border border-(--ui-border) bg-(--ui-bg-elevated) pcb-inset-bevel',
 				].join(' '),
 			},
 			table: {
 				item: [
 					'text-(--ui-text-dimmed) font-pcb',
 					'bg-(--ui-bg-elevated) border border-(--ui-border)',
-					'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.04)]',
-					'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.025)_1px,transparent_0)] bg-[size:20px_20px]',
+					'pcb-panel-grid pcb-inset-bevel',
 				].join(' '),
 			},
 		},
@@ -67,10 +56,10 @@ export default {
 			class: {
 				item: [
 					'has-data-[state=checked]:bg-auto',
-					'has-data-[state=checked]:bg-linear-to-r',
+					'has-data-[state=checked]:pcb-gradient-brand',
 					'has-data-[state=checked]:text-white',
-					'has-data-[state=checked]:from-primary has-data-[state=checked]:to-secondary',
 					'has-data-[state=checked]:font-semibold',
+					'has-data-[state=checked]:shadow-[0_0_12px_var(--pcb-trace-glow)]',
 				].join(' '),
 				label: 'group-has-data-[state=checked]/rg:text-white!',
 				description: 'group-has-data-[state=checked]/rg:text-white!',
@@ -91,37 +80,27 @@ export default {
 		{
 			size: 'xs',
 			variant: ['card', 'table'],
-			class: {
-				item: 'px-2.5 py-2',
-			},
+			class: { item: 'px-2.5 py-2' },
 		},
 		{
 			size: 'sm',
 			variant: ['card', 'table'],
-			class: {
-				item: 'px-3 py-2.5',
-			},
+			class: { item: 'px-3 py-2.5' },
 		},
 		{
 			size: 'md',
 			variant: ['card', 'table'],
-			class: {
-				item: 'px-3.5 py-3',
-			},
+			class: { item: 'px-3.5 py-3' },
 		},
 		{
 			size: 'lg',
 			variant: ['card', 'table'],
-			class: {
-				item: 'px-4 py-3.5',
-			},
+			class: { item: 'px-4 py-3.5' },
 		},
 		{
 			size: 'xl',
 			variant: ['card', 'table'],
-			class: {
-				item: 'px-4.5 py-4',
-			},
+			class: { item: 'px-4.5 py-4' },
 		},
 	],
 }

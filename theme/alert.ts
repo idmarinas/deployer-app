@@ -1,6 +1,4 @@
-// theme/alert.ts
-// Estilo "Command Module": alerta de sistema con traza lateral energizada
-// en variantes no-solid. Solid mantiene el degradado de marca.
+// theme/alert.ts — Alerta de sistema Command Module
 export default {
 	slots: {
 		root: 'relative overflow-hidden w-full rounded-md p-4 flex gap-2.5 border',
@@ -13,7 +11,7 @@ export default {
 			color: 'primary',
 			variant: 'solid',
 			class: {
-				root: 'bg-linear-to-r from-primary-500/90 to-secondary-500/90 border-transparent text-white shadow-[0_0_20px_rgba(10,141,255,0.25)]',
+				root: 'pcb-gradient-brand pcb-gloss-line border-transparent text-white shadow-[0_0_20px_var(--pcb-trace-glow)]',
 			},
 		},
 		{
@@ -41,7 +39,7 @@ export default {
 			color: 'success',
 			variant: 'solid',
 			class: {
-				root: 'bg-success-500 border-transparent text-neutral-950 shadow-[0_0_20px_rgba(0,200,163,0.25)]',
+				root: 'bg-success-500 pcb-gloss-line border-transparent text-neutral-950 shadow-[0_0_20px_color-mix(in_srgb,var(--color-deployer-success-500)_25%,transparent)]',
 			},
 		},
 		{
@@ -69,7 +67,7 @@ export default {
 			color: 'warning',
 			variant: 'solid',
 			class: {
-				root: 'bg-warning-500 border-transparent text-neutral-950 shadow-[0_0_20px_rgba(230,178,0,0.25)]',
+				root: 'bg-warning-500 pcb-gloss-line border-transparent text-neutral-950 shadow-[0_0_20px_color-mix(in_srgb,var(--color-deployer-warning-500)_25%,transparent)]',
 			},
 		},
 		{
@@ -97,7 +95,7 @@ export default {
 			color: 'error',
 			variant: 'solid',
 			class: {
-				root: 'bg-error-500 border-transparent text-white shadow-[0_0_20px_rgba(255,10,85,0.25)]',
+				root: 'bg-error-500 pcb-gloss-line border-transparent text-white shadow-[0_0_20px_color-mix(in_srgb,var(--color-deployer-error-500)_25%,transparent)]',
 			},
 		},
 		{
@@ -125,7 +123,7 @@ export default {
 			color: 'info',
 			variant: 'solid',
 			class: {
-				root: 'bg-info-500 border-transparent text-neutral-950 shadow-[0_0_20px_rgba(0,199,255,0.25)]',
+				root: 'bg-info-500 pcb-gloss-line border-transparent text-neutral-950 shadow-[0_0_20px_color-mix(in_srgb,var(--color-deployer-info-500)_25%,transparent)]',
 			},
 		},
 		{

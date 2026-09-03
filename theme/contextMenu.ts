@@ -1,14 +1,11 @@
-// theme/contextMenu.ts
-// Mismo lenguaje visual que dropdownMenu.ts: panel readout con dot-grid,
-// L-bracket en esquina y bisel interior. Item resaltado con traza izquierda.
+// theme/contextMenu.ts — Panel readout Command Module
 export default {
 	slots: {
 		content: [
 			'rounded-md border border-(--ui-border) bg-(--ui-bg-elevated)/95 backdrop-blur-xl overflow-hidden p-1',
-			'shadow-2xl',
-			'bg-[radial-gradient(circle_at_1px_1px,rgba(10,141,255,0.035)_1px,transparent_0)] bg-[size:20px_20px]',
-			'shadow-[inset_0_0_0_1px_rgba(10,141,255,0.06),0_4px_24px_rgba(0,0,0,0.25)]',
-			'relative before:absolute before:top-[6px] before:right-[6px]',
+			'pcb-panel-grid pcb-inset-bevel relative',
+			'shadow-[inset_0_0_0_1px_var(--pcb-inset-border),0_4px_24px_color-mix(in_srgb,black_25%,transparent)]',
+			'before:absolute before:top-[6px] before:right-[6px]',
 			'before:size-[10px]',
 			'before:border-t-2 before:border-r-2',
 			'before:border-t-primary-500/35 before:border-r-primary-500/35',

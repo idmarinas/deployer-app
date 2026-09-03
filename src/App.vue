@@ -14,7 +14,7 @@ const colorMode = useColorMode()
 const i18n = useI18n()
 const { shortcuts } = useDeployerShortcuts()
 
-const themeColor = computed(() => (colorMode.value === 'dark' ? '#18181b' : '#ffffff'))
+const themeColor = computed(() => (colorMode.value === 'dark' ? '#0b0c0e' : '#ffffff'))
 
 useHead({
 	htmlAttrs: {

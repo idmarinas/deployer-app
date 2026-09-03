@@ -2,15 +2,31 @@
 // Sólido: LED activo con glow + shadow interno para efecto "componente físico".
 // Outline: solo aro silkscreen (componente sin encender).
 // El clip-path pcb-clip-badge da la silueta de SMD.
+const groupFirst = 'not-only:first:[clip-path:polygon(6px_0%,100%_0%,100%_100%,0%_100%)]'
+const groupLast = 'not-only:last:[clip-path:polygon(0%_0%,100%_0%,calc(100%_-_6px)_100%,0%_100%)]'
+const groupMiddle = 'not-last:not-first:[clip-path:polygon(0%_0%,100%_0%,100%_100%,0%_100%)]'
+const fieldGroup = [groupFirst, groupLast, groupMiddle].join(' ')
+
+const ledInset =
+	'shadow-[inset_0_1px_0_color-mix(in_srgb,white_18%,transparent),inset_0_-2px_4px_color-mix(in_srgb,black_15%,transparent)]'
+const ledInsetLight =
+	'shadow-[inset_0_1px_0_color-mix(in_srgb,white_25%,transparent),inset_0_-2px_4px_color-mix(in_srgb,black_12%,transparent)]'
+
 export default {
 	slots: {
 		base: 'pcb-clip-badge font-pcb font-medium tracking-wider uppercase relative',
+	},
+	variants: {
+		fieldGroup: {
+			horizontal: fieldGroup,
+			vertical: fieldGroup,
+		},
 	},
 	compoundVariants: [
 		{
 			color: 'primary',
 			variant: 'solid',
-			class: 'bg-primary-500 text-white [filter:drop-shadow(0_0_8px_rgba(10,141,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
+			class: `bg-primary-500 text-white [filter:drop-shadow(0_0_8px_var(--pcb-trace-glow))] ${ledInset}`,
 		},
 		{
 			color: 'primary',
@@ -30,7 +46,7 @@ export default {
 		{
 			color: 'secondary',
 			variant: 'solid',
-			class: 'bg-secondary-500 text-white [filter:drop-shadow(0_0_8px_rgba(130,26,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
+			class: `bg-secondary-500 text-white [filter:drop-shadow(0_0_8px_color-mix(in_srgb,var(--color-deployer-secondary-500)_50%,transparent))] ${ledInset}`,
 		},
 		{
 			color: 'secondary',
@@ -50,7 +66,7 @@ export default {
 		{
 			color: 'success',
 			variant: 'solid',
-			class: 'bg-success-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(0,200,163,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
+			class: `bg-success-500 text-neutral-950 [filter:drop-shadow(0_0_8px_color-mix(in_srgb,var(--color-deployer-success-500)_50%,transparent))] ${ledInsetLight}`,
 		},
 		{
 			color: 'success',
@@ -65,7 +81,7 @@ export default {
 		{
 			color: 'info',
 			variant: 'solid',
-			class: 'bg-info-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(0,199,255,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
+			class: `bg-info-500 text-neutral-950 [filter:drop-shadow(0_0_8px_color-mix(in_srgb,var(--color-deployer-info-500)_50%,transparent))] ${ledInsetLight}`,
 		},
 		{
 			color: 'info',
@@ -80,7 +96,7 @@ export default {
 		{
 			color: 'warning',
 			variant: 'solid',
-			class: 'bg-warning-500 text-neutral-950 [filter:drop-shadow(0_0_8px_rgba(230,178,0,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.12)]',
+			class: `bg-warning-500 text-neutral-950 [filter:drop-shadow(0_0_8px_color-mix(in_srgb,var(--color-deployer-warning-500)_50%,transparent))] ${ledInsetLight}`,
 		},
 		{
 			color: 'warning',
@@ -95,7 +111,7 @@ export default {
 		{
 			color: 'error',
 			variant: 'solid',
-			class: 'bg-error-500 text-white [filter:drop-shadow(0_0_8px_rgba(255,10,85,0.5))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-2px_4px_rgba(0,0,0,0.15)]',
+			class: `bg-error-500 text-white [filter:drop-shadow(0_0_8px_color-mix(in_srgb,var(--color-deployer-error-500)_50%,transparent))] ${ledInset}`,
 		},
 		{
 			color: 'error',
@@ -110,12 +126,14 @@ export default {
 		{
 			color: 'neutral',
 			variant: 'solid',
-			class: 'bg-neutral-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_4px_rgba(0,0,0,0.2)]',
+			class:
+				'bg-neutral-700 text-white shadow-[inset_0_1px_0_color-mix(in_srgb,white_12%,transparent),inset_0_-2px_4px_color-mix(in_srgb,black_20%,transparent)]',
 		},
 		{
 			color: 'neutral',
 			variant: 'outline',
-			class: 'bg-neutral-500/5 text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-400/50 dark:ring-neutral-600/50',
+			class:
+				'bg-neutral-500/5 text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-400/50 dark:ring-neutral-600/50',
 		},
 		{
 			color: 'neutral',
@@ -125,7 +143,8 @@ export default {
 		{
 			color: 'neutral',
 			variant: 'subtle',
-			class: 'bg-neutral-500/10 text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-400/25 dark:ring-neutral-600/25',
+			class:
+				'bg-neutral-500/10 text-neutral-700 dark:text-neutral-300 ring-1 ring-inset ring-neutral-400/25 dark:ring-neutral-600/25',
 		},
 	],
 }

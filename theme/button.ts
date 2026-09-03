@@ -10,10 +10,10 @@ export default {
 			'relative overflow-hidden transition-all duration-200',
 			'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50',
 			'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none disabled:[filter:none]',
-			// Indicador de "arming" — small dot glow que se enciende en hover
+			// Pad de circuito — indicador de "arming" en hover
 			'hover:after:absolute hover:after:bottom-1 hover:after:left-1 hover:after:size-[3px]',
 			'hover:after:rounded-full hover:after:bg-primary-400',
-			'hover:after:shadow-[0_0_4px_rgba(10,141,255,0.6)]',
+			'hover:after:shadow-[0_0_4px_var(--pcb-trace-glow)]',
 		].join(' '),
 	},
 	variants: {
@@ -27,16 +27,11 @@ export default {
 			color: 'primary',
 			variant: 'solid',
 			class: `
-				bg-gradient-to-r from-primary-500 to-secondary-500
-				text-white border-0
-				pcb-shadow-sm
-				hover:from-primary-400 hover:to-secondary-400
-				hover:pcb-animate-pulse
-				active:from-primary-600 active:to-secondary-600 active:scale-[0.97]
+				pcb-gradient-brand text-white border-0 pcb-shadow-sm pcb-gloss-line
+				hover:brightness-110 hover:pcb-animate-pulse
+				active:brightness-90 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent
-				hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]
+				hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,white_15%,transparent)]
 			`,
 		},
 		{
@@ -96,15 +91,11 @@ export default {
 			color: 'secondary',
 			variant: 'solid',
 			class: `
-				bg-secondary-500 text-white border-0
-				pcb-shadow-sm
-				hover:bg-secondary-400
-				hover:pcb-animate-pulse
+				bg-secondary-500 text-white border-0 pcb-shadow-sm pcb-gloss-line
+				hover:bg-secondary-400 hover:pcb-animate-pulse
 				active:bg-secondary-600 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent
-				hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]
+				hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,white_15%,transparent)]
 			`,
 		},
 		{
@@ -154,13 +145,10 @@ export default {
 			color: 'neutral',
 			variant: 'solid',
 			class: `
-				bg-neutral-700 dark:bg-neutral-700 text-white border-0
-				pcb-shadow-neutral
+				bg-neutral-700 dark:bg-neutral-700 text-white border-0 pcb-shadow-neutral pcb-gloss-line
 				hover:bg-neutral-600
 				active:bg-neutral-800 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent
 			`,
 		},
 		{
@@ -209,13 +197,11 @@ export default {
 			color: 'success',
 			variant: 'solid',
 			class: `
-				bg-success-500 text-white border-0
-				[filter:drop-shadow(0_2px_8px_rgba(0,200,163,0.3))]
-				hover:bg-success-400 hover:[filter:drop-shadow(0_0_16px_rgba(0,200,163,0.5))]
+				bg-success-500 text-white border-0 pcb-gloss-line
+				[filter:drop-shadow(0_2px_8px_color-mix(in_srgb,var(--color-deployer-success-500)_30%,transparent))]
+				hover:bg-success-400 hover:[filter:drop-shadow(0_0_16px_color-mix(in_srgb,var(--color-deployer-success-500)_50%,transparent))]
 				active:bg-success-600 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent
 			`,
 		},
 		{
@@ -242,13 +228,11 @@ export default {
 			color: 'warning',
 			variant: 'solid',
 			class: `
-				bg-warning-500 text-neutral-900 border-0
-				[filter:drop-shadow(0_2px_8px_rgba(230,178,0,0.3))]
-				hover:bg-warning-400 hover:[filter:drop-shadow(0_0_16px_rgba(230,178,0,0.5))]
+				bg-warning-500 text-neutral-900 border-0 pcb-gloss-line
+				[filter:drop-shadow(0_2px_8px_color-mix(in_srgb,var(--color-deployer-warning-500)_30%,transparent))]
+				hover:bg-warning-400 hover:[filter:drop-shadow(0_0_16px_color-mix(in_srgb,var(--color-deployer-warning-500)_50%,transparent))]
 				active:bg-warning-600 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/50 before:to-transparent
 			`,
 		},
 		{
@@ -275,13 +259,11 @@ export default {
 			color: 'error',
 			variant: 'solid',
 			class: `
-				bg-error-500 text-white border-0
-				[filter:drop-shadow(0_2px_8px_rgba(255,10,85,0.3))]
-				hover:bg-error-400 hover:[filter:drop-shadow(0_0_16px_rgba(255,10,85,0.5))]
+				bg-error-500 text-white border-0 pcb-gloss-line
+				[filter:drop-shadow(0_2px_8px_color-mix(in_srgb,var(--color-deployer-error-500)_30%,transparent))]
+				hover:bg-error-400 hover:[filter:drop-shadow(0_0_16px_color-mix(in_srgb,var(--color-deployer-error-500)_50%,transparent))]
 				active:bg-error-600 active:scale-[0.97]
 				transition-all duration-200
-				before:absolute before:inset-x-0 before:top-0 before:h-px
-				before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent
 			`,
 		},
 		{
