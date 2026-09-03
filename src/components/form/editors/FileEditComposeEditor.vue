@@ -3,21 +3,22 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { ComposeMode } from '@/lib/docker-compose/types'
+import { ManagedFile } from '@/lib/files'
 </script>
 
 <script setup lang="ts">
 const { t } = useI18n()
 
-const model = defineModel<string | null>({ required: true })
+const model = defineModel<ManagedFile>({ required: true })
 
 const editMode = ref<ComposeMode>('form')
 
 function currentContent(): string {
-	return model.value ?? ''
+	return model.value.content ?? ''
 }
 
 function writeContent(content: string) {
-	model.value = content
+	model.value.content = content
 }
 
 function switchMode(mode: ComposeMode) {
@@ -45,13 +46,7 @@ function switchMode(mode: ComposeMode) {
 				/>
 			</div>
 		</div>
-		<ComposeJsonSchema v-if="editMode === 'form'" v-model="model" />
-		<UTextarea
-			v-else
-			:model-value="currentContent()"
-			class="w-full font-mono"
-			:rows="15"
-			@update:model-value="writeContent"
-		/>
+		<ComposeJsonSchema v-if="editMode === 'form'" v-model="model.content" />
+		<UTextarea v-else v-model="model.content" class="w-full font-mono" :rows="15" />
 	</div>
 </template>

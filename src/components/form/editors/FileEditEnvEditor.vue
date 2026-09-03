@@ -1,17 +1,18 @@
 <script lang="ts">
+import { ManagedFile } from '@/lib/files'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
-const model = defineModel<string | null>({ required: true })
+const model = defineModel<ManagedFile>({ required: true })
 
 const { t } = useI18n()
 
 const envEntries = computed({
 	get() {
-		if (!model.value) return []
-		return model.value
+		if (!model.value.content) return []
+		return model.value.content
 			.split('\n')
 			.filter(line => line.trim() && !line.startsWith('#'))
 			.map(line => {
@@ -21,7 +22,7 @@ const envEntries = computed({
 			})
 	},
 	set(entries: Array<{ key: string; value: string }>) {
-		model.value = entries
+		model.value.content = entries
 			.filter(e => e.key.trim())
 			.map(e => `${e.key}=${e.value}`)
 			.join('\n')
