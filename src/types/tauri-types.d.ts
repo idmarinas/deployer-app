@@ -10,8 +10,6 @@ export type AuthType = "password" | "key";
 
 export type CommandResponse<T = null> = { success: boolean, data: T | null, message_key: string, message_params: { [key in string]: string }, };
 
-export type ComposeFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, name: string, mime_type?: string | null, size?: number | null, last_modified?: number | null, webkit_relative_path?: string | null, icon?: string | null, };
-
 export type DatabaseInfo = { path: string, file_size_bytes: number, table_count: number, tables: Array<TableInfo>, other_tables: OtherTablesInfo | null, page_count: number, page_size: number, };
 
 export type DerivePasskeyInfo = { 
@@ -35,11 +33,6 @@ key_content: string,
 passphrase: string | null, };
 
 export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
-
-/**
- * Struct común de retorno para las tablas con patrón "_files".
- */
-export type ModuleFile = { id: number, module_id: number, file_path: string, content: string | null, is_binary: boolean, name: string, mime_type: string | null, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string | null, created_at: string, updated_at: string, };
 
 export type DockerComposeOperationInput = { docker_compose_id: number, };
 
@@ -72,6 +65,13 @@ action: ExportPublicKeyAction,
  * Credenciales temporales opcionales.
  */
 temp_username: string | null, temp_password: string | null, };
+
+/**
+ * Identificador de una tabla "_files". Serde lo serializa en snake_case del
+ * variante (p.ej. DockerComposeFiles -> "docker_compose_files"), el mismo
+ * valor string que usaba el frontend como id de tabla.
+ */
+export type FilesTableId = "docker_compose_files";
 
 export type GeneratePasskeyInput = { 
 /**
@@ -202,6 +202,18 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
 
+/**
+ * Struct común de retorno para las tablas con patrón "_files".
+ */
+export type ModuleFile = { id: number, module_id: number, file_path: string, content: string, is_binary: boolean, name: string, mime_type: string | null, file_type: string, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string, updated_at: string, created_at: string, deleted_at: string | null, };
+
+/**
+ * Entrada de un archivo a sincronizar. Común a cualquier módulo que utilice el
+ * patrón "_files" (solo cambia el `module_id` y la tabla, que van en
+ * [`SyncModuleFilesInput`]).
+ */
+export type ModuleFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, name: string, mime_type?: string | null, file_type: string, size?: number | null, last_modified?: number | null, webkit_relative_path?: string | null, icon?: string | null, };
+
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
 
 export type RemoteCommandInput = { host_id: number, 
@@ -288,6 +300,10 @@ recursive: boolean | null,
  */
 ssh_reconnect_attempts: number | null, };
 
-export type SyncDockerComposeFilesInput = { module_id: number, files: Array<ComposeFileInput>, };
+/**
+ * Entrada del comando `sync_module_files`: el `module_id` del módulo padre,
+ * la `table` "_files" a usar y la lista de archivos.
+ */
+export type SyncModuleFilesInput = { module_id: number, table: FilesTableId, files: Array<ModuleFileInput>, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
