@@ -10,6 +10,11 @@ edition = "2021"
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
 
+[profile.dev.package.scrypt]
+opt-level = 3
+[profile.dev.package.rust-argon2]
+opt-level = 3
+
 [profile.release]
 codegen-units = 1 # Allows LLVM to perform better optimization.
 lto = true        # Enables link-time-optimizations.
@@ -33,6 +38,7 @@ tauri = { version = "2.11.5", features = ["tray-icon"] }
 tauri-plugin-opener = "2.5.4"
 tauri-plugin-dialog = "2.7.2"
 tauri-plugin-store = "2.4.4"
+tauri-plugin-stronghold = "2"
 tauri-plugin-positioner = { version = "2.3.3", features = ["tray-icon"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
@@ -48,6 +54,9 @@ keyring = "4.1.6"
 base64 = "0.23.1"
 rand = { version = "0.10.2", default-features = false, features = ["sys_rng"] }
 rand_core = { version = "0.10.1" }
+rust-argon2 = "2"
+iota_stronghold = "2"
+dirs = "6"
 hex = "0.4.3"
 reqwest = { version = "0.12.28", features = ["json", "rustls-tls"], default-features = false }
 urlencoding = "2.1.3"
