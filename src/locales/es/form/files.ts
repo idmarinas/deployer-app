@@ -36,6 +36,8 @@ export default {
 	},
 	binary: 'Archivo binario',
 	image_label: 'Imagen',
+	env_label: 'Archivo .env',
+	compose_label: 'Compose',
 	binary_hint: 'Este archivo es binario y no puede editarse desde la aplicación.',
 	discarded_size: '{count} archivo descartado por superar {size} | {count} archivos descartados por superar {size}',
 	discarded_type:

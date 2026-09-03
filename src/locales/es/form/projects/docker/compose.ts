@@ -22,10 +22,8 @@ export default {
 		help: 'Directorio en el servidor donde se subirán todos los archivos del compose',
 	},
 	files: {
-		compose_label: 'compose.yaml',
 		principal: 'Principal',
 		secondary: 'Secundario',
-		env_label: 'Archivos .env',
 		env_add: 'Añadir variable',
 		create_compose: 'Crear compose.yaml',
 		compose_missing: 'Falta el archivo compose.yaml principal',

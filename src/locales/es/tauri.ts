@@ -15,6 +15,10 @@ export default {
       table_check_failed: 'Error al verificar la tabla {table}. \n Razón: {reason}',
     },
   },
+  files: {
+    sync_failed: 'Error al sincronizar los archivos. \n Razón: {reason}',
+    sync_success: 'Archivos sincronizados correctamente',
+  },
   deployments: {
     errors: {
       context_failed: 'Error al obtener el contexto de cifrado. \n Razón: {reason}',
@@ -94,10 +98,6 @@ export default {
       pull: { failed: 'Error al actualizar las imágenes de Docker Compose. \n Razón: {reason}' },
       restart: { failed: 'Error al reiniciar los servicios de Docker Compose. \n Razón: {reason}' },
       up: { failed: 'Error al iniciar los servicios de Docker Compose. \n Razón: {reason}' },
-    },
-    files: {
-      sync_failed: 'Error al sincronizar los archivos del Docker Compose. \n Razón: {reason}',
-      sync_success: 'Archivos sincronizados correctamente',
     },
   },
   framework_configs: {
