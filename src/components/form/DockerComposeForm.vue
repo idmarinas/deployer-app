@@ -7,14 +7,15 @@ import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
+const items = defineModel<ManagedFile[]>('items', { required: true })
 const state = defineModel<{
 	name: string
 	description?: JSONContent
 	host_id?: number
 	remote_path: string
 	enabled: boolean
-	files: ManagedFile[]
 }>({ required: true })
+
 const props = defineProps<{
 	isLoading: boolean
 }>()
@@ -71,5 +72,5 @@ const { t } = useI18n()
 	</UFormField>
 
 	<USeparator class="my-3 col-span-full" />
-	<ComposeTreeFilesUpload v-model="state.files" class="col-span-full" can-create-file can-edit can-upload />
+	<ComposeTreeFilesUpload v-model="items" class="col-span-full" can-create-file can-edit can-upload />
 </template>
