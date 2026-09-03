@@ -76,16 +76,18 @@ async fn upload_all_compose_files(
     for file in files {
         let dest_path = format!("{}/{}", remote_dir.trim_end_matches('/'), file.file_path);
 
-        let content: Vec<u8> = match &file.content {
-            Some(c) if file.is_binary => {
-                // Archivos binarios: el contenido se almacena en base64.
-                BASE64.decode(c).map_err(|e| {
-                    format!("Error al decodificar base64 de '{}': {}", file.file_path, e)
-                })?
-            }
-            Some(c) => c.as_bytes().to_vec(),
-            // Si no hay contenido almacenado, saltamos el archivo
-            None => continue,
+        // content es notNull con default ''(no opcional): si está vacío, saltamos.
+        if file.content.is_empty() {
+            continue;
+        }
+
+        let content: Vec<u8> = if file.is_binary {
+            // Archivos binarios: el contenido se almacena en base64.
+            BASE64.decode(&file.content).map_err(|e| {
+                format!("Error al decodificar base64 de '{}': {}", file.file_path, e)
+            })?
+        } else {
+            file.content.as_bytes().to_vec()
         };
 
         if let Some(parent) = Path::new(&dest_path).parent() {

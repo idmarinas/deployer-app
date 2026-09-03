@@ -1,28 +1,33 @@
 use std::collections::HashMap;
 use tauri::AppHandle;
 
-use crate::commands::projects::docker::compose::files_types::SyncDockerComposeFilesInput;
+use crate::commands::projects::files::types::SyncModuleFilesInput;
 use crate::files::{self, ModuleFile};
 use crate::helpers::open_crypto_context;
 use crate::response::CommandResponse;
 
 // ============================================================================
-// Comandos Tauri
+// Comando Tauri genérico de archivos de módulo
 // ============================================================================
 
-/// Sincroniza la lista de archivos de un compose en una única transacción:
-/// inserta los nuevos, actualiza los existentes y elimina los que ya no
-/// estén presentes. Devuelve la lista final de archivos con sus ids.
+/// Sincroniza la lista de archivos de un módulo en una única transacción:
+/// inserta los nuevos, actualiza los existentes y elimina los que ya no estén
+/// presentes. Devuelve la lista final de archivos con sus ids.
 ///
-/// El SQL se construye dinámicamente a partir del schema de tabla `_files`
-/// (crate::files), de modo que si cambia el nombre de la tabla o la columna
-/// FK basta con regenerar `files.rs` (bun run tables:generate).
+/// Es un comando genérico compatible con cualquier tabla con patrón "_files":
+/// el frontend indica la `table` (identificador de [`crate::files::FilesTable`])
+/// y el `module_id` del padre. Por defecto usa la tabla de Docker Compose.
+///
+/// El SQL se construye dinámicamente a partir del schema `_files` (crate::files),
+/// de modo que si cambia una columna basta con regenerar `files.rs`
+/// (bun run tables:generate).
 #[tauri::command]
-pub async fn sync_project_docker_compose_files(
+pub async fn sync_module_files(
     app: AppHandle,
-    input: SyncDockerComposeFilesInput,
+    input: SyncModuleFilesInput,
 ) -> Result<CommandResponse<Vec<ModuleFile>>, String> {
-    let schema = &files::DOCKER_COMPOSE_FILES;
+    // La exaustividad de tabla queda garantizada en compile-time por el enum.
+    let schema = input.table.schema();
 
     // Columnas editables, excluyendo la FK (module_id), que se gestiona aparte.
     let edit_cols: Vec<&str> = files::FILES_EDITABLE
@@ -37,7 +42,7 @@ pub async fn sync_project_docker_compose_files(
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "tauri.docker_composes.files.sync_failed",
+                "tauri.files.sync_failed",
                 HashMap::from([("reason".to_string(), e)]),
             ))
         }
@@ -47,7 +52,7 @@ pub async fn sync_project_docker_compose_files(
         Ok(tx) => tx,
         Err(e) => {
             return Ok(CommandResponse::err(
-                "tauri.docker_composes.files.sync_failed",
+                "tauri.files.sync_failed",
                 HashMap::from([("reason".to_string(), e.to_string())]),
             ))
         }
@@ -87,6 +92,7 @@ pub async fn sync_project_docker_compose_files(
                     .bind(file.is_binary)
                     .bind(&file.name)
                     .bind(&file.mime_type)
+                    .bind(&file.file_type)
                     .bind(file.size)
                     .bind(file.last_modified)
                     .bind(&file.webkit_relative_path)
@@ -98,7 +104,7 @@ pub async fn sync_project_docker_compose_files(
                 match q.execute(&mut *tx).await {
                     Ok(r) if r.rows_affected() > 0 => Ok(id),
                     Ok(_) => {
-                        // El id no pertenecía a este compose: se inserta.
+                        // El id no pertenecía a este módulo: se inserta.
                         let placeholders =
                             std::iter::repeat_n("?", edit_cols.len() + 3).collect::<Vec<_>>().join(", ");
 
@@ -115,6 +121,7 @@ pub async fn sync_project_docker_compose_files(
                             .bind(file.is_binary)
                             .bind(&file.name)
                             .bind(&file.mime_type)
+                            .bind(&file.file_type)
                             .bind(file.size)
                             .bind(file.last_modified)
                             .bind(&file.webkit_relative_path)
@@ -146,6 +153,7 @@ pub async fn sync_project_docker_compose_files(
                     .bind(file.is_binary)
                     .bind(&file.name)
                     .bind(&file.mime_type)
+                    .bind(&file.file_type)
                     .bind(file.size)
                     .bind(file.last_modified)
                     .bind(&file.webkit_relative_path)
@@ -164,7 +172,7 @@ pub async fn sync_project_docker_compose_files(
             Err(e) => {
                 let _ = tx.rollback().await;
                 return Ok(CommandResponse::err(
-                    "tauri.docker_composes.files.sync_failed",
+                    "tauri.files.sync_failed",
                     HashMap::from([("reason".to_string(), e.to_string())]),
                 ));
             }
@@ -185,14 +193,14 @@ pub async fn sync_project_docker_compose_files(
     if let Err(e) = delete_query.execute(&mut *tx).await {
         let _ = tx.rollback().await;
         return Ok(CommandResponse::err(
-            "tauri.docker_composes.files.sync_failed",
+            "tauri.files.sync_failed",
             HashMap::from([("reason".to_string(), e.to_string())]),
         ));
     }
 
     if let Err(e) = tx.commit().await {
         return Ok(CommandResponse::err(
-            "tauri.docker_composes.files.sync_failed",
+            "tauri.files.sync_failed",
             HashMap::from([("reason".to_string(), e.to_string())]),
         ));
     }
@@ -208,6 +216,6 @@ pub async fn sync_project_docker_compose_files(
 
     Ok(CommandResponse::ok(
         files,
-        "tauri.docker_composes.files.sync.success",
+        "tauri.files.sync_success",
     ))
 }

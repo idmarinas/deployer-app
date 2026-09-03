@@ -14,10 +14,10 @@ use commands::database::{
 };
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
 use commands::projects::docker::compose::{
-    sync_project_docker_compose_files,
     project_docker_compose_down, project_docker_compose_logs, project_docker_compose_ps,
     project_docker_compose_pull, project_docker_compose_restart, project_docker_compose_up,
 };
+use commands::projects::files::sync_module_files;
 use commands::cache::docker::{
     cache_docker_search, cache_docker_tags,
 };
@@ -71,8 +71,8 @@ pub fn run() {
             ssh_upload_file,
             ssh_download_file,
             ssh_cancel_remote_job,
-            // Docker Composes - Archivos
-            sync_project_docker_compose_files,
+            // Modules - Archivos (genérico, patrón "_files")
+            sync_module_files,
             // Docker Composes - Operaciones
             project_docker_compose_up,
             project_docker_compose_down,
