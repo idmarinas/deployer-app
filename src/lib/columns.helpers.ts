@@ -29,6 +29,9 @@ export const file_table = {
 	is_binary: integer({ mode: 'boolean' }).notNull().default(false),
 	name: text().notNull(),
 	mime_type: text(),
+	file_type: text({ enum: ['compose', 'composer', 'env', 'other'] })
+		.notNull()
+		.default('other'),
 	size: integer(),
 	last_modified: integer(),
 	webkit_relative_path: text(),
