@@ -238,12 +238,7 @@ watch([isLoading, pageTitle, () => route.params.id], ([newLoading, newTitle, new
 				/>
 			</div>
 
-			<ComposeTreeFilesUpload
-				:model-value="compose_files"
-				:can-upload="false"
-				:can-edit="false"
-				:can-create-file="false"
-			/>
+			<ComposeTreeFilesUpload :model-value="compose_files" />
 		</div>
 	</div>
 	<StatusError v-else-if="status === 'error' && error?.message === 'not-found'" />
