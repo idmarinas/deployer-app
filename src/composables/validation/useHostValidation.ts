@@ -19,10 +19,12 @@ export function useHostValidation(id?: number) {
 				.nonempty(t('validation.hosts.name.required'))
 				.min(3, t('validation.hosts.name.min'))
 				.max(120, t('validation.hosts.name.max'))
-				.refine(
-					async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0,
-					t('validation.hosts.name.not_unique'),
-				),
+				.refine(async value => {
+					if (!value) {
+						return false
+					}
+					return (await db.$count(hosts, eq(hosts.name, value))) <= 0
+				}, t('validation.hosts.name.not_unique')),
 		host: z.xor(
 			[z.ipv4(t('validation.hosts.host.ipv4')), z.ipv6(t('validation.hosts.host.ipv6'))],
 			t('validation.hosts.host.required'),
@@ -75,6 +77,8 @@ export function useHostValidation(id?: number) {
 				.min(3, t('validation.hosts.name.min'))
 				.max(120, t('validation.hosts.name.max'))
 				.refine(async value => {
+					if (!value) return false
+
 					let where = eq(hosts.name, value)
 					if (id) {
 						where = and(where, ne(hosts.id, id))!

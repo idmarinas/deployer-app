@@ -17,10 +17,11 @@ export function usePasskeyValidation(id?: number) {
 				.normalize()
 				.min(3, t('validation.passkeys.name.min'))
 				.max(120, t('validation.passkeys.name.max'))
-				.refine(
-					async value => (await db.$count(passkeys, eq(passkeys.name, value))) <= 0,
-					t('validation.passkeys.name.not_unique'),
-				),
+				.refine(async value => {
+					if (!value) return false
+
+					return (await db.$count(passkeys, eq(passkeys.name, value))) <= 0
+				}, t('validation.passkeys.name.not_unique')),
 		key_content: z.string().nonempty(t('validation.passkeys.key_content.required')),
 		passphrase: z.string().nullable().default(null),
 		fingerprint: z => z,
@@ -38,6 +39,8 @@ export function usePasskeyValidation(id?: number) {
 				.min(3, t('validation.passkeys.name.min'))
 				.max(120, t('validation.passkeys.name.max'))
 				.refine(async value => {
+					if (!value) return false
+
 					let where = eq(passkeys.name, value)
 					if (id) {
 						where = and(where, ne(passkeys.id, id))!
