@@ -22,10 +22,7 @@ macro_rules! params {
 /// Los archivos .sql se embeben en el binario en tiempo de compilación.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn execute_migrations(
-    app: AppHandle,
-    path: Option<String>,
-) -> CommandResponse<()> {
+pub async fn execute_migrations(app: AppHandle, path: Option<String>) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     let pool = match path {

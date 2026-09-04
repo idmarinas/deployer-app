@@ -1,10 +1,7 @@
 pub mod cipher;
-pub mod keyring;
+pub mod stronghold;
 
-pub use cipher::{decrypt, is_encrypted};
-pub use keyring::get_or_create_master_key;
-
-/// Valor centinela que el backend sustituye por los valores con prefijo `ENC:`
-/// cuando el frontend solicita enmascaramiento (`mask_fields`). El frontend
-/// reconoce este valor y muestra un placeholder (ej. "••••••••") en UI.
-pub const BLANK_VALUE: &str = "__BLANK__e5362baf-c777-4d57-a609-6eaf1f9e87f6";
+pub use cipher::is_encrypted;
+pub use stronghold::{
+    encrypt_with_key, get_or_create_vault_password, split_ciphertext_version, StrongholdVault,
+};

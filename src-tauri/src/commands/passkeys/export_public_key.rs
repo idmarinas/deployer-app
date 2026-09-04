@@ -8,12 +8,13 @@ use tokio::time::timeout;
 use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::AuthType;
-use crate::ssh::{HostCredentials, SshCredentials, SshSession};
-use crate::response::CommandResponse;
 use crate::crypto;
+use crate::crypto::StrongholdVault;
+use crate::helpers::configured_sqlite_options;
 use crate::params;
+use crate::response::CommandResponse;
+use crate::ssh::{HostCredentials, SshCredentials, SshSession};
 
 /// Timeout para operaciones SSH (en segundos)
 const SSH_TIMEOUT_SECS: u64 = 15;
@@ -67,9 +68,9 @@ pub async fn export_public_key(
     app: AppHandle,
     input: ExportPublicKeyInput,
 ) -> Result<CommandResponse<()>, String> {
-    // 1. Contexto de cifrado
-    let (_pool, master_key) = match crate::helpers::open_crypto_context(&app).await {
-        Ok(ctx) => ctx,
+    // 1. Contexto de cifrado — vault de Stronghold
+    let vault = match StrongholdVault::open() {
+        Ok(v) => v,
         Err(e) => {
             return Ok(CommandResponse::err(
                 "tauri.hosts.error.context_failed",
@@ -116,8 +117,9 @@ pub async fn export_public_key(
     // Descifrar credenciales del host
     if let Some(ref pwd) = host_creds.password {
         if crypto::is_encrypted(pwd) {
-            host_creds.password = Some(
-                crypto::decrypt(pwd, &master_key)
+                host_creds.password = Some(
+                vault
+                    .decrypt_value("encrypt:deployer_hosts.password", pwd)
                     .map_err(|e| format!("Error al descifrar password: {}", e))?,
             );
         }
@@ -125,7 +127,8 @@ pub async fn export_public_key(
     if let Some(ref kc) = host_key_content {
         if crypto::is_encrypted(kc) {
             host_key_content = Some(
-                crypto::decrypt(kc, &master_key)
+                vault
+                    .decrypt_value("encrypt:deployer_passkeys.key_content", kc)
                     .map_err(|e| format!("Error al descifrar key_content: {}", e))?,
             );
         }
@@ -133,7 +136,8 @@ pub async fn export_public_key(
     if let Some(ref pp) = host_passphrase {
         if crypto::is_encrypted(pp) {
             host_passphrase = Some(
-                crypto::decrypt(pp, &master_key)
+                vault
+                    .decrypt_value("encrypt:deployer_passkeys.passphrase", pp)
                     .map_err(|e| format!("Error al descifrar passphrase: {}", e))?,
             );
         }
@@ -158,13 +162,15 @@ pub async fn export_public_key(
 
     // Descifrar contenido de la passkey
     if crypto::is_encrypted(&passkey.key_content) {
-        passkey.key_content = crypto::decrypt(&passkey.key_content, &master_key)
+        passkey.key_content = vault
+            .decrypt_value("encrypt:deployer_passkeys.key_content", &passkey.key_content)
             .map_err(|e| format!("Error al descifrar passkey: {}", e))?;
     }
     if let Some(ref pp) = passkey.passphrase {
         if crypto::is_encrypted(pp) {
             passkey.passphrase = Some(
-                crypto::decrypt(pp, &master_key)
+                vault
+                    .decrypt_value("encrypt:deployer_passkeys.passphrase", pp)
                     .map_err(|e| format!("Error al descifrar passphrase: {}", e))?,
             );
         }

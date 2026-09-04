@@ -4,11 +4,11 @@ use tauri::AppHandle;
 use ts_rs::TS;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::HostSystemInfo;
-use crate::ssh::{connect_to_host_by_id, run_ssh_command, SshSession};
-use crate::response::CommandResponse;
+use crate::helpers::configured_sqlite_options;
 use crate::params;
+use crate::response::CommandResponse;
+use crate::ssh::{connect_to_host_by_id, run_ssh_command, SshSession};
 
 /// Timeout para comandos de actualización (segundos). Puede ser largo.
 const UPDATE_COMMAND_TIMEOUT_SECS: u64 = 300;
@@ -124,7 +124,13 @@ pub async fn host_update_packages(
 ) -> Result<CommandResponse<HostUpdateResult>, String> {
     let (mut session, system_info) = connect_and_load_system_info(&app, input.host_id).await?;
 
-    let (command, output, exit_code) = update_packages(&mut session, &system_info, input.packages.as_deref(), input.use_sudo.unwrap_or(false)).await;
+    let (command, output, exit_code) = update_packages(
+        &mut session,
+        &system_info,
+        input.packages.as_deref(),
+        input.use_sudo.unwrap_or(false),
+    )
+    .await;
 
     let _ = session.disconnect().await;
 
@@ -135,7 +141,11 @@ pub async fn host_update_packages(
     };
 
     Ok(CommandResponse::ok(
-        HostUpdateResult { command, output, exit_code },
+        HostUpdateResult {
+            command,
+            output,
+            exit_code,
+        },
         key,
     ))
 }
@@ -165,8 +175,8 @@ async fn fetch_host_json_field<T: serde::de::DeserializeOwned>(
     host_id: i64,
     field: &str,
 ) -> Option<T> {
-    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
-        .ok()??;
+    let db_path =
+        crate::commands::database::store::get_database_path_internal(app.clone()).ok()??;
     let url = path_to_sqlite_url(&db_path);
     let options = configured_sqlite_options(&url).ok()?;
     let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;
@@ -198,15 +208,9 @@ async fn check_updates(
     system_info: &HostSystemInfo,
 ) -> Result<Vec<HostPackage>, String> {
     let output = match system_info.package_manager.as_str() {
-        "apt" => {
-            run_ssh_cmd(&mut session, "apt list --upgradable 2>/dev/null").await?
-        }
-        "yum" => {
-            run_ssh_cmd(&mut session, "yum check-update 2>/dev/null").await?
-        }
-        "dnf" => {
-            run_ssh_cmd(&mut session, "dnf check-update --quiet 2>/dev/null").await?
-        }
+        "apt" => run_ssh_cmd(&mut session, "apt list --upgradable 2>/dev/null").await?,
+        "yum" => run_ssh_cmd(&mut session, "yum check-update 2>/dev/null").await?,
+        "dnf" => run_ssh_cmd(&mut session, "dnf check-update --quiet 2>/dev/null").await?,
         _ => {
             let _ = session.disconnect().await;
             return Err("Package manager no soportado".to_string());
@@ -256,13 +260,7 @@ async fn update_packages(
             }
             _ => format!("{sudo}dnf update -y"),
         },
-        _ => {
-            return (
-                String::new(),
-                "Package manager no soportado".to_string(),
-                1,
-            )
-        }
+        _ => return (String::new(), "Package manager no soportado".to_string(), 1),
     };
 
     match run_ssh_command(session, &command, UPDATE_COMMAND_TIMEOUT_SECS).await {
@@ -344,7 +342,11 @@ fn parse_yum_dnf_updates(output: &str) -> Vec<HostPackage> {
                 let available = parts[1].to_string();
                 let current = parts.get(2).map(|s| s.to_string()).unwrap_or_default();
 
-                if name.starts_with('.') || name == "Obsoleting" || name.contains("Updated") || name.contains("Installed") {
+                if name.starts_with('.')
+                    || name == "Obsoleting"
+                    || name.contains("Updated")
+                    || name.contains("Installed")
+                {
                     return None;
                 }
 
@@ -373,7 +375,12 @@ fn parse_yum_dnf_updates(output: &str) -> Vec<HostPackage> {
 
 fn clean_version(v: &str) -> String {
     let no_epoch = v.split(':').last().unwrap_or(v);
-    no_epoch.split('-').next().unwrap_or(no_epoch).trim().to_string()
+    no_epoch
+        .split('-')
+        .next()
+        .unwrap_or(no_epoch)
+        .trim()
+        .to_string()
 }
 
 fn classify_update(current: &str, new: &str) -> String {

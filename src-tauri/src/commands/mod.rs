@@ -4,6 +4,7 @@ pub mod hosts;
 pub mod passkeys;
 pub mod projects;
 pub mod remote;
+pub mod stronghold;
 
 /// Macro params! global - disponible en todos los módulos de commands.
 /// Construye un HashMap<String, String> de forma concisa.

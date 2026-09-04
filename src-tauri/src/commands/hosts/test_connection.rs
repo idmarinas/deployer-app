@@ -2,9 +2,9 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::timeout;
 
-use crate::ssh::connect_to_host_by_id;
-use crate::response::CommandResponse;
 use crate::params;
+use crate::response::CommandResponse;
+use crate::ssh::connect_to_host_by_id;
 
 /// Timeout por defecto para la conexión SSH (en segundos)
 const CONNECTION_TIMEOUT_SECS: u64 = 10;
@@ -21,10 +21,7 @@ const CONNECTION_TIMEOUT_SECS: u64 = 10;
 /// Devuelve `success: true` si la autenticación fue exitosa, o
 /// `success: false` con un mensaje descriptivo en caso de error.
 #[tauri::command]
-pub async fn test_connection(
-    app: AppHandle,
-    host_id: i64,
-) -> Result<CommandResponse<()>, String> {
+pub async fn test_connection(app: AppHandle, host_id: i64) -> Result<CommandResponse<()>, String> {
     // test_connection debe poder testear hosts deshabilitados
     let connection_result = timeout(
         Duration::from_secs(CONNECTION_TIMEOUT_SECS),

@@ -3,7 +3,7 @@ use tauri::AppHandle;
 
 use crate::commands::projects::files::types::SyncModuleFilesInput;
 use crate::files::{self, ModuleFile};
-use crate::helpers::open_crypto_context;
+use crate::helpers::open_pool;
 use crate::response::CommandResponse;
 
 // ============================================================================
@@ -38,7 +38,7 @@ pub async fn sync_module_files(
 
     let edit_sql_cols = edit_cols.join(", ");
 
-    let (pool, _key) = match open_crypto_context(&app).await {
+    let (pool, _path) = match open_pool(&app).await {
         Ok(ctx) => ctx,
         Err(e) => {
             return Ok(CommandResponse::err(
@@ -214,8 +214,5 @@ pub async fn sync_module_files(
     .await
     .map_err(|e| format!("Error al cargar archivos sincronizados: {}", e))?;
 
-    Ok(CommandResponse::ok(
-        files,
-        "tauri.files.sync_success",
-    ))
+    Ok(CommandResponse::ok(files, "tauri.files.sync_success"))
 }

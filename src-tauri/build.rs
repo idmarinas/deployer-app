@@ -11,10 +11,13 @@ fn package_json() -> PathBuf {
 }
 
 fn resolved_version(package: &str) -> Option<String> {
-    let version = fs::read_to_string(manifest_dir().join(format!("../node_modules/{package}/package.json")))
-        .ok()?;
+    let version =
+        fs::read_to_string(manifest_dir().join(format!("../node_modules/{package}/package.json")))
+            .ok()?;
     let json: serde_json::Value = serde_json::from_str(&version).ok()?;
-    json.get("version").and_then(serde_json::Value::as_str).map(String::from)
+    json.get("version")
+        .and_then(serde_json::Value::as_str)
+        .map(String::from)
 }
 
 fn declared_version(package_json_key: &str) -> Option<String> {

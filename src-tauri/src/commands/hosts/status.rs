@@ -3,11 +3,11 @@ use sqlx::SqlitePool;
 use tauri::AppHandle;
 
 use crate::commands::database::path_to_sqlite_url;
-use crate::helpers::configured_sqlite_options;
 use crate::commands::hosts::types::{HostStatusMetrics, HostSystemInfo};
-use crate::ssh::{connect_to_host_by_id, run_ssh_command};
-use crate::response::CommandResponse;
+use crate::helpers::configured_sqlite_options;
 use crate::params;
+use crate::response::CommandResponse;
+use crate::ssh::{connect_to_host_by_id, run_ssh_command};
 
 /// Timeout para comandos batch (segundos).
 const BATCH_TIMEOUT_SECS: u64 = 15;
@@ -145,7 +145,8 @@ pub async fn host_check_system_info(
     let needs_refresh = match &cached_system_info {
         Some(sys) => match &sys.last_checked_at {
             Some(last_checked) => {
-                let cooldown_hours = get_setting_i64(&app, "hosts.system_info_cooldown_hours").await
+                let cooldown_hours = get_setting_i64(&app, "hosts.system_info_cooldown_hours")
+                    .await
                     .unwrap_or(DEFAULT_SYSTEM_INFO_COOLDOWN_HOURS);
                 is_expired(last_checked, cooldown_hours * 3600)
             }
@@ -222,7 +223,8 @@ pub async fn host_check_metrics(
 
     if let Some(ref metrics) = cached_metrics {
         if let Some(ref last_checked) = metrics.last_checked_at {
-            let cooldown_minutes = get_setting_i64(&app, "hosts.status_info_cooldown_minutes").await
+            let cooldown_minutes = get_setting_i64(&app, "hosts.status_info_cooldown_minutes")
+                .await
                 .unwrap_or(DEFAULT_STATUS_INFO_COOLDOWN_MINUTES);
             if !is_expired(last_checked, cooldown_minutes * 60) {
                 let _ = session.disconnect().await;
@@ -236,8 +238,8 @@ pub async fn host_check_metrics(
 
     // 3. Ejecutar batch: métricas dinámicas
     let met_json = run_batch(&mut session, BATCH_METRICS).await?;
-    let met: BatchMetrics = serde_json::from_str(&met_json)
-        .map_err(|e| format!("Error al parsear métricas: {}", e))?;
+    let met: BatchMetrics =
+        serde_json::from_str(&met_json).map_err(|e| format!("Error al parsear métricas: {}", e))?;
 
     let _ = session.disconnect().await;
 
@@ -267,10 +269,7 @@ pub async fn host_check_metrics(
 // ============================================================================
 
 /// Ejecuta un comando batch SSH y devuelve el output crudo.
-async fn run_batch(
-    session: &mut crate::ssh::SshSession,
-    command: &str,
-) -> Result<String, String> {
+async fn run_batch(session: &mut crate::ssh::SshSession, command: &str) -> Result<String, String> {
     let (output, _exit_code) = run_ssh_command(session, command, BATCH_TIMEOUT_SECS).await?;
     Ok(output.trim().to_string())
 }
@@ -307,8 +306,8 @@ fn is_expired(last_checked_at: &str, ttl_secs: i64) -> bool {
 
 /// Lee un valor de deployer_settings y lo parsea a i64.
 async fn get_setting_i64(app: &AppHandle, key: &str) -> Option<i64> {
-    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
-        .ok()??;
+    let db_path =
+        crate::commands::database::store::get_database_path_internal(app.clone()).ok()??;
     let url = path_to_sqlite_url(&db_path);
     let options = configured_sqlite_options(&url).ok()?;
     let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;
@@ -388,8 +387,8 @@ async fn fetch_host_json_field<T: serde::de::DeserializeOwned>(
     host_id: i64,
     field: &str,
 ) -> Option<T> {
-    let db_path = crate::commands::database::store::get_database_path_internal(app.clone())
-        .ok()??;
+    let db_path =
+        crate::commands::database::store::get_database_path_internal(app.clone()).ok()??;
     let url = path_to_sqlite_url(&db_path);
     let options = configured_sqlite_options(&url).ok()?;
     let pool: SqlitePool = SqlitePool::connect_with(options).await.ok()?;

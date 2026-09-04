@@ -1,11 +1,9 @@
-use sqlx::{Row, SqlitePool};
+use sqlx::Row;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::timeout;
 
-use crate::commands::database::path_to_sqlite_url;
-use crate::helpers::{configured_sqlite_options, open_crypto_context};
-use crate::commands::database::store::get_database_path_internal;
+use crate::helpers::open_pool;
 
 use super::session::{decrypt_host_credentials, HostCredentials, SshSession};
 
@@ -23,17 +21,10 @@ pub async fn connect_to_host_by_id(
     reconnect_attempts: u32,
     enabled_only: bool,
 ) -> Result<(SshSession, HostCredentials), String> {
-    let (_pool, key) = open_crypto_context(app).await?;
+    let (pool, _path) = open_pool(app).await.map_err(|e| format!("Error al abrir pool: {}", e))?;
 
-    let db_path = get_database_path_internal(app.clone())
-        .map_err(|e| format!("Error al obtener ruta de BD: {}", e))?
-        .ok_or_else(|| "Ruta de BD no configurada".to_string())?;
-
-    let url = path_to_sqlite_url(&db_path);
-    let options = configured_sqlite_options(&url)?;
-    let pool = SqlitePool::connect_with(options)
-        .await
-        .map_err(|e| e.to_string())?;
+    let vault = crate::crypto::StrongholdVault::open()
+        .map_err(|e| format!("Error al abrir vault de Stronghold: {}", e))?;
 
     let query = if enabled_only {
         r#"
@@ -82,7 +73,7 @@ pub async fn connect_to_host_by_id(
     let key_content: Option<String> = row.try_get("key_content").ok().flatten();
     let passphrase: Option<String> = row.try_get("passphrase").ok().flatten();
 
-    let credentials = decrypt_host_credentials(&host_creds, key_content, passphrase, &key)?;
+    let credentials = decrypt_host_credentials(&host_creds, key_content, passphrase, &vault)?;
     let addr = format!("{}:{}", host_creds.host, host_creds.port);
 
     let session = timeout(

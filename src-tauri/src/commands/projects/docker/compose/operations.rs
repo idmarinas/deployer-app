@@ -1,39 +1,36 @@
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use std::path::Path;
 use tauri::AppHandle;
 use tokio::io::AsyncWriteExt;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
 use crate::commands::projects::docker::compose::types::{
     DockerCompose, DockerComposeOperationInput, DockerComposeService,
 };
 use crate::files::{self, ModuleFile};
-use crate::helpers::open_crypto_context;
+use crate::helpers::open_pool;
+use crate::params;
+use crate::response::CommandResponse;
 use crate::ssh::{
     connect_to_host_by_id, open_sftp_session, run_ssh_command, shell_escape, SshSession,
 };
-use crate::response::CommandResponse;
-use crate::params;
 use crate::tables;
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-async fn load_docker_compose(
-    pool: &sqlx::SqlitePool,
-    id: i64,
-) -> Result<DockerCompose, String> {
+async fn load_docker_compose(pool: &sqlx::SqlitePool, id: i64) -> Result<DockerCompose, String> {
     use sqlx::Row;
 
     let row = sqlx::query(&format!(
         "SELECT * FROM {} WHERE id = ?1",
         tables::TABLE_PROJECTS_DOCKER_COMPOSE
     ))
-        .bind(id)
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| format!("Error al cargar docker compose: {}", e))?
-        .ok_or_else(|| "Docker compose no encontrado".to_string())?;
+    .bind(id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| format!("Error al cargar docker compose: {}", e))?
+    .ok_or_else(|| "Docker compose no encontrado".to_string())?;
 
     Ok(DockerCompose {
         id: row.get("id"),
@@ -148,7 +145,7 @@ async fn load_compose_with_files(
     app: &AppHandle,
     docker_compose_id: i64,
 ) -> Result<(sqlx::SqlitePool, DockerCompose, Vec<ModuleFile>, SshSession), String> {
-    let (pool, _key) = open_crypto_context(app).await?;
+    let (pool, _path) = open_pool(app).await?;
     let compose = load_docker_compose(&pool, docker_compose_id).await?;
     let files = load_compose_files(&pool, docker_compose_id).await?;
     let host_id = compose
@@ -176,8 +173,8 @@ pub async fn project_docker_compose_up(
     // Subir todos los archivos via SFTP
     upload_all_compose_files(&mut session, remote_dir, &files).await?;
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
@@ -222,8 +219,8 @@ pub async fn project_docker_compose_down(
 
     let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
@@ -266,8 +263,8 @@ pub async fn project_docker_compose_ps(
 
     let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
@@ -305,18 +302,15 @@ pub async fn project_docker_compose_logs(
 
     let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
     let (output, exit_code) = run_in_dir(
         &mut session,
         remote_dir,
-        &format!(
-            "docker compose -f {} logs --tail 50",
-            compose_remote_path
-        ),
+        &format!("docker compose -f {} logs --tail 50", compose_remote_path),
     )
     .await?;
 
@@ -346,8 +340,8 @@ pub async fn project_docker_compose_restart(
 
     let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
@@ -390,8 +384,8 @@ pub async fn project_docker_compose_pull(
 
     let remote_dir = compose.remote_path.trim_end_matches('/');
 
-    let compose_file_name = find_compose_file_name(&files)
-        .unwrap_or_else(|| "compose.yaml".to_string());
+    let compose_file_name =
+        find_compose_file_name(&files).unwrap_or_else(|| "compose.yaml".to_string());
 
     let compose_remote_path = format!("{}/{}", remote_dir, compose_file_name);
 
@@ -430,7 +424,10 @@ fn find_compose_file_name(files: &[ModuleFile]) -> Option<String> {
         .iter()
         .find(|f| {
             let name = f.file_path.to_lowercase();
-            name == "compose.yaml" || name == "compose.yml" || name == "docker-compose.yaml" || name == "docker-compose.yml"
+            name == "compose.yaml"
+                || name == "compose.yml"
+                || name == "docker-compose.yaml"
+                || name == "docker-compose.yml"
         })
         .map(|f| f.file_path.clone())
 }

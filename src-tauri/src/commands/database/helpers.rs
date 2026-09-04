@@ -4,8 +4,6 @@ use sqlx::Column;
 use sqlx::Row;
 use sqlx::ValueRef;
 
-use crate::crypto;
-
 // ====================================================================
 // Bind de parámetros
 // ====================================================================
@@ -74,21 +72,6 @@ pub fn decode_column_value(row: &SqliteRow, ordinal: usize) -> Value {
     Value::Null
 }
 
-
-// ====================================================================
-// Descifrado
-// ====================================================================
-
-/// Descifra un valor si está cifrado.
-pub fn maybe_decrypt(value: &Value, master_key: &[u8]) -> Result<Value, String> {
-    if let Value::String(s) = value {
-        if s.starts_with(crypto::keyring::ENCRYPTED_PREFIX) {
-            return Ok(Value::String(crypto::cipher::decrypt(s, master_key)?));
-        }
-    }
-    Ok(value.clone())
-}
-
 // ====================================================================
 // Utilidades
 // ====================================================================
@@ -106,4 +89,20 @@ pub fn rows_to_values(rows: &[SqliteRow]) -> Vec<Vec<Value>> {
     }
 
     result
+}
+
+/// Devuelve los nombres de columna de la primera fila (en orden de la query).
+///
+/// Si no hay filas, devuelve una lista vacía. El orden coincide con el de
+/// `rows_to_values`, por lo que el frontend puede mapear cada valor por índice.
+pub fn row_column_names(rows: &[SqliteRow]) -> Vec<String> {
+    if let Some(first) = rows.first() {
+        first
+            .columns()
+            .iter()
+            .map(|c| c.name().to_string())
+            .collect()
+    } else {
+        Vec::new()
+    }
 }

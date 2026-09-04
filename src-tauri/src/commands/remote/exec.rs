@@ -5,9 +5,9 @@ use tauri::State;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 
+use crate::params;
 use crate::response::CommandResponse;
 use crate::ssh::{connect_to_host_by_id, shell_escape, SshSession};
-use crate::params;
 
 use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
 use super::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
@@ -60,8 +60,8 @@ pub async fn ssh_execute_command(
         input.command.clone()
     };
 
-    let run = run_command_streaming(&mut session, &full_command, timeout_secs, &channel, &token)
-        .await;
+    let run =
+        run_command_streaming(&mut session, &full_command, timeout_secs, &channel, &token).await;
 
     let _ = session.disconnect().await;
 
@@ -181,11 +181,7 @@ fn emit_error(channel: &Channel<RemoteConsoleEvent>, message: &str) {
     });
 }
 
-fn emit_finished(
-    channel: &Channel<RemoteConsoleEvent>,
-    exit_code: i64,
-    duration_seconds: i64,
-) {
+fn emit_finished(channel: &Channel<RemoteConsoleEvent>, exit_code: i64, duration_seconds: i64) {
     let _ = channel.send(RemoteConsoleEvent::Finished {
         exit_code,
         duration_seconds,

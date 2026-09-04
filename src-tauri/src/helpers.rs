@@ -4,7 +4,6 @@ use tauri::AppHandle;
 
 use crate::commands::database::path_to_sqlite_url;
 use crate::commands::database::store::get_database_path_internal;
-use crate::crypto;
 
 pub fn configured_sqlite_options(url: &str) -> Result<SqliteConnectOptions, String> {
     SqliteConnectOptions::from_str(url)
@@ -28,16 +27,4 @@ pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> 
     let pool = create_configured_pool(&url).await?;
 
     Ok((pool, path))
-}
-
-pub fn get_master_key() -> Result<Vec<u8>, String> {
-    crypto::get_or_create_master_key()
-}
-
-pub async fn open_crypto_context(
-    app: &AppHandle,
-) -> Result<(SqlitePool, Vec<u8>), String> {
-    let (pool, _) = open_pool(app).await?;
-    let key = get_master_key()?;
-    Ok((pool, key))
 }

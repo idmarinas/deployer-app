@@ -6,6 +6,7 @@ use tokio::time::timeout;
 
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
+use crate::crypto::StrongholdVault;
 
 /// Timeout por defecto para el establecimiento de la conexión SSH (segundos).
 const CONNECT_TIMEOUT_SECS: u64 = 15;
@@ -111,16 +112,17 @@ impl SshSession {
     }
 }
 
-/// Descifra las credenciales del host usando la clave maestra.
+/// Descifra las credenciales del host usando el vault de Stronghold.
 pub fn decrypt_host_credentials(
     host: &HostCredentials,
     key_content: Option<String>,
     passphrase: Option<String>,
-    master_key: &[u8],
+    vault: &StrongholdVault,
 ) -> Result<SshCredentials, String> {
     let password = match &host.password {
         Some(pwd) if crypto::is_encrypted(pwd) => Some(
-            crypto::decrypt(pwd, master_key)
+            vault
+                .decrypt_value("encrypt:deployer_hosts.password", pwd)
                 .map_err(|e| format!("Error al descifrar contraseña del host: {}", e))?,
         ),
         other => other.clone(),
@@ -128,7 +130,8 @@ pub fn decrypt_host_credentials(
 
     let key_content = match key_content {
         Some(kc) if crypto::is_encrypted(&kc) => Some(
-            crypto::decrypt(&kc, master_key)
+            vault
+                .decrypt_value("encrypt:deployer_passkeys.key_content", &kc)
                 .map_err(|e| format!("Error al descifrar clave privada: {}", e))?,
         ),
         other => other,
@@ -136,7 +139,8 @@ pub fn decrypt_host_credentials(
 
     let passphrase = match passphrase {
         Some(pp) if crypto::is_encrypted(&pp) => Some(
-            crypto::decrypt(&pp, master_key)
+            vault
+                .decrypt_value("encrypt:deployer_passkeys.passphrase", &pp)
                 .map_err(|e| format!("Error al descifrar passphrase: {}", e))?,
         ),
         other => other,

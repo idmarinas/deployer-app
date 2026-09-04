@@ -7,31 +7,29 @@ mod response;
 mod ssh;
 pub mod tables;
 
-use commands::database::{
-    create_database_file, get_app_info, get_database_info,
-    get_migrations_info, has_migrations_pending, initialize_database, query_raw,
-    execute_migrations, validate_database_sqlite,
-};
+use commands::cache::docker::{cache_docker_search, cache_docker_tags};
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
+use commands::database::{
+    create_database_file, execute_migrations, get_app_info, get_database_info, get_migrations_info,
+    has_migrations_pending, initialize_database, query_raw, validate_database_sqlite,
+};
+use commands::hosts::{
+    host_check_metrics, host_check_system_info, host_check_updates, host_update_packages,
+    test_connection,
+};
+use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
 use commands::projects::docker::compose::{
     project_docker_compose_down, project_docker_compose_logs, project_docker_compose_ps,
     project_docker_compose_pull, project_docker_compose_restart, project_docker_compose_up,
 };
 use commands::projects::files::sync_module_files;
-use commands::cache::docker::{
-    cache_docker_search, cache_docker_tags,
-};
-use commands::hosts::{
-    host_check_system_info, host_check_metrics, host_check_updates, host_update_packages, test_connection,
-};
-use commands::passkeys::{
-    derive_passkey_info, export_public_key, generate_passkey,
-};
 use commands::remote::{
-    ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file,
-    RemoteJobCancel,
+    ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
-
+use commands::stronghold::{
+    get_vault_password, get_vault_path, rotate_encryption_key, scan_and_reencrypt,
+};
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -53,6 +51,16 @@ pub fn run() {
                     })
                     .build(app)?;
             }
+
+            // Stronghold: se registra en setup para tener acceso a app_local_data_dir
+            let salt_path = app
+                .path()
+                .app_local_data_dir()
+                .expect("could not resolve app local data path")
+                .join("salt.txt");
+            app.handle()
+                .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -98,6 +106,11 @@ pub fn run() {
             // Database - Migrations
             execute_migrations,
             has_migrations_pending,
+            // Stronghold
+            get_vault_password,
+            get_vault_path,
+            rotate_encryption_key,
+            scan_and_reencrypt,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

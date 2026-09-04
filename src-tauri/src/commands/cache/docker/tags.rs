@@ -1,9 +1,9 @@
 use sqlx::SqlitePool;
 use tauri::AppHandle;
 
+use super::types::{DockerHubTagResult, DockerHubTagsCache};
 use crate::helpers::open_pool;
 use crate::tables;
-use super::types::{DockerHubTagsCache, DockerHubTagResult};
 
 const TAGS_CACHE_TTL_SECONDS: i64 = 86400;
 const TAGS_PAGE_SIZE: u32 = 100;
@@ -232,11 +232,8 @@ pub async fn cache_docker_tags(
         let page = get_or_fetch_tags_page(&pool, &namespace, &repository, &current_url).await?;
 
         if let Some(tag) = &tag {
-            let found: Vec<DockerHubTagResult> = page
-                .tags
-                .into_iter()
-                .filter(|t| &t.name == tag)
-                .collect();
+            let found: Vec<DockerHubTagResult> =
+                page.tags.into_iter().filter(|t| &t.name == tag).collect();
             if !found.is_empty() {
                 return Ok(found);
             }

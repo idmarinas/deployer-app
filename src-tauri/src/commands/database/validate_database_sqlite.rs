@@ -1,8 +1,8 @@
 use crate::commands::database::path_to_sqlite_url;
 use crate::helpers::create_configured_pool;
 use crate::helpers::open_pool;
-use crate::response::CommandResponse;
 use crate::params;
+use crate::response::CommandResponse;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
@@ -14,10 +14,7 @@ use tokio::time::{sleep_until, Instant};
 /// Devuelve un CommandResponse con clave de traducción y parámetros para el frontend.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn validate_database_sqlite(
-    app: AppHandle,
-    path: Option<String>,
-) -> CommandResponse<()> {
+pub async fn validate_database_sqlite(app: AppHandle, path: Option<String>) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     // 1. Crear pool de conexión
@@ -99,10 +96,7 @@ pub async fn validate_database_sqlite(
             Ok(None) => {
                 pool.close().await;
                 sleep_until(deadline).await;
-                return CommandResponse::err(
-                    "tauri.database.errors.missing_table",
-                    params!(),
-                );
+                return CommandResponse::err("tauri.database.errors.missing_table", params!());
             }
             _ => {}
         }

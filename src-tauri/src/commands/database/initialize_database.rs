@@ -1,8 +1,8 @@
 use crate::commands::database::path_to_sqlite_url;
 use crate::helpers::create_configured_pool;
 use crate::helpers::open_pool;
-use crate::response::CommandResponse;
 use crate::params;
+use crate::response::CommandResponse;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::{sleep_until, Instant};
@@ -13,10 +13,7 @@ use tokio::time::{sleep_until, Instant};
 /// Devuelve siempre un CommandResponse con clave de traducción y parámetros.
 /// Espera como mínimo 1 segundo antes de devolver el resultado.
 #[tauri::command]
-pub async fn initialize_database(
-    app: AppHandle,
-    path: Option<String>,
-) -> CommandResponse<()> {
+pub async fn initialize_database(app: AppHandle, path: Option<String>) -> CommandResponse<()> {
     let deadline = Instant::now() + Duration::from_secs(1);
 
     let pool = match path {

@@ -1,16 +1,16 @@
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use std::path::Path;
 use tauri::ipc::Channel;
 use tauri::AppHandle;
 use tauri::State;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use tokio::io::AsyncReadExt;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 
+use crate::params;
 use crate::response::CommandResponse;
 use crate::ssh::transfer::{self as transfer_utils, TransferResult};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session};
-use crate::params;
 
 use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
 use super::types::{
@@ -183,7 +183,8 @@ pub async fn ssh_download_file(
         });
     };
 
-    let (content_base64, saved_to, transfer) = if let Some(local_path) = input.local_path.as_deref() {
+    let (content_base64, saved_to, transfer) = if let Some(local_path) = input.local_path.as_deref()
+    {
         let dest = Path::new(local_path).to_path_buf();
 
         // Some(true) → directorio recursivo; Some(false) → archivo simple;
@@ -213,8 +214,16 @@ pub async fn ssh_download_file(
                 .await
             }
             None => {
-                transfer_utils::download(&sftp, &src, &dest, overwrite, None, Some(&token), &mut emit)
-                    .await
+                transfer_utils::download(
+                    &sftp,
+                    &src,
+                    &dest,
+                    overwrite,
+                    None,
+                    Some(&token),
+                    &mut emit,
+                )
+                .await
             }
         };
 

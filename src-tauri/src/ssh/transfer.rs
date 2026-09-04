@@ -205,7 +205,10 @@ where
     F: FnMut(&str),
 {
     if src.is_dir() {
-        upload_dir(sftp, src, dest, overwrite, exclude, chmod, cancel, on_output).await
+        upload_dir(
+            sftp, src, dest, overwrite, exclude, chmod, cancel, on_output,
+        )
+        .await
     } else {
         upload_single_file(sftp, src, dest, overwrite, chmod, cancel, on_output).await
     }
@@ -299,9 +302,13 @@ where
         .await
         .map_err(|e| format!("Error al leer directorio remoto '{}': {}", src_str, e))?;
 
-    tokio::fs::create_dir_all(dest_dir)
-        .await
-        .map_err(|e| format!("Error al crear directorio local '{}': {}", dest_dir.display(), e))?;
+    tokio::fs::create_dir_all(dest_dir).await.map_err(|e| {
+        format!(
+            "Error al crear directorio local '{}': {}",
+            dest_dir.display(),
+            e
+        )
+    })?;
 
     for entry in entries {
         if cancelled(cancel) {
@@ -333,8 +340,9 @@ where
             .await?;
             result.add(sub);
         } else {
-            let sub = download_single_file(sftp, &entry_src, &entry_dest, overwrite, cancel, on_output)
-                .await?;
+            let sub =
+                download_single_file(sftp, &entry_src, &entry_dest, overwrite, cancel, on_output)
+                    .await?;
             result.add(sub);
         }
     }

@@ -67,8 +67,6 @@ impl<T> Patch<T> {
             Patch::Value(v) => Some(v),
         }
     }
-
-
 }
 
 /// Representación en TypeScript: idéntica a `Option<T>` (`T | null`).

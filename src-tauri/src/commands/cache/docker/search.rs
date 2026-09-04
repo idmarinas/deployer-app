@@ -1,9 +1,9 @@
-use tauri::AppHandle;
 use serde::Deserialize;
+use tauri::AppHandle;
 
+use super::types::{DockerHubImageResult, DockerHubSearchCache};
 use crate::helpers::open_pool;
 use crate::tables;
-use super::types::{DockerHubImageResult, DockerHubSearchCache};
 
 const SEARCH_CACHE_TTL_SECONDS: i64 = 3600;
 const SEARCH_PAGE_SIZE: u32 = 25;
@@ -62,17 +62,20 @@ pub async fn cache_docker_search(
     .map_err(|e| e.to_string())?;
 
     if !cached.is_empty() && cache_is_fresh(&cached[0].fetched_at, SEARCH_CACHE_TTL_SECONDS) {
-        let mut results: Vec<DockerHubImageResult> = cached.iter().map(|r| DockerHubImageResult {
-            name: if r.namespace == "library" {
-                r.repository.clone()
-            } else {
-                format!("{}/{}", r.namespace, r.repository)
-            },
-            description: r.description.clone().unwrap_or_default(),
-            pull_count: r.pull_count,
-            star_count: r.star_count,
-            official: r.namespace == "library",
-        }).collect();
+        let mut results: Vec<DockerHubImageResult> = cached
+            .iter()
+            .map(|r| DockerHubImageResult {
+                name: if r.namespace == "library" {
+                    r.repository.clone()
+                } else {
+                    format!("{}/{}", r.namespace, r.repository)
+                },
+                description: r.description.clone().unwrap_or_default(),
+                pull_count: r.pull_count,
+                star_count: r.star_count,
+                official: r.namespace == "library",
+            })
+            .collect();
         results.sort_by(|a, b| b.official.cmp(&a.official));
         return Ok(results);
     }
@@ -100,16 +103,20 @@ pub async fn cache_docker_search(
         .await
         .map_err(|e| format!("Error al parsear respuesta: {}", e))?;
 
-    let mut results: Vec<DockerHubImageResult> = data.results.into_iter().map(|r| {
-        let name = r.repo_name.clone();
-        DockerHubImageResult {
-            name,
-            description: r.short_description.unwrap_or_default(),
-            pull_count: r.pull_count.unwrap_or(0),
-            star_count: r.star_count.unwrap_or(0),
-            official: r.is_official.unwrap_or(false),
-        }
-    }).collect();
+    let mut results: Vec<DockerHubImageResult> = data
+        .results
+        .into_iter()
+        .map(|r| {
+            let name = r.repo_name.clone();
+            DockerHubImageResult {
+                name,
+                description: r.short_description.unwrap_or_default(),
+                pull_count: r.pull_count.unwrap_or(0),
+                star_count: r.star_count.unwrap_or(0),
+                official: r.is_official.unwrap_or(false),
+            }
+        })
+        .collect();
 
     results.sort_by(|a, b| b.official.cmp(&a.official));
 

@@ -1,5 +1,5 @@
-use crate::helpers::open_pool;
 use crate::commands::database::store::get_database_path_internal;
+use crate::helpers::open_pool;
 use crate::response::CommandResponse;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -55,15 +55,15 @@ pub async fn get_migrations_info(app: AppHandle) -> CommandResponse<Vec<Migratio
 
     let applied = rows
         .into_iter()
-        .map(|(version, description, installed_on, success, execution_time_ns)| {
-            MigrationInfo {
+        .map(
+            |(version, description, installed_on, success, execution_time_ns)| MigrationInfo {
                 version,
                 description,
                 installed_on,
                 success,
                 execution_time_ns,
-            }
-        })
+            },
+        )
         .collect();
 
     pool.close().await;

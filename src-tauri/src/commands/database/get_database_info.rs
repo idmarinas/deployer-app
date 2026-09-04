@@ -1,5 +1,5 @@
-use crate::helpers::open_pool;
 use crate::commands::database::store::get_database_path_internal;
+use crate::helpers::open_pool;
 use crate::response::CommandResponse;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -47,13 +47,12 @@ async fn get_table_stats(pool: &sqlx::SqlitePool, table_name: &str) -> (i64, i64
         .unwrap_or(0);
 
     // Tamaño estimado
-    let columns: Vec<(String, String)> = sqlx::query_as(
-        "SELECT name, type FROM pragma_table_info(?)",
-    )
-    .bind(table_name)
-    .fetch_all(pool)
-    .await
-    .unwrap_or_default();
+    let columns: Vec<(String, String)> =
+        sqlx::query_as("SELECT name, type FROM pragma_table_info(?)")
+            .bind(table_name)
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
 
     let size_bytes = if columns.is_empty() || row_count == 0 {
         0
