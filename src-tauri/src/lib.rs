@@ -26,9 +26,7 @@ use commands::projects::files::sync_module_files;
 use commands::remote::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
-use commands::stronghold::{
-    get_vault_password, get_vault_path, rotate_encryption_key, scan_and_reencrypt,
-};
+use commands::stronghold::{get_vault_password, get_vault_path};
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -58,9 +56,7 @@ pub fn run() {
                 .app_local_data_dir()
                 .expect("could not resolve app local data path")
                 .join("salt.txt");
-            app.handle()
-                .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
-
+            app.handle().plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -109,8 +105,6 @@ pub fn run() {
             // Stronghold
             get_vault_password,
             get_vault_path,
-            rotate_encryption_key,
-            scan_and_reencrypt,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

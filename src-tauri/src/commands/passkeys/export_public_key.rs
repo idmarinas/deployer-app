@@ -69,7 +69,7 @@ pub async fn export_public_key(
     input: ExportPublicKeyInput,
 ) -> Result<CommandResponse<()>, String> {
     // 1. Contexto de cifrado — vault de Stronghold
-    let vault = match StrongholdVault::open() {
+    let vault = match StrongholdVault::open(&app) {
         Ok(v) => v,
         Err(e) => {
             return Ok(CommandResponse::err(

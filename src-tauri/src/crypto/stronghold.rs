@@ -14,30 +14,29 @@ const VAULT_PASSWORD_ACCOUNT: &str = "stronghold-vault";
 const VAULT_FILE_NAME: &str = "vault.hold";
 const CLIENT_NAME: &str = "encrypt-keys";
 
-/// Sufijo de la entrada del store que guarda la versión actual de un campo.
-const CURRENT_VERSION_SUFFIX: &str = ":current";
-
-/// Wrapper que gestiona acceso al vault de Stronghold para claves de cifrado.
-///
-/// JS (plugin Tauri) y Rust (este módulo) abren el mismo archivo de vault.
-/// `iota-stronghold` usa bloqueo a nivel de archivo para acceso concurrente seguro.
+/// Acceso de SOLO LECTURA al vault de Stronghold para claves de cifrado.///
+/// La escritura sobre el vault (creación/rotación/purga de claves) la realiza
+/// el frontend con el plugin de Stronghold. Rust solo abre el vault para leer
+/// claves y descifrar credenciales SSH, de modo que no hay contención entre
+/// ambos accesos.
 ///
 /// Las claves se guardan versionadas: `encrypt:{table}.{col}:{version}`.
 /// La versión actual se guarda en `encrypt:{table}.{col}:current`.
 /// Un valor cifrado en SQLite tiene formato `ENC:{version}:<base64>`.
 pub struct StrongholdVault {
     stronghold: IotaStronghold,
-    snapshot_path: SnapshotPath,
-    keyprovider: KeyProvider,
 }
 
 impl StrongholdVault {
-    /// Abre el vault. Calcula rutas basándose en `app_local_data_dir`.
-    ///
+    /// Abre el vault (solo lectura) calculando rutas desde `app_local_data_dir`.
     /// El vault se comparte con el plugin Tauri JS, que usa el mismo salt
     /// y la misma password para acceder al mismo archivo.
-    pub fn open() -> Result<Self, String> {
-        let data_dir = compute_data_dir()?;
+    pub fn open(app: &tauri::AppHandle) -> Result<Self, String> {
+        use tauri::Manager;
+        let data_dir = app
+            .path()
+            .app_local_data_dir()
+            .map_err(|e| format!("Error al obtener directorio de datos: {}", e))?;
         let vault_path = data_dir.join(VAULT_FILE_NAME);
         let salt_path = data_dir.join("salt.txt");
 
@@ -55,118 +54,19 @@ impl StrongholdVault {
                 .map_err(|e| format!("Error al cargar snapshot de Stronghold: {:?}", e))?;
         }
 
-        Ok(Self {
-            stronghold,
-            snapshot_path,
-            keyprovider,
-        })
-    }
-
-    /// Persiste el vault a disco.
-    pub fn save(&self) -> Result<(), String> {
-        self.stronghold
-            .commit_with_keyprovider(&self.snapshot_path, &self.keyprovider)
-            .map_err(|e| format!("Error al guardar vault: {:?}", e))?;
-        Ok(())
-    }
-
-    /// Obtiene (migrando si es necesario) la versión actual de cifrado para un scope.
-    ///
-    /// `scope` es el identificador base del campo (`encrypt:deployer_hosts.password`).
-    /// Devuelve un entero >= 0. La entrada `encrypt:{table}.{col}:current` guarda la
-    /// versión actual; la clave se almacena en `encrypt:{table}.{col}:{version}`.
-    ///
-    /// Migración desde el formato sin versionar: si no existe `:current`,
-    /// se comprueba si hay una clave legada en `encrypt:{table}.{col}`. Si existe,
-    /// se migra a `encrypt:{table}.{col}:0`; si no, se crea una clave nueva en v0.
-    pub fn get_current_version(&self, scope: &str) -> Result<i64, String> {
-        let client = self.get_or_create_client()?;
-        let store = client.store();
-
-        let current_key = format!("{}{}", scope, CURRENT_VERSION_SUFFIX);
-        if let Some(bytes) = store.get(current_key.as_bytes()).map_err(|e| {
-            format!("Error al leer versión actual del store: {:?}", e)
-        })? {
-            if bytes.len() == 8 {
-                let mut arr = [0u8; 8];
-                arr.copy_from_slice(&bytes);
-                return Ok(i64::from_be_bytes(arr));
-            }
-        }
-
-        // No hay versión actual → migrar de formato legado o crear v0.
-        let version = 0i64;
-        let legacy_key = scope.as_bytes().to_vec();
-        let versioned_key = format!("{}:{}", scope, version);
-
-        let legacy = store
-            .get(&legacy_key)
-            .map_err(|e| format!("Error al leer clave legada: {:?}", e))?;
-
-        if let Some(bytes) = legacy {
-            store
-                .insert(versioned_key.as_bytes().to_vec(), bytes.to_vec(), None)
-                .map_err(|e| format!("Error al migrar clave legada: {:?}", e))?;
-            store
-                .delete(&legacy_key)
-                .map_err(|e| format!("Error al borrar clave legada: {:?}", e))?;
-        } else {
-            let new_key = generate_random_key_32()?;
-            store
-                .insert(versioned_key.as_bytes().to_vec(), new_key, None)
-                .map_err(|e| format!("Error al crear clave v0: {:?}", e))?;
-        }
-
-        store
-            .insert(current_key.as_bytes().to_vec(), version.to_be_bytes().to_vec(), None)
-            .map_err(|e| format!("Error al guardar versión actual: {:?}", e))?;
-        self.save()?;
-
-        Ok(version)
+        Ok(Self { stronghold })
     }
 
     /// Obtiene la clave AES de una versión concreta para un scope.
     pub fn get_key_for_version(&self, scope: &str, version: i64) -> Result<Vec<u8>, String> {
         let key_scope = format!("{}:{}", scope, version);
         let client = self.get_or_create_client()?;
-        let store = client.store();
-        let key = store
+        let key = client
+            .store()
             .get(key_scope.as_bytes())
             .map_err(|e| format!("Error al leer clave del store: {:?}", e))?
             .ok_or_else(|| format!("Clave no encontrada: {}", key_scope))?;
         Ok(key.to_vec())
-    }
-
-    /// Genera una nueva clave y la registra como la versión actual del scope.
-    ///
-    /// A diferencia de una rotación destructiva, **conserva** la clave anterior
-    /// (y todas las anteriores): cada versión sigue disponible bajo su entrada,
-    /// por lo que los valores ya cifrados con versiones viejas siguen descifrándose.
-    /// Devuelve la nueva clave generada.
-    pub fn rotate_key(&self, scope: &str) -> Result<Vec<u8>, String> {
-        let current = self.get_current_version(scope)?;
-        let new_version = current + 1;
-        let new_key = generate_random_key_32()?;
-
-        let client = self.get_or_create_client()?;
-        let store = client.store();
-
-        let versioned_key = format!("{}:{}", scope, new_version);
-        store
-            .insert(versioned_key.as_bytes().to_vec(), new_key.clone(), None)
-            .map_err(|e| format!("Error al guardar nueva clave: {:?}", e))?;
-
-        let current_key = format!("{}{}", scope, CURRENT_VERSION_SUFFIX);
-        store
-            .insert(
-                current_key.as_bytes().to_vec(),
-                new_version.to_be_bytes().to_vec(),
-                None,
-            )
-            .map_err(|e| format!("Error al actualizar versión actual: {:?}", e))?;
-
-        self.save()?;
-        Ok(new_key)
     }
 
     /// Descifra un valor usando la clave de la versión con la que fue cifrado.
@@ -177,20 +77,6 @@ impl StrongholdVault {
         let (version, payload) = split_ciphertext_version(ciphertext);
         let key = self.get_key_for_version(scope, version)?;
         decrypt_aes_gcm_payload(payload, &key)
-    }
-
-    /// Elimina la clave de una versión concreta (viejas tras purga).
-    pub fn purge_version(&self, scope: &str, version: i64) -> Result<(), String> {
-        if version == 0 {
-            return Ok(());
-        }
-        let key_scope = format!("{}:{}", scope, version);
-        let client = self.get_or_create_client()?;
-        client
-            .store()
-            .delete(key_scope.as_bytes())
-            .map_err(|e| format!("Error al purgar clave de versión {}: {:?}", version, e))?;
-        Ok(())
     }
 
     fn get_or_create_client(&self) -> Result<Client, String> {
@@ -226,28 +112,6 @@ pub fn split_ciphertext_version(ciphertext: &str) -> (i64, &str) {
     }
 }
 
-/// Cifra un texto plano con AES-256-GCM usando una clave dada y devuelve
-/// el valor con formato `ENC:{version}:<base64(nonce12+cipher)>`.
-pub fn encrypt_with_key(plaintext: &str, key: &[u8], version: i64) -> Result<String, String> {
-    let cipher = Aes256Gcm::new_from_slice(key)
-        .map_err(|e| format!("Error al inicializar el cifrado: {}", e))?;
-
-    let mut nonce_bytes = [0u8; 12];
-    SysRng
-        .try_fill_bytes(&mut nonce_bytes)
-        .map_err(|e| format!("Error al generar nonce: {}", e))?;
-    let nonce = Nonce::from(nonce_bytes);
-
-    let ciphertext = cipher
-        .encrypt(&nonce, plaintext.as_bytes())
-        .map_err(|e| format!("Error al cifrar: {}", e))?;
-
-    let mut combined = nonce_bytes.to_vec();
-    combined.extend_from_slice(&ciphertext);
-
-    Ok(format!("ENC:{}:{}", version, BASE64.encode(&combined)))
-}
-
 /// Descifra un payload AES-256-GCM (sin prefijo `ENC:`).
 ///
 /// Formato del payload: `base64(nonce_12_bytes + ciphertext)`.
@@ -272,13 +136,6 @@ fn decrypt_aes_gcm_payload(payload: &str, key: &[u8]) -> Result<String, String> 
 
     String::from_utf8(plaintext_bytes)
         .map_err(|e| format!("Error al decodificar texto descifrado: {}", e))
-}
-
-/// Calcula la ruta de datos local de la app (mismo directorio que Tauri).
-fn compute_data_dir() -> Result<PathBuf, String> {
-    let local = dirs::data_local_dir()
-        .ok_or_else(|| "No se pudo obtener el directorio de datos local".to_string())?;
-    Ok(local.join("DeployerApp"))
 }
 
 /// Obtiene la password del vault desde el keychain del SO.
@@ -315,6 +172,10 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
         }
         salt.copy_from_slice(&data);
     } else {
+        if let Some(parent) = salt_path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Error al crear directorio del salt: {}", e))?;
+        }
         SysRng
             .try_fill_bytes(&mut salt)
             .map_err(|e| format!("Error al generar salt: {}", e))?;
@@ -322,22 +183,12 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
             .map_err(|e| format!("Error al guardar salt: {}", e))?;
     }
 
-    let hash = argon2::hash_raw(password.as_bytes(), &salt, &Default::default())
-        .map_err(|e| format!("Error al derivar clave con Argon2: {:?}", e))?;
-
-    Ok(hash)
+    argon2::hash_raw(password.as_bytes(), &salt, &Default::default())
+        .map_err(|e| format!("Error al derivar clave con Argon2: {:?}", e))
 }
 
 fn generate_random_password() -> String {
     let mut bytes = [0u8; 32];
     SysRng.try_fill_bytes(&mut bytes).ok();
     hex::encode(bytes)
-}
-
-fn generate_random_key_32() -> Result<Vec<u8>, String> {
-    let mut key = vec![0u8; 32];
-    SysRng
-        .try_fill_bytes(&mut key)
-        .map_err(|e| format!("Error al generar clave AES: {}", e))?;
-    Ok(key)
 }

@@ -23,7 +23,7 @@ pub async fn connect_to_host_by_id(
 ) -> Result<(SshSession, HostCredentials), String> {
     let (pool, _path) = open_pool(app).await.map_err(|e| format!("Error al abrir pool: {}", e))?;
 
-    let vault = crate::crypto::StrongholdVault::open()
+    let vault = crate::crypto::StrongholdVault::open(app)
         .map_err(|e| format!("Error al abrir vault de Stronghold: {}", e))?;
 
     let query = if enabled_only {
