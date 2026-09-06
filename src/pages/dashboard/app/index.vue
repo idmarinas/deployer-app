@@ -48,10 +48,16 @@ const { t } = useI18n()
 				label: t('pages.app.settings.sections.database.migrations'),
 				slot: 'migrations',
 			},
+			{
+				icon: ICONS.misc.lock,
+				label: t('pages.app.settings.sections.security.label'),
+				slot: 'security',
+			},
 		]"
 	>
 		<template #info><TabAppInfo /></template>
 		<template #database><TabDatabaseInfo /></template>
 		<template #migrations><TabMigrations /></template>
+		<template #security><TabSecurity /></template>
 	</UTabs>
 </template>
