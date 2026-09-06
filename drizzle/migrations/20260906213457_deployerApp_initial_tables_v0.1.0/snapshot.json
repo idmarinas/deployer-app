@@ -1,0 +1,445 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "e349faf9-6d06-4d29-b87f-97fb79349a37",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "deployer_hosts",
+      "entityType": "tables"
+    },
+    {
+      "name": "deployer_passkeys",
+      "entityType": "tables"
+    },
+    {
+      "name": "deployer_settings",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]}'",
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "enabled",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "host",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "22",
+      "generated": null,
+      "name": "port",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "username",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'password'",
+      "generated": null,
+      "name": "auth_type",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "password",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key_id",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "system_info",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "status_info",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "server_updates",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "table": "deployer_hosts"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]}'",
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "enabled",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key_content",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "passphrase",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'ed25519'",
+      "generated": null,
+      "name": "key_type",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fingerprint",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key",
+      "entityType": "columns",
+      "table": "deployer_settings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value",
+      "entityType": "columns",
+      "table": "deployer_settings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "deployer_settings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "deployer_settings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "table": "deployer_settings"
+    },
+    {
+      "columns": [
+        "key_id"
+      ],
+      "tableTo": "deployer_passkeys",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_deployer_hosts_key_id_deployer_passkeys_id_fk",
+      "entityType": "fks",
+      "table": "deployer_hosts"
+    },
+    {
+      "columns": [
+        "key"
+      ],
+      "nameExplicit": true,
+      "name": "deployer_settings_pk_id",
+      "entityType": "pks",
+      "table": "deployer_settings"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "deployer_hosts_pk",
+      "table": "deployer_hosts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "deployer_passkeys_pk",
+      "table": "deployer_passkeys",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "key_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "deployer_host_idx_key_id",
+      "entityType": "indexes",
+      "table": "deployer_hosts"
+    },
+    {
+      "columns": [
+        {
+          "value": "enabled",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "deployer_host_idx_enabled",
+      "entityType": "indexes",
+      "table": "deployer_hosts"
+    },
+    {
+      "columns": [
+        {
+          "value": "enabled",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "deployer_passkeys_idx_enabled",
+      "entityType": "indexes",
+      "table": "deployer_passkeys"
+    },
+    {
+      "columns": [
+        "name"
+      ],
+      "nameExplicit": true,
+      "name": "deployer_host_unq_name",
+      "entityType": "uniques",
+      "table": "deployer_hosts"
+    },
+    {
+      "columns": [
+        "name"
+      ],
+      "nameExplicit": true,
+      "name": "deployer_passkeys_unq_name",
+      "entityType": "uniques",
+      "table": "deployer_passkeys"
+    }
+  ],
+  "renames": []
+}
