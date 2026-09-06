@@ -84,9 +84,8 @@
 
 Se centra en los módulos:
 
-1. Docker `compose.yaml`
-2. Crear los hosts
-3. Crear las claves de acceso.
+1. Crear los hosts
+2. Crear las claves de acceso.
 
 ## Módulos
 
