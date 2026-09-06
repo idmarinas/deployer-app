@@ -8,22 +8,22 @@ export function useSideberMenu() {
 	const { t } = useI18n()
 
 	const navigationMenu: NavigationMenuItem[][] = [
-		[
-			// Proyectos
-			{
-				label: t('components.sidebar.projects'),
-				icon: getModuleIcon('projects'),
-				defaultOpen: true,
-				children: [
-					// Docker Composes
-					{
-						label: t('components.sidebar.docker_composes'),
-						icon: getModuleIcon('docker_composes'),
-						to: { name: 'dashboard-docker_composes' },
-					},
-				],
-			},
-		],
+		// [
+		// 	// Proyectos
+		// 	{
+		// 		label: t('components.sidebar.projects'),
+		// 		icon: getModuleIcon('projects'),
+		// 		defaultOpen: true,
+		// 		children: [
+		// 			// Docker Composes
+		// 			{
+		// 				label: t('components.sidebar.docker_composes'),
+		// 				icon: getModuleIcon('docker_composes'),
+		// 				to: { name: 'dashboard-docker_composes' },
+		// 			},
+		// 		],
+		// 	},
+		// ],
 		[
 			// Claves de acceso
 			{
