@@ -46,3 +46,5 @@
 
 - **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
 - **Planificando:** Sistema de ajustes (a futuro) → `.agents/plans/AGENTS.settings-system.PLAN.md`
+- **Planificando:** Sustituir `query_raw` por `tauri-plugin-sql` → `.agents/plans/AGENTS.plugin-sql.PLAN.md`
+- **Ejecutando:** Reemplazar el sistema de cifrado por Stronghold → `.agents/plans/AGENTS.stronghold-crypto.PLAN.md` (Fases 1-7 y 9 implementadas; falta verificación funcional Fase 8)
