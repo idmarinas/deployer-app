@@ -1,8 +1,6 @@
-pub mod cache;
 pub mod database;
 pub mod hosts;
 pub mod passkeys;
-pub mod projects;
 pub mod remote;
 pub mod stronghold;
 

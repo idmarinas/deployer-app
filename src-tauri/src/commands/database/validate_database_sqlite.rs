@@ -74,7 +74,6 @@ pub async fn validate_database_sqlite(app: AppHandle, path: Option<String>) -> C
         crate::tables::TABLE_SETTINGS,
         crate::tables::TABLE_PASSKEYS,
         crate::tables::TABLE_HOSTS,
-        crate::tables::TABLE_PROJECTS_DOCKER_COMPOSE,
     ];
 
     for table in required_tables {

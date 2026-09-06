@@ -54,10 +54,7 @@ type FileTableColumn = {
 }
 
 // Todas las columnas (para SELECT y el struct de retorno), con la PK id primera.
-const FILES_COLUMNS: string[] = [
-	'id',
-	...Object.keys(file_table).filter(k => k !== 'id'),
-]
+const FILES_COLUMNS: string[] = ['id', ...Object.keys(file_table).filter(k => k !== 'id')]
 
 // Columnas editables en INSERT/UPDATE (excluye PK y timestamps).
 // module_id va primero (la FK al padre); el resto conserva el orden del objeto.
@@ -229,8 +226,8 @@ ${filesTableDefs.map(f => `            Self::${constToVariant(f.constName)} => &
 writeFileSync(TABLES_OUTPUT, tablesContent)
 console.log(`[tables] ✅ tables.rs generado (${tables.length} tabla(s))`)
 
-writeFileSync(FILES_OUTPUT, filesContent)
-console.log(`[tables] ✅ files.rs generado (${filesTableDefs.length} entidad(es) con patrón _files)`)
+// writeFileSync(FILES_OUTPUT, filesContent)
+// console.log(`[tables] ✅ files.rs generado (${filesTableDefs.length} entidad(es) con patrón _files)`)
 
 for (const t of tables) {
 	console.log(`  ${t.constName} = "${t.tableName}"`)

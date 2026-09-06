@@ -1,13 +1,11 @@
 mod commands;
 mod crypto;
-mod files;
 mod helpers;
 mod patch;
 mod response;
 mod ssh;
 pub mod tables;
 
-use commands::cache::docker::{cache_docker_search, cache_docker_tags};
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
 use commands::database::{
     create_database_file, execute_migrations, get_app_info, get_database_info, get_migrations_info,
@@ -18,11 +16,6 @@ use commands::hosts::{
     test_connection,
 };
 use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
-use commands::projects::docker::compose::{
-    project_docker_compose_down, project_docker_compose_logs, project_docker_compose_ps,
-    project_docker_compose_pull, project_docker_compose_restart, project_docker_compose_up,
-};
-use commands::projects::files::sync_module_files;
 use commands::remote::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
@@ -75,18 +68,6 @@ pub fn run() {
             ssh_upload_file,
             ssh_download_file,
             ssh_cancel_remote_job,
-            // Modules - Archivos (genérico, patrón "_files")
-            sync_module_files,
-            // Docker Composes - Operaciones
-            project_docker_compose_up,
-            project_docker_compose_down,
-            project_docker_compose_ps,
-            project_docker_compose_logs,
-            project_docker_compose_restart,
-            project_docker_compose_pull,
-            // Docker Hub Cache
-            cache_docker_search,
-            cache_docker_tags,
             // Database - Store
             get_database_path,
             set_database_path,
