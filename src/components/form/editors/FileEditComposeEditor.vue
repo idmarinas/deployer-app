@@ -13,14 +13,6 @@ const model = defineModel<ManagedFile>({ required: true })
 
 const editMode = ref<ComposeMode>('form')
 
-function currentContent(): string {
-	return model.value.content ?? ''
-}
-
-function writeContent(content: string) {
-	model.value.content = content
-}
-
 function switchMode(mode: ComposeMode) {
 	if (mode === editMode.value) return
 	editMode.value = mode
