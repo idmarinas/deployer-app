@@ -7,10 +7,9 @@ mod ssh;
 pub mod tables;
 
 use commands::database::store::{check_database_exists, get_database_path, set_database_path};
-use commands::database::{
-    create_database_file, execute_migrations, get_app_info, get_database_info, get_migrations_info,
-    has_migrations_pending, initialize_database, query_raw, validate_database_sqlite,
-};
+use commands::database::{get_app_info, get_database_info, query_raw};
+use commands::database::manage::{create_database_file, initialize_database, validate_database_sqlite};
+use commands::database::migrations::{execute_migrations, get_migrations_info, has_migrations_pending};
 use commands::hosts::{
     host_check_metrics, host_check_system_info, host_check_updates, host_update_packages,
     test_connection,
@@ -79,10 +78,10 @@ pub fn run() {
             query_raw,
             get_app_info,
             get_database_info,
-            get_migrations_info,
             // Database - Migrations
             execute_migrations,
             has_migrations_pending,
+            get_migrations_info,
             // Stronghold
             get_vault_password,
             get_vault_path,
