@@ -135,6 +135,10 @@
 	--pcb-pad: var(--color-deployer-primary-500);
 	--pcb-board: var(--color-deployer-neutral-100);
 	--pcb-silk: var(--color-deployer-neutral-400);
+	--pcb-grid-dot: color-mix(in srgb, var(--color-deployer-primary-500) 3.5%, transparent);
+	--pcb-inset-border: color-mix(in srgb, var(--color-deployer-primary-500) 6%, transparent);
+	--pcb-gloss: color-mix(in srgb, white 60%, transparent);
+	--pcb-bracket-glow: var(--pcb-trace-glow);
 }
 
 .dark {
@@ -159,6 +163,10 @@
 	--pcb-pad: var(--color-deployer-primary-400);
 	--pcb-board: var(--color-deployer-neutral-900);
 	--pcb-silk: var(--color-deployer-neutral-600);
+	--pcb-grid-dot: color-mix(in srgb, var(--color-deployer-primary-500) 4.5%, transparent);
+	--pcb-inset-border: color-mix(in srgb, var(--color-deployer-primary-500) 8%, transparent);
+	--pcb-gloss: color-mix(in srgb, white 50%, transparent);
+	--pcb-bracket-glow: var(--pcb-trace-glow);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -214,6 +222,138 @@ body,
 /* Hexágono achatado — iconos de estado, indicadores */
 .pcb-clip-hex {
 	clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0% 50%);
+}
+
+/* Esquina inferior-izquierda recortada — inputs, selects, textareas */
+.pcb-field-clip {
+	clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 8px 100%, 0% calc(100% - 8px));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILIDADES PCB — Superficies de panel (dot-grid, bisel, gloss, gradiente)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Dot-grid de instrumentos — patrón reutilizable en cards, sidebar, inputs */
+.pcb-panel-grid {
+	background-image: radial-gradient(circle at 1px 1px, var(--pcb-grid-dot) 1px, transparent 0);
+	background-size: 20px 20px;
+}
+
+/* Bisel interior metálico — superficie glossy tipo logo */
+.pcb-inset-bevel {
+	box-shadow: inset 0 0 0 1px var(--pcb-inset-border);
+}
+
+/* Highlight specular superior — brillo del cohete en el logo */
+.pcb-gloss-line::before {
+	content: '';
+	position: absolute;
+	inset-inline: 0;
+	top: 0;
+	height: 1px;
+	background: linear-gradient(to right, transparent, var(--pcb-gloss), transparent);
+	pointer-events: none;
+}
+
+/* Gradiente de marca azul → morado */
+.pcb-gradient-brand {
+	background-image: linear-gradient(to right, var(--color-deployer-primary-500), var(--color-deployer-secondary-500));
+}
+
+/* L-bracket superior-izquierdo — requiere position:relative en el padre */
+.pcb-bracket-tl::before {
+	content: '';
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	width: 14px;
+	height: 14px;
+	border-top: 2px solid color-mix(in srgb, var(--color-deployer-primary-500) 45%, transparent);
+	border-left: 2px solid color-mix(in srgb, var(--color-deployer-primary-500) 45%, transparent);
+	border-radius: 1px 0 0 0;
+	box-shadow: 0 0 6px var(--pcb-bracket-glow);
+	pointer-events: none;
+}
+
+/* L-bracket inferior-derecho */
+.pcb-bracket-br::after {
+	content: '';
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	width: 14px;
+	height: 14px;
+	border-bottom: 2px solid color-mix(in srgb, var(--color-deployer-secondary-500) 45%, transparent);
+	border-right: 2px solid color-mix(in srgb, var(--color-deployer-secondary-500) 45%, transparent);
+	border-radius: 0 0 1px 0;
+	box-shadow: 0 0 6px color-mix(in srgb, var(--color-deployer-secondary-500) 12%, transparent);
+	pointer-events: none;
+}
+
+/* Variante compacta para navbar, table, toast */
+.pcb-bracket-tl-sm::before {
+	content: '';
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	width: 10px;
+	height: 10px;
+	border-top: 2px solid color-mix(in srgb, var(--color-deployer-primary-500) 40%, transparent);
+	border-left: 2px solid color-mix(in srgb, var(--color-deployer-primary-500) 40%, transparent);
+	border-radius: 1px 0 0 0;
+	pointer-events: none;
+}
+
+.pcb-bracket-br-sm::after {
+	content: '';
+	position: absolute;
+	bottom: 6px;
+	right: 6px;
+	width: 10px;
+	height: 10px;
+	border-bottom: 2px solid color-mix(in srgb, var(--color-deployer-secondary-500) 40%, transparent);
+	border-right: 2px solid color-mix(in srgb, var(--color-deployer-secondary-500) 40%, transparent);
+	border-radius: 0 0 1px 0;
+	pointer-events: none;
+}
+
+/* Traza de borde con gradiente brand (header/footer de paneles) */
+.pcb-trace-brand-bottom {
+	position: relative;
+}
+.pcb-trace-brand-bottom::before {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(
+		to right,
+		var(--color-deployer-primary-500),
+		var(--color-deployer-secondary-500)
+	);
+	opacity: 0.4;
+	pointer-events: none;
+}
+
+.pcb-trace-brand-top {
+	position: relative;
+}
+.pcb-trace-brand-top::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(
+		to right,
+		var(--color-deployer-primary-500),
+		var(--color-deployer-secondary-500)
+	);
+	opacity: 0.4;
+	pointer-events: none;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

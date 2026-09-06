@@ -16,7 +16,7 @@ export default {
 			'px-6 py-4 border-b border-(--ui-border) relative',
 			'before:absolute before:bottom-0 before:left-6 before:right-6 before:h-px',
 			'before:bg-linear-to-r before:from-primary-500/40 before:via-secondary-500/40 before:to-transparent',
-			'after:absolute after:top-1/2 after:-translate-y-1/2 after:end-6',
+			'after:absolute after:top-1/2 after:-translate-y-1/2 after:end-6 after:-z-10 after:opacity-50',
 			'after:size-6 after:rounded-full',
 			'after:border-2 after:border-primary-500/25',
 			'after:bg-linear-to-br after:from-primary-500/10 after:to-secondary-500/10',
