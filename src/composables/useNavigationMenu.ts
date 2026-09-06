@@ -111,13 +111,13 @@ export function useSideberMenu() {
 				//   to: '/dashboard/variables/add',
 				//   kbds: ['shift', 'V']
 				// },
-				{
-					label: t('components.navigation.add.docker_compose.label'),
-					suffix: t('components.navigation.add.docker_compose.description'),
-					icon: getModuleIcon('docker_composes'),
-					to: '/dashboard/docker_composes/add',
-					kbds: ['shift', 'D'],
-				},
+				// {
+				// 	label: t('components.navigation.add.docker_compose.label'),
+				// 	suffix: t('components.navigation.add.docker_compose.description'),
+				// 	icon: getModuleIcon('docker_composes'),
+				// 	to: '/dashboard/docker_composes/add',
+				// 	kbds: ['shift', 'D'],
+				// },
 			],
 		},
 	]
@@ -137,13 +137,13 @@ export function useDashboardButton() {
 			label: t('components.sidebar.projects'),
 			type: 'label',
 		},
-		{
-			label: t('components.navigation.add.docker_compose.label'),
-			description: t('components.navigation.add.docker_compose.description'),
-			icon: getModuleIcon('docker_composes'),
-			to: { name: 'dashboard-docker_composes-add' },
-			kbds: ['shift', 'D'],
-		},
+		// {
+		// 	label: t('components.navigation.add.docker_compose.label'),
+		// 	description: t('components.navigation.add.docker_compose.description'),
+		// 	icon: getModuleIcon('docker_composes'),
+		// 	to: { name: 'dashboard-docker_composes-add' },
+		// 	kbds: ['shift', 'D'],
+		// },
 		// {
 		//   label: t('components.navigation.add.project.label'),
 		//   description: t('components.navigation.add.project.description'),
