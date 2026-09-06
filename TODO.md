@@ -19,7 +19,7 @@
 13. Cambiar base de datos:
     1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
 
-  ```ts
+```typescript
   async function changeDatabasePath() {
    // Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
   const selected = await open({
@@ -78,7 +78,7 @@
   isChangingDb.value = false
   }
   }
-  ```
+```
 
 ## Versión 0.1.0
 
@@ -87,6 +87,15 @@ Se centra en los módulos:
 1. Crear los hosts
 2. Crear las claves de acceso.
 
+### Cosas por hacer
+
+1. Extraer componentes de la página principal (dashboard).vue
+2. Comprobar que funciona los dos módulos
+
+3. Organizar mejor la carpeta `src/lib/*`
+4. Preparar los `locales/`
+5. Organizar y limpiar la carpeta `src/composables/*`
+6. Crear el logo para el uninstaller.
 ## Módulos
 
 ### Passkeys
