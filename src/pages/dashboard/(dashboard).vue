@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useDashboardButton } from '@/composables/useNavigationMenu'
 import { db } from '@/lib/db'
-import { projects_docker_compose as composes, hosts, passkeys } from '@/lib/schema'
+import { hosts, passkeys } from '@/lib/schema'
 import { getModuleIcon } from '@/utils/icons'
 import { count, desc, eq } from 'drizzle-orm'
 import { computed, onMounted, ref } from 'vue'
@@ -20,8 +20,6 @@ const isLoading = ref(true)
 const hostCount = ref(0)
 const hostEnabledCount = ref(0)
 const passkeyCount = ref(0)
-const composeCount = ref(0)
-const composeEnabledCount = ref(0)
 
 interface RecentHost {
 	id: number
@@ -37,24 +35,15 @@ interface RecentPasskey {
 	createdAt: string
 }
 
-interface RecentDockerCompose {
-	id: number
-	name: string
-	enabled: boolean
-	hostName: string | null
-	createdAt: string
-}
-
 const recentHosts = ref<RecentHost[]>([])
 const recentPasskeys = ref<RecentPasskey[]>([])
-const recentComposes = ref<RecentDockerCompose[]>([])
 
-const totalItems = computed(() => hostCount.value + passkeyCount.value + composeCount.value)
+const totalItems = computed(() => hostCount.value + passkeyCount.value)
 const isEmpty = computed(() => !isLoading.value && totalItems.value === 0)
 
 onMounted(async () => {
 	try {
-		const [hc, hec, pc, cc, cec, rh, rp, rc] = await Promise.all([
+		const [hc, hec, pc, rh, rp] = await Promise.all([
 			db
 				.select({ c: count() })
 				.from(hosts)
@@ -67,15 +56,6 @@ onMounted(async () => {
 			db
 				.select({ c: count() })
 				.from(passkeys)
-				.then(r => Number(r[0]?.c ?? 0)),
-			db
-				.select({ c: count() })
-				.from(composes)
-				.then(r => Number(r[0]?.c ?? 0)),
-			db
-				.select({ c: count() })
-				.from(composes)
-				.where(eq(composes.enabled, true))
 				.then(r => Number(r[0]?.c ?? 0)),
 			db
 				.select({
@@ -97,28 +77,13 @@ onMounted(async () => {
 				.from(passkeys)
 				.orderBy(desc(passkeys.created_at))
 				.limit(5),
-			db
-				.select({
-					id: composes.id,
-					name: composes.name,
-					enabled: composes.enabled,
-					hostName: hosts.name,
-					createdAt: composes.created_at,
-				})
-				.from(composes)
-				.leftJoin(hosts, eq(composes.host_id, hosts.id))
-				.orderBy(desc(composes.created_at))
-				.limit(5),
 		])
 
 		hostCount.value = hc
 		hostEnabledCount.value = hec
 		passkeyCount.value = pc
-		composeCount.value = cc
-		composeEnabledCount.value = cec
 		recentHosts.value = rh as RecentHost[]
 		recentPasskeys.value = rp as RecentPasskey[]
-		recentComposes.value = rc as RecentDockerCompose[]
 	} catch (e) {
 		console.error('Error loading dashboard summary:', e)
 	} finally {
@@ -197,13 +162,6 @@ onMounted(async () => {
 								color="primary"
 								variant="outline"
 							/>
-							<UButton
-								:icon="getModuleIcon('docker_composes')"
-								:label="t('components.navigation.add.docker_compose.label')"
-								:to="{ name: 'dashboard-docker_composes-add' }"
-								color="primary"
-								variant="outline"
-							/>
 						</div>
 					</div>
 				</UCard>
@@ -238,22 +196,6 @@ onMounted(async () => {
 								<div class="text-2xl font-bold">{{ passkeyCount }}</div>
 								<div class="text-sm text-dimmed">{{ t('pages.home.summary.passkeys') }}</div>
 							</div>
-						</div>
-					</UCard>
-
-					<UCard>
-						<div class="flex items-center gap-4">
-							<div class="flex size-12 items-center justify-center rounded-full bg-(--ui-info)/10">
-								<UIcon :name="getModuleIcon('docker_composes')" class="size-6 text-info" />
-							</div>
-							<div>
-								<div class="text-2xl font-bold">{{ composeCount }}</div>
-								<div class="text-sm text-dimmed">{{ t('pages.home.summary.docker_composes') }}</div>
-							</div>
-						</div>
-						<div v-if="composeCount > 0" class="mt-3 flex items-center gap-1.5 text-xs text-dimmed">
-							<UIcon name="i-tabler-circle-check" class="size-3.5 text-success" />
-							<span>{{ composeEnabledCount }} {{ t('pages.home.summary.enabled') }}</span>
 						</div>
 					</UCard>
 				</div>
@@ -339,55 +281,6 @@ onMounted(async () => {
 								</div>
 								<UBadge v-if="key.keyType" variant="subtle" color="neutral" size="xs" class="shrink-0">
 									{{ key.keyType }}
-								</UBadge>
-							</router-link>
-						</div>
-					</UCard>
-
-					<!-- Recent docker composes -->
-					<UCard>
-						<template #header>
-							<div class="flex items-center justify-between">
-								<h3 class="font-semibold text-sm">{{ t('pages.home.recent.docker_composes') }}</h3>
-								<UButton
-									v-if="composeCount > 0"
-									:label="t('pages.home.recent.view_all')"
-									to="/dashboard/docker_composes"
-									color="neutral"
-									variant="ghost"
-									size="xs"
-									:icon="getModuleIcon('docker_composes')"
-									trailing
-								/>
-							</div>
-						</template>
-
-						<div v-if="recentComposes.length === 0" class="py-6 text-center text-sm text-dimmed">
-							{{ t('pages.home.recent.no_items') }}
-						</div>
-
-						<div v-else class="divide-y divide-default -mx-3">
-							<router-link
-								v-for="compose in recentComposes"
-								:key="compose.id"
-								:to="`/dashboard/docker_composes/${compose.id}`"
-								class="flex items-center justify-between px-3 py-2.5 hover:bg-(--ui-bg-elevated)/50 rounded-sm transition-colors"
-							>
-								<div class="flex items-center gap-2 min-w-0">
-									<UIcon
-										:name="compose.enabled ? getModuleIcon('docker_composes') : getModuleIcon('docker_composes', 'off')"
-										class="size-4 shrink-0"
-										:class="compose.enabled ? 'text-info' : 'text-dimmed'"
-									/>
-									<div class="min-w-0">
-										<span class="text-sm truncate block">{{ compose.name }}</span>
-										<span v-if="compose.hostName" class="text-xs text-dimmed truncate block">
-											{{ compose.hostName }}
-										</span>
-									</div>
-								</div>
-								<UBadge :color="compose.enabled ? 'success' : 'neutral'" variant="subtle" size="xs" class="shrink-0">
-									{{ compose.enabled ? 'Activo' : 'Inactivo' }}
 								</UBadge>
 							</router-link>
 						</div>
