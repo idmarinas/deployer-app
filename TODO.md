@@ -95,11 +95,9 @@ Módulos:
 
 1. Extraer componentes de la página principal (dashboard).vue
 2. Comprobar que funciona los dos módulos
-
-3. Organizar mejor la carpeta `src/lib/*`
-4. Preparar los `locales/`
-5. Organizar y limpiar la carpeta `src/composables/*`
-6. Crear el logo para el uninstaller.
+3. Preparar los `locales/`
+4. Organizar y limpiar la carpeta `src/composables/*`
+5. Crear el logo para el uninstaller.
 
 ## Módulos
 
