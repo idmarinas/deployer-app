@@ -1,5 +1,5 @@
-import { db } from '@/lib/db'
-import { hosts } from '@/lib/schema'
+import { db } from '@/drizzle/drizzle'
+import { hosts } from '@/drizzle/schema'
 import { asc, eq } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 

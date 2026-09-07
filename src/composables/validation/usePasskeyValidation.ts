@@ -2,9 +2,9 @@ import { and, eq, ne } from 'drizzle-orm'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import * as z from 'zod'
 
+import { db } from '@/drizzle/drizzle'
+import { passkeys } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
-import { db } from '@/lib/db'
-import { passkeys } from '@/lib/schema'
 
 export function usePasskeyValidation(id?: number) {
 	const { t } = i18n.global

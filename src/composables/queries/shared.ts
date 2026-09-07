@@ -1,12 +1,12 @@
-import type { EntryKey, QueryCache } from '@pinia/colada'
 import type { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
-import type { Composer } from 'vue-i18n'
+import type { EntryKey, QueryCache } from '@pinia/colada'
 import type { SQL } from 'drizzle-orm'
-import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 import { count as drizzleCount, DrizzleQueryError } from 'drizzle-orm'
+import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
+import type { Composer } from 'vue-i18n'
 
 import useToaster from '@/composables/useToaster'
-import { db, QueryRawError } from '@/lib/db'
+import { db, QueryRawError } from '@/drizzle/drizzle'
 
 /**
  * Cuenta filas de una tabla Drizzle que cumplen una condición, vía el proxy

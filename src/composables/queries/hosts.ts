@@ -5,9 +5,9 @@ import { eq } from 'drizzle-orm'
 
 import { createQueryNotifier, firstRow, invalidateCacheQueries } from '@/composables/queries/shared'
 import useToaster from '@/composables/useToaster'
+import { db } from '@/drizzle/drizzle'
+import { hosts as deployer_hosts } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
-import { db } from '@/lib/db'
-import { hosts as deployer_hosts } from '@/lib/schema'
 
 export function useHostQuery() {
 	const cacheQuery = useQueryCache()

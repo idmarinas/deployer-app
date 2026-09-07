@@ -1,5 +1,5 @@
-import { db } from '@/lib/db'
-import { settings } from '@/lib/schema'
+import { db } from '@/drizzle/drizzle'
+import { settings } from '@/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
 
 export async function getDeployerSetting(key: string, _default: string | null = null): Promise<string | null> {

@@ -1,7 +1,7 @@
 import { useQuery } from '@/composables/useQuery'
 
-import { db } from '@/lib/db'
-import { passkeys as passkeysSchema } from '@/lib/schema'
+import { db } from '@/drizzle/drizzle'
+import { passkeys as passkeysSchema } from '@/drizzle/schema'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export const useSelectPasskeys = defineColadaLoader({

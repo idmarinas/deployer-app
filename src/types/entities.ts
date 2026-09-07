@@ -1,4 +1,4 @@
-import { hosts, passkeys } from '@/lib/schema'
+import { hosts, passkeys } from '@/drizzle/schema'
 
 export type Passkey = typeof passkeys.$inferSelect
 
