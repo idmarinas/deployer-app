@@ -15,11 +15,10 @@ src/
 │       └── fonts/        <- Archivos .woff2 de las fuentes
 ├── components/          <- Componentes reutilizables de UI (form/, pages/, table/, remote/...)
 ├── composables/         <- Lógica con reactividad de Vue (useSchemaToForm, useRemoteCommand, queries/, ...)
-├── lib/                 <- Capa de datos: db.ts (Drizzle proxy), schema.ts/relations.ts (auto), schema-types.ts, entities/, docker-compose/
+├── lib/                 <- Capa de datos: db.ts (Drizzle proxy), stronghold.ts (cripto), schema.ts/relations.ts (auto), schema-types.ts, entities/
 ├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
 ├── locales/             <- i18n (es/, _loader.ts)
-├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,projects/docker/compose,console,theme}, deployer/)
-├── schemas/             <- JSON Schema de edición (compose-spec.json, composer-schema.json)
+├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,theme}, deployer/, deployer/(setup))
 ├── types/               <- Tipos (entities.ts, tauri-types.d.ts auto-generados)
 └── utils/               <- Funciones puras sin reactividad de Vue
 
@@ -50,7 +49,7 @@ theme/                   <- Temas personalizados de componentes Nuxt UI (raíz d
 └── tooltip.ts
 ```
 
-> **Nota sobre el historial:** los catálogos de `projects`, `tasks`, `variables` y `deployments` de versiones anteriores se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar). Los loaders activos de datos son `deployerApp.ts`, `docker_composes.ts`, `hosts.ts` y `passkeys.ts`.
+> **Nota sobre el historial:** los catálogos de `projects`, `tasks`, `variables` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts` y `passkeys.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
 
 ---
 
@@ -258,33 +257,36 @@ Al añadir o modificar cualquier theme file, verificar:
 
 ### Composables de datos (`useQuery.ts`)
 
-- **Lecturas de datos**: los loaders en `src/loaders/` usan `defineColadaLoader` de `pinia-colada` y se consumen directamente en las páginas (ej. `useHostById()`, `useDockerComposeListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`). No hay barrel intermedio.
-- La validación de unicidad de los schemas Zod (`composables/schemas/*.ts`) usa `countWhere(table, condition)` de `composables/queries/shared.ts` directamente. Construye la condición con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/lib/schema` — nunca SQL manual interpolado.
+- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`).
+- Las **queries CRUD** (findAll/find/create/update/remove + notificaciones por toast) se agrupan en el barrel **`composables/useQuery.ts`** (`useQuery()` → `{ hosts, passkeys, projects... }`) y en `src/composables/queries/{hosts,passkeys,shared}.ts`; las páginas de hosts/passkeys las consumen con `const { hosts: hostQuery } = useQuery()`. `useQuery` es el único barrel de queries (no hay barrel por loader).
+- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/lib/schema` — nunca SQL manual interpolado.
 
   ```ts
-  // composables/schemas/hosts.ts
+  // composables/validation/useHostValidation.ts (extracto)
   import { and, eq, ne } from 'drizzle-orm'
-  import { countWhere } from '@/composables/queries/shared'
+  import { db } from '@/lib/db'
   import { hosts } from '@/lib/schema'
 
-  .refine(async (value) => {
-    const condition = hostId
-      ? and(eq(hosts.name, value), ne(hosts.id, hostId))!
-      : eq(hosts.name, value)
-    const exist = await countWhere(hosts, condition)
-    return exist <= 0
-  }, t('validation.hosts.name.not_unique'))
+  name: z =>
+    z
+      .trim()
+      .normalize()
+      .nonempty(t('validation.hosts.name.required'))
+      .min(3, t('validation.hosts.name.min'))
+      .max(120, t('validation.hosts.name.max'))
+      .refine(async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0, t('validation.hosts.name.not_unique')),
   ```
 - Los **tipos** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/lib/schema`); los tipos generados por Rust (entidades `Host`, `DockerCompose`, y los inputs/respuestas de comandos) se importan desde `@/types/entities` y `@/types/tauri-types` (auto-generados por `ts-rs`).
-- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/lib/db.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, caché Docker Hub, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
+- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/lib/db.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
 
 ### Acceso a la base de datos
 
 - Todo el acceso a datos (lecturas **y** escrituras) va por **Drizzle en modo proxy** (`src/lib/db.ts`), que delega en el comando Tauri `query_raw`.
-  - Por defecto (`_decryptEnabled == false`), el proxy envía `maskFields` y el backend sustituye `ENC:` por `BLANK_VALUE`.
-  - Con `withDecryption(true, fn)`, el proxy envía `decryptFields` y el backend descifra con la master key.
-  - En escrituras, el proxy detecta los campos cifrados desde el schema (via `detectEncryptedFieldsFromSchema`) y construye el `encryptMask`; elimina además los valores centinela/`ENC:` antes del invoke (`stripEncryptedValues`).
-- Los comandos Rust `invoke('...')` solo se usan para operaciones con lógica de backend (SSH/SFTP, cripto de claves, caché Docker Hub, gestión de BD).
+  - El frontend detecta los campos cifrados desde el schema (`detectEncryptedFieldsFromSchema` en `db.ts`) y hace la cripto por su cuenta con `src/lib/stronghold.ts` (Web Crypto + vault Stronghold).
+  - En escrituras, el proxy cifra los params de los campos `encryptedText(...)` (`encryptParams`) y elimina antes las asignaciones centinela/`ENC:` (`stripEncryptedValues`).
+  - En lecturas: por defecto (`withDecryption(false)`) enmascara los valores `ENC:` → `BLANK_VALUE`; con `withDecryption(true, fn)` los descifra con la versión de clave del valor.
+  - `query_raw` solo ejecuta SQL — **nunca cifra/enmascara** (eso vive en el frontend).
+- Los comandos Rust `invoke('...')` solo se usan para operaciones con lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD).
 - No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
 
 ---
@@ -320,9 +322,9 @@ getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, pa
 
 ### Migración completada
 
-Las páginas activas (`pages/dashboard/{app,hosts,passkeys,projects/docker/compose}/...`) ya usan `ICONS`/`getModuleIcon`. No queda ningún `i-tabler-...` hardcodeado conocido fuera de archivos no tocados (revisar al editar cualquier archivo nuevo que use iconos).
+Las páginas activas (`pages/dashboard/{app,hosts,passkeys,console,theme}` y `deployer/`) ya usan `ICONS`/`getModuleIcon`. **Aún quedan iconos `i-tabler-*` hardcodeados** en algunos archivos activos (p.ej. `useToolbarButtons.ts`, `DeployerAppMenu.vue`, `useConfigureDeployerApp.ts`, `useMigrations.ts`, `useToaster.ts`, `TableServerUpdates.vue`, `ReviewFilesDialog.vue` y el componente de muestra `ThemePreview.vue`). Al tocar cualquiera de ellos, migrar a `ICONS`/`getModuleIcon`; en código nuevo nunca hardcodear.
 
-> `getModuleIcon` cubre el `ModuleName` completo (8 módulos), sin importar que algunos (deployments, variables, global_variables, tasks) ya no tengan páginas propias en el código activo.
+> `getModuleIcon` cubre el `ModuleName` completo (8 módulos), sin importar que algunos (deployments, variables, global_variables, tasks, projects, docker_composes) ya no tengan páginas propias en el código activo.
 
 ---
 
@@ -347,7 +349,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ### Carga de mensajes (`src/locales/_loader.ts`)
 
-- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...).
+- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...). **Hoy solo `es/` contiene mensajes**: `en/` únicamente tiene `formats/` (formatos de fecha/número) y carece de claves propias de mensajes.
 - `_loader.ts` usa `import.meta.glob` para cargar todos los `.ts` de `es/**` (excluyendo `es/formats/**`, que son los formatos de fecha/número) y los ensambla en un objeto anidado según la ruta del archivo (`pages/setup.ts` → `{ pages: { setup: {...} } }`).
 - Caso especial: un archivo `index.ts` fusiona sus claves directamente en el padre en vez de anidarse bajo `index` (ej. `pages/index.ts` → `result.pages`, no `result.pages.index`).
 - En `DEV`, se avisa por consola si a un idioma le faltan archivos respecto al idioma de referencia (`es`).
@@ -400,14 +402,15 @@ await db.insert(projects_docker_compose).values({ name, host_id })
 
 ### Comandos `invoke` (lógica de backend)
 
-Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, caché Docker Hub, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
+Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
 
 - **Hosts:** `test_connection`, `host_updates`, `host_check_system_info`, `host_check_metrics`, `host_update_packages`.
 - **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
-- **Docker Hub:** `cache_docker_search`, `cache_docker_tags`.
-- **Docker Compose remoto:** `sync_project_docker_compose_files`, `project_docker_compose_up/down/ps/logs/restart/pull`.
 - **BD / setup (deployer):** `get_database_path`, `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
+- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path` — los usa `src/lib/stronghold.ts` para cargar el vault (ver también `AGENTS.backend.md` §4).
 - **Consola remota (SSH suelto):** `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job`.
+
+> Los comandos de Docker Hub (`cache_docker_search`/`cache_docker_tags`) y de Docker Compose remoto (`sync_project_docker_compose_files`, `project_docker_compose_*`) **se retiraron** del backend — no llamarlos.
 
 ```ts
 import { invoke } from '@tauri-apps/api/core'
@@ -425,7 +428,7 @@ Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT
 
 Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con streaming por Channel:
 
-- Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` § 5.1 «Consola remota»).
+- Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` §5 «Consola remota»).
 - Frontend: `useRemoteCommand` (`src/composables/useRemoteCommand.ts`) encapsula la creación del `Channel<RemoteConsoleEvent>` y el `invoke`. Expone:
   - Estado reactivo: `output`, `isRunning`, `lastExitCode`, `errorMessage`.
   - Acciones: `execute(input)`, `upload(input)`, `download(input)` (devuelven `CommandResponse<T> | null`; `null` = rechazo del invoke).
@@ -440,17 +443,16 @@ Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con stream
 
 ---
 
-### `@vueuse/integrations` (`useSortable`): importar SIEMPRE el submódulo directo
+### Drag & drop (`useSortable`): **sin uso activo** (feature retirada)
 
-`@vueuse/integrations` es un paquete "barrel" que reexporta muchas integraciones (`useSortable`, `useAsyncValidator`, `useAxios`, `useQRCode`, ...), cada una con su propia dependencia opcional (`sortablejs`, `async-validator`, `axios`, `qrcode`...). Importar `import { useSortable } from '@vueuse/integrations'` obliga a Vite a resolver el barrel completo, incluidas dependencias que no tenemos instaladas (rompe en dev con `Could not resolve "async-validator"` aunque no se use `useAsyncValidator`).
+La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`variables`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
 
-**Siempre** importar el submódulo directo: `import { useSortable } from '@vueuse/integrations/useSortable'`. Y añadir `@vueuse/integrations` como dependencia explícita en `package.json` (antes solo estaba `@vueuse/core`, y `@vueuse/integrations` se resolvía por hoisting transitivo, lo cual es frágil).
+Si en el futuro se reintrodujera drag & drop, aplicar estas reglas (aprendidas de la implementación retirada, aún válidas para Tauri):
 
-Además, **siempre** pasar `watchElement: true` en las opciones cuando el contenedor esté dentro de un `v-if` que depende de datos asíncronos (ej. `v-if="localHosts.length"` con datos de un loader de `pinia-colada`). Por defecto `watchElement` es `false` y `useSortable` solo intenta enlazar Sortable.js **una vez** en `onMounted`; si en ese primer render el elemento aún no existe en el DOM (datos no cargados todavía), Sortable.js nunca se inicializa y el drag & drop queda muerto sin ningún error en consola. Con `watchElement: true`, `useSortable` monta un `watch` reactivo sobre el elemento y lo enlaza en cuanto aparece.
-
-**No usar la API `{ start, stop, option }` que devuelve `useSortable()` para configurar `handle`/`onUpdate` después de la llamada.** La instancia real de Sortable.js se crea dentro de un `onMounted` interno (asíncrono respecto al `<script setup>`), así que si llamas a `option('handle', ...)` justo después de `useSortable()`, la instancia todavía no existe y la llamada no hace nada (se pierde en silencio, sin error). **Siempre** pasar `handle`, `animation`, `onUpdate`, etc. como tercer argumento (objeto de opciones) directamente en la llamada a `useSortable(el, list, { handle: '.handle', onUpdate: ... })`. Tampoco llamar a `stop()` manualmente en un `onMounted` propio del componente: si se registra después del `onMounted` interno de `useSortable` (que es lo normal, al llamarse después en el `<script setup>`), destruye la instancia justo después de crearla.
-
-**`forceFallback: true` es OBLIGATORIO en Tauri.** Sortable.js usa por defecto la API nativa HTML5 Drag & Drop (`dragstart`/`dragover`/...), que **no funciona de forma fiable dentro de webviews embebidos** (WebView2 en Windows, WebKit en macOS/Linux vía Tauri; el mismo problema afecta a Electron). Síntoma: nada de código da error, pero arrastrar no hace absolutamente nada (el navegador del sistema operativo sí lo haría bien, la app empaquetada no). Solución: pasar siempre `forceFallback: true` en las opciones de `useSortable`, que hace que Sortable.js use eventos de ratón normales en vez de la API nativa.
+- **Importar SIEMPRE el submódulo directo**: `import { useSortable } from '@vueuse/integrations/useSortable'` (importar el barrel `@vueuse/integrations` rompe dev por las dependencias opcionales no instaladas, p.ej. `async-validator`). Añadir `@vueuse/integrations` como dependencia explícita en `package.json`.
+- **`forceFallback: true` es OBLIGATORIO** en Tauri: la API nativa HTML5 Drag & Drop no funciona de forma fiable en webviews (WebView2/WebKit). Sin `forceFallback`, arrastrar no hace nada sin error.
+- Pasar `watchElement: true` cuando el contenedor esté bajo un `v-if` con datos asíncronos; de lo contrario Sortable.js intenta enlazarse una sola vez en `onMounted` y queda muerto si el elemento aún no existe.
+- Pasar `handle`, `animation`, `onUpdate`, etc. como objeto de opciones en la propia llamada a `useSortable()` (la instancia real se crea en un `onMounted` interno; llamar a `option(...)`/`stop()` después no funciona).
 
 ## 6c. CRÍTICO: cualquier `data` de un loader de `pinia-colada` es un `shallowRef`
 
@@ -471,7 +473,9 @@ La pantalla de carga se gestiona en `index.html`. Cuando Vue monta la aplicació
 
 ## 8. Formularios JSON-Schema (basado en `json-schema-library`)
 
-Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema (p.ej. `compose.yaml` vía `ComposeJsonSchema.vue`, `composer.json`). El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa `compose-spec.json` ni `composer-schema.json`. `JsonSchemaEditor.vue` es el editor genérico de documento (raíz con layout de objeto genérico); `ComposeJsonSchema.vue` y `ComposerJsonSchema.vue` son wrappers finos que le pasan schema + i18n + iconos (los únicos que importan los JSON de esquema).
+Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema. El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa ningún JSON de esquema. `JsonSchemaEditor.vue` es el editor genérico de documento (raíz con layout de objeto genérico).
+
+> **Retirado del código activo:** los JSON `src/schemas/compose-spec.json` / `composer-schema.json` **no existen** (se eliminaron del proyecto) y los wrappers que los importaban, `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue` (en `src/components/form/schema/`), quedaron como **huérfanos con imports rotos** (solo siguen referenciados en `components.d.ts`). Las referencias a "Compose"/"Composer" en este §8 se conservan como **referencia histórica** del patrón de uso. El **núcleo** (`src/utils/schema-form/*`, `useSchemaToForm`, `SchemaField*`, `JsonSchemaEditor.vue`) sigue intacto y sin dependencias de esos JSON. Cada editor nuevo debe importar su propio schema y aportar sus normalizers/widgets.
 
 ### Utilidades (`src/utils/schema-form/*`)
 
@@ -484,8 +488,8 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
   - `preferredVariant(node)`, `variantDefault(node)` (vía `getData()`), `variantLabel(node)`.
 - `paths.ts` → `getAt`/`setAt`/`deleteAt` por ruta de formulario `a.b[0]` y conversión `pathToPointer`/`pointerToPath`.
 - `validate.ts` → `validateWithJsl(root, data, resolveMessage?)` → `{ ok, errors: Record<ruta, string[]> }`. Cada error mapea el JSON pointer → ruta de formulario y el código de jsl → clave i18n `form.schema_form.errors.<código>` (ver tabla en `validate.ts`). El resolver por defecto usa `useI18n()`; sin resolver se devuelve la clave.
-- `normalize.ts` → sistema de **normalizadores por schema**. `SchemaNormalizer = (schema: Record<string, any>, pointer: string) => Record<string, any> | undefined` (transforma **un solo nodo** y recibe su JSON pointer, raíz `#`; `undefined` = sin cambios; los normalizadores con menos parámetros siguen siendo válidos). `booleanStringNormalizer` convierte las uniones exactas `boolean | string` (cualquier orden) en `boolean` (en compose el `string` solo existe para que ciertos parsers no fallen al leer `true`/`false` como texto). `normalizeSchema(schema, ...normalizers)` clona y recorre todo el esquema (`properties`, `patternProperties`, `$defs`, `definitions`, `oneOf`/`anyOf`/`allOf`/`prefixItems`, `items`, `additionalProperties`, `not`, `contains`) aplicando los normalizadores en orden a cada nodo (el pointer se escapa: `~`→`~0`, `/`→`~1`); **sin normalizadores devuelve el schema sin recorrerlo**. Cada editor elige los suyos: `ComposeJsonSchema.vue` → `normalizeSchema(composeSpec, booleanStringNormalizer, widgetsNormalizer(...))`; `ComposerJsonSchema.vue` → `normalizeSchema(composerSpec)` (sin normalizadores: su `abandoned` es `boolean|string` con el `string` como valor real, no se normaliza). Añadir un normalizador nuevo = una función de nodo, sin tocar el walker.
-- `WIDGET_KEY = 'x-widget'` y `widgetsNormalizer(map: Record<pointer, nombre>)` en `normalize.ts`: marcan un nodo para renderizarlo con un widget concreto (`{ ...schema, 'x-widget': nombre }` solo si su pointer está en el mapa). jsl **ignora las claves `x-*`** (`SchemaNode.addKeywords`), así que el marcado no genera warnings. El nombre se resuelve contra el mapa `widgets` del formulario (núcleo agnóstico; los wrappers aportan los componentes: Compose → `ComposeImagePicker` para `#/$defs/service/properties/image`).
+- `normalize.ts` → sistema de **normalizadores por schema**. `SchemaNormalizer = (schema: Record<string, any>, pointer: string) => Record<string, any> | undefined` (transforma **un solo nodo** y recibe su JSON pointer, raíz `#`; `undefined` = sin cambios; los normalizadores con menos parámetros siguen siendo válidos). `booleanStringNormalizer` convierte las uniones exactas `boolean | string` (cualquier orden) en `boolean` (en compose el `string` solo existe para que ciertos parsers no fallen al leer `true`/`false` como texto). `normalizeSchema(schema, ...normalizers)` clona y recorre todo el esquema (`properties`, `patternProperties`, `$defs`, `definitions`, `oneOf`/`anyOf`/`allOf`/`prefixItems`, `items`, `additionalProperties`, `not`, `contains`) aplicando los normalizadores en orden a cada nodo (el pointer se escapa: `~`→`~0`, `/`→`~1`); **sin normalizadores devuelve el schema sin recorrerlo**. Cada editor elige los suyos (de referencia, cómo lo hacían los wrappers retirados): `ComposeJsonSchema.vue` → `normalizeSchema(composeSpec, booleanStringNormalizer, widgetsNormalizer(...))`; `ComposerJsonSchema.vue` → `normalizeSchema(composerSpec)` (sin normalizadores: su `abandoned` es `boolean|string` con el `string` como valor real, no se normaliza). Añadir un normalizador nuevo = una función de nodo, sin tocar el walker.
+- `WIDGET_KEY = 'x-widget'` y `widgetsNormalizer(map: Record<pointer, nombre>)` en `normalize.ts`: marcan un nodo para renderizarlo con un widget concreto (`{ ...schema, 'x-widget': nombre }` solo si su pointer está en el mapa). jsl **ignora las claves `x-*`** (`SchemaNode.addKeywords`), así que el marcado no genera warnings. El nombre se resuelve contra el mapa `widgets` del formulario (núcleo agnóstico; los wrappers aportaban los componentes, p.ej. Compose → `ComposeImagePicker` para `#/$defs/service/properties/image` — wrappers retirados del código activo).
 
 ### Composable y componentes
 
@@ -494,7 +498,7 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
   - `SchemaField.vue` — clasifica con `classifyNode` y despacha al componente adecuado; cualquier tipo nullable se rodea con `SchemaFieldNull`. Si el schema del nodo tiene `x-widget` (vía `WIDGET_KEY`) y `form.widgets[nombre]` existe, la rama escalar renderiza `<component :is="widget" v-model="model" />` en vez del input genérico. Los objetos delegan el cuerpo en `SchemaFieldObject` (la cabecera con label/help/remove/add queda aquí).
   - `SchemaFieldObject.vue` — render de los hijos de un objeto: **simples primero** (obligatorias delante de opcionales) y **contenedores** (`array`/`map`/`object`/uniones con variante contenedora) como **pestañas** (icono por kind + punto rojo/ámbar de error/warning). Cuando hay muchas simples opcionales (>10) se pliegan tras el botón "Mostrar campos": **inicialmente solo se ven las obligatorias** (en `service`, sin `required`, la sección simple queda plegada y lo primero visible son las pestañas: build, deploy, healthcheck…). Prop opcional `icon?: (name, node) => string | undefined`: resolver de icono por tab de contenedor; si no se provee usa `ICONS.schemaForm[kind]`. Así el núcleo sigue agnóstico y Compose conserva sus iconos (`ICONS.compose`).
   - `JsonSchemaEditor.vue` — editor genérico de documento (widget de diálogo): `defineModel<string|null>` (texto serializado en el formato elegido), `schema`, `title?`, `description?`, `formatOutput?: 'yaml' | 'json'` (default `'yaml'`; de él se infiere parseo `parseYaml`/`JSON.parse`, serialización `toYaml`/`JSON.stringify(data, null, 2)` y extensiones de import `.yaml,.yml`/`.json`), `importLabel?` (default `form.schema_form.import_file`), `resolveTitle?`/`resolveDescription?`/`resolveMessage?`, `icon?`, `widgets?: Record<string, Component>`. Internamente: `useSchemaToForm` + `provideSchemaFormContext`, sync model↔formData (los mismos watchers con `lastModel`/`syncingFromModel`/`nextTick`), alerts de error/warning, import de archivo, preview y badge de draft. La raíz se renderiza con `<SchemaFieldObject :node="form.root" path="" :icon="icon" />` → layout genérico (simples inline, contenedores como pestañas), sin hardcodeo de claves (`name`/`version` no se tratan aparte).
-  - `ComposeJsonSchema.vue` / `ComposerJsonSchema.vue` — wrappers finos sobre `JsonSchemaEditor`: solo pasan `schema` (normalizado con `normalizeSchema` + sus normalizers), title/description y resolvers (Compose: `formatOutput="yaml"` + `form.compose_schema.*` + `icon = ICONS.compose[name]` + label de import específico + `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` + `widgets={'compose-image': ComposeImagePicker}` → el campo `image` de cada servicio usa el picker de Docker Hub en vez de un string plano; Composer: `formatOutput="json"`, sin resolvers). Crear un editor nuevo = wrapper de configuración, no una copia.
+  - `ComposeJsonSchema.vue` / `ComposerJsonSchema.vue` — ~~wrappers finos sobre `JsonSchemaEditor`~~ **retirados del código activo** (quedan en `src/components/form/schema/` con imports rotos de `@/schemas/*.json` y sin referencias desde páginas/loaders). Su patrón era: pasar `schema` (normalizado con `normalizeSchema` + sus normalizers), title/description y resolvers (Compose: `formatOutput="yaml"` + `form.compose_schema.*` + `icon = ICONS.compose[name]` + label de import específico + `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` + `widgets={'compose-image': ComposeImagePicker}`; Composer: `formatOutput="json"`, sin resolvers). Crear un editor nuevo = wrapper de configuración sobre `JsonSchemaEditor`, no una copia.
   - `SchemaFieldNull.vue` — `USwitch` para activar/desactivar el valor `null` (activar → `set(path, null)`; desactivar → `remove(path)`).
   - `SchemaFieldUnion.vue` — `USelect` de variantes (`oneOf`/`anyOf`/type-array) + editor de la variante activa. **oneOf es exclusivo**: solo se edita el formato elegido.
   - `SchemaFieldArray.vue` — lista de items; si los items resueltos (`classifyNode(resolveNode(items))`) son una unión (`items.oneOf`, `$ref`→unión o `type` array) → `USelect` de formato del array (**array uniforme: solo UN formato**, todos los items con la misma variante, no se mezclan); default del item vía `variantDefault`.
@@ -507,4 +511,4 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
 - **Defaults de `getData()`:** solo se incluyen propiedades `required` (con su `default` o el default del tipo: `0`, `""`, `false`…). Las propiedades opcionales con `default` **no** entran (así lo hace jsl).
 - **i18n:** los mensajes de validación son claves `form.schema_form.errors.*` (nunca strings en español). Labels de variantes/títulos: `form.schema_form.*` y `form.compose_schema.*` (vía `resolveTitle`/`resolveDescription`).
 - **No reinventar:** si un caso no se renderiza, resolver/compilar con las utilidades de `jsl.ts` antes de escribir un parser manual de `$ref`/`allOf`.
-- **Testing:** `tests/{jsl,validate,schema-form,render,normalize}.test.ts` cubren clasificación, validación, defaults, render y normalizadores (incluido `widgetsNormalizer` + marcado `x-widget` sin warnings) sobre `compose-spec`/`composer-schema`.
+- **Testing:** `tests/{jsl,validate,schema-form,render,normalize}.test.ts` cubren clasificación, validación, defaults, render y normalizadores (incluido `widgetsNormalizer` + marcado `x-widget` sin warnings). **Ojo:** `schema-form.test.ts`, `render.test.ts`, `normalize.test.ts` y `jsl.test.ts` importan `@/schemas/compose-spec.json` / `@/schemas/composer-schema.json`, que **ya no existen** → esos 4 tests están rotos a la espera de actualización (`bun test` no los resuelve hoy; `validate.test.ts` sí sigue operativo). El núcleo que prueban está intacto.
