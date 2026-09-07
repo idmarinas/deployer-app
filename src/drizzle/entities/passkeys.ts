@@ -1,7 +1,7 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-import { description, enabled, timestamps } from '../columns.helpers'
-import { encryptedText } from '../schema-types'
+import { description, enabled, timestamps } from '@/drizzle/lib/columns.helpers'
+import { encryptedText } from '@/drizzle/lib/schema-types'
 
 export const passkeys = sqliteTable(
 	'deployer_passkeys',

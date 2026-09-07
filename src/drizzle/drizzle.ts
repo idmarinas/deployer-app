@@ -2,9 +2,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { getTableName } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
 
-import { relations } from '@/lib/relations'
-import * as tablesSchema from '@/lib/schema'
-import { decrypt, encrypt, encryptScope } from '@/lib/stronghold'
+import { decrypt, encrypt, encryptScope } from '@/drizzle/lib/stronghold'
+import { relations } from '@/drizzle/relations'
+import * as tablesSchema from '@/drizzle/schema'
 
 const schema = tablesSchema
 

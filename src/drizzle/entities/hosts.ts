@@ -1,9 +1,9 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { encryptedText } from '../schema-types'
-import { passkeys } from './passkeys'
 
+import { description, enabled, timestamps } from '@/drizzle/lib/columns.helpers'
+import { encryptedText } from '@/drizzle/lib/schema-types'
 import { HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
-import { description, enabled, timestamps } from '../columns.helpers'
+import { passkeys } from './passkeys'
 
 export const hosts = sqliteTable(
 	'deployer_hosts',

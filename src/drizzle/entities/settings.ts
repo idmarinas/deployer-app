@@ -1,5 +1,6 @@
 import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { timestamps } from '../columns.helpers'
+
+import { timestamps } from '@/drizzle/lib/columns.helpers'
 
 export const settings = sqliteTable(
 	'deployer_settings',
