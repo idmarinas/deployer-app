@@ -4,7 +4,6 @@
 	"version": "0.1.0",
 	"identifier": "com.idmarinas.deployer-app",
 	"build": {
-		"removeUnusedCommands": true,
 		"beforeDevCommand": "bun run dev",
 		"devUrl": "http://localhost:1420",
 		"beforeBuildCommand": "bun run build",
