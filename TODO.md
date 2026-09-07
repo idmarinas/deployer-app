@@ -82,11 +82,10 @@
 
 ## Versión 0.1.0
 
-Se centra en los módulos:
+Módulos:
 
-1. Crear los hosts
-2. Crear las claves de acceso.
-
+1. Servidores (hosts)
+2. Claves de acceso (passkeys)
 ### Cosas por hacer
 
 1. Extraer componentes de la página principal (dashboard).vue
