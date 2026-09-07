@@ -58,6 +58,7 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-hosts-not-found'
       | 'dashboard-passkeys'
       | 'dashboard-passkeys-add'
+      | 'dashboard-passkeys-id'
       | 'dashboard-passkeys-id-edit'
       | 'dashboard-theme'
     >,
@@ -150,6 +151,7 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/passkeys/[...path]'
       | 'dashboard-passkeys'
       | 'dashboard-passkeys-add'
+      | 'dashboard-passkeys-id'
       | 'dashboard-passkeys-id-edit'
     >,
     'dashboard-passkeys': RouteRecordInfo<
@@ -159,11 +161,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/dashboard/passkeys/[...path]': RouteRecordInfo<
-      '/dashboard/passkeys/[...path]',
-      '/dashboard/passkeys/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
+    'dashboard-passkeys-id': RouteRecordInfo<
+      'dashboard-passkeys-id',
+      '/dashboard/passkeys/:id(\\d+)',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
       | never
     >,
     'dashboard-passkeys-id-edit': RouteRecordInfo<
@@ -171,6 +173,13 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/passkeys/:id(\\d+)/edit',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    '/dashboard/passkeys/[...path]': RouteRecordInfo<
+      '/dashboard/passkeys/[...path]',
+      '/dashboard/passkeys/:path(.*)',
+      { path: ParamValue<true> },
+      { path: ParamValue<false> },
       | never
     >,
     'dashboard-passkeys-add': RouteRecordInfo<
@@ -256,6 +265,7 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-hosts-not-found'
         | 'dashboard-passkeys'
         | 'dashboard-passkeys-add'
+        | 'dashboard-passkeys-id'
         | 'dashboard-passkeys-id-edit'
         | 'dashboard-theme'
       views:
@@ -363,6 +373,7 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/passkeys/[...path]'
         | 'dashboard-passkeys'
         | 'dashboard-passkeys-add'
+        | 'dashboard-passkeys-id'
         | 'dashboard-passkeys-id-edit'
       views:
         | 'default'
@@ -377,6 +388,22 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/dashboard/passkeys/[id]/(view).vue': {
+      routes:
+        | 'dashboard-passkeys-id'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/passkeys/[id]/edit.vue': {
+      routes:
+        | 'dashboard-passkeys-id-edit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/dashboard/passkeys/[...path].vue': {
       routes:
         | '/dashboard/passkeys/[...path]'
@@ -384,14 +411,6 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
-    }
-    'src/pages/dashboard/passkeys/[id].edit.vue': {
-      routes:
-        | 'dashboard-passkeys-id-edit'
-      views:
-        | never
-      pathParamNames:
-        | 'id'
     }
     'src/pages/dashboard/passkeys/add.vue': {
       routes:
