@@ -19,6 +19,10 @@
 13. Cambiar base de datos:
     1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
 
+## Nuxt
+
+Puede ser más complicado migrar de lo que parece.
+
 ```typescript
   async function changeDatabasePath() {
    // Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
@@ -86,6 +90,7 @@ Módulos:
 
 1. Servidores (hosts)
 2. Claves de acceso (passkeys)
+
 ### Cosas por hacer
 
 1. Extraer componentes de la página principal (dashboard).vue
@@ -95,6 +100,7 @@ Módulos:
 4. Preparar los `locales/`
 5. Organizar y limpiar la carpeta `src/composables/*`
 6. Crear el logo para el uninstaller.
+
 ## Módulos
 
 ### Passkeys
