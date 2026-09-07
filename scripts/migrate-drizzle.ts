@@ -1,8 +1,8 @@
+import { execSync } from 'node:child_process'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { execSync } from 'node:child_process'
 
-const DRIZZLE_DIR = join(import.meta.dir, '..', 'drizzle', 'migrations')
+const DRIZZLE_DIR = join(import.meta.dir, '..', 'migrations')
 const SQLX_DIR = join(import.meta.dir, '..', 'src-tauri', 'migrations')
 
 function parseArgs() {
@@ -15,9 +15,7 @@ function parseArgs() {
 async function generateAndFlatten() {
 	const name = parseArgs()
 
-	const cmd = name
-		? `bunx drizzle-kit generate --name ${name}`
-		: 'bunx drizzle-kit generate'
+	const cmd = name ? `bunx drizzle-kit generate --name ${name}` : 'bunx drizzle-kit generate'
 
 	console.log(`> ${cmd}`)
 	execSync(cmd, { stdio: 'inherit', cwd: join(import.meta.dir, '..') })
