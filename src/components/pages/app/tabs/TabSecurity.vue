@@ -3,7 +3,13 @@ import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import useToaster from '@/composables/useToaster'
-import { ENCRYPTED_FIELDS, getCurrentVersion, reencryptScope, rotateKey, scanAndReencrypt } from '@/lib/stronghold'
+import {
+	ENCRYPTED_FIELDS,
+	getCurrentVersion,
+	reencryptScope,
+	rotateKey,
+	scanAndReencrypt,
+} from '@/drizzle/lib/stronghold'
 </script>
 
 <script setup lang="ts">
