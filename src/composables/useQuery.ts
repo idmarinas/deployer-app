@@ -1,6 +1,6 @@
 import { useHostQuery } from '@/composables/queries/hosts'
 import { usePasskeyQuery } from '@/composables/queries/passkeys'
-import { useDockerComposeQuery } from '@/composables/queries/projects/docker/compose'
+// import { useDockerComposeQuery } from '@/composables/queries/projects/docker/compose'
 
 export function useQuery() {
 	return {
@@ -11,11 +11,11 @@ export function useQuery() {
 		passkeys: usePasskeyQuery(),
 
 		// Projects
-		projects: {
-			docker: {
-				// Docker Compose
-				compose: useDockerComposeQuery(),
-			},
-		},
+		// projects: {
+		// 	docker: {
+		// 		// Docker Compose
+		// 		compose: useDockerComposeQuery(),
+		// 	},
+		// },
 	}
 }
