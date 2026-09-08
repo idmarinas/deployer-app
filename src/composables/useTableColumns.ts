@@ -10,10 +10,11 @@ import UBadge from '@nuxt/ui/components/Badge.vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 
 import { usePositionedButtons, type PositionedButton } from '@/composables/usePositionedButtons'
+import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
 
 export interface TableColumnsOptions {
-	moduleName?: string
+	moduleName?: ModulesName
 	deleteFn?: (id: number) => Promise<boolean>
 	onReload?: () => Promise<void> | void
 }
