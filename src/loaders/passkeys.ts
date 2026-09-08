@@ -26,7 +26,7 @@ export const usePasskeysListAll = defineColadaLoader({
 	},
 })
 
-export const usePasskeyById = defineColadaLoader('dashboard-passkeys-id-edit', {
+export const usePasskeyById = defineColadaLoader('dashboard-passkeys-id', {
 	key: to => ['passkeys', 'passkey', `passkey-${to.params.id}`],
 	query: async to => {
 		const id = Number.parseInt(to.params.id)
