@@ -14,7 +14,7 @@ const props = defineProps<{
 	created_at: string
 	updated_at: string
 	onToggle?: (input: { enabled: boolean }) => Promise<boolean>
-	onUpdatedEnabled: (enabled: boolean) => void
+	onUpdatedEnabled?: (enabled: boolean) => void
 }>()
 
 const { t, locale } = useI18n()
