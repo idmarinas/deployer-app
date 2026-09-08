@@ -11,6 +11,7 @@ export default {
 			'relative overflow-visible',
 			'transition-all duration-300',
 			'hover:border-primary-500/30 hover:pcb-shadow-hover-md',
+			'flex flex-col',
 		].join(' '),
 		header: [
 			'px-6 py-4 border-b border-(--ui-border) relative',
@@ -22,7 +23,7 @@ export default {
 			'after:bg-linear-to-br after:from-primary-500/10 after:to-secondary-500/10',
 			'after:shadow-[inset_0_0_8px_color-mix(in_srgb,var(--color-deployer-primary-500)_12%,transparent),0_0_4px_var(--pcb-trace-glow)]',
 		].join(' '),
-		body: 'px-6 py-5',
+		body: 'px-6 py-5 flex-1',
 		footer: [
 			'px-6 py-4 border-t border-(--ui-border) relative',
 			'before:absolute before:top-0 before:left-6 before:right-6 before:h-px',
