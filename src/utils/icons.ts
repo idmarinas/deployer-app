@@ -25,12 +25,11 @@
  *   ICONS.actions.delete                   // 'i-tabler-trash'
  */
 
+import { ModulesName } from './deployer-app'
+
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
-
-export type ModuleName =
-	'hosts' | 'projects' | 'deployments' | 'variables' | 'global_variables' | 'passkeys' | 'tasks' | 'docker_composes'
 
 export type ModuleIconVariant = 'plural' | 'singular' | 'off'
 
@@ -47,47 +46,52 @@ export interface ModuleIconSet {
 // Iconos por módulo (plural / singular / off)
 // ---------------------------------------------------------------------------
 
-export const MODULE_ICONS: Record<ModuleName, ModuleIconSet> = {
+export const MODULE_ICONS: Record<ModulesName, ModuleIconSet> = {
+	default: {
+		plural: 'i-tabler-packages',
+		singular: 'i-tabler-package',
+		off: 'i-tabler-package-off',
+	},
 	hosts: {
 		plural: 'i-tabler-cloud-network',
 		singular: 'i-tabler-server',
 		off: 'i-tabler-server-off',
 	},
-	projects: {
-		plural: 'i-tabler-packages',
-		singular: 'i-tabler-package',
-		off: 'i-tabler-package-off',
-	},
-	deployments: {
-		plural: 'i-tabler-send',
-		singular: 'i-tabler-send',
-		off: 'i-tabler-send-off',
-	},
-	variables: {
-		plural: 'i-tabler-variable',
-		singular: 'i-tabler-variable',
-		off: 'i-tabler-variable-off',
-	},
-	global_variables: {
-		plural: 'i-tabler-variable',
-		singular: 'i-tabler-variable',
-		off: 'i-tabler-variable-off',
-	},
+	// projects: {
+	// 	plural: 'i-tabler-packages',
+	// 	singular: 'i-tabler-package',
+	// 	off: 'i-tabler-package-off',
+	// },
+	// deployments: {
+	// 	plural: 'i-tabler-send',
+	// 	singular: 'i-tabler-send',
+	// 	off: 'i-tabler-send-off',
+	// },
+	// variables: {
+	// 	plural: 'i-tabler-variable',
+	// 	singular: 'i-tabler-variable',
+	// 	off: 'i-tabler-variable-off',
+	// },
+	// global_variables: {
+	// 	plural: 'i-tabler-variable',
+	// 	singular: 'i-tabler-variable',
+	// 	off: 'i-tabler-variable-off',
+	// },
 	passkeys: {
 		plural: 'i-tabler-key',
 		singular: 'i-tabler-key',
 		off: 'i-tabler-key-off',
 	},
-	tasks: {
-		plural: 'i-tabler-list-check',
-		singular: 'i-tabler-list-details',
-		off: 'i-tabler-x',
-	},
-	docker_composes: {
-		plural: 'i-tabler-brand-docker',
-		singular: 'i-tabler-brand-docker',
-		off: 'i-tabler-brand-docker',
-	},
+	// tasks: {
+	// 	plural: 'i-tabler-list-check',
+	// 	singular: 'i-tabler-list-details',
+	// 	off: 'i-tabler-x',
+	// },
+	// docker_composes: {
+	// 	plural: 'i-tabler-brand-docker',
+	// 	singular: 'i-tabler-brand-docker',
+	// 	off: 'i-tabler-brand-docker',
+	// },
 }
 
 // ---------------------------------------------------------------------------
@@ -263,11 +267,11 @@ export function toIconify(icon: string): string {
  * @param isIconify Si es `true`, devuelve el icono en formato Iconify (`tabler:*`) en vez de UI (`i-tabler-*`)
  */
 export function getModuleIcon(
-	moduleName: ModuleName | string,
+	moduleName: ModulesName,
 	variant: ModuleIconVariant = 'plural',
 	isIconify = false,
 ): string {
-	const set = MODULE_ICONS[moduleName as ModuleName] ?? MODULE_ICONS.projects
+	const set = MODULE_ICONS[moduleName] ?? MODULE_ICONS.default
 	const icon = set[variant] ?? set.plural
 
 	return isIconify ? toIconify(icon) : icon
@@ -278,7 +282,7 @@ export function getModuleIcon(
  * USwitch / UToggle (uncheckedIcon = off, checkedIcon = singular).
  */
 export function getModuleSwitchIcons(
-	moduleName: ModuleName | string,
+	moduleName: ModulesName,
 	isIconify = false,
 ): { uncheckedIcon: string; checkedIcon: string } {
 	return {
