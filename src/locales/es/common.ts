@@ -38,6 +38,7 @@ export default {
 	empty: {
 		label: 'Vacío',
 		description: 'No se ha proporcionado una descripción',
+		passphrase: 'No está protegida con contraseña',
 	},
 
 	semver: {
