@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { setAppSettings } from '@/composables/deployer/useDeployerAppSettings'
+import { setAppSettings } from '@/composables/deployer/useAppSettings'
 import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -18,7 +18,7 @@ interface StepItem extends Omit<StepperItem, 'key'> {
 	invoke: string | Function
 }
 
-export function useDeployerAppConfigure() {
+export function useAppConfigure() {
 	const toast = useToast()
 	const router = useRouter()
 	const { locale, t } = useI18n()
