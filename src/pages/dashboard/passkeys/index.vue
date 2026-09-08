@@ -4,6 +4,7 @@ import type { TableColumn } from '@nuxt/ui'
 
 import { h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import { useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
@@ -12,6 +13,7 @@ import { ICONS } from '@/utils/icons'
 
 import { useQuery } from '@/composables/useQuery'
 import { useTableColumns } from '@/composables/useTableColumns'
+import { ModulesName } from '@/utils/deployer-app'
 </script>
 
 <script setup lang="ts">
@@ -22,12 +24,13 @@ definePage({
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 
+const router = useRouter()
 const { t, locale } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
 const { passkeys: passkeyQuery } = useQuery()
 
-const { tableColumnExpand, tableColumnActions } = useTableColumns<Passkey>({
-	moduleName: 'passkeys',
+const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Passkey>({
+	moduleName: ModulesName.Passkeys,
 	deleteFn: passkeyQuery.remove,
 	onReload: reload,
 })
@@ -58,7 +61,19 @@ const columns: TableColumn<Passkey>[] = [
 		header: t('pages.passkeys.table.columns.fingerprint'),
 		cell: ({ row }) => row.original.fingerprint?.replace('SHA256:', '').slice(0, 20),
 	},
+	tableColumnEnabled,
 	tableColumnActions(row => [
+		{
+			id: 'manage',
+			action: 'before',
+			targetId: 'edit',
+			label: t('common.actions.view'),
+			icon: ICONS.actions.view,
+			tooltip: true,
+			color: 'success',
+			variant: 'ghost',
+			onClick: () => router.push({ name: 'dashboard-passkeys-id', params: { id: row.original.id } }),
+		},
 		{
 			id: 'copy-to-server',
 			action: 'before',
