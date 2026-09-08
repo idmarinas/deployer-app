@@ -29,7 +29,7 @@ const links = computed<ButtonProps[]>(() => {
 	// Mostrar el botón de reinicio condicionalmente
 	if (buttons.value.restart.show) {
 		items.push({
-			label: t('pages.setup.buttons.restart'),
+			label: t('pages.app.setup.buttons.restart'),
 			color: 'warning',
 			variant: 'soft',
 			icon: 'i-tabler-refresh',

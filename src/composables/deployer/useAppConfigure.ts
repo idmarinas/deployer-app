@@ -66,40 +66,40 @@ export function useAppConfigure() {
 			{
 				id: 'create_file',
 				icon: 'i-tabler-file-database',
-				title: t('pages.setup.steps.title.create_file'),
-				description: t('pages.setup.steps.description.idle.create_file'),
+				title: t('pages.app.setup.steps.title.create_file'),
+				description: t('pages.app.setup.steps.description.idle.create_file'),
 				status: 'idle',
 				invoke: 'create_database_file',
 			},
 			{
 				id: 'initialize',
 				icon: 'i-tabler-database-plus',
-				title: t('pages.setup.steps.title.initialize'),
-				description: t('pages.setup.steps.description.idle.initialize'),
+				title: t('pages.app.setup.steps.title.initialize'),
+				description: t('pages.app.setup.steps.description.idle.initialize'),
 				status: 'idle',
 				invoke: 'initialize_database',
 			},
 			{
 				id: 'migrations',
 				icon: ICONS.database.databaseImport,
-				title: t('pages.setup.steps.title.migrations'),
-				description: t('pages.setup.steps.description.idle.migrations'),
+				title: t('pages.app.setup.steps.title.migrations'),
+				description: t('pages.app.setup.steps.description.idle.migrations'),
 				status: 'idle',
 				invoke: 'execute_migrations',
 			},
 			{
 				id: 'validate',
 				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
+				title: t('pages.app.setup.steps.title.validate'),
+				description: t('pages.app.setup.steps.description.idle.validate'),
 				status: 'idle',
 				invoke: 'validate_database_sqlite',
 			},
 			{
 				id: 'save_path',
 				icon: 'i-tabler-database-search',
-				title: t('pages.setup.steps.title.save_path'),
-				description: t('pages.setup.steps.description.idle.save_path'),
+				title: t('pages.app.setup.steps.title.save_path'),
+				description: t('pages.app.setup.steps.description.idle.save_path'),
 				status: 'idle',
 				async invoke() {
 					try {
@@ -120,8 +120,8 @@ export function useAppConfigure() {
 			{
 				id: 'seed',
 				icon: 'i-tabler-database-import',
-				title: t('pages.setup.steps.title.seed'),
-				description: t('pages.setup.steps.description.idle.seed'),
+				title: t('pages.app.setup.steps.title.seed'),
+				description: t('pages.app.setup.steps.description.idle.seed'),
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
 					try {
@@ -151,8 +151,8 @@ export function useAppConfigure() {
 		// Validar que la ruta del archivo .sqlite no sea nula
 		if (!path) {
 			toast.add({
-				title: t('pages.setup.toast.title.canceled'),
-				description: t('pages.setup.toast.description.canceled'),
+				title: t('pages.app.setup.toast.title.canceled'),
+				description: t('pages.app.setup.toast.description.canceled'),
 				color: 'neutral',
 			})
 
@@ -187,8 +187,8 @@ export function useAppConfigure() {
 
 		if (!path) {
 			toast.add({
-				title: t('pages.setup.toast.title.canceled'),
-				description: t('pages.setup.toast.description.canceled'),
+				title: t('pages.app.setup.toast.title.canceled'),
+				description: t('pages.app.setup.toast.description.canceled'),
 				color: 'neutral',
 			})
 
@@ -202,32 +202,32 @@ export function useAppConfigure() {
 			{
 				id: 'validate_pre',
 				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
+				title: t('pages.app.setup.steps.title.validate'),
+				description: t('pages.app.setup.steps.description.idle.validate'),
 				status: 'idle',
 				invoke: 'validate_database_sqlite',
 			},
 			{
 				id: 'migrations',
 				icon: ICONS.database.databaseCog,
-				title: t('pages.setup.steps.title.migrations'),
-				description: t('pages.setup.steps.description.idle.migrations'),
+				title: t('pages.app.setup.steps.title.migrations'),
+				description: t('pages.app.setup.steps.description.idle.migrations'),
 				status: 'idle',
 				invoke: 'execute_migrations',
 			},
 			{
 				id: 'validate_post',
 				icon: 'i-tabler-database-smile',
-				title: t('pages.setup.steps.title.validate'),
-				description: t('pages.setup.steps.description.idle.validate'),
+				title: t('pages.app.setup.steps.title.validate'),
+				description: t('pages.app.setup.steps.description.idle.validate'),
 				status: 'idle',
 				invoke: 'validate_database_sqlite',
 			},
 			{
 				id: 'save_path',
 				icon: ICONS.database.databaseImport,
-				title: t('pages.setup.steps.title.save_path'),
-				description: t('pages.setup.steps.description.idle.save_path'),
+				title: t('pages.app.setup.steps.title.save_path'),
+				description: t('pages.app.setup.steps.description.idle.save_path'),
 				status: 'idle',
 				async invoke() {
 					try {

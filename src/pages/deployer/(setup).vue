@@ -20,7 +20,7 @@ const links = computed<ButtonProps[]>(() => {
 	const items: ButtonProps[] = [
 		// Seleccionar base de datos existente
 		{
-			label: t('pages.setup.buttons.select'),
+			label: t('pages.app.setup.buttons.select'),
 			icon: ICONS.database.databaseSearch,
 			disabled: buttons.value.select.disabled,
 			loading: buttons.value.select.loading,
@@ -28,7 +28,7 @@ const links = computed<ButtonProps[]>(() => {
 				const selected = await open({
 					directory: false,
 					multiple: false,
-					title: t('pages.setup.buttons.select'),
+					title: t('pages.app.setup.buttons.select'),
 					filters: [
 						{
 							name: 'SQLite Files',
@@ -42,7 +42,7 @@ const links = computed<ButtonProps[]>(() => {
 		},
 		{
 			// Crear la base de datos
-			label: t('pages.setup.buttons.create'),
+			label: t('pages.app.setup.buttons.create'),
 			color: 'neutral',
 			variant: 'subtle',
 			icon: ICONS.database.databasePlus,
@@ -50,7 +50,7 @@ const links = computed<ButtonProps[]>(() => {
 			loading: buttons.value.create.loading,
 			onClick: async () => {
 				const selected = await save({
-					title: t('pages.setup.buttons.create'),
+					title: t('pages.app.setup.buttons.create'),
 					defaultPath: 'deployer-app.sqlite',
 					filters: [
 						{
@@ -68,7 +68,7 @@ const links = computed<ButtonProps[]>(() => {
 	// Mostrar el botón de reinicio condicionalmente
 	if (buttons.value.restart.show) {
 		items.push({
-			label: t('pages.setup.buttons.restart'),
+			label: t('pages.app.setup.buttons.restart'),
 			color: 'warning',
 			variant: 'soft',
 			icon: ICONS.actions.refresh,
@@ -85,9 +85,9 @@ const links = computed<ButtonProps[]>(() => {
 <template>
 	<UPageHero
 		:links="links"
-		:headline="t('pages.setup.headline')"
-		:title="t('pages.setup.title')"
-		:description="t('pages.setup.description')"
+		:headline="t('pages.app.setup.headline')"
+		:title="t('pages.app.setup.title')"
+		:description="t('pages.app.setup.description')"
 	>
 		<UStepper :items="steps" value-key="id" :default-value="currentStep" disabled />
 	</UPageHero>
