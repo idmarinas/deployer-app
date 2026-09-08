@@ -5,8 +5,8 @@ import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getDeployerSetting, setDeployerSetting } from '@/composables/deployer/useDeployerSettings'
-import { useDeployerShortcuts } from '@/composables/deployer/useDeployerShortcuts'
+import { getDeployerSetting, setDeployerSetting } from '@/composables/deployer/useDeployerAppSettings'
+import { useDeployerShortcuts } from '@/composables/deployer/useDeployerAppShortcuts'
 import { loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from '@/locales/_loader'
 import { registerExternalLinks } from '@/utils/externalLinks'
 

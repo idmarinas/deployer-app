@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { setDeployerSettings } from '@/composables/deployer/useDeployerSettings'
+import { setDeployerSettings } from '@/composables/deployer/useDeployerAppSettings'
 import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 
