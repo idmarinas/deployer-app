@@ -93,11 +93,8 @@ Módulos:
 
 ### Cosas por hacer
 
-1. Extraer componentes de la página principal (dashboard).vue
-2. Comprobar que funciona los dos módulos
-3. Preparar los `locales/`
-4. Organizar y limpiar la carpeta `src/composables/*`
-5. Crear el logo para el uninstaller.
+1. Comprobar que funciona los dos módulos
+2. Preparar los `locales/` y añadir la traducción para `en`
 
 ## Módulos
 
