@@ -19,6 +19,7 @@ import { useHostById } from '@/loaders/hosts'
 import { ICONS } from '@/utils/icons'
 
 import { PositionedButton } from '@/composables/usePositionedButtons'
+import { ModulesName } from '@/utils/deployer-app'
 import UButton from '@nuxt/ui/components/Button.vue'
 </script>
 
@@ -44,15 +45,15 @@ const { hosts: hostQuery } = useQuery()
 const isOperating = ref(false)
 
 const isLoadingOrOperating = computed(() => isLoading.value || isOperating.value)
-const { useViewButtons, useButtons } = useToolbarButtons('hosts', isLoadingOrOperating, hostQuery.remove)
-const { hosts: hostsButtons } = useButtons()
+const { useViewButtons, useButtons } = useToolbarButtons(ModulesName.Hosts, isLoadingOrOperating, hostQuery.remove)
+const { hostButtons } = useButtons()
 
 const pageTitle = computed(() => hostData.value?.name || '')
 
 const buttons: PositionedButton[] = [
 	{ id: 'cancel', action: 'remove' },
 	{ id: 'edit', action: 'update', tooltip: false, class: 'mr-5' },
-	hostsButtons.testConnection(hostData, { action: 'after', targetId: 'edit', tooltip: true, color: 'secondary' }),
+	hostButtons.testConnection(hostData, { action: 'after', targetId: 'edit', tooltip: true, color: 'secondary' }),
 ]
 const toolbarButtons = computed<VNode[]>(() => useViewButtons(hostData as any, buttons, true))
 

@@ -152,7 +152,7 @@ export function useToolbarButtons(
 		}
 
 		return {
-			hosts: {
+			hostButtons: {
 				testConnection: hostsTestConnection,
 			},
 		}
