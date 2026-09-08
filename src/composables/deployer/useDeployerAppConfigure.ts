@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { setDeployerSettings } from '@/composables/deployer/useDeployerAppSettings'
+import { setAppSettings } from '@/composables/deployer/useDeployerAppSettings'
 import { ICONS } from '@/utils/icons'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -125,7 +125,7 @@ export function useDeployerAppConfigure() {
 				status: 'idle',
 				async invoke(): Promise<CommandResponse> {
 					try {
-						await setDeployerSettings([
+						await setAppSettings([
 							{ key: 'locale', value: locale.value },
 							{ key: 'theme_color', value: colorMode.value },
 						])

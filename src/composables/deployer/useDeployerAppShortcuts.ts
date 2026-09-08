@@ -1,6 +1,6 @@
 import { useRouter } from 'vue-router'
 
-export function useDeployerShortcuts() {
+export function useAppShortcuts() {
 	const router = useRouter()
 
 	const shortcuts = {

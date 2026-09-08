@@ -2,13 +2,13 @@ import { db } from '@/drizzle/drizzle'
 import { settings } from '@/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
 
-export async function getDeployerSetting(key: string, _default: string | null = null): Promise<string | null> {
+export async function getAppSetting(key: string, _default: string | null = null): Promise<string | null> {
 	const row = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get()
 
 	return row?.value ?? _default
 }
 
-export async function setDeployerSetting(key: string, value: string): Promise<void> {
+export async function setAppSetting(key: string, value: string): Promise<void> {
 	await db
 		.insert(settings)
 		.values({ key, value })
@@ -19,7 +19,7 @@ export async function setDeployerSetting(key: string, value: string): Promise<vo
 		.run()
 }
 
-export async function setDeployerSettings(values: { key: string; value: string }[]): Promise<void> {
+export async function setAppSettings(values: { key: string; value: string }[]): Promise<void> {
 	await db
 		.insert(settings)
 		.values(values)
@@ -29,7 +29,7 @@ export async function setDeployerSettings(values: { key: string; value: string }
 		})
 }
 
-export async function listDeployerSettings(): Promise<Record<string, string>> {
+export async function listAppSettings(): Promise<Record<string, string>> {
 	const rows = await db
 		.select({
 			key: settings.key,
@@ -47,7 +47,7 @@ export async function listDeployerSettings(): Promise<Record<string, string>> {
 	return result
 }
 
-export async function deleteDeployerSetting(key: string): Promise<boolean> {
+export async function deleteAppSetting(key: string): Promise<boolean> {
 	const result = await db.delete(settings).where(eq(settings.key, key)).run()
 
 	return (result as any).changes > 0

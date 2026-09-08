@@ -5,14 +5,14 @@ import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeMount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getDeployerSetting, setDeployerSetting } from '@/composables/deployer/useDeployerAppSettings'
-import { useDeployerShortcuts } from '@/composables/deployer/useDeployerAppShortcuts'
+import { getAppSetting, setAppSetting } from '@/composables/deployer/useDeployerAppSettings'
+import { useAppShortcuts } from '@/composables/deployer/useDeployerAppShortcuts'
 import { loadDatetimeFormat, loadLocaleMessages, loadNumberFormat } from '@/locales/_loader'
 import { registerExternalLinks } from '@/utils/externalLinks'
 
 const colorMode = useColorMode()
 const i18n = useI18n()
-const { shortcuts } = useDeployerShortcuts()
+const { shortcuts } = useAppShortcuts()
 
 const themeColor = computed(() => (colorMode.value === 'dark' ? '#0b0c0e' : '#ffffff'))
 
@@ -25,7 +25,7 @@ useHead({
 
 onBeforeMount(async () => {
 	try {
-		const savedLocale = await getDeployerSetting('locale')
+		const savedLocale = await getAppSetting('locale')
 
 		if (savedLocale && savedLocale !== i18n.locale.value) {
 			const [messages, datetimeFormat, numberFormat] = await Promise.all([
@@ -50,11 +50,11 @@ onMounted(() => {
 })
 
 watch(colorMode, async newColor => {
-	await setDeployerSetting('theme_color', newColor)
+	await setAppSetting('theme_color', newColor)
 })
 
 watch(i18n.locale, async newLocale => {
-	await setDeployerSetting('locale', newLocale)
+	await setAppSetting('locale', newLocale)
 })
 
 defineShortcuts(shortcuts)
