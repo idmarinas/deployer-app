@@ -18,7 +18,7 @@ interface StepItem extends Omit<StepperItem, 'key'> {
 	invoke: string | Function
 }
 
-export function useConfigureDeployerApp() {
+export function useDeployerAppConfigure() {
 	const toast = useToast()
 	const router = useRouter()
 	const { locale, t } = useI18n()

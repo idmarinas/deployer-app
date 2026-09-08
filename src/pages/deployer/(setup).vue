@@ -5,7 +5,7 @@ import type { ButtonProps } from '@nuxt/ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { useConfigureDeployerApp } from '@/composables/deployer/useConfigureDeployerApp'
+import { useDeployerAppConfigure } from '@/composables/deployer/useDeployerAppConfigure'
 import { ICONS } from '@/utils/icons'
 
 // Tauri related
@@ -14,7 +14,7 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 
 <script setup lang="ts">
 const { t } = useI18n()
-const { steps, currentStep, buttons, databaseCreate, databaseLoad, resetSetup } = useConfigureDeployerApp()
+const { steps, currentStep, buttons, databaseCreate, databaseLoad, resetSetup } = useDeployerAppConfigure()
 
 const links = computed<ButtonProps[]>(() => {
 	const items: ButtonProps[] = [
