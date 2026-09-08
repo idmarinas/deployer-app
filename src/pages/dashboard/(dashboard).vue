@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import { useDashboardButton } from '@/composables/useNavigationMenu'
 import { ModulesName } from '@/utils/deployer-app'
+import { ICONS } from '@/utils/icons'
 
 const { t } = useI18n()
 
@@ -26,7 +27,7 @@ onMounted(async () => {})
 
 				<template #right>
 					<UDropdownMenu :items="dashboardButton">
-						<UButton icon="i-tabler-plus" square class="rounded-full" />
+						<UButton :icon="ICONS.actions.add" square class="rounded-full" />
 					</UDropdownMenu>
 				</template>
 			</UDashboardNavbar>
