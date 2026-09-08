@@ -17,6 +17,8 @@ export default {
 		view: 'Ver',
 		edit: 'Editar',
 		save: 'Guardar',
+		create: 'Crear',
+		list: 'Lista',
 		delete: 'Eliminar',
 		confirm: 'Confirmar',
 		cancel: 'Cancelar',

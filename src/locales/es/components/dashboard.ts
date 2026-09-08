@@ -12,6 +12,7 @@ export default {
 		},
 	},
 	last_items: {
+		empty: 'Nada que mostrar',
 		hosts: {
 			title: 'Últimos servidores',
 		},
