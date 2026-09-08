@@ -1,9 +1,9 @@
-import type { CommandResponse } from '../types/tauri-types'
+import type { CommandResponse } from '../../types/tauri-types'
 
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { StepperItem } from '@nuxt/ui'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 // Tauri related imports
 import { invoke } from '@tauri-apps/api/core'
@@ -16,7 +16,7 @@ interface StepItem extends Omit<StepperItem, 'key'> {
 	invoke: string | Function
 }
 
-export function useMigrations() {
+export function useAppMigrations() {
 	const router = useRouter()
 	const toast = useToast()
 	const { t } = useI18n()
