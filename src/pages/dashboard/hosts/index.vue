@@ -13,6 +13,7 @@ import { ICONS } from '@/utils/icons'
 import ValueViewer from '@/components/view/ValueViewer.vue'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useQuery } from '@/composables/useQuery'
+import { ModulesName } from '@/utils/deployer-app'
 </script>
 
 <script setup lang="ts">
@@ -27,10 +28,10 @@ const { data: items, isLoading, status, reload } = useHostListAll()
 const { t } = useI18n()
 const router = useRouter()
 const { hosts: hostQuery } = useQuery()
-const { useButtons } = useToolbarButtons('hosts', isLoading, hostQuery.remove)
-const { hosts: hostsButtons } = useButtons()
+const { useButtons } = useToolbarButtons(ModulesName.Hosts, isLoading, hostQuery.remove)
+const { hostButtons } = useButtons()
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Host>({
-	moduleName: 'hosts',
+	moduleName: ModulesName.Hosts,
 	deleteFn: hostQuery.remove,
 	onReload: reload,
 })
@@ -83,7 +84,7 @@ const columns: TableColumn<Host>[] = [
 			variant: 'ghost',
 			onClick: () => router.push({ name: 'dashboard-hosts-id', params: { id: row.original.id } }),
 		},
-		hostsButtons.testConnection(row.original, {
+		hostButtons.testConnection(row.original, {
 			action: 'after',
 			targetId: 'edit',
 			variant: 'ghost',
