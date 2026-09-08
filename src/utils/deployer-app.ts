@@ -3,6 +3,7 @@ import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { hosts, passkeys } from '@/drizzle/schema'
 
 export enum ModulesName {
+	Default = 'default',
 	Hosts = 'hosts',
 	Passkeys = 'passkeys',
 }

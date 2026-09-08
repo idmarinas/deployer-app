@@ -1,8 +1,9 @@
+import { ModulesName } from '@/utils/deployer-app'
 import { inject, isVNode, provide, ref, type VNode } from 'vue'
 
 export type ToolbarContent = VNode[] | undefined
 export type ToolbarManager = {
-	moduleName: string
+	moduleName: ModulesName
 	toolbarKey: string
 	setToolbarFn: (fn: () => ToolbarContent | VNode) => void
 	clearContent: () => void
@@ -10,7 +11,7 @@ export type ToolbarManager = {
 }
 
 // Crear una key única por módulo
-export function createToolbarKey(moduleName: string = 'default'): string {
+export function createToolbarKey(moduleName: ModulesName = ModulesName.Default): string {
 	return `dashboard:toolbar:${moduleName}`
 }
 
@@ -20,7 +21,7 @@ export function createToolbarKey(moduleName: string = 'default'): string {
  *
  * @param moduleName - Nombre del módulo (hosts, projects, deployments, etc)
  */
-export function useDashboardToolbarProvider(moduleName: string = 'default') {
+export function useDashboardToolbarProvider(moduleName: ModulesName = ModulesName.Default) {
 	const toolbarContent = ref<ToolbarContent>(undefined)
 	const toolbarKey = createToolbarKey(moduleName)
 	let toolbarFn: () => ToolbarContent | VNode
@@ -60,7 +61,7 @@ export function useDashboardToolbarProvider(moduleName: string = 'default') {
  *
  * @param moduleName - Nombre del módulo (debe coincidir con el usado en useDashboardToolbarProvider)
  */
-export function useDashboardToolbar(moduleName: string = 'default') {
+export function useDashboardToolbar(moduleName: ModulesName = ModulesName.Default) {
 	const toolbarKey = createToolbarKey(moduleName)
 
 	let toolbar = inject<ToolbarManager>(toolbarKey)

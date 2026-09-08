@@ -1,16 +1,17 @@
+import type { ToolbarContent, ToolbarManager } from '@/composables/dashboard/toolbar/useDashboardToolbar'
 import type { Ref } from 'vue'
-import type { ToolbarContent, ToolbarManager } from './useDashboardToolbar'
 
 import { inject } from 'vue'
 
-import { createToolbarKey, useDashboardToolbarProvider } from './useDashboardToolbar'
+import { createToolbarKey, useDashboardToolbarProvider } from '@/composables/dashboard/toolbar/useDashboardToolbar'
+import { ModulesName } from '@/utils/deployer-app'
 
 type ToolbarModuleResult = {
 	toolbarContent?: Ref<ToolbarContent>
 	toolbar?: ToolbarManager
 }
 
-function createToolbarModule(NAME: string): ToolbarModuleResult {
+function createToolbarModule(NAME: ModulesName): ToolbarModuleResult {
 	const existing = inject<ToolbarManager | null>(createToolbarKey(NAME), null)
 
 	if (existing) {
@@ -23,13 +24,13 @@ function createToolbarModule(NAME: string): ToolbarModuleResult {
 }
 
 export function useToolbarForHostsModule(): ToolbarModuleResult {
-	return createToolbarModule('hosts')
+	return createToolbarModule(ModulesName.Hosts)
 }
 
 export function useToolbarForPasskeysModule(): ToolbarModuleResult {
-	return createToolbarModule('passkeys')
+	return createToolbarModule(ModulesName.Passkeys)
 }
 
-export function useToolbarForProjectsDockerCompose(): ToolbarModuleResult {
-	return createToolbarModule('projects.docker.compose')
-}
+// export function useToolbarForProjectsDockerCompose(): ToolbarModuleResult {
+// 	return createToolbarModule('projects.docker.compose')
+// }

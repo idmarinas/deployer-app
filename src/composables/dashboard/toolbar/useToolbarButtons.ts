@@ -12,9 +12,14 @@ import { useConfirmDialog } from '@/composables/useDialog'
 import useToaster from '@/composables/useToaster'
 import { ICONS } from '@/utils/icons'
 
+import { ModulesName } from '@/utils/deployer-app'
 import { invoke } from '@tauri-apps/api/core'
 
-export function useToolbarButtons(moduleName: string, loading: Ref<boolean>, deleteFn?: (id: number) => Promise<boolean>) {
+export function useToolbarButtons(
+	moduleName: ModulesName,
+	loading: Ref<boolean>,
+	deleteFn?: (id: number) => Promise<boolean>,
+) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const { t } = useI18n()
