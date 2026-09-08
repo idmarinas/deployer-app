@@ -252,7 +252,7 @@ export const ICONS = {
 
 /** Convierte un icono en formato UI (`i-tabler-*`) al formato Iconify (`tabler:*`) */
 export function toIconify(icon: string): string {
-	return icon.replace(/(?:^i-(?<set>tabler|cib)-)/m, '$set:')
+	return icon.replace(/(?:^i-(?<set>tabler|cib)-)/m, '$<set>:')
 }
 
 /**
