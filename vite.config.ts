@@ -1,6 +1,7 @@
 import ui from '@nuxt/ui/vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import { PreRenderedAsset } from 'rolldown'
 import { defineConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import vueRouter from 'vue-router/vite'
@@ -132,6 +133,25 @@ export default defineConfig(async () => ({
 
 	build: {
 		target: 'esnext',
+		rolldownOptions: {
+			output: {
+				entryFileNames: 'assets/[name]-[hash].js',
+				chunkFileNames: 'assets/js/[name]-[hash].js',
+				assetFileNames(chunkInfo: PreRenderedAsset) {
+					// Custom logic to group assets by type
+					const extType = chunkInfo.names[0].split('.').pop()!
+					if (['png', 'jpeg', 'jpg', 'gif', 'svg'].includes(extType)) {
+						return 'assets/images/[name]-[hash][extname]'
+					}
+
+					if (['woff', 'woff2', 'eot', 'ttf', 'otf'].includes(extType)) {
+						return 'assets/fonts/[name]-[hash][extname]'
+					}
+
+					return 'assets/[ext]/[name]-[hash][extname]'
+				},
+			},
+		},
 	},
 
 	optimizeDeps: {
