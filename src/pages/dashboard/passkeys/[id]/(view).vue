@@ -5,8 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 import { PositionedButton } from '@/composables/usePositionedButtons'
-import { useQuery } from '@/composables/useQuery'
 import { usePasskeyById } from '@/loaders/passkeys'
 import { isEncryptedValue } from '@/utils/crypto'
 import { ModulesName } from '@/utils/deployer-app'
@@ -26,7 +26,7 @@ definePage({
 
 const { t } = useI18n()
 const { toolbar } = useToolbarForPasskeysModule()
-const { passkeys: passkeysQuery } = useQuery()
+const passkeysQuery = usePasskeyQuery()
 
 const { data: itemData, isLoading, status, error } = usePasskeyById()
 

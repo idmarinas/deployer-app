@@ -12,12 +12,12 @@ import { useRoute } from 'vue-router'
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { useQuery } from '@/composables/useQuery'
 import useToaster from '@/composables/useToaster'
 import { useHostById } from '@/loaders/hosts'
 
 import { ICONS } from '@/utils/icons'
 
+import { useHostQuery } from '@/composables/queries/hosts'
 import { PositionedButton } from '@/composables/usePositionedButtons'
 import { ModulesName } from '@/utils/deployer-app'
 import UButton from '@nuxt/ui/components/Button.vue'
@@ -40,7 +40,7 @@ const toaster = useToaster()
 
 const { t, n, d } = useI18n()
 const { data: hostData, isLoading, status, error, reload } = useHostById()
-const { hosts: hostQuery } = useQuery()
+const hostQuery = useHostQuery()
 
 const isOperating = ref(false)
 

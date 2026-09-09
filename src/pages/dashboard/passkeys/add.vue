@@ -11,8 +11,8 @@ import { useRouter } from 'vue-router'
 
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 import { useGeneratePasskeyDialog } from '@/composables/useDialog'
-import { useQuery } from '@/composables/useQuery'
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
 </script>
 
@@ -27,7 +27,7 @@ const router = useRouter()
 const { t } = useI18n()
 const { toolbar } = useToolbarForPasskeysModule()
 const { passkeys: passkeySchema } = useSchemaValidation()
-const { passkeys: passkeyQuery } = useQuery()
+const passkeyQuery = usePasskeyQuery()
 
 const initialState: PasskeyValidationInsertType = {
 	name: '',

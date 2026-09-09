@@ -6,7 +6,7 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { useQuery } from '@/composables/useQuery'
+import { useHostQuery } from '@/composables/queries/hosts'
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { useRouter } from 'vue-router'
 </script>
@@ -19,7 +19,7 @@ definePage({
 const router = useRouter()
 const { toolbar } = useToolbarForHostsModule()
 const { hosts: hostSchema } = useSchemaValidation()
-const { hosts: hostQuery } = useQuery()
+const hostQuery = useHostQuery()
 
 const initialState: HostValidationInsertType = {
 	name: '',

@@ -1,8 +1,10 @@
-import { useQuery } from '@/composables/useQuery'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 
 import { db } from '@/drizzle/drizzle'
 import { passkeys as passkeysSchema } from '@/drizzle/schema'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
+
+const passkeysQuery = usePasskeyQuery()
 
 export const useSelectPasskeys = defineColadaLoader({
 	key: ['passkeys', 'select'],
@@ -21,8 +23,7 @@ export const useSelectPasskeys = defineColadaLoader({
 export const usePasskeysListAll = defineColadaLoader({
 	key: ['passkeys', 'all', 'list', 'list-all'],
 	query: async () => {
-		const { passkeys } = useQuery()
-		return await passkeys.findAll()
+		return await passkeysQuery.findAll()
 	},
 })
 
@@ -30,8 +31,7 @@ export const usePasskeyById = defineColadaLoader('dashboard-passkeys-id', {
 	key: to => ['passkeys', 'passkey', `passkey-${to.params.id}`],
 	query: async to => {
 		const id = Number.parseInt(to.params.id)
-		const { passkeys } = useQuery()
-		const result = await passkeys.find(id)
+		const result = await passkeysQuery.find(id)
 
 		if (!result) {
 			throw new Error('not-found')

@@ -11,7 +11,7 @@ import { usePasskeysListAll } from '@/loaders/passkeys'
 import { isEncryptedValue } from '@/utils/crypto'
 import { ICONS } from '@/utils/icons'
 
-import { useQuery } from '@/composables/useQuery'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { ModulesName } from '@/utils/deployer-app'
 </script>
@@ -27,7 +27,7 @@ const UBadge = resolveComponent('UBadge')
 const router = useRouter()
 const { t, locale } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
-const { passkeys: passkeyQuery } = useQuery()
+const passkeyQuery = usePasskeyQuery()
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Passkey>({
 	moduleName: ModulesName.Passkeys,

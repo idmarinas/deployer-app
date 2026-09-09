@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { useQuery } from '@/composables/useQuery'
+import { useHostQuery } from '@/composables/queries/hosts'
 import { useHostValidation } from '@/composables/validation/useHostValidation'
 import { useHostById } from '@/loaders/hosts'
 </script>
@@ -28,7 +28,7 @@ const router = useRouter()
 const hostSchema = useHostValidation(Number.parseInt(route.params.id))
 const { toolbar } = useToolbarForHostsModule()
 const { data: host, isLoading, reload } = useHostById()
-const { hosts: hostsQuery } = useQuery()
+const hostsQuery = useHostQuery()
 
 const state = ref<any>({})
 const form = useTemplateRef<Form<HostValidationUpdateType>>('form')

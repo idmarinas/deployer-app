@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useToolbarContentEdit } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForPasskeysModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
-import { useQuery } from '@/composables/useQuery'
+import { usePasskeyQuery } from '@/composables/queries/passkeys'
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { usePasskeyById } from '@/loaders/passkeys'
 </script>
@@ -28,7 +28,7 @@ const router = useRouter()
 const { toolbar } = useToolbarForPasskeysModule()
 const { data: passkey, isLoading, reload } = usePasskeyById()
 const { passkeys: passkeySchema } = useSchemaValidation(Number.parseInt(route.params.id))
-const { passkeys: passkeyQuery } = useQuery()
+const passkeyQuery = usePasskeyQuery()
 
 const state = ref<any>({})
 const form = useTemplateRef<Form<PasskeyValidationUpdateType>>('form')
