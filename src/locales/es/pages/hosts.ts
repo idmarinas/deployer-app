@@ -15,10 +15,6 @@ export default {
 			test_connection: 'Probar conexión',
 			manage: 'Gestionar',
 		},
-		empty: {
-			title: 'No se han encontrado servidores',
-			description: 'Parece que no has añadido ningún servidor. Crea uno para empezar.',
-		},
 	},
 	manage: {
 		title: {

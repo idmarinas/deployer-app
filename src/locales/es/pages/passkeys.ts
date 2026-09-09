@@ -8,10 +8,6 @@ export default {
 			type: 'Tipo',
 			fingerprint: 'Huella digital',
 		},
-		empty: {
-			title: 'No se han encontrado claves de acceso',
-			description: 'Parece que no has añadido ninguna clave de acceso. Crea una para empezar.',
-		},
 	},
 	toast: {
 		delete: {

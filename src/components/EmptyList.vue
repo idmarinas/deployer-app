@@ -18,12 +18,12 @@ const props = defineProps<{
 <template>
 	<UEmpty
 		:icon="getModuleIcon(props.module)"
-		:title="t(`pages.${props.module}.table.empty.title`)"
-		:description="t(`pages.${props.module}.table.empty.description`)"
+		:title="t(`components.empty_list.${props.module}.title`)"
+		:description="t(`components.empty_list.${props.module}.description`)"
 		:actions="[
 			{
 				icon: ICONS.actions.add,
-				label: t(`components.buttons.${props.module}.add.label`),
+				label: t(`components.empty_list.${props.module}.add.label`),
 				to: props.addRoute,
 			},
 			{
