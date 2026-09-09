@@ -349,7 +349,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ### Carga de mensajes (`src/locales/_loader.ts`)
 
-- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...). **Hoy solo `es/` contiene mensajes**: `en/` únicamente tiene `formats/` (formatos de fecha/número) y carece de claves propias de mensajes.
+- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...) y una carpeta `formats/` (formatos de fecha/número). **`es/` y `en/` contienen mensajes**: `es` es la referencia de claves (tipos + `warnMissingKeys`) y `en` es su espejo (mismas claves en inglés).
 - `_loader.ts` usa `import.meta.glob` para cargar todos los `.ts` de `es/**` (excluyendo `es/formats/**`, que son los formatos de fecha/número) y los ensambla en un objeto anidado según la ruta del archivo (`pages/setup.ts` → `{ pages: { setup: {...} } }`).
 - Caso especial: un archivo `index.ts` fusiona sus claves directamente en el padre en vez de anidarse bajo `index` (ej. `pages/index.ts` → `result.pages`, no `result.pages.index`).
 - En `DEV`, se avisa por consola si a un idioma le faltan archivos respecto al idioma de referencia (`es`).
@@ -372,7 +372,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 - **Claves con función** (`(ctx: MessageContext) => ...`, ej. `overlays.toast.description.error`): el generador las normaliza a `string` en el schema vía el tipo `NormalizeMessages`. Motivo: vue-i18n v11 calcula las claves válidas de `t()` del Composition API con `JsonPaths` (`@intlify/core-base`), que recursa dentro de cualquier valor que extienda `Record<string, any>` — una función también lo extiende — excluyendo del autocompletado la clave original. Normalizarlas a hojas `string` las restaura; es types-only (no afecta al runtime ni al retorno de `t()`).
 - `typed-locale.d.ts` es un archivo **autogenerado** (está en `.gitignore`) — nunca editarlo a mano. Se regenera automáticamente en `bun run dev` (que ejecuta `i18n:types`); también se puede regenerar manualmente con `bun run i18n:types`. **Nota:** `bun run build` actualmente **no** ejecuta `i18n:types` (solo `vue-tsc --noEmit && vite build`), por lo que si se añaden claves hay que lanzar `i18n:types` antes del build.
 - Gracias a la augmentation global, `t('common.active')`, `useI18n().t(...)` y `$t(...)` en plantillas quedan autocompletados y validados en toda la app sin tipar cada `useI18n()` manualmente.
-- Al añadir un archivo de mensajes nuevo en `es/`, no hace falta tocar `typed-locale.d.ts` — se regenera solo en el siguiente `dev`/`build`/`i18n:types`. El idioma `en` no tiene su propio schema: solo `es` se usa como referencia de tipos (igual que es la referencia para `warnMissingKeys` en runtime).
+- Al añadir un archivo de mensajes nuevo en `es/`, no hace falta tocar `typed-locale.d.ts` — se regenera solo en el siguiente `dev`/`build`/`i18n:types` — pero **hay que crear su espejo en `en/`** con las mismas claves (si falta, `warnMissingKeys` lo avisa en `DEV`). El idioma `en` no tiene su propio schema: solo `es` se usa como referencia de tipos (igual que es la referencia para `warnMissingKeys` en runtime).
 
 ---
 
