@@ -1,5 +1,6 @@
 import type { CommandPaletteGroup, DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { ModulesName } from '@/utils/deployer-app'
@@ -8,7 +9,7 @@ import { getModuleIcon, ICONS } from '@/utils/icons'
 export function useSideberMenu() {
 	const { t } = useI18n()
 
-	const navigationMenu: NavigationMenuItem[][] = [
+	const navigationMenu = computed<NavigationMenuItem[][]>(() => [
 		// [
 		// 	// Proyectos
 		// 	{
@@ -61,18 +62,18 @@ export function useSideberMenu() {
 			//   to: {name: 'dashboard-deployments'},
 			// },
 		],
-	]
+	])
 
-	const navigationMenuFooter: NavigationMenuItem[] = [
+	const navigationMenuFooter = computed<NavigationMenuItem[]>(() => [
 		// Consola remota
 		{
 			label: t('components.sidebar.console'),
 			icon: ICONS.server.terminal,
 			to: { name: 'dashboard-console' },
 		},
-	]
+	])
 
-	const searchGroups: CommandPaletteGroup[] = [
+	const searchGroups = computed<CommandPaletteGroup[]>(() => [
 		{
 			id: 'actions',
 			label: t('components.sidebar.search.actions'),
@@ -121,7 +122,7 @@ export function useSideberMenu() {
 				// },
 			],
 		},
-	]
+	])
 
 	return {
 		navigationMenu,
@@ -133,7 +134,7 @@ export function useSideberMenu() {
 export function useDashboardButton() {
 	const { t } = useI18n()
 
-	const items: DropdownMenuItem[] = [
+	const items = computed<DropdownMenuItem[]>(() => [
 		{
 			label: t('components.sidebar.projects'),
 			type: 'label',
@@ -183,7 +184,7 @@ export function useDashboardButton() {
 		//   to: '/dashboard/variables/add',
 		//   kbds: ['shift', 'V']
 		// },
-	]
+	])
 
 	return items
 }
