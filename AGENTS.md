@@ -18,16 +18,16 @@
 ## Propósito del Backend
 
 - **Orquestación SSH/SFTP** para consola remota, test de conexión, check de sistema/métricas y actualizaciones de hosts.
-- **Cifrado/descifrado** transparente de campos sensibles (`hosts.password`, `passkeys.key_content`/`passphrase`) con claves AES gestionadas en el **vault de Stronghold** (`src/lib/stronghold.ts` + Web Crypto; Rust abre el vault solo para leer y descifrar credenciales SSH).
+- **Cifrado/descifrado** transparente de campos sensibles (`hosts.password`, `passkeys.key_content`/`passphrase`) con claves AES gestionadas en el **vault de Stronghold** (`src/drizzle/lib/stronghold.ts` + Web Crypto; Rust abre el vault solo para leer y descifrar credenciales SSH).
 - **Generación de claves SSH**, **test de conexión** y **gestión de hosts**.
 - **Inicialización y gestión de la BD** (crear/abrir/validar archivo SQLite, ejecutar migraciones).
-- El **acceso a datos (lecturas y escrituras)** lo hace el frontend con **Drizzle en modo proxy** (vía `query_raw`), que cifra/descifra/enmascara los campos declarados como `encryptedText(...)` en `src/lib/schema-types.ts` usando las claves del vault (`src/lib/stronghold.ts`); `query_raw` solo ejecuta SQL. Los comandos Rust dedicados solo atienden lógica de backend que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).
+- El **acceso a datos (lecturas y escrituras)** lo hace el frontend con **Drizzle en modo proxy** (vía `query_raw`), que cifra/descifra/enmascara los campos declarados como `encryptedText(...)` en `src/drizzle/lib/schema-types.ts` usando las claves del vault (`src/drizzle/lib/stronghold.ts`); `query_raw` solo ejecuta SQL. Los comandos Rust dedicados solo atienden lógica de backend que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).
 
 ## Reglas
 
 - **Idioma:** siempre español.
 - **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/` (salida de build) y el **historial personal**: archivos `.back` y todo archivo/carpeta con extensión `.dist` (p.ej. `_archived.dist/`). No incluirlos en búsquedas ni lecturas salvo que se pidan explícitamente como referencia; nunca modificarlos.
-- **Archivos autogenerados (no editar):** `drizzle/` (completo), `src/lib/schema.ts`, `src/lib/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src-tauri/src/tables.rs`.
+- **Archivos autogenerados (no editar):** `drizzle/` (completo), `src/drizzle/schema.ts`, `src/drizzle/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src-tauri/src/tables.rs`.
 - **`drizzle/migrations/`** — no borrar; Drizzle Kit lo usa para calcular diffs entre esquemas.
 - **`src-tauri/migrations/`** — archivos planos `.sql` generados por `drizzle:generate`; sqlx los embebe en el binario.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
@@ -38,12 +38,12 @@
 
 | Situación | Solución |
 | --- | --- |
-| SELECT, sin descifrado | Drizzle (`src/lib/db.ts`) — el proxy enmascara los valores `ENC:` → `BLANK_VALUE` |
+| SELECT, sin descifrado | Drizzle (`src/drizzle/drizzle.ts`) — el proxy enmascara los valores `ENC:` → `BLANK_VALUE` |
 | SELECT con descifrado explícito | Drizzle + `withDecryption(true, fn)` — el proxy descifra con las claves del vault |
-| INSERT/UPDATE/DELETE | Drizzle (`src/lib/db.ts`) — el proxy cifra los campos `encryptedText(...)` |
+| INSERT/UPDATE/DELETE | Drizzle (`src/drizzle/drizzle.ts`) — el proxy cifra los campos `encryptedText(...)` |
 | Lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD) | Comando Rust dedicado |
 
-`query_raw` (Rust) solo ejecuta el SQL generado por el proxy y devuelve `columns` + `rows`: ni cifra ni enmascara (eso lo hace el frontend con `src/lib/stronghold.ts`). No hay comandos Rust `crud_*` por entidad.
+`query_raw` (Rust) solo ejecuta el SQL generado por el proxy y devuelve `columns` + `rows`: ni cifra ni enmascara (eso lo hace el frontend con `src/drizzle/lib/stronghold.ts`). No hay comandos Rust `crud_*` por entidad.
 
 ## Comandos
 

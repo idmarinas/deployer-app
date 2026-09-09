@@ -15,7 +15,7 @@ src/
 │       └── fonts/        <- Archivos .woff2 de las fuentes
 ├── components/          <- Componentes reutilizables de UI (form/, pages/, table/, remote/...)
 ├── composables/         <- Lógica con reactividad de Vue (useSchemaToForm, useRemoteCommand, queries/, ...)
-├── lib/                 <- Capa de datos: db.ts (Drizzle proxy), stronghold.ts (cripto), schema.ts/relations.ts (auto), schema-types.ts, entities/
+├── drizzle/             <- Capa de datos: drizzle.ts (Drizzle proxy), lib/stronghold.ts (cripto), schema.ts/relations.ts (auto), lib/schema-types.ts, entities/
 ├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
 ├── locales/             <- i18n (es/, _loader.ts)
 ├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,theme}, deployer/, deployer/(setup))
@@ -259,13 +259,13 @@ Al añadir o modificar cualquier theme file, verificar:
 
 - **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`).
 - Las **queries CRUD** (findAll/find/create/update/remove + notificaciones por toast) se agrupan en el barrel **`composables/useQuery.ts`** (`useQuery()` → `{ hosts, passkeys, projects... }`) y en `src/composables/queries/{hosts,passkeys,shared}.ts`; las páginas de hosts/passkeys las consumen con `const { hosts: hostQuery } = useQuery()`. `useQuery` es el único barrel de queries (no hay barrel por loader).
-- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/lib/schema` — nunca SQL manual interpolado.
+- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
 
   ```ts
   // composables/validation/useHostValidation.ts (extracto)
   import { and, eq, ne } from 'drizzle-orm'
-  import { db } from '@/lib/db'
-  import { hosts } from '@/lib/schema'
+  import { db } from '@/drizzle/drizzle'
+  import { hosts } from '@/drizzle/schema'
 
   name: z =>
     z
@@ -276,13 +276,13 @@ Al añadir o modificar cualquier theme file, verificar:
       .max(120, t('validation.hosts.name.max'))
       .refine(async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0, t('validation.hosts.name.not_unique')),
   ```
-- Los **tipos** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/lib/schema`); los tipos generados por Rust (entidades `Host`, `DockerCompose`, y los inputs/respuestas de comandos) se importan desde `@/types/entities` y `@/types/tauri-types` (auto-generados por `ts-rs`).
-- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/lib/db.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
+- Los **tipos** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`); los tipos generados por Rust (entidades `Host`, `DockerCompose`, y los inputs/respuestas de comandos) se importan desde `@/types/entities` y `@/types/tauri-types` (auto-generados por `ts-rs`).
+- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/drizzle/drizzle.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
 
 ### Acceso a la base de datos
 
-- Todo el acceso a datos (lecturas **y** escrituras) va por **Drizzle en modo proxy** (`src/lib/db.ts`), que delega en el comando Tauri `query_raw`.
-  - El frontend detecta los campos cifrados desde el schema (`detectEncryptedFieldsFromSchema` en `db.ts`) y hace la cripto por su cuenta con `src/lib/stronghold.ts` (Web Crypto + vault Stronghold).
+- Todo el acceso a datos (lecturas **y** escrituras) va por **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`), que delega en el comando Tauri `query_raw`.
+  - El frontend detecta los campos cifrados desde el schema (`detectEncryptedFieldsFromSchema` en `drizzle.ts`) y hace la cripto por su cuenta con `src/drizzle/lib/stronghold.ts` (Web Crypto + vault Stronghold).
   - En escrituras, el proxy cifra los params de los campos `encryptedText(...)` (`encryptParams`) y elimina antes las asignaciones centinela/`ENC:` (`stripEncryptedValues`).
   - En lecturas: por defecto (`withDecryption(false)`) enmascara los valores `ENC:` → `BLANK_VALUE`; con `withDecryption(true, fn)` los descifra con la versión de clave del valor.
   - `query_raw` solo ejecuta SQL — **nunca cifra/enmascara** (eso vive en el frontend).
@@ -380,13 +380,13 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ### Acceso a datos: Drizzle proxy (recomendado para CRUD)
 
-Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/lib/db.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/lib/schema-types.ts`), emite el SQL, y delega en el comando `query_raw` de Rust, que se encarga de cifrar (escrituras), descifrar (lecturas con `withDecryption`) o enmascarar (lecturas por defecto) los campos.
+Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/drizzle/lib/schema-types.ts`), emite el SQL, y delega en el comando `query_raw` de Rust, que se encarga de cifrar (escrituras), descifrar (lecturas con `withDecryption`) o enmascarar (lecturas por defecto) los campos.
 
 ```ts
-import { db } from '@/lib/db'
-import { hosts, projects_docker_compose } from '@/lib/schema'
+import { db } from '@/drizzle/drizzle'
+import { hosts, projects_docker_compose } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { withDecryption } from '@/lib/db'
+import { withDecryption } from '@/drizzle/drizzle'
 
 // Lectura sin descifrado (los campos cifrados llegan como BLANK_VALUE)
 const row = await db.select().from(hosts).where(eq(hosts.id, id)).limit(1)
@@ -407,7 +407,7 @@ Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault 
 - **Hosts:** `test_connection`, `host_updates`, `host_check_system_info`, `host_check_metrics`, `host_update_packages`.
 - **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
 - **BD / setup (deployer):** `get_database_path`, `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
-- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path` — los usa `src/lib/stronghold.ts` para cargar el vault (ver también `AGENTS.backend.md` §4).
+- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path` — los usa `src/drizzle/lib/stronghold.ts` para cargar el vault (ver también `AGENTS.backend.md` §4).
 - **Consola remota (SSH suelto):** `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job`.
 
 > Los comandos de Docker Hub (`cache_docker_search`/`cache_docker_tags`) y de Docker Compose remoto (`sync_project_docker_compose_files`, `project_docker_compose_*`) **se retiraron** del backend — no llamarlos.

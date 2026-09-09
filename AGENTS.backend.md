@@ -95,14 +95,14 @@ Todos los comandos se registran en el `invoke_handler!` de `src-tauri/src/lib.rs
 
 ### Acceso desde el frontend
 
-- **Todas las lecturas y escrituras** sobre las tablas de negocio se hacen desde el frontend con **Drizzle en modo proxy** (`src/lib/db.ts`), que delega en el comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
-- `query_raw` es un **ejecutor de SQL simple** (`sql`, `params`): devuelve `columns` + `rows`. **No hace cripto**: el cifrado/descifrado/enmascaramiento de los campos `encryptedText(...)` lo gestiona el frontend (`src/lib/db.ts` + `src/lib/stronghold.ts`, ver §4). No hay comandos Rust `crud_*` por entidad.
+- **Todas las lecturas y escrituras** sobre las tablas de negocio se hacen desde el frontend con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`), que delega en el comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
+- `query_raw` es un **ejecutor de SQL simple** (`sql`, `params`): devuelve `columns` + `rows`. **No hace cripto**: el cifrado/descifrado/enmascaramiento de los campos `encryptedText(...)` lo gestiona el frontend (`src/drizzle/drizzle.ts` + `src/drizzle/lib/stronghold.ts`, ver §4). No hay comandos Rust `crud_*` por entidad.
 - **Los comandos Rust solo existen para lógica de backend** que Drizzle no puede cubrir: SSH/SFTP (`hosts/`, `remote/`), cripto de claves (`passkeys/`), acceso al vault de Stronghold (`stronghold/`), y gestión/inicialización de BD (`database/`).
 - Antes de crear un comando Rust nuevo, comprobar si la lógica puede cubrirse con Drizzle (vía `query_raw`). Ver la tabla de decisión en `AGENTS.md`.
 
 ### Nombres de tablas
 
-Todas las tablas llevan el prefijo `deployer_`. El nombre de tabla se define en la migración SQL (`src-tauri/migrations/`, fuente de verdad del esquema) y en las entidades Drizzle de `src/lib/entities/`. Las constantes de nombres también se autogeneran en `src-tauri/src/tables.rs` mediante `bun run tables:generate` (no editar a mano).
+Todas las tablas llevan el prefijo `deployer_`. El nombre de tabla se define en la migración SQL (`src-tauri/migrations/`, fuente de verdad del esquema) y en las entidades Drizzle de `src/drizzle/entities/`. Las constantes de nombres también se autogeneran en `src-tauri/src/tables.rs` mediante `bun run tables:generate` (no editar a mano).
 
 ### Tablas actuales y campos destacados
 
@@ -112,13 +112,13 @@ Todas las tablas llevan el prefijo `deployer_`. El nombre de tabla se define en 
 | `deployer_passkeys`                  | `name`, `enabled`, `key_content` (cifrado), `passphrase` (cifrado), `key_type`, `fingerprint`             |
 | `deployer_settings`                  | Clave-valor: PK `key` + `value` (p.ej. cooldowns `hosts.system_info_cooldown_hours`, `hosts.status_info_cooldown_minutes`) |
 
-Tablas con cifrado declarado (vía `encryptedText` en `src/lib/schema-types.ts`): `deployer_hosts.password`, `deployer_passkeys.key_content`, `deployer_passkeys.passphrase`.
+Tablas con cifrado declarado (vía `encryptedText` en `src/drizzle/lib/schema-types.ts`): `deployer_hosts.password`, `deployer_passkeys.key_content`, `deployer_passkeys.passphrase`.
 
 ---
 
 ## 3. Entidades Drizzle y declaración de campos cifrados
 
-El esquema Drizzle vive en `src/lib/entities/*` (hoy solo `hosts`, `passkeys` y `settings`) y es la fuente que el frontend usa para **detectar los campos cifrados** y construir el `encryptMask`/scope por columna. Las entidades se generan y no se editan a mano (ver `AGENTS.md`); el cifrado se declara con el customType `encryptedText(...)` de `src/lib/schema-types.ts`.
+El esquema Drizzle vive en `src/drizzle/entities/*` (hoy solo `hosts`, `passkeys` y `settings`) y es la fuente que el frontend usa para **detectar los campos cifrados** y construir el `encryptMask`/scope por columna. Las entidades se generan y no se editan a mano (ver `AGENTS.md`); el cifrado se declara con el customType `encryptedText(...)` de `src/drizzle/lib/schema-types.ts`.
 
 `encryptedText` soporta dos modos:
 
@@ -127,7 +127,7 @@ El esquema Drizzle vive en `src/lib/entities/*` (hoy solo `hosts`, `passkeys` y 
 
 ### Columnas con timestamps
 
-`src/lib/columns.helpers.ts` define helpers reutilizables: `timestamps`, `description`, `enabled` (y `file_table`, un helper legacy sin uso activo).
+`src/drizzle/lib/columns.helpers.ts` define helpers reutilizables: `timestamps`, `description`, `enabled` (y `file_table`, un helper legacy sin uso activo).
 
 `timestamps` añade `created_at` / `updated_at` / `deleted_at` con:
 
@@ -148,8 +148,8 @@ Las tablas de negocio tienen columna `deleted_at` (nullable) y el esquema Drizzl
 ### Vista general
 
 - El frontend opera **siempre en texto plano** y realiza el cifrado/descifrado/enmascaramiento con **Web Crypto (AES-256-GCM)** usando claves guardadas en el **vault de Stronghold**:
-  - `src/lib/stronghold.ts` — carga el vault, gestiona claves versionadas, cifra/descifra/rota.
-  - `src/lib/db.ts` (proxy Drizzle) — cifra los params en escrituras; descifra (con `withDecryption(true, ...)`) o enmascara (default) en lecturas.
+  - `src/drizzle/lib/stronghold.ts` — carga el vault, gestiona claves versionadas, cifra/descifra/rota.
+  - `src/drizzle/drizzle.ts` (proxy Drizzle) — cifra los params en escrituras; descifra (con `withDecryption(true, ...)`) o enmascara (default) en lecturas.
 - Rust **no cifra ni descifra en `query_raw`**. Rust abre el vault solo para **leer** claves y descifrar credenciales SSH en `ssh/connect.rs` / `ssh/session.rs` (`StrongholdVault::open`).
 
 ### Vault de Stronghold
@@ -176,7 +176,7 @@ AES-256-GCM, nonce aleatorio de 12 bytes por cada cifrado.
 - Si un valor ya tiene el prefijo `ENC:` al llegar a cifrar, **no se vuelve a cifrar**.
 - Los campos vacíos se almacenan como string vacío, nunca como `ENC:`.
 
-### Configuración de campos cifrados (`encryptedText(...)` en `src/lib/schema-types.ts`)
+### Configuración de campos cifrados (`encryptedText(...)` en `src/drizzle/lib/schema-types.ts`)
 
 | Tabla                     | Campo          | Uso |
 | ------------------------- | -------------- | --- |
@@ -184,11 +184,11 @@ AES-256-GCM, nonce aleatorio de 12 bytes por cada cifrado.
 | `deployer_passkeys`       | `key_content`  | Se cifra al escribir; se enmascara al leer |
 | `deployer_passkeys`       | `passphrase`   | Se cifra al escribir; se enmascara al leer |
 
-> `generate_passkey` devuelve la passphrase en claro al frontend; el INSERT vía el proxy (`db.ts`) la cifra al persistir.
+> `generate_passkey` devuelve la passphrase en claro al frontend; el INSERT vía el proxy (`drizzle.ts`) la cifra al persistir.
 
 ### Flujo por operación (frontend)
 
-- **Escritura**: `db.ts` detecta los campos cifrados del schema (`detectEncryptedFieldsFromSchema`), aplica `stripEncryptedValues` (elimina asignaciones con sentinel/`BLANK_VALUE` o `ENC:`) y cifra los params marcados con `encrypt(scope, valor)`.
+- **Escritura**: `drizzle.ts` detecta los campos cifrados del schema (`detectEncryptedFieldsFromSchema`), aplica `stripEncryptedValues` (elimina asignaciones con sentinel/`BLANK_VALUE` o `ENC:`) y cifra los params marcados con `encrypt(scope, valor)`.
 - **Lectura sin descifrado** (default): reemplaza los valores `ENC:` por `BLANK_VALUE` (la UI muestra un placeholder).
 - **Lectura con descifrado**: `withDecryption(true, fn)` → descifra por scope usando la versión del valor.
 
@@ -212,7 +212,7 @@ Comandos SSH/SFTP "sueltos" (no asociados a un compose) que usa la consola remot
 
 ### Propósito
 
-Único punto de entrada que permite al frontend ejecutar SQL arbitrario generado por Drizzle (modo proxy), tanto lecturas como escrituras. **No hace cripto**: el cifrado/descifrado/enmascaramiento de los campos declarados `encryptedText(...)` lo gestiona el frontend (proxy `db.ts` + vault en `stronghold.ts`). Ver `src/lib/db.ts` para cómo el frontend lo invoca.
+Único punto de entrada que permite al frontend ejecutar SQL arbitrario generado por Drizzle (modo proxy), tanto lecturas como escrituras. **No hace cripto**: el cifrado/descifrado/enmascaramiento de los campos declarados `encryptedText(...)` lo gestiona el frontend (proxy `drizzle.ts` + vault en `stronghold.ts`). Ver `src/drizzle/drizzle.ts` para cómo el frontend lo invoca.
 
 ### Firma
 
