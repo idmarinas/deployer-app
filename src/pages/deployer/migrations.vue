@@ -15,7 +15,7 @@ const { buttons, steps, currentStep, runMigrations, resetMigration } = useAppMig
 const links = computed<ButtonProps[]>(() => {
 	const items: ButtonProps[] = [
 		{
-			label: t('pages.migrations.buttons.run'),
+			label: t('pages.app.migrations.buttons.run'),
 			color: 'primary',
 			disabled: buttons.value.run.disabled,
 			loading: buttons.value.run.loading,
@@ -46,9 +46,9 @@ const links = computed<ButtonProps[]>(() => {
 <template>
 	<UPageHero
 		:links="links"
-		:headline="t('pages.migrations.headline')"
-		:title="t('pages.migrations.title')"
-		:description="t('pages.migrations.description')"
+		:headline="t('pages.app.migrations.headline')"
+		:title="t('pages.app.migrations.title')"
+		:description="t('pages.app.migrations.description')"
 	>
 		<UStepper :items="steps" value-key="id" :default-value="currentStep" disabled />
 	</UPageHero>
