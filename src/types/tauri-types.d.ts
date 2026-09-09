@@ -14,6 +14,10 @@ export type DatabaseInfo = { path: string, file_size_bytes: number, table_count:
 
 export type DerivePasskeyInfo = { 
 /**
+ * Clave pública OpenSSH derivada de la clave privada.
+ */
+public_key: string | null, 
+/**
  * Fingerprint SHA-256 derivado de la clave (formato `SHA256:...`).
  */
 fingerprint: string | null, 
@@ -31,20 +35,6 @@ key_content: string,
  * Passphrase para descifrar la clave si está protegida.
  */
 passphrase: string | null, };
-
-export type DockerCompose = { id: number, name: string, description: any, host_id: number | null, remote_path: string, enabled: boolean, created_at: string, updated_at: string, };
-
-export type DockerComposeOperationInput = { docker_compose_id: number, };
-
-export type DockerComposeService = { name: string, status: string, health: string | null, };
-
-export type DockerHubImageResult = { name: string, description: string, pull_count: number, star_count: number, official: boolean, };
-
-export type DockerHubSearchCache = { id: number, query: string, namespace: string, repository: string, description: string | null, pull_count: number, star_count: number, fetched_at: string, };
-
-export type DockerHubTagResult = { name: string, full_size: number, last_updated: string, version: string, variant: string, };
-
-export type DockerHubTagsCache = { id: number, namespace: string, repository: string, url_query: string, url_next: string | null, url_previous: string | null, count: number, tags: string, tags_versions: string, tags_variants: string, fetched_at: string, };
 
 export type ExportPublicKeyAction = "add" | "remove";
 
@@ -65,13 +55,6 @@ action: ExportPublicKeyAction,
  * Credenciales temporales opcionales.
  */
 temp_username: string | null, temp_password: string | null, };
-
-/**
- * Identificador de una tabla "_files". Serde lo serializa en snake_case del
- * variante (p.ej. DockerComposeFiles -> "docker_compose_files"), el mismo
- * valor string que usaba el frontend como id de tabla.
- */
-export type FilesTableId = "docker_compose_files";
 
 export type GeneratePasskeyInput = { 
 /**
@@ -202,18 +185,6 @@ export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
 
-/**
- * Struct común de retorno para las tablas con patrón "_files".
- */
-export type ModuleFile = { id: number, module_id: number, file_path: string, content: string, is_binary: boolean, name: string, mime_type: string | null, file_type: string, size: number | null, last_modified: number | null, webkit_relative_path: string | null, icon: string, updated_at: string, created_at: string, deleted_at: string | null, };
-
-/**
- * Entrada de un archivo a sincronizar. Común a cualquier módulo que utilice el
- * patrón "_files" (solo cambia el `module_id` y la tabla, que van en
- * [`SyncModuleFilesInput`]).
- */
-export type ModuleFileInput = { id?: number, file_path: string, content?: string | null, is_binary: boolean, name: string, mime_type?: string | null, file_type: string, size?: number | null, last_modified?: number | null, webkit_relative_path?: string | null, icon?: string | null, };
-
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
 
 export type RemoteCommandInput = { host_id: number, 
@@ -299,11 +270,5 @@ recursive: boolean | null,
  * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
  */
 ssh_reconnect_attempts: number | null, };
-
-/**
- * Entrada del comando `sync_module_files`: el `module_id` del módulo padre,
- * la `table` "_files" a usar y la lista de archivos.
- */
-export type SyncModuleFilesInput = { module_id: number, table: FilesTableId, files: Array<ModuleFileInput>, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };

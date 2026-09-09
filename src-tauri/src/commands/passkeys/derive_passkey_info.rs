@@ -28,6 +28,8 @@ pub struct DerivePasskeyInfoInput {
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct DerivePasskeyInfo {
+    /// Clave pública OpenSSH derivada de la clave privada.
+    pub public_key: Option<String>,
     /// Fingerprint SHA-256 derivado de la clave (formato `SHA256:...`).
     pub fingerprint: Option<String>,
     /// Tipo real del algoritmo de la clave.
@@ -102,8 +104,20 @@ pub async fn derive_passkey_info(
     // 5) Calcular fingerprint SHA-256
     let fingerprint = key.fingerprint(HashAlg::Sha256).to_string();
 
+    // 6) Extraer la clave pública en formato OpenSSH
+    let public_key_str = match key.public_key().to_openssh() {
+        Ok(s) => s,
+        Err(e) => {
+            return Ok(CommandResponse::err(
+                "tauri.passkeys.errors.serialization_failed",
+                crate::params!("reason" => e.to_string()),
+            ));
+        }
+    };
+
     Ok(CommandResponse::ok(
         DerivePasskeyInfo {
+            public_key: Some(public_key_str),
             fingerprint: Some(fingerprint),
             key_type: Some(key_type),
         },

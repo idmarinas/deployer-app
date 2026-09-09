@@ -24,6 +24,7 @@ CREATE TABLE `deployer_passkeys` (
 	`description` text DEFAULT '{"type":"doc","content":[{"type":"paragraph"}]}' NOT NULL,
 	`enabled` integer DEFAULT false NOT NULL,
 	`key_content` text NOT NULL,
+	`public_key` text,
 	`passphrase` text,
 	`key_type` text DEFAULT 'ed25519' NOT NULL,
 	`fingerprint` text,

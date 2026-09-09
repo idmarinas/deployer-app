@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "e349faf9-6d06-4d29-b87f-97fb79349a37",
+  "id": "49c16c4c-3e50-4040-9025-064868f9999e",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -225,6 +225,16 @@
       "default": null,
       "generated": null,
       "name": "key_content",
+      "entityType": "columns",
+      "table": "deployer_passkeys"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "public_key",
       "entityType": "columns",
       "table": "deployer_passkeys"
     },
