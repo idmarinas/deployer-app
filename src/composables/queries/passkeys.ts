@@ -65,6 +65,7 @@ export function usePasskeyQuery() {
 			...data,
 			fingerprint: response.data.fingerprint || data.fingerprint?.trim(),
 			key_type: response.data.key_type || data.key_type,
+			public_key: response.data.public_key || '',
 			updated_at: new Date().toISOString(),
 			created_at: new Date().toISOString(),
 		}
