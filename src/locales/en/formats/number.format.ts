@@ -17,5 +17,6 @@ export default <IntlNumberFormat>{
 	percent: {
 		style: 'percent',
 		useGrouping: false,
+		maximumFractionDigits: 2,
 	},
 }
