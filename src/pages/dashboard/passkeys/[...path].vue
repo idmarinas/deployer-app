@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
+import { ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon } from '@/utils/icons'
 
 const { t } = useI18n()
@@ -8,7 +9,7 @@ const { t } = useI18n()
 
 <template>
 	<UError
-		:icon="getModuleIcon('passkeys', 'off')"
+		:icon="getModuleIcon(ModulesName.Passkeys, 'off')"
 		:clear="false"
 		:error="{
 			statusCode: 404,

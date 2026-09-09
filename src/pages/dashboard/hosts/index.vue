@@ -159,7 +159,7 @@ onMounted(() => {
 	</ListTable>
 	<EmptyList
 		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		module="hosts"
+		:module="ModulesName.Hosts"
 		:add-route="{ name: 'dashboard-hosts-add' }"
 		:reload-fn="reload"
 	/>

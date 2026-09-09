@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
+import { ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon } from '@/utils/icons'
 
 const { t } = useI18n()
@@ -12,7 +13,7 @@ definePage({
 
 <template>
 	<UError
-		:icon="getModuleIcon('hosts', 'off')"
+		:icon="getModuleIcon(ModulesName.Hosts, 'off')"
 		:clear="false"
 		:error="{
 			statusCode: 404,

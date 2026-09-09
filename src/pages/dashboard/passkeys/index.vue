@@ -160,7 +160,7 @@ onMounted(() => {
 	</ListTable>
 	<EmptyList
 		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		module="passkeys"
+		:module="ModulesName.Passkeys"
 		:reload-fn="reload"
 		:add-route="{ name: 'dashboard-passkeys-add' }"
 	/>
