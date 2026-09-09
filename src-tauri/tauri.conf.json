@@ -36,7 +36,7 @@
 			"nsis": {
 				"installerIcon": "icons/installer.ico",
 				"uninstallerIcon": "icons/uninstaller.ico",
-				"installMode": "both",
+				"installMode": "currentUser",
 				"languages": ["Spanish", "English"]
 			}
 		},
