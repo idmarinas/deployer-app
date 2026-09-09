@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const { t } = useI18n()
 
-const { toolbarContent } = useDashboardToolbarProvider('app')
+const { toolbarContent } = useDashboardToolbarProvider()
 </script>
 
 <template>
