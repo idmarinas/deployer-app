@@ -37,7 +37,7 @@ export function useSideberMenu() {
 			// Servidores
 			{
 				label: t('components.sidebar.hosts'),
-				icon: getModuleIcon(ModulesName.Passkeys),
+				icon: getModuleIcon(ModulesName.Hosts),
 				to: { name: 'dashboard-hosts' },
 				// description: 'Configurar conexiones a servidores'
 			},
