@@ -43,16 +43,16 @@ export function useAppMigrations() {
 			{
 				id: 'run_migrations',
 				icon: 'i-tabler-database',
-				title: t('pages.migrations.steps.title.run_migrations'),
-				description: t('pages.migrations.steps.description.idle.run_migrations'),
+				title: t('pages.app.migrations.steps.title.run_migrations'),
+				description: t('pages.app.migrations.steps.description.idle.run_migrations'),
 				status: 'idle',
 				invoke: 'execute_migrations',
 			},
 			{
 				id: 'validate',
 				icon: 'i-tabler-database-smile',
-				title: t('pages.migrations.steps.title.validate'),
-				description: t('pages.migrations.steps.description.idle.validate'),
+				title: t('pages.app.migrations.steps.title.validate'),
+				description: t('pages.app.migrations.steps.description.idle.validate'),
 				status: 'idle',
 				invoke: 'validate_database_sqlite',
 			},
@@ -114,7 +114,7 @@ export function useAppMigrations() {
 
 		value.status = status
 		value.description = t(
-			`pages.migrations.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`,
+			`pages.app.migrations.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`,
 		)
 	}
 

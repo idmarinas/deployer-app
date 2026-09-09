@@ -111,7 +111,7 @@ export function useAppConfigure() {
 					} catch {
 						return {
 							success: false,
-							message_key: 'pages.setup.toast.error.save_path',
+							message_key: 'pages.app.setup.toast.error.save_path',
 							message_params: {},
 						}
 					}
@@ -239,7 +239,7 @@ export function useAppConfigure() {
 					} catch {
 						return {
 							success: false,
-							message_key: 'pages.setup.toast.error.save_path',
+							message_key: 'pages.app.setup.toast.error.save_path',
 							message_params: {},
 						}
 					}
@@ -260,7 +260,9 @@ export function useAppConfigure() {
 		if (!value) return
 
 		value.status = status
-		value.description = t(`pages.setup.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`)
+		value.description = t(
+			`pages.app.setup.steps.description.${status}.${step.replace('_pre', '').replace('_post', '')}`,
+		)
 	}
 
 	async function executeSetupSteps(path: string): Promise<boolean> {
