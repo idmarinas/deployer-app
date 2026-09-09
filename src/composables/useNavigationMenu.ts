@@ -2,6 +2,7 @@ import type { CommandPaletteGroup, DropdownMenuItem, NavigationMenuItem } from '
 
 import { useI18n } from 'vue-i18n'
 
+import { ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon, ICONS } from '@/utils/icons'
 
 export function useSideberMenu() {
@@ -28,14 +29,14 @@ export function useSideberMenu() {
 			// Claves de acceso
 			{
 				label: t('components.sidebar.passkeys'),
-				icon: getModuleIcon('passkeys'),
+				icon: getModuleIcon(ModulesName.Passkeys),
 				to: { name: 'dashboard-passkeys' },
 				// description: 'Gestionar claves SSH (RSA, ED25519, ECDSA)'
 			},
 			// Servidores
 			{
 				label: t('components.sidebar.hosts'),
-				icon: getModuleIcon('hosts'),
+				icon: getModuleIcon(ModulesName.Passkeys),
 				to: { name: 'dashboard-hosts' },
 				// description: 'Configurar conexiones a servidores'
 			},
@@ -93,14 +94,14 @@ export function useSideberMenu() {
 				{
 					label: t('components.navigation.add.passkey.label'),
 					suffix: t('components.navigation.add.passkey.description'),
-					icon: getModuleIcon('passkeys'),
+					icon: getModuleIcon(ModulesName.Passkeys),
 					to: '/dashboard/passkeys/add',
 					kbds: ['shift', 'K'],
 				},
 				{
 					label: t('components.navigation.add.host.label'),
 					suffix: t('components.navigation.add.host.description'),
-					icon: getModuleIcon('hosts', 'singular'),
+					icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
 					to: '/dashboard/hosts/add',
 					kbds: ['shift', 'H'],
 				},
@@ -164,14 +165,14 @@ export function useDashboardButton() {
 		{
 			label: t('components.navigation.add.passkey.label'),
 			description: t('components.navigation.add.passkey.description'),
-			icon: getModuleIcon('passkeys'),
+			icon: getModuleIcon(ModulesName.Passkeys),
 			to: { name: 'dashboard-passkeys-add' },
 			kbds: ['shift', 'K'],
 		},
 		{
 			label: t('components.navigation.add.host.label'),
 			description: t('components.navigation.add.host.description'),
-			icon: getModuleIcon('hosts', 'singular'),
+			icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
 			to: { name: 'dashboard-hosts-add' },
 			kbds: ['shift', 'H'],
 		},
