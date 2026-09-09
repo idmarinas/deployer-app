@@ -45,7 +45,7 @@ onMounted(async () => {
 			<RouterLink
 				v-for="item in items"
 				:key="item.id"
-				:to="{ name: `dashboard-${module}-id`, params: { id: item.id } }"
+				:to="{ name: `dashboard-${module}-id` as any, params: { id: item.id } }"
 				class="flex items-center justify-between px-3 py-2.5 hover:bg-elevated/50 transition-colors"
 			>
 				<div class="flex items-center gap-2 min-w-0">
@@ -71,13 +71,13 @@ onMounted(async () => {
 				:icon="ICONS.actions.list"
 				:label="t('common.actions.list')"
 				variant="soft"
-				:to="{ name: `dashboard-${module}` }"
+				:to="{ name: `dashboard-${module}` as any }"
 				size="sm"
 			/>
 			<UButton
 				:icon="ICONS.actions.add"
 				:label="t('common.actions.create')"
-				:to="{ name: `dashboard-${module}-add` }"
+				:to="{ name: `dashboard-${module}-add` as any }"
 				size="sm"
 			/>
 		</template>
