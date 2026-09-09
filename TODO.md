@@ -93,8 +93,7 @@ Módulos:
 
 ### Cosas por hacer
 
-1. Comprobar que funciona los dos módulos
-2. Preparar los `locales/` y añadir la traducción para `en`
+1. Nada por ahora
 
 ## Módulos
 
