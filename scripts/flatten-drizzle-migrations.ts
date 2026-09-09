@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const DRIZZLE_MIGRATIONS = join(import.meta.dir, '..', 'drizzle', 'migrations')
+const DRIZZLE_MIGRATIONS = join(import.meta.dir, '..', 'migrations')
 const SQLX_MIGRATIONS = join(import.meta.dir, '..', 'src-tauri', 'migrations')
 
 async function flatten() {
