@@ -2,6 +2,20 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (09 sep 2026 — traducción `locale/es` al `en`)
+
+**Nota del usuario:** el plan `AGENTS.locale-en.PLAN.md` se da por completado (el usuario lo marcó como **Completado**). Detalle en `AGENTS.locale-en.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Creados los 28 archivos de mensajes en `src/locales/en/**`** espejo de `es` (mismos árboles de claves `snake_case`, `satisfies LocaleMessageValue`): `app.ts`, `common.ts`, `entity.ts`, `overlays.ts`, `tauri.ts`, `components/{dashboard,deployerAppMenu,editor,empty_list,error,navigation,sidebar}.ts`, `dialogs/hosts.ts`, `form/{hosts,index,passkeys,shared}.ts`, `notifications/{hosts,passkeys}.ts`, `pages/app/{migrations,settings,setup}.ts`, `pages/{console,home,hosts,passkeys}.ts`, `validation/{hosts,passkeys}.ts`.
+2. **`en/formats/number.format.ts`** alineado a `es` (`percent.maximumFractionDigits: 2`). Plurales de 3 formas en es (`check_updates.success.*`) traducidos con sintaxis ICU `{count, plural, ...}` para el inglés. Traducciones correctas donde `es` tenía typos (`form/shared.ts`, `overlays.ts`).
+3. **Verificación**: coherencia de claves es↔en 28/28 (script de comparación de árboles), `bun run i18n:types` OK, `bun run build` verde. Los errores preexistentes de `vue-tsc` (`route-map.d.ts` desactualizado + enum `ModulesName`) los corrigió el **usuario**.
+4. **Fix posterior (sesión 17)**: `src/composables/useNavigationMenu.ts` resuelve ahora los labels con `computed` (antes `t(...)` capturado en `setup`), para que la barra lateral/menú/búsqueda/campo "+" se traduzcan al cambiar el idioma. `bun run build` verde.
+5. **`AGENTS.frontend.md` §5** actualizado: `en/` y `es/` tienen mensajes; al añadir claves en `es/` crear espejo en `en/`.
+
+**Resultado:** la app funciona de serie en inglés (so arranca en `en` si el SO está en inglés) y el cambio de idioma en runtime traduce toda la UI.
+
+---
+
 ## Tareas completadas (09 sep 2026 — Stronghold: reemplazo del cifrado + revisión y documentación)
 
 **Nota del usuario en `AGENTS.todo.md`**: _`AGENTS.stronghold-review.PLAN.md` está confirmado; el plan ya está completado y se hicieron ciertos cambios que deberían documentarse en `AGENTS.md`, `AGENTS.frontend.md` y `AGENTS.backend.md`._ Detalle en `AGENTS.stronghold-crypto.PLAN.md` (implementación) y `AGENTS.stronghold-review.PLAN.md` (revisión), ambos archivados en `.agents/plans.done/`.
