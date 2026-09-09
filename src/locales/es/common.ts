@@ -61,4 +61,8 @@ export default {
 	back: {
 		list: 'Volver a la lista',
 	},
+
+	table: {
+		columns: 'Columnas',
+	},
 } satisfies LocaleMessageValue
