@@ -22,10 +22,10 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { file_table } from '../src/lib/columns.helpers'
+import { file_table } from '../src/drizzle/lib/columns.helpers'
 
 const __dirname = import.meta.dir
-const ENTITIES_DIR = join(__dirname, '../src/lib/entities')
+const ENTITIES_DIR = join(__dirname, '../src/drizzle/entities')
 const TABLES_OUTPUT = join(__dirname, '../src-tauri/src/tables.rs')
 const FILES_OUTPUT = join(__dirname, '../src-tauri/src/files.rs')
 
