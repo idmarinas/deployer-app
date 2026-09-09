@@ -11,6 +11,7 @@ export const passkeys = sqliteTable(
 		description,
 		enabled,
 		key_content: encryptedText('key_content').notNull(),
+		public_key: text(),
 		passphrase: encryptedText('passphrase'),
 		key_type: text({ enum: ['rsa', 'ed25519', 'ecdsa'] })
 			.notNull()
