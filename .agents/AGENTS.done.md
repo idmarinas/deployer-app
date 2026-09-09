@@ -2,6 +2,18 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (09 sep 2026 — Stronghold: reemplazo del cifrado + revisión y documentación)
+
+**Nota del usuario en `AGENTS.todo.md`**: _`AGENTS.stronghold-review.PLAN.md` está confirmado; el plan ya está completado y se hicieron ciertos cambios que deberían documentarse en `AGENTS.md`, `AGENTS.frontend.md` y `AGENTS.backend.md`._ Detalle en `AGENTS.stronghold-crypto.PLAN.md` (implementación) y `AGENTS.stronghold-review.PLAN.md` (revisión), ambos archivados en `.agents/plans.done/`.
+
+1. **`AGENTS.stronghold-crypto.PLAN.md` → Completado**: reemplazo del cifrado (clave maestra única) por **Stronghold** con claves versionadas `encrypt:{tabla}.{col}:{version}` (Fases 1-7 y 9 implementadas; Fase 8 de verificación funcional delegada al usuario). Rotación/escaneo en JS (`src/drizzle/lib/stronghold.ts` + `TabSecurity.vue`); Rust abre el vault de Stronghold **solo lectura** (`StrongholdVault::open`) para descifrar credenciales SSH.
+2. **`AGENTS.stronghold-review.PLAN.md` → Completado**: verificación del plan Stronghold real. Detectó las discrepancias: rutas `src/lib/*` → `src/drizzle/*`, y que la rotación (`rotateKey`) y el escaneo/re-cifrado (`scanAndReencrypt`/`reencryptScope`) son **JS**, no comandos Rust (`rotate_encryption_key`/`scan_and_reencrypt` no existen en `lib.rs`).
+3. **Documentación actualizada**: en `AGENTS.md`, `AGENTS.frontend.md` y `AGENTS.backend.md` todas las referencias a `src/lib/*`, `@/lib/*` y `db.ts` pasan a la estructura real: `src/drizzle/drizzle.ts`, `src/drizzle/lib/stronghold.ts`, `src/drizzle/lib/schema-types.ts`, `src/drizzle/lib/columns.helpers.ts`, `src/drizzle/entities/*`, `src/drizzle/schema.ts`/`relations.ts` y imports `@/drizzle/*`.
+
+**Resultado:** solo cambios de documentación (no se tocó código ni migraciones). Verificado por grep que no quedan referencias a `src/lib`/`@/lib` en los 3 documentos.
+
+---
+
 ## Tareas completadas (27 ago 2026 — revisión de los archivos AGENTS)
 
 **Nota del usuario en `AGENTS.todo.md`**: _Revisión de los archivos AGENTS.md, AGENTS.frontend.md y AGENTS.backend.md. Hay que buscar inconsistencias de lo que dice el AGENTS con el estado real del proyecto._ Plan y detalle en `AGENTS.agentes-revision.PLAN.md`.

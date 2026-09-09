@@ -2,7 +2,7 @@
 
 ## Estado
 
-**En progreso (Ejecutando)** — Fases 1-7 implementadas y verificadas (`cargo check` OK). Pendiente Fase 8 (verificación funcional end-to-end) y UI de rotación de claves.
+**Completado** — el usuario dio por completado el plan (Fases 1-7 y 9 implementadas; la Fase 8 de verificación funcional queda delegada/revisada por el usuario). Plan archivado en `.agents/plans.done/`.
 
 ---
 
