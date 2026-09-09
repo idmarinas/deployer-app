@@ -1,4 +1,5 @@
 <script lang="ts">
+import { ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon, ICONS } from '@/utils/icons'
 import { useI18n } from 'vue-i18n'
 import { RouteLocationRaw } from 'vue-router'
@@ -8,7 +9,7 @@ import { RouteLocationRaw } from 'vue-router'
 const { t } = useI18n()
 
 const props = defineProps<{
-	module: 'projects' | 'tasks' | 'passkeys' | 'hosts' | 'variables' | 'global_variables' | 'docker_composes'
+	module: ModulesName
 	reloadFn: () => void
 	addRoute?: RouteLocationRaw
 }>()
