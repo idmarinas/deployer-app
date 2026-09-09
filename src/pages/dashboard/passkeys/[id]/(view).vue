@@ -113,13 +113,13 @@ watch([isLoading, pageTitle], ([newLoading, newTitle]) => {
 					</template>
 				</UUser>
 			</UPageCard>
-			<!-- <UPageCard variant="ghost">
+			<UPageCard variant="ghost">
 				<UUser
 					:name="t('entity.passkey.key_public')"
-					description="clave publica"
+					:description="itemData.public_key || undefined"
 					:avatar="{ icon: ICONS.auth.lockOpen }"
 				/>
-			</UPageCard> -->
+			</UPageCard>
 		</UPageList>
 	</template>
 	<StatusError v-else-if="status === 'error' && error?.message === 'not-found'" />
