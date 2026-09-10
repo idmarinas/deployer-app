@@ -1,7 +1,7 @@
 {
 	"name": "deployer-app",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"scripts": {
 		"dev": "bun run i18n:types && vite",
