@@ -6,6 +6,7 @@ export default {
 		inactive: 'Inactivo',
 		enabled: 'Habilitado',
 		disabled: 'Deshabilitado',
+		copied: 'Copiado',
 	},
 
 	deploy: {
@@ -26,6 +27,7 @@ export default {
 		filter: 'Filtrar',
 		enable: 'Activar',
 		disable: 'Desactivar',
+		copy: 'Copiar',
 	},
 
 	confirm: {
