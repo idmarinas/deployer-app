@@ -84,16 +84,9 @@ Puede ser más complicado migrar de lo que parece.
   }
 ```
 
-## Versión 0.1.0
+## Versión 0.2.0
 
-Módulos:
-
-1. Servidores (hosts)
-2. Claves de acceso (passkeys)
-
-### Cosas por hacer
-
-1. Nada por ahora
+1. Nada
 
 ## Módulos
 
