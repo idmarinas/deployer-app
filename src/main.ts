@@ -16,6 +16,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 import App from './App.vue'
 import { i18n } from './i18n'
+import { checkVaultHealth } from './drizzle/lib/stronghold'
 
 const router = createRouter({
 	routes,
@@ -23,6 +24,20 @@ const router = createRouter({
 })
 
 async function bootstrap() {
+	// 0. Diagnóstico del vault de Stronghold (no bloqueante)
+	try {
+		const health = await checkVaultHealth()
+		if (!health.vault_file_exists) {
+			console.warn('[stronghold] Vault no encontrado. Se inicializará en el primer cifrado.')
+		} else if (!health.client_exists || health.missing_scopes.length > 0) {
+			console.warn(
+				`[stronghold] Vault incompleto. Claves faltantes: ${health.missing_scopes.join(', ') || 'client no encontrado'}`,
+			)
+		}
+	} catch (err) {
+		console.warn('[stronghold] No se pudo verificar la salud del vault:', err)
+	}
+
 	// 1. Comprobaciones ANTES de montar Vue
 	const exists = await invoke<CommandResponse<boolean>>('check_database_exists')
 

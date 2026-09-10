@@ -37,6 +37,27 @@ export function encryptScope(table: string, field: string): string {
 	return `encrypt:${table}.${field}`
 }
 
+/**
+ * Estado del vault de Stronghold reportado por el backend (diagnóstico).
+ */
+export interface VaultHealthReport {
+	vault_file_exists: boolean
+	salt_file_exists: boolean
+	snapshot_loaded: boolean
+	client_exists: boolean
+	keys_found: string[]
+	expected_scopes: string[]
+	missing_scopes: string[]
+}
+
+/**
+ * Solicita al backend un diagnóstico del vault de Stronghold.
+ * Permite detectar si el vault está vacío, corrupto o sin inicializar.
+ */
+export async function checkVaultHealth(): Promise<VaultHealthReport> {
+	return invoke<VaultHealthReport>('check_vault_health')
+}
+
 async function getStronghold(): Promise<Stronghold> {
 	if (!strongholdPromise) {
 		strongholdPromise = (async () => {

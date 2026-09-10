@@ -18,7 +18,7 @@ use commands::passkeys::{derive_passkey_info, export_public_key, generate_passke
 use commands::remote::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
-use commands::stronghold::{get_vault_password, get_vault_path};
+use commands::stronghold::{check_vault_health, get_vault_password, get_vault_path};
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -85,6 +85,7 @@ pub fn run() {
             // Stronghold
             get_vault_password,
             get_vault_path,
+            check_vault_health,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
