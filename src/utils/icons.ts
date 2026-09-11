@@ -128,7 +128,7 @@ export const ICONS = {
 		viewOff: 'i-tabler-eye-off',
 		copy: 'i-tabler-copy',
 		play: 'i-tabler-play',
-		stop: 'i-tabler-square-stop',
+		stop: 'i-tabler-cancel',
 		list: 'i-tabler-list',
 		listDetails: 'i-tabler-list-details',
 		folder: 'i-tabler-folder',
@@ -227,6 +227,7 @@ export const ICONS = {
 		lockOpen: 'i-tabler-lock-open',
 		encrypt: 'i-tabler-key',
 		empty: 'i-tabler-circle-dashed',
+		workingdir: 'i-tabler-folder',
 	},
 
 	/** Para las tabs de compose.yaml */
