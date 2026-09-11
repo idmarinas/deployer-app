@@ -151,7 +151,10 @@ async fn run_command_streaming(
                     Some(ChannelMsg::ExitStatus { exit_status }) => {
                         exit_code = exit_status as i64;
                     }
-                    None => break,
+                    // EOF llega antes que ExitStatus en OpenSSH; NO cortar aquí:
+                    // esperar al cierre del canal para capturar el exit code real.
+                    Some(ChannelMsg::Eof) => {}
+                    Some(ChannelMsg::Close) | None => break,
                     _ => {}
                 }
             }
