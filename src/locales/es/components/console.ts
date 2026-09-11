@@ -13,8 +13,8 @@ export default {
 		run: 'Ejecutar',
 	},
 	upload: {
-		local_placeholder: 'ruta local (o selecciona)',
-		remote_placeholder: 'ruta remota de destino',
+		local_placeholder: 'Ruta local (o selecciona)',
+		remote_placeholder: 'Ruta remota de destino',
 		browse_file: 'Archivo',
 		browse_dir: 'Carpeta',
 		recursive: 'Directorio (recursivo)',

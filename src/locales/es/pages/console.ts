@@ -4,7 +4,7 @@ export default {
 	title: 'Consola remota',
 	sections: {
 		command: 'Ejecutar comando',
-		upload: 'Subir archivo',
-		download: 'Descargar archivo',
+		upload: 'Subir archivos',
+		download: 'Descargar archivos',
 	},
 } satisfies LocaleMessageValue
