@@ -2,6 +2,18 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (11 sep 2026 — Comando remoto universal tipo n8n, fase 1: nodos en TS)
+
+**Nota del usuario**: el plan `AGENTS.universal-remote.PLAN.md` se da por completado; el usuario continúa con comandos **guardados y mantenidos en BD** (ver `AGENTS.commands-db.PLAN.md`). Detalle en `AGENTS.universal-remote.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Sistema de nodos en TypeScript** en `src/utils/remote-nodes/`: `types.ts` (`RemoteNodeDefinition`, `OutputParser` json/line-based/regex/raw), `parsers.ts` (`parseOutput` con búsqueda de JSON/arrays embebidos), `runner.ts` (`runNode`/`runCustomNode` sobre `ssh_execute_command` con `Channel`), `registry.ts` (`getNode`/`getAllNodes`).
+2. **Nodos predefinidos** en `src/utils/remote-nodes/nodes/`: `system-metrics`, `system-info`, `upgradable-packages`, `custom`.
+3. **Integración piloto**: en `src/pages/dashboard/hosts/[id]/(view).vue`, `checkMetrics()` reemplazó `invoke('host_check_metrics')` por `runNode('system-metrics', hostId)` (mapea a `HostStatusMetrics`, persiste con `db.update(deployer_hosts)` e invalida caché).
+
+**Resultado:** `bun run build` verde. El resto de integraciones de `system-info`/`upgradable-packages` y el guardado de nodos en BD se abordan en el plan siguiente.
+
+---
+
 ## Tareas completadas (09 sep 2026 — traducción `locale/es` al `en`)
 
 **Nota del usuario:** el plan `AGENTS.locale-en.PLAN.md` se da por completado (el usuario lo marcó como **Completado**). Detalle en `AGENTS.locale-en.PLAN.md` (archivado en `.agents/plans.done/`).
