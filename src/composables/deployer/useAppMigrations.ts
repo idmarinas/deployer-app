@@ -129,7 +129,7 @@ export function useAppMigrations() {
 			buttons.value.run.disabled = true
 			buttons.value.run.loading = false
 
-			router.push('/')
+			router.push({ name: 'dashboard-home' })
 		} else {
 			buttons.value.run.disabled = true
 			buttons.value.run.loading = false
