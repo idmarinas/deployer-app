@@ -1,5 +1,6 @@
 // export { cache_projects_docker_search } from './entities/cache_projects_docker_search'
 // export { cache_projects_docker_tags } from './entities/cache_projects_docker_tags'
+export { commands } from './entities/commands'
 export { hosts } from './entities/hosts'
 export { passkeys } from './entities/passkeys'
 // export { projects_docker_compose } from './entities/projects_docker_compose'
