@@ -1,11 +1,12 @@
 import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
-import { hosts, passkeys } from '@/drizzle/schema'
+import { commands, hosts, passkeys } from '@/drizzle/schema'
 
 export enum ModulesName {
 	Default = 'default',
 	Hosts = 'hosts',
 	Passkeys = 'passkeys',
+	Commands = 'commands',
 }
 
 export function getSqliteTableByModuleName(module: ModulesName): SQLiteTableWithColumns<any> | undefined {
@@ -14,6 +15,8 @@ export function getSqliteTableByModuleName(module: ModulesName): SQLiteTableWith
 			return hosts
 		case ModulesName.Passkeys:
 			return passkeys
+		case ModulesName.Commands:
+			return commands
 		default:
 			return undefined
 	}
