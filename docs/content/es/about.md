@@ -4,7 +4,7 @@ description: Librerías y paquetes de terceros que han contribuido a la creació
 navigation: false
 ogImage:
   props:
-    headline: Liberías utilizados
+    headline: Librerías utilizadas
     icon: i-tabler-user
 ---
 
