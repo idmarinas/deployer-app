@@ -10,18 +10,50 @@ export default defineNuxtConfig({
 		defaultLocale: 'es',
 	},
 	docsBundle: {
+		name: 'DeployerApp',
+		short_name: 'DeployerApp',
 		libraries: [
 			{
-				title: 'Symfony Components',
-				icon: 'i-tabler-brand-symfony',
-				to: 'https://www.symfony.com/components',
-				description: 'This project relies on these components for most of its features.',
+				icon: 'i-tabler-brand-nuxt',
+				title: 'Nuxt UI',
+				description:
+					'La interfaz de la aplicación se construye con Nuxt UI v4: componentes accesibles y personalizables con tema basado en Tailwind CSS.',
+				to: 'https://ui.nuxt.com',
 			},
 			{
-				title: 'Other component',
-				icon: 'i-tabler-components',
-				to: 'https://www.example.com',
-				description: 'Other Component used in this project.',
+				icon: 'i-tabler-brand-vue',
+				title: 'VueJS',
+				description:
+					'El frontend se desarrolla con Vue 3 y TypeScript: composables, reactividad y tipado estricto sobre los que se apoyan todas las vistas.',
+				to: 'https://vuejs.org',
+			},
+			{
+				icon: 'i-simple-icons-drizzle',
+				title: 'Drizzle ORM',
+				description:
+					'Capa de acceso a datos en modo proxy sobre SQLite: cifra, descifra y enmascara los campos sensibles con las claves del vault Stronghold.',
+				to: 'https://orm.drizzle.team',
+			},
+			{
+				icon: 'i-simple-icons-tauri',
+				title: 'Tauri App',
+				description:
+					'Tauri 2 empaqueta la app en un binario nativo en Rust: backend de orquestación SSH/SFTP, gestión de la BD SQLite y vault Stronghold para credenciales.',
+				to: 'https://tauri.app',
+			},
+			{
+				icon: 'i-tabler-brand-tailwind',
+				title: 'Tailwind CSS',
+				description:
+					'Tailwind CSS v4 define el sistema de estilos y el tema visual de la interfaz mediante utilidades configurables y adaptables a cualquier dispositivo.',
+				to: 'https://tailwindcss.com',
+			},
+			{
+				icon: 'i-simple-icons-pinia',
+				title: 'Pinia Colada',
+				description:
+					'Pinia Colada gestiona el estado de datos del servidor: consultas con caching, deduplicación e invalidación automática hacia la BD local.',
+				to: 'https://pinia-colada.esm.dev',
 			},
 		],
 		socials: {
