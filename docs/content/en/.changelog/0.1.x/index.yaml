@@ -1,0 +1,9 @@
+branch: 0.1.x
+title: 0.1.x Releases
+description: |
+  Browse all versions in the 0.1.x release line. Each release includes the publication date, a summary of changes, and the responsible author.
+  Select any version to view the complete changelog.
+security: true # Does the branch receive security updates?
+requirements: # Requirements needed for the versions in this branch
+  op: ['Windows']
+  support: features # One of: features, bugs, none
