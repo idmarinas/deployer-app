@@ -6,10 +6,16 @@ import { onMounted, ref, watch } from 'vue'
 <script setup lang="ts">
 const state = defineModel<string>()
 
-const props = defineProps<{
-	maxLength: number
-	name: string
-}>()
+const props = withDefaults(
+	defineProps<{
+		maxLength: number
+		name: string
+		canEdit?: boolean
+	}>(),
+	{
+		canEdit: true,
+	},
+)
 
 const generateSlug = () =>
 	slugify(props.name || '', {
@@ -21,6 +27,7 @@ const generateSlug = () =>
 
 const readonly = ref(true)
 const slug = ref(false)
+const customized = ref(false)
 
 onMounted(() => {
 	if (state.value && state.value.length > 0) {
@@ -31,7 +38,7 @@ onMounted(() => {
 watch(
 	() => props.name,
 	() => {
-		if (!slug.value) {
+		if (!slug.value && !customized.value && props.canEdit) {
 			state.value = generateSlug()
 		}
 	},
@@ -40,7 +47,14 @@ watch(
 
 <template>
 	<UFieldGroup class="w-full">
-		<UInput v-model="state" autocomplete="off" class="w-full" :maxlength="maxLength" :readonly="readonly">
+		<UInput
+			v-model="state"
+			autocomplete="off"
+			class="w-full"
+			:maxlength="maxLength"
+			:readonly="readonly"
+			@update:model-value="() => (customized = true)"
+		>
 			<template #trailing>
 				<div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
 					{{ state?.length ?? 0 }}/{{ maxLength }}
@@ -50,11 +64,8 @@ watch(
 		<UButton
 			:icon="readonly ? 'i-tabler-pencil-off' : 'i-tabler-pencil'"
 			:variant="readonly ? 'solid' : 'subtle'"
-			@click="
-				() => {
-					readonly = !readonly
-				}
-			"
+			:disabled="!canEdit"
+			@click="() => (readonly = !readonly)"
 		/>
 	</UFieldGroup>
 </template>

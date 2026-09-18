@@ -1,0 +1,137 @@
+@import './fonts.css';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PALETA DE COLOR — DeployerApp
+   Tokens estáticos de Tailwind. Nuxt UI los consume a través de la config
+   de colores semánticos mapeados en vite.config.ts → ui.colors.
+   ───────────────────────────────────────────────────────────────────────────── */
+@theme static {
+	/* Primary — Azul eléctrico */
+	--color-deployer-primary-50: #e8f4ff;
+	--color-deployer-primary-100: #c7e4ff;
+	--color-deployer-primary-200: #9acfff;
+	--color-deployer-primary-300: #6cb9ff;
+	--color-deployer-primary-400: #3da3ff;
+	--color-deployer-primary-500: #0a8dff;
+	--color-deployer-primary-600: #0070d1;
+	--color-deployer-primary-700: #0055a3;
+	--color-deployer-primary-800: #003b75;
+	--color-deployer-primary-900: #002247;
+	--color-deployer-primary-950: #001326;
+
+	/* Secondary — Morado neón */
+	--color-deployer-secondary-50: #f3e8ff;
+	--color-deployer-secondary-100: #e3c6ff;
+	--color-deployer-secondary-200: #cc9cff;
+	--color-deployer-secondary-300: #b36aff;
+	--color-deployer-secondary-400: #9a3aff;
+	--color-deployer-secondary-500: #821aff;
+	--color-deployer-secondary-600: #6700d1;
+	--color-deployer-secondary-700: #4d00a3;
+	--color-deployer-secondary-800: #330075;
+	--color-deployer-secondary-900: #1c0047;
+	--color-deployer-secondary-950: #0f0026;
+
+	/* Success — Verde azulado (circuito activo) */
+	--color-deployer-success-50: #e6fffa;
+	--color-deployer-success-100: #b3fff0;
+	--color-deployer-success-200: #7dffe6;
+	--color-deployer-success-300: #47ffdb;
+	--color-deployer-success-400: #12ffd1;
+	--color-deployer-success-500: #00c8a3;
+	--color-deployer-success-600: #009b7f;
+	--color-deployer-success-700: #006e5b;
+	--color-deployer-success-800: #004137;
+	--color-deployer-success-900: #001413;
+	--color-deployer-success-950: #000a09;
+
+	/* Info — Cyan neón */
+	--color-deployer-info-50: #e8fcff;
+	--color-deployer-info-100: #c6f4ff;
+	--color-deployer-info-200: #9ceaff;
+	--color-deployer-info-300: #6adfff;
+	--color-deployer-info-400: #3ad3ff;
+	--color-deployer-info-500: #00c7ff;
+	--color-deployer-info-600: #009ecc;
+	--color-deployer-info-700: #007699;
+	--color-deployer-info-800: #004d66;
+	--color-deployer-info-900: #002533;
+	--color-deployer-info-950: #00131a;
+
+	/* Warning — Amarillo-naranja */
+	--color-deployer-warning-50: #fff9e6;
+	--color-deployer-warning-100: #ffefb3;
+	--color-deployer-warning-200: #ffe47d;
+	--color-deployer-warning-300: #ffd847;
+	--color-deployer-warning-400: #ffcb12;
+	--color-deployer-warning-500: #e6b200;
+	--color-deployer-warning-600: #b38a00;
+	--color-deployer-warning-700: #806200;
+	--color-deployer-warning-800: #4d3a00;
+	--color-deployer-warning-900: #1a1300;
+	--color-deployer-warning-950: #0d0900;
+
+	/* Error — Rojo magenta */
+	--color-deployer-error-50: #ffe8f0;
+	--color-deployer-error-100: #ffc6d4;
+	--color-deployer-error-200: #ff9cb5;
+	--color-deployer-error-300: #ff6a93;
+	--color-deployer-error-400: #ff3a74;
+	--color-deployer-error-500: #ff0a55;
+	--color-deployer-error-600: #d1003f;
+	--color-deployer-error-700: #a3002e;
+	--color-deployer-error-800: #75001f;
+	--color-deployer-error-900: #470012;
+	--color-deployer-error-950: #260009;
+
+	/* Neutral — Gris azulado oscuro */
+	--color-deployer-neutral-50: #f2f4f7;
+	--color-deployer-neutral-100: #d9dde3;
+	--color-deployer-neutral-200: #bfc6cf;
+	--color-deployer-neutral-300: #a5aebc;
+	--color-deployer-neutral-400: #8b97a8;
+	--color-deployer-neutral-500: #717f94;
+	--color-deployer-neutral-600: #596474;
+	--color-deployer-neutral-700: #424a55;
+	--color-deployer-neutral-800: #2b3136;
+	--color-deployer-neutral-900: #15181b;
+	--color-deployer-neutral-950: #0b0c0e;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TIPOGRAFÍA BASE
+   ───────────────────────────────────────────────────────────────────────────── */
+html,
+body,
+#app {
+	font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR — estilizada con tema PCB
+   ───────────────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--color-deployer-neutral-600);
+	border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-deployer-primary-500);
+	box-shadow: 0 0 6px var(--pcb-trace-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SELECCIÓN DE TEXTO
+   ───────────────────────────────────────────────────────────────────────────── */
+::selection {
+	background-color: rgba(10, 141, 255, 0.25);
+	color: var(--color-deployer-neutral-50);
+}

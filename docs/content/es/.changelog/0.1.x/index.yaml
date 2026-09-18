@@ -1,0 +1,9 @@
+branch: 0.1.x
+title: Versiones 0.1.x
+description: |
+  Explora todas las versiones de la rama 0.1.x. Cada release incluye la fecha de publicación, un resumen de los cambios y el autor responsable.
+  Selecciona cualquier versión para ver el changelog completo.
+security: true # ¿Recibe la rama actualizaciones de seguridad?
+requirements: # Requisitos necesarios para las versiones de esta rama
+  op: ['Windows']
+  support: features # Una de: features, bugs, none

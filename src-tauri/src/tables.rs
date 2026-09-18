@@ -3,6 +3,9 @@
 // Se regenera con: bun run tables:generate
 // ---------------------------------------------------------------------------
 
+/// Tabla: deployer_commands (fuente: commands.ts)
+pub const TABLE_COMMANDS: &str = "deployer_commands";
+
 /// Tabla: deployer_hosts (fuente: hosts.ts)
 pub const TABLE_HOSTS: &str = "deployer_hosts";
 

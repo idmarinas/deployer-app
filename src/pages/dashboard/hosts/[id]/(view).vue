@@ -1,25 +1,32 @@
 <script lang="ts">
+import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { Host } from '@/types/entities'
-import type { CommandResponse, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import type { HostPackage, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import type { SystemInfoResult, SystemMetricsResult } from '@/utils/commands/results'
 import type { Ref, VNode } from 'vue'
 
+import { useQueryCache } from '@pinia/colada'
+import { useCountdown } from '@vueuse/core'
+import { eq } from 'drizzle-orm'
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
-
-import { invoke } from '@tauri-apps/api/core'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+
+import { invalidateCacheQueries } from '@/composables/queries/shared'
+import { db } from '@/drizzle/drizzle'
+import { hosts as deployer_hosts } from '@/drizzle/schema'
+import { runCommand } from '@/utils/commands/runner'
+import { ICONS } from '@/utils/icons'
 
 import { useToolbarButtons } from '@/composables/dashboard/toolbar/useToolbarButtons'
 import { useToolbarContentTitle } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
+import { useHostQuery } from '@/composables/queries/hosts'
 import useToaster from '@/composables/useToaster'
 import { useHostById } from '@/loaders/hosts'
 
-import { ICONS } from '@/utils/icons'
-
-import { useHostQuery } from '@/composables/queries/hosts'
-import { PositionedButton } from '@/composables/usePositionedButtons'
 import { ModulesName } from '@/utils/deployer-app'
+
 import UButton from '@nuxt/ui/components/Button.vue'
 </script>
 
@@ -41,6 +48,7 @@ const toaster = useToaster()
 const { t, n, d } = useI18n()
 const { data: hostData, isLoading, status, error, reload } = useHostById()
 const hostQuery = useHostQuery()
+const cacheQuery = useQueryCache()
 
 const isOperating = ref(false)
 
@@ -57,36 +65,59 @@ const buttons: PositionedButton[] = [
 ]
 const toolbarButtons = computed<VNode[]>(() => useViewButtons(hostData as any, buttons, true))
 
-const disableHostInformation = computed(() => {
+const btnInfoCount = ref(0)
+const { remaining: btnInfoRemaining, start: btnInfoStart } = useCountdown(btnInfoCount, {
+	onComplete: () => (btnInfoCount.value = 0),
+})
+const btnInfoDisable = computed(() => {
 	if (!hostData.value?.system_info?.last_checked_at) return false
 
-	const now = Date.now()
 	const time = new Date(hostData.value.system_info.last_checked_at).getTime()
-	const COOLDOWN = 24 * 60 * 60 * 1000
+	const cooldown = 24 * 60 * 60 * 1000 // 24 horas - 1 día
 
-	return now - time <= COOLDOWN
+	return calculateBtn(time, cooldown, btnInfoCount, btnInfoStart)
 })
-const disableHostMetrics = computed(() => {
+
+const btnMetricsCount = ref(0)
+const { remaining: btnMetricsRemaining, start: btnMetricsStart } = useCountdown(btnMetricsCount, {
+	onComplete: () => (btnMetricsCount.value = 0),
+})
+const btnMetrics = computed(() => {
 	if (!hostData.value?.status_info?.last_checked_at) return false
 
-	const now = Date.now()
+	const cooldown = 1 * 60 * 1000 // 1 minuto
 	const time = new Date(hostData.value.status_info.last_checked_at).getTime()
-	const COOLDOWN = 15 * 60 * 1000
 
-	return now - time <= COOLDOWN
+	return calculateBtn(time, cooldown, btnMetricsCount, btnMetricsStart)
 })
-const disableServerUpdates = computed(() => {
+
+const btnServerUpdatesCount = ref(0)
+const { remaining: btnServerUpdatesRemaining, start: btnServerUpdatesStart } = useCountdown(btnServerUpdatesCount, {
+	onComplete: () => (btnServerUpdatesCount.value = 0),
+})
+const btnServerUpdatesDisable = computed(() => {
 	if (!hostData.value?.system_info?.package_manager) return true
 	else if (!hostData.value?.server_updates?.last_checked_at) return false
 
-	const now = Date.now()
 	const time = new Date(hostData.value.server_updates.last_checked_at).getTime()
-	const COOLDOWN = 24 * 60 * 60 * 1000
+	const cooldown = 24 * 60 * 60 * 1000
 
-	return now - time <= COOLDOWN
+	return calculateBtn(time, cooldown, btnServerUpdatesCount, btnServerUpdatesStart)
 })
 
-async function updateHostInformation() {
+function calculateBtn(time: number, cooldown: number, count: Ref<number>, start: () => void): boolean {
+	const now = Date.now()
+	const wait = cooldown - (now - time)
+
+	count.value = Math.max(0, Math.round(wait / 1000))
+	if (count.value) {
+		start()
+	}
+
+	return now - time <= cooldown
+}
+
+async function updateHostInfo() {
 	if (!hostData.value) return
 
 	isOperating.value = true
@@ -99,46 +130,49 @@ async function updateHostInformation() {
 		},
 	)
 
-	await invoke<CommandResponse<HostSystemInfo>>('host_check_system_info', { hostId: hostData.value.id })
-		.then(result => {
-			if (result.success) {
-				hostData.value = {
-					...hostData.value,
-					system_info: result.data,
-				} as Host
+	try {
+		const { exit_code, parsed } = await runCommand<SystemInfoResult>('system-info', hostData.value.id)
 
-				toaster.toast.update(
-					notice.id,
-					toaster.success(
-						t('notifications.hosts.system_info.success.title'),
-						t('notifications.hosts.system_info.success.description', { name: hostData.value.name }),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			} else {
-				toaster.toast.update(
-					notice.id,
-					toaster.error(
-						t('notifications.hosts.system_info.error.title'),
-						t('notifications.hosts.system_info.error.description', {
-							name: hostData.value?.name,
-							...result.message_params,
-						}),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			}
-		})
-		.catch(e => {
-			toaster.toast.update(
-				notice.id,
-				toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
-			)
-		})
-		.finally(() => {
-			isOperating.value = false
-		})
-	isOperating.value = false
+		if (exit_code !== 0 || !parsed) {
+			throw new Error(t('notifications.hosts.system_info.error.title'))
+		}
+
+		const system_info: HostSystemInfo = {
+			package_manager: parsed.package_manager,
+			package_manager_version: parsed.package_manager_version,
+			kernel: parsed.kernel,
+			arch: parsed.arch,
+			distribution: parsed.distribution,
+			cpu_cores: parsed.cores,
+			memory_total: parsed.memory_total,
+			disk_total: parsed.disk_total,
+			os_release: parsed.os_release,
+			last_checked_at: new Date().toISOString(),
+		}
+
+		hostData.value = {
+			...hostData.value,
+			system_info,
+		} as Host
+
+		await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+		toaster.toast.update(
+			notice.id,
+			toaster.success(
+				t('notifications.hosts.system_info.success.title'),
+				t('notifications.hosts.system_info.success.description', { name: hostData.value.name }),
+				{ id: notice.id, duration: undefined },
+			),
+		)
+	} catch (e) {
+		toaster.toast.update(
+			notice.id,
+			toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
+		)
+	} finally {
+		isOperating.value = false
+	}
 }
 
 async function checkMetrics() {
@@ -154,45 +188,74 @@ async function checkMetrics() {
 		},
 	)
 
-	await invoke<CommandResponse<HostStatusMetrics>>('host_check_metrics', { hostId: hostData.value.id })
-		.then(result => {
-			if (result.success) {
-				hostData.value = {
-					...hostData.value,
-					status_info: result.data,
-				} as Host
+	try {
+		const { exit_code, parsed } = await runCommand<SystemMetricsResult>('system-metrics', hostData.value.id)
 
-				toaster.toast.update(
-					notice.id,
-					toaster.success(
-						t('notifications.hosts.status_info.success.title'),
-						t('notifications.hosts.status_info.success.description', { name: hostData.value.name }),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			} else {
-				toaster.toast.update(
-					notice.id,
-					toaster.error(
-						t('notifications.hosts.status_info.error.title'),
-						t('notifications.hosts.status_info.error.description', {
-							name: hostData.value?.name,
-							...result.message_params,
-						}),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			}
-		})
-		.catch(e => {
-			toaster.toast.update(
-				notice.id,
-				toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
-			)
-		})
-		.finally(() => {
-			isOperating.value = false
-		})
+		if (exit_code !== 0 || !parsed) {
+			throw new Error(t('notifications.hosts.status_info.error.title'))
+		}
+
+		console.log(parsed)
+
+		const status_info: HostStatusMetrics = {
+			cpu_usage: parsed.cpu,
+			ram_usage: parsed.ram,
+			disk_usage: parsed.disk,
+			last_checked_at: new Date().toISOString(),
+		}
+
+		hostData.value = {
+			...hostData.value,
+			status_info,
+		} as Host
+
+		await db.update(deployer_hosts).set({ status_info }).where(eq(deployer_hosts.id, hostData.value.id))
+		await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+		toaster.toast.update(
+			notice.id,
+			toaster.success(
+				t('notifications.hosts.status_info.success.title'),
+				t('notifications.hosts.status_info.success.description', { name: hostData.value.name }),
+				{ id: notice.id, duration: undefined },
+			),
+		)
+	} catch (e) {
+		toaster.toast.update(
+			notice.id,
+			toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
+		)
+	} finally {
+		isOperating.value = false
+	}
+}
+
+/** Normaliza un valor del parseador regex: la primera coincidencia es un string, las siguientes un array. */
+function toArray(value: unknown): string[] {
+	if (value === undefined || value === null) return []
+	if (Array.isArray(value)) return value.map(item => String(item))
+	return [String(value)]
+}
+
+/** Deduce el tipo de actualización comparando versiones actual y disponible. */
+function computeUpdateType(current: string, available: string): string {
+	if (!current || !available || current === available) return 'unknown'
+
+	const parse = (version: string): number[] =>
+		version
+			.replace(/^[^0-9]*/, '')
+			.split(/[^0-9]+/)
+			.filter(Boolean)
+			.map(Number)
+
+	const [currentMajor, currentMinor, currentPatch] = parse(current)
+	const [availableMajor, availableMinor, availablePatch] = parse(available)
+
+	if (availableMajor !== currentMajor) return 'major'
+	if (availableMinor !== currentMinor) return 'minor'
+	if (availablePatch !== currentPatch) return 'patch'
+
+	return 'unknown'
 }
 
 async function checkUpdates() {
@@ -208,44 +271,70 @@ async function checkUpdates() {
 		},
 	)
 
-	await invoke<CommandResponse<HostServerUpdates>>('host_check_updates', { hostId: hostData.value.id })
-		.then(result => {
-			if (result.success) {
-				hostData.value = {
-					...hostData.value,
-					server_updates: result.data,
-				} as Host
+	try {
+		const { exit_code, parsed } = await runCommand<{
+			name?: unknown
+			repo?: unknown
+			current_version?: unknown
+			available_version?: unknown
+		}>('upgradable-packages', hostData.value.id)
 
-				const count = result.data?.packages?.length || 0
+		if (exit_code !== 0 || !parsed) {
+			throw new Error(t('notifications.hosts.check_updates.error.title'))
+		}
 
-				toaster.toast.update(
-					notice.id,
-					toaster.success(
-						t('notifications.hosts.check_updates.success.title', { count }),
-						t('notifications.hosts.check_updates.success.description', { count, name: hostData.value.name }),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			} else {
-				toaster.toast.update(
-					notice.id,
-					toaster.error(
-						t('notifications.hosts.check_updates.error.title'),
-						t('notifications.hosts.check_updates.error.description', { name: hostData.value!.name }),
-						{ id: notice.id, duration: undefined },
-					),
-				)
-			}
+		const names = toArray(parsed.name)
+		const repos = toArray(parsed.repo)
+		const currents = toArray(parsed.current_version)
+		const availables = toArray(parsed.available_version)
+
+		const packages: HostPackage[] = names.map((name, i) => {
+			const current_version = currents[i] || ''
+			const available_version = availables[i] || ''
+			const repo = repos[i] || ''
+			const is_security = repo.toLowerCase().includes('security')
+			const update_type = computeUpdateType(current_version, available_version)
+			const priority = is_security ? 'high' : update_type === 'major' ? 'medium' : 'low'
+
+			return { name, current_version, available_version, repo, update_type, is_security, priority }
 		})
-		.catch(e => {
-			toaster.toast.update(
-				notice.id,
-				toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
-			)
-		})
-		.finally(() => {
-			isOperating.value = false
-		})
+
+		const count = packages.length
+		const server_updates: HostServerUpdates = {
+			packages,
+			summary: {
+				total: count,
+				security: packages.filter(pkg => pkg.is_security).length,
+				major: packages.filter(pkg => pkg.update_type === 'major').length,
+				minor: packages.filter(pkg => pkg.update_type === 'minor').length,
+				patch: packages.filter(pkg => pkg.update_type === 'patch').length,
+			},
+			last_checked_at: new Date().toISOString(),
+		}
+
+		hostData.value = {
+			...hostData.value,
+			server_updates,
+		} as Host
+
+		await invalidateCacheQueries(cacheQuery, ['hosts'])
+
+		toaster.toast.update(
+			notice.id,
+			toaster.success(
+				t('notifications.hosts.check_updates.success.title', { count }),
+				t('notifications.hosts.check_updates.success.description', { count, name: hostData.value.name }),
+				{ id: notice.id, duration: undefined },
+			),
+		)
+	} catch (e) {
+		toaster.toast.update(
+			notice.id,
+			toaster.error(t('overlays.toast.title.error'), String(e), { id: notice.id, duration: undefined }),
+		)
+	} finally {
+		isOperating.value = false
+	}
 }
 
 function updatedEnabled(enabled: boolean) {
@@ -353,12 +442,12 @@ provide<Ref<boolean>>('isOperating', isOperating)
 					</span>
 
 					<UButton
+						:label="btnInfoRemaining ? `Espera ${btnInfoRemaining} segs` : t('common.actions.refresh')"
+						:icon="btnInfoRemaining ? 'i-tabler-clock-pause' : ICONS.actions.refresh"
 						:loading="isOperating"
-						:icon="ICONS.actions.refresh"
-						:label="t('common.actions.refresh')"
 						variant="soft"
-						:disabled="disableHostInformation"
-						@click="updateHostInformation"
+						:disabled="btnInfoDisable"
+						@click="updateHostInfo"
 					/>
 				</div>
 				<USeparator class="my-4" />
@@ -402,11 +491,13 @@ provide<Ref<boolean>>('isOperating', isOperating)
 						</span>
 					</span>
 					<UButton
-						:icon="ICONS.actions.refresh"
-						:label="t('pages.hosts.manage.check_updates')"
+						:label="
+							btnServerUpdatesRemaining ? `Espera ${btnServerUpdatesRemaining} segs` : t('common.actions.refresh')
+						"
+						:icon="btnServerUpdatesRemaining ? 'i-tabler-clock-pause' : ICONS.actions.refresh"
 						variant="soft"
 						:loading="isOperating"
-						:disabled="disableServerUpdates"
+						:disabled="btnServerUpdatesDisable"
 						@click="checkUpdates"
 					/>
 				</div>
@@ -441,11 +532,11 @@ provide<Ref<boolean>>('isOperating', isOperating)
 						</span>
 					</div>
 					<UButton
-						:label="t('common.actions.refresh')"
-						:icon="ICONS.actions.refresh"
+						:label="btnMetricsRemaining ? `Espera ${btnMetricsRemaining} segs` : t('common.actions.refresh')"
+						:icon="btnMetricsRemaining ? 'i-tabler-clock-pause' : ICONS.actions.refresh"
 						variant="soft"
 						:loading="isOperating"
-						:disabled="disableHostMetrics"
+						:disabled="btnMetrics"
 						@click="checkMetrics"
 					/>
 				</div>

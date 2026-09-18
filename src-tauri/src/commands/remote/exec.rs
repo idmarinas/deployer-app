@@ -54,10 +54,17 @@ pub async fn ssh_execute_command(
         }
     };
 
-    let full_command = if let Some(wd) = input.working_dir.as_deref() {
-        format!("cd {} && {}", shell_escape(wd), input.command)
-    } else {
-        input.command.clone()
+    let full_command = {
+        // Normalizar fin de línea: los scripts almacenados pueden contener CR (CRLF)
+        // y bash los interpreta como parte del token (p.ej. `sleep 1\r`). El SSH exec
+        // envía el string tal cual, así que limpiar aquí garantiza LF en el servidor.
+        let command = input.command.replace("\r\n", "\n").replace('\r', "\n");
+
+        if let Some(wd) = input.working_dir.as_deref() {
+            format!("cd {} && {}", shell_escape(wd), command)
+        } else {
+            command
+        }
     };
 
     let run =
@@ -151,7 +158,10 @@ async fn run_command_streaming(
                     Some(ChannelMsg::ExitStatus { exit_status }) => {
                         exit_code = exit_status as i64;
                     }
-                    None => break,
+                    // EOF llega antes que ExitStatus en OpenSSH; NO cortar aquí:
+                    // esperar al cierre del canal para capturar el exit code real.
+                    Some(ChannelMsg::Eof) => {}
+                    Some(ChannelMsg::Close) | None => break,
                     _ => {}
                 }
             }

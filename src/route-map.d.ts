@@ -45,10 +45,14 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/dashboard/[...path]'
       | '/dashboard/app'
+      | '/dashboard/commands'
       | '/dashboard/hosts'
       | '/dashboard/passkeys'
       | '/dashboard/passkeys/[...path]'
       | 'dashboard-app'
+      | 'dashboard-commands'
+      | 'dashboard-commands-add'
+      | 'dashboard-commands-key-edit'
       | 'dashboard-console'
       | 'dashboard-home'
       | 'dashboard-hosts'
@@ -86,6 +90,36 @@ declare module 'vue-router/auto-routes' {
     'dashboard-app': RouteRecordInfo<
       'dashboard-app',
       '/dashboard/app',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/dashboard/commands': RouteRecordInfo<
+      '/dashboard/commands',
+      '/dashboard/commands',
+      Record<never, never>,
+      Record<never, never>,
+      | 'dashboard-commands'
+      | 'dashboard-commands-add'
+      | 'dashboard-commands-key-edit'
+    >,
+    'dashboard-commands': RouteRecordInfo<
+      'dashboard-commands',
+      '/dashboard/commands',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'dashboard-commands-key-edit': RouteRecordInfo<
+      'dashboard-commands-key-edit',
+      '/dashboard/commands/:key/edit',
+      { key: ParamValue<true> },
+      { key: ParamValue<false> },
+      | never
+    >,
+    'dashboard-commands-add': RouteRecordInfo<
+      'dashboard-commands-add',
+      '/dashboard/commands/add',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -252,10 +286,14 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard'
         | '/dashboard/[...path]'
         | '/dashboard/app'
+        | '/dashboard/commands'
         | '/dashboard/hosts'
         | '/dashboard/passkeys'
         | '/dashboard/passkeys/[...path]'
         | 'dashboard-app'
+        | 'dashboard-commands'
+        | 'dashboard-commands-add'
+        | 'dashboard-commands-key-edit'
         | 'dashboard-console'
         | 'dashboard-home'
         | 'dashboard-hosts'
@@ -301,6 +339,41 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/app/index.vue': {
       routes:
         | 'dashboard-app'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/commands.vue': {
+      routes:
+        | '/dashboard/commands'
+        | 'dashboard-commands'
+        | 'dashboard-commands-add'
+        | 'dashboard-commands-key-edit'
+      views:
+        | 'default'
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/commands/index.vue': {
+      routes:
+        | 'dashboard-commands'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/commands/[key]/edit.vue': {
+      routes:
+        | 'dashboard-commands-key-edit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/commands/add.vue': {
+      routes:
+        | 'dashboard-commands-add'
       views:
         | never
       pathParamNames:

@@ -31,6 +31,10 @@ export function useToolbarForPasskeysModule(): ToolbarModuleResult {
 	return createToolbarModule(ModulesName.Passkeys)
 }
 
+export function useToolbarForCommandsModule(): ToolbarModuleResult {
+	return createToolbarModule(ModulesName.Commands)
+}
+
 // export function useToolbarForProjectsDockerCompose(): ToolbarModuleResult {
 // 	return createToolbarModule('projects.docker.compose')
 // }

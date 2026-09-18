@@ -117,8 +117,15 @@ watch([isLoading, pageTitle], ([newLoading, newTitle]) => {
 				<UUser
 					:name="t('entity.passkey.key_public')"
 					:description="itemData.public_key || undefined"
-					:avatar="{ icon: ICONS.auth.lockOpen }"
-				/>
+					:ui="{ description: 'break-all' }"
+				>
+					<template #avatar>
+						<div class="flex flex-col items-center gap-2">
+							<UAvatar :icon="ICONS.auth.lockOpen" />
+							<Clipboard :source="itemData.public_key!" only-icon />
+						</div>
+					</template>
+				</UUser>
 			</UPageCard>
 		</UPageList>
 	</template>
