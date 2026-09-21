@@ -60,7 +60,7 @@ Apóyame
   :::u-button
   ---
   icon: i-simple-icons-github
-  color: purple
+  color: sponsor
   to: https://github.com/sponsors/idmarinas
   target: _blank
   ---
