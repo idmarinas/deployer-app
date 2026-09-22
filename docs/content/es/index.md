@@ -1,7 +1,7 @@
 ---
 title: {{project_name}}
-description: DeployerApp es una aplicación de escritorio para desplegar y administrar tus sitios web vía SSH/SFTP, con credenciales cifradas y control de los datos en una base local.
-# Aditional for Docs only
+description: '{{project_name}} es una aplicación de escritorio para desplegar y administrar tus sitios web vía SSH/SFTP, con credenciales cifradas y control de los datos en una base local.'
+# Additional for Docs only
 # since: '1.0'
 # deprecated:
 #   since: '1.5'
@@ -19,7 +19,7 @@ description: DeployerApp es una aplicación de escritorio para desplegar y admin
 :text-bundle-name
 
 #description
-**DeployerApp** es una aplicación de escritorio, construida con **Tauri** y **Vue**, que te permite **desplegar y administrar tus sitios web** mediante **SSH/SFTP**, manteniendo el control de los datos en una **base de datos local**.
+**:vars{n="project"}** es una aplicación de escritorio, construida con **Tauri** y **Vue**, que te permite **desplegar y administrar tus sitios web** mediante **SSH/SFTP**, manteniendo el control de los datos en una **base de datos local**.
 
 #links
   :::u-button
