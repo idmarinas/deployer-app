@@ -6,4 +6,4 @@ description: |
 security: true # ¿Recibe la rama actualizaciones de seguridad?
 requirements: # Requisitos necesarios para las versiones de esta rama
   op: ['Windows']
-  support: features # Una de: features, bugs, none
+  support: none # Una de: features, bugs, none
