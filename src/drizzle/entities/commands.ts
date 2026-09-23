@@ -12,7 +12,7 @@ export const commands = sqliteTable(
 		command: text().notNull(),
 		parser: text({ mode: 'json' }).$type<OutputParser>().notNull().default({ type: 'raw' }),
 		timeout: integer().notNull().default(30),
-		customized: integer({ mode: 'boolean' }).notNull().default(true),
+		custom: integer({ mode: 'boolean' }).notNull().default(true),
 		enabled,
 		...timestamps,
 	},
