@@ -47,3 +47,15 @@
 - **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
 - **Planificando:** Sistema de ajustes (a futuro) → `.agents/plans/AGENTS.settings-system.PLAN.md`
 - **Planificando:** Sustituir `query_raw` por `tauri-plugin-sql` → `.agents/plans/AGENTS.plugin-sql.PLAN.md`
+
+## Notas de documentación (pendientes, sin plan)
+
+Recortes y fusiones detectados en la revisión de la documentación (`docs/content/es/`) que **no** implican crear un plan; quedan anotados por si se deciden aplicar en futuras pasadas:
+
+- **`004.hosts/5.metrics.md`** — solapa con `004.hosts/2.manage.md` (la pestaña *Estado del servidor* es parte de la vista del host). Fusión pendiente.
+- **`006.console/3.output.md`** — contenido muy corto que se puede integrar en `006.console/1.usage.md`. Fusión pendiente.
+- **`007.configuration/2.information.md`** — podría recortarse (los datos mostrados pueden verse desde la propia pestaña Información). Recorte pendiente.
+
+Traducciones a otros locales (`en/`): solo después de que la versión `es` esté revisada y confirmada; pueden hacerse por partes.
+
+> **Build docs (`bun run generate`) verificado (0.1 docs):** compila (client+server), contenidos indexados (`sql_dump` OK). Los prerender `/es` y `/en` dan `[500] Server Error` **pre-existente y ambiental** (timeouts de iconos de Iconify offline — afecta también al landing `en/` intacto). No es un problema de los contenidos.

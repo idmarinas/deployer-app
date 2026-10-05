@@ -1,5 +1,7 @@
 # TODO
 
+- Documentación (`docs/content/`, es primero y en después): [`AGENTS.docs.md`](./AGENTS.docs.md)
+
 1. Inputs, Crear un warpper para Inputs, Textareas, Selects, etc. que se puedan crear de una forma mas sencilla, con ciertos añadidos.
    - Ejemplo el trailing, que agrega un contador de límite de caracteres.
 2. Integrar la edición en la lista de items (en host, en la vista de todos los host integrar ver la información del host y poder editarlo)
@@ -12,12 +14,12 @@
 9. Comprobar que toda llamada al backend tiene un toast con loading > success | error
 10. Cuando se agreguen las tablas personalizadas, agruparlas en la información de la BD (Configuración DeployerApp)
 11. Sistema de cifrado:
-    1. Estudiar usar Stronghold para guardar las claves de des/cifrado se seguiría usando el keychain para la clave maestra que desbloquea el vault de Stronghold.
+   1. Estudiar usar Stronghold para guardar las claves de des/cifrado se seguiría usando el keychain para la clave maestra que desbloquea el vault de Stronghold.
 12. Página de lista:
-    1. En las páginas de lista, cambiar la forma en la que se borran los items.
-        1. Cuando se borra un item, marcar dicho item de la lista (destacandolo) y luego borrar solo ese item, sin necesidad de recargar toda la lista.
+   1. En las páginas de lista, cambiar la forma en la que se borran los items.
+      1. Cuando se borra un item, marcar dicho item de la lista (destacandolo) y luego borrar solo ese item, sin necesidad de recargar toda la lista.
 13. Cambiar base de datos:
-    1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
+   1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
 
 ## Nuxt
 
@@ -97,9 +99,9 @@ Puede ser más complicado migrar de lo que parece.
 2. Comprobar si se le puede poner una duración a la clave.
    - No se puede hacer. La clave no permite esto.
    - Alternativa: Usar el campo `created_at` como orientación para aconsejar un cambio.
-     - Recomendación de 180 días para entornos de alta seguridad.
-     - 1 año para entornos menos exigentes
-     - Se podrá configurar el tiempo recomendado, para rotar claves.
+      - Recomendación de 180 días para entornos de alta seguridad.
+      - 1 año para entornos menos exigentes
+      - Se podrá configurar el tiempo recomendado, para rotar claves.
 3. Incluir que servidores están usando la clave de acceso.
 4. Poder des/activar una clave de acceso, para permitir borrarla
    - Cuando una clave de acceso está desactivada, el host no la puede usar.
@@ -108,9 +110,10 @@ Puede ser más complicado migrar de lo que parece.
 
 1. Hosts (Servidores) agregar el poder manejar ciertos aspectos del servidor:
    - Comprobar si hay actualizaciones
-     - Actualizar el paquete seleccionado o varios. (ya se puede, pero hay que mejorarlo)
-       - Cuando se actualiza un paquete, hay que actualizar la lista, comprobar que paquetes se pueden actualizar.
-     - Comprobar el espacio en disco usado (¿poder liberar espacio?)
+      - Actualizar el paquete seleccionado o varios. (ya se puede, pero hay que mejorarlo)
+         - Cuando se actualiza un paquete, hay que actualizar la lista, comprobar que paquetes se pueden actualizar.
+         - Mostrar en un dialogo el progreso de actualización.
+      - Comprobar el espacio en disco usado (¿poder liberar espacio?)
    - Integración con n8n para ver el estado de uso de cpu/ram/disco (el workflow creado usar sus datos)
 2. Los comandos que obtienen información del servidor, tener encuenta el SO a la hora de ejecutar comandos.
 3. Permitir tener varias claves de acceso.

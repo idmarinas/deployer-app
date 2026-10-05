@@ -75,3 +75,4 @@ bun run tables:generate        # Regenera src-tauri/src/tables.rs (constantes de
 
 - Backend (Rust/BD/cifrado/SSH/comandos): [`AGENTS.backend.md`](./AGENTS.backend.md)
 - Frontend (Vue/temas/i18n/queries/componentes): [`AGENTS.frontend.md`](./AGENTS.frontend.md)
+- Documentación (`docs/content/`): [`AGENTS.docs.md`](./AGENTS.docs.md)
