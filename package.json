@@ -38,7 +38,7 @@
 	"devDependencies": {
 		"@iconify-json/cib": "^1.2.3",
 		"@iconify-json/tabler": "^1.2.42",
-		"@iconify-json/vscode-icons": "^1.2.93",
+		"@iconify-json/vscode-icons": "^1.2.94",
 		"@libsql/client": "^0.17.4",
 		"@tauri-apps/cli": "^2.12.4",
 		"@types/node": "^26.6.5",
