@@ -1,0 +1,76 @@
+import type { LocaleMessageValue } from 'vue-i18n'
+
+export default {
+	setup: {
+		steps: {
+			title: {
+				save_path: 'Save SQLite file path',
+				create_file: 'Create SQLite file',
+				initialize: 'Connect to the database',
+				migrations: 'Run migrations',
+				seed: 'Insert initial data',
+				validate: 'Validate installation',
+			},
+			description: {
+				idle: {
+					save_path: 'Waiting to save the SQLite file path',
+					create_file: 'Waiting to create SQLite file',
+					initialize: 'Waiting to connect to the database',
+					migrations: 'Waiting to run migrations',
+					seed: 'Waiting to insert initial data',
+					validate: 'Waiting to validate installation',
+				},
+				loading: {
+					save_path: 'Saving the SQLite file path...',
+					create_file: 'Creating SQLite file...',
+					initialize: 'Connecting to the database...',
+					migrations: 'Running migrations...',
+					seed: 'Inserting initial data...',
+					validate: 'Validating installation...',
+				},
+				success: {
+					save_path: 'SQLite file path saved successfully',
+					create_file: 'SQLite file created successfully',
+					initialize: 'Database connection successful',
+					migrations: 'Migrations executed successfully',
+					seed: 'Initial data inserted successfully',
+					validate: 'Installation validated successfully',
+				},
+				error: {
+					save_path: 'Error saving the SQLite file path',
+					create_file: 'Error creating SQLite file',
+					initialize: 'Error connecting to the database',
+					migrations: 'Error running migrations',
+					seed: 'Error inserting initial data',
+					validate: 'Error validating installation',
+				},
+			},
+		},
+	},
+	migrations: {
+		steps: {
+			title: {
+				run_migrations: 'Running migrations',
+				validate: 'Validating database',
+			},
+			description: {
+				idle: {
+					run_migrations: 'Waiting to run migrations',
+					validate: 'Waiting to validate the database',
+				},
+				loading: {
+					run_migrations: 'Running migrations...',
+					validate: 'Validating database...',
+				},
+				success: {
+					run_migrations: 'Migrations executed successfully',
+					validate: 'Database validated successfully',
+				},
+				error: {
+					run_migrations: 'Error running migrations',
+					validate: 'Error validating the database',
+				},
+			},
+		},
+	},
+} satisfies LocaleMessageValue
