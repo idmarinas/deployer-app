@@ -18,6 +18,10 @@ export default {
 			label: 'Add host',
 			description: 'Add a new host to which projects can be deployed.',
 		},
+		command: {
+			label: 'Add command',
+			description: 'Add a new reusable command to run on the hosts.',
+		},
 		variable: {
 			label: 'Add global variable',
 			description: 'Add a new reusable global variable.',

@@ -18,6 +18,10 @@ export default {
 			label: 'Añadir servidor',
 			description: 'Añadir un nuevo servidor en el que se pueden desplegar proyectos.',
 		},
+		command: {
+			label: 'Añadir comando',
+			description: 'Añadir un nuevo comando reutilizable para ejecutar en los servidores.',
+		},
 		variable: {
 			label: 'Añadir variable global',
 			description: 'Añadir una nueva variable global que se puede reutilizar.',

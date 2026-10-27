@@ -17,4 +17,12 @@ export default {
 			description: 'Añadir un nuevo servidor en el que se pueden desplegar proyectos.',
 		},
 	},
+	commands: {
+		title: 'No se han encontrado comandos',
+		description: 'Parece que no has añadido ningún comando. Crea uno para empezar.',
+		add: {
+			label: 'Añadir comando',
+			description: 'Añadir un nuevo comando reutilizable para ejecutar en los servidores.',
+		},
+	},
 } satisfies LocaleMessageValue
