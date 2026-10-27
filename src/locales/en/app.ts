@@ -10,6 +10,7 @@ export default {
 			host: 'host | hosts',
 			task: 'task | tasks',
 			passkey: 'access key | access keys',
+			command: 'command | commands',
 			global_variable: 'global variable | global variables',
 			docker_compose: 'docker compose | docker composes',
 		},

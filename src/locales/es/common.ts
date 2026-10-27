@@ -28,6 +28,7 @@ export default {
 		enable: 'Activar',
 		disable: 'Desactivar',
 		copy: 'Copiar',
+		test: 'Probar',
 	},
 
 	confirm: {
