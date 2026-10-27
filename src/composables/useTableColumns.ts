@@ -15,7 +15,13 @@ import { ICONS } from '@/utils/icons'
 
 export interface TableColumnsOptions {
 	moduleName?: ModulesName
-	deleteFn?: (id: number) => Promise<boolean>
+	/**
+	 * Nombre del param de ruta que identifica la fila (por defecto `id`).
+	 * Para entidades con PK string (p.ej. `key` en commands) se usa el nombre
+	 * de la columna: `dashboard-commands-key-edit` con param `key`.
+	 */
+	idParam?: string
+	deleteFn?(id: number | string): Promise<boolean>
 	onReload?: () => Promise<void> | void
 }
 
@@ -59,6 +65,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 			const defaultButtons: PositionedButton[] = []
 
 			if (options?.moduleName && options?.deleteFn) {
+				const idParam = options.idParam ?? 'id'
+
 				defaultButtons.push({
 					id: 'edit',
 					icon: ICONS.actions.edit,
@@ -68,8 +76,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					tooltip: true,
 					onClick() {
 						router.push({
-							name: `dashboard-${options.moduleName}-id-edit` as any,
-							params: { id: (row.original as any).id },
+							name: `dashboard-${options.moduleName}-${idParam}-edit` as any,
+							params: { [idParam]: (row.original as any)[idParam] } as any,
 						})
 					},
 				})
@@ -89,7 +97,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 						})
 
 						if (result) {
-							await options.deleteFn!((row.original as any).id)
+							await options.deleteFn!((row.original as any)[idParam] as number | string)
 
 							if (options.onReload) {
 								await options.onReload()

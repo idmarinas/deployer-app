@@ -41,6 +41,13 @@ export function useSideberMenu() {
 				to: { name: 'dashboard-hosts' },
 				// description: 'Configurar conexiones a servidores'
 			},
+			// Comandos
+			{
+				label: t('components.sidebar.commands'),
+				icon: getModuleIcon(ModulesName.Commands),
+				to: { name: 'dashboard-commands' },
+				// description: 'Comandos reutilizables para ejecutar en los servidores'
+			},
 			// Variables
 			// {
 			//   label: t('components.sidebar.variables'),
@@ -105,6 +112,13 @@ export function useSideberMenu() {
 					icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
 					to: '/dashboard/hosts/add',
 					kbds: ['shift', 'H'],
+				},
+				{
+					label: t('components.navigation.add.command.label'),
+					suffix: t('components.navigation.add.command.description'),
+					icon: getModuleIcon(ModulesName.Commands),
+					to: '/dashboard/commands/add',
+					kbds: ['shift', 'C'],
 				},
 				// {
 				//   label: t('components.navigation.add.variable.label'),
@@ -176,6 +190,13 @@ export function useDashboardButton() {
 			icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
 			to: { name: 'dashboard-hosts-add' },
 			kbds: ['shift', 'H'],
+		},
+		{
+			label: t('components.navigation.add.command.label'),
+			description: t('components.navigation.add.command.description'),
+			icon: getModuleIcon(ModulesName.Commands),
+			to: { name: 'dashboard-commands-add' },
+			kbds: ['shift', 'C'],
 		},
 		// {
 		//   label: t('components.navigation.add.variable.label'),
