@@ -24,6 +24,7 @@ import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToo
 import { useHostQuery } from '@/composables/queries/hosts'
 import useToaster from '@/composables/useToaster'
 import { useHostById } from '@/loaders/hosts'
+import { formatBytes } from '@/utils/format'
 
 import { ModulesName } from '@/utils/deployer-app'
 
@@ -73,7 +74,7 @@ const btnInfoDisable = computed(() => {
 	if (!hostData.value?.system_info?.last_checked_at) return false
 
 	const time = new Date(hostData.value.system_info.last_checked_at).getTime()
-	const cooldown = 24 * 60 * 60 * 1000 // 24 horas - 1 día
+	const cooldown = 1 * 60 * 1000 // 1 hora
 
 	return calculateBtn(time, cooldown, btnInfoCount, btnInfoStart)
 })
@@ -100,7 +101,7 @@ const btnServerUpdatesDisable = computed(() => {
 	else if (!hostData.value?.server_updates?.last_checked_at) return false
 
 	const time = new Date(hostData.value.server_updates.last_checked_at).getTime()
-	const cooldown = 24 * 60 * 60 * 1000
+	const cooldown = 2 * 60 * 1000
 
 	return calculateBtn(time, cooldown, btnServerUpdatesCount, btnServerUpdatesStart)
 })
@@ -131,7 +132,7 @@ async function updateHostInfo() {
 	)
 
 	try {
-		const { exit_code, parsed } = await runCommand<SystemInfoResult>('system-info', hostData.value.id)
+		const { exit_code, parsed } = await runCommand<SystemInfoResult>('system_info', hostData.value.id)
 
 		if (exit_code !== 0 || !parsed) {
 			throw new Error(t('notifications.hosts.system_info.error.title'))
@@ -155,6 +156,7 @@ async function updateHostInfo() {
 			system_info,
 		} as Host
 
+		await db.update(deployer_hosts).set({ system_info }).where(eq(deployer_hosts.id, hostData.value.id))
 		await invalidateCacheQueries(cacheQuery, ['hosts'])
 
 		toaster.toast.update(
@@ -189,13 +191,11 @@ async function checkMetrics() {
 	)
 
 	try {
-		const { exit_code, parsed } = await runCommand<SystemMetricsResult>('system-metrics', hostData.value.id)
+		const { exit_code, parsed } = await runCommand<SystemMetricsResult>('system_metrics', hostData.value.id)
 
 		if (exit_code !== 0 || !parsed) {
 			throw new Error(t('notifications.hosts.status_info.error.title'))
 		}
-
-		console.log(parsed)
 
 		const status_info: HostStatusMetrics = {
 			cpu_usage: parsed.cpu,
@@ -277,7 +277,7 @@ async function checkUpdates() {
 			repo?: unknown
 			current_version?: unknown
 			available_version?: unknown
-		}>('upgradable-packages', hostData.value.id)
+		}>('upgradable_packages', hostData.value.id)
 
 		if (exit_code !== 0 || !parsed) {
 			throw new Error(t('notifications.hosts.check_updates.error.title'))
@@ -317,6 +317,7 @@ async function checkUpdates() {
 			server_updates,
 		} as Host
 
+		await db.update(deployer_hosts).set({ server_updates }).where(eq(deployer_hosts.id, hostData.value.id))
 		await invalidateCacheQueries(cacheQuery, ['hosts'])
 
 		toaster.toast.update(
@@ -474,11 +475,11 @@ provide<Ref<boolean>>('isOperating', isOperating)
 					</div>
 					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.memory_total') }}</span>
-						<span class="text-sm font-mono">{{ hostData.system_info?.memory_total || '-' }}</span>
+						<span class="text-sm font-mono">{{ formatBytes(Number(hostData.system_info?.memory_total)) || '-' }}</span>
 					</div>
 					<div class="flex items-center justify-between rounded-lg">
 						<span class="text-xs text-muted font-medium">{{ t('pages.hosts.manage.disk_total') }}</span>
-						<span class="text-sm font-mono">{{ hostData.system_info?.disk_total || '-' }}</span>
+						<span class="text-sm font-mono">{{ formatBytes(Number(hostData.system_info?.disk_total)) || '-' }}</span>
 					</div>
 				</div>
 			</template>
