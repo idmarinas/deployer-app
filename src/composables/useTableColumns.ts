@@ -46,7 +46,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 
 	const enabledColumn: TableColumn<T> = {
 		accessorKey: 'enabled',
-		header: t('common.status.enabled'),
+		header: () => t('common.status.enabled'),
 		cell({ row }) {
 			const label = row.getValue('enabled') ? t('common.status.active') : t('common.status.inactive')
 			const color = row.getValue('enabled') ? 'success' : 'error'

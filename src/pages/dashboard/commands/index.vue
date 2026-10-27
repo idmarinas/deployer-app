@@ -33,16 +33,16 @@ const columns: TableColumn<Command>[] = [
 	tableColumnExpand,
 	{
 		accessorKey: 'key',
-		header: t('entity.command.key'),
+		header: () => t('entity.command.key'),
 		cell: ({ row }) => h('span', { class: 'font-mono text-xs' }, row.original.key),
 	},
 	{
 		accessorKey: 'name',
-		header: t('entity.command.name'),
+		header: () => t('entity.command.name'),
 	},
 	{
 		accessorKey: 'timeout',
-		header: t('entity.command.timeout'),
+		header: () => t('entity.command.timeout'),
 		cell: ({ row }) => `${row.original.timeout}s`,
 	},
 	tableColumnEnabled,
