@@ -61,7 +61,6 @@ async function executeCommand<T>(
 	const channel = new Channel<RemoteConsoleEvent>()
 	channel.onmessage = () => {}
 
-	console.log(definition.command)
 	const input = {
 		host_id: hostId,
 		command: definition.command,
@@ -75,7 +74,6 @@ async function executeCommand<T>(
 		channel,
 	})
 
-	console.log(response)
 	if (!response.success || !response.data) {
 		throw new Error(response.message_key)
 	}
