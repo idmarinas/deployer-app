@@ -16,7 +16,6 @@ export interface ConfirmDialogOptions {
 
 export interface CommandTestDialogOptions {
 	title?: string
-	description?: string
 	command: string
 	parser?: OutputParser
 	timeout?: number
