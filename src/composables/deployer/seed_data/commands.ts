@@ -15,7 +15,6 @@ export const commands = (t: ComposerTranslation): Omit<Command, 'deleted_at'>[] 
 			],
 		},
 		command: `bash -c '
-esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
 read cpu user nice system idle iowait irq softirq steal < /proc/stat
 sleep 1
 read cpu2 user2 nice2 system2 idle2 iowait2 irq2 softirq2 steal2 < /proc/stat
@@ -26,16 +25,20 @@ total2=$((user2 + nice2 + system2 + idle2 + iowait2 + irq2 + softirq2))
 total_delta=$((total2 - total1))
 
 if [ "$total_delta" -gt 0 ]; then
-  cpu_usage=$(awk "BEGIN {printf \\"%.2f\\", (1 - $idle_delta / $total_delta) * 100}")
+  cpu_usage=$(awk "BEGIN {printf \"%.2f\", (1 - $idle_delta / $total_delta) * 100}")
 else
   cpu_usage="0.00"
 fi
 
-ram_usage=$(free -b 2>/dev/null | awk "NR==2 {printf \\"%.2f\\", (1 - \\$7/\\$2) * 100}")
-disk_usage=$(df / --output=used,size 2>/dev/null | awk "NR==2 {printf \\"%.2f\\", (\\$1/\\$2) * 100}")
+ram_usage=$(free -b 2>/dev/null | awk "NR==2 {printf \"%.2f\", (1 - \$7/\$2) * 100}")
+
+disk_usage=$(df / --output=used,size 2>/dev/null | awk "NR==2 {printf \"%.2f\", (\$1/\$2) * 100}")
+
 uptime_out=$(uptime -p 2>/dev/null || uptime)
 
-printf "{\\"cpu\\":\\"%s\\",\\"ram\\":\\"%s\\",\\"disk\\":\\"%s\\",\\"uptime\\":\\"%s\\"}" \\
+esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
+
+printf "{\"cpu\":\"%s\",\"ram\":\"%s\",\"disk\":\"%s\",\"uptime\":\"%s\"}" \
   "$cpu_usage" "$ram_usage" "$disk_usage" "$(esc "$uptime_out")"
 '`,
 		custom: false,
