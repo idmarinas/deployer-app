@@ -14,7 +14,7 @@ export const commands = (t: ComposerTranslation): Omit<Command, 'deleted_at'>[] 
 				},
 			],
 		},
-		command: `bash -c '
+		command: String.raw`bash -c '
 read cpu user nice system idle iowait irq softirq steal < /proc/stat
 sleep 1
 read cpu2 user2 nice2 system2 idle2 iowait2 irq2 softirq2 steal2 < /proc/stat
@@ -61,7 +61,7 @@ printf "{\"cpu\":\"%s\",\"ram\":\"%s\",\"disk\":\"%s\",\"uptime\":\"%s\"}" \
 				},
 			],
 		},
-		command: `bash -c '
+		command: String.raw`bash -c '
 esc() { printf "%s" "$1" | sed "s/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g"; }
 
 kernel=$(uname -r 2>/dev/null)
