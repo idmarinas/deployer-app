@@ -32,12 +32,9 @@ export function usePositionedButtons() {
 	function createButton(btn: PositionedButton): VNode {
 		return h(UTooltip, { text: btn.label, delayDuration: 0, disabled: !btn.tooltip }, () =>
 			h(UButton, {
-				icon: btn.icon,
+				...btn,
 				label: btn.tooltip ? undefined : btn.label, // si hay tooltip, no mostramos texto
-				color: btn.color,
-				variant: btn.variant,
 				loading: btn.loading?.value,
-				onClick: btn.onClick,
 			}),
 		)
 	}
