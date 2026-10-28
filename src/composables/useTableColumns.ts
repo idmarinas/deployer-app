@@ -74,6 +74,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					color: 'info',
 					variant: 'ghost',
 					tooltip: true,
+					disabled: (row.original as any)?.internal || false,
 					onClick() {
 						router.push({
 							name: `dashboard-${options.moduleName}-${idParam}-edit` as any,
@@ -89,6 +90,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					color: 'error',
 					variant: 'ghost',
 					tooltip: true,
+					disabled: (row.original as any)?.internal || false,
 					async onClick() {
 						const result = await confirmDialog({
 							type: 'cancel_delete',
