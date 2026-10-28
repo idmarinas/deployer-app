@@ -40,6 +40,7 @@ printf "{\\"cpu\\":\\"%s\\",\\"ram\\":\\"%s\\",\\"disk\\":\\"%s\\",\\"uptime\\":
 '`,
 		custom: false,
 		enabled: true,
+		internal: true,
 		parser: { type: 'json' },
 		timeout: 30,
 		updated_at: new Date().toISOString(),
@@ -90,6 +91,7 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 '`,
 		custom: false,
 		enabled: true,
+		internal: true,
 		parser: { type: 'json' },
 		timeout: 30,
 		updated_at: new Date().toISOString(),
@@ -110,6 +112,7 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 		command: `apt list --upgradable 2>/dev/null || yum check-update 2>/dev/null || dnf check-update 2>/dev/null`,
 		custom: false,
 		enabled: true,
+		internal: true,
 		parser: {
 			type: 'regex',
 			patterns: [
