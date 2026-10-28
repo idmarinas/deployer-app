@@ -21,6 +21,8 @@ export const description = text({ mode: 'json' })
 
 export const enabled = integer({ mode: 'boolean' }).notNull().default(false)
 
+export const internal = integer({ mode: 'boolean' }).notNull().default(false)
+
 export const file_table = {
 	id: integer().primaryKey({ autoIncrement: true }),
 	module_id: integer().notNull(),
