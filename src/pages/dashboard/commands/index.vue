@@ -78,45 +78,24 @@ onMounted(() => {
 <template>
 	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
 		<template #expanded="{ row }">
-			<UCard>
-				<template #title>
-					<div class="flex items-center justify-between">
-						<div class="flex gap-3 items-center">
-							<UChip :color="row.original.enabled ? 'success' : 'error'" :show="true">
-								<span class="text-lg font-semibold">{{ row.original.name }}</span>
-							</UChip>
-							<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> @{{ row.original.key }} </UBadge>
-							<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
-						</div>
-					</div>
+			<ItemCard
+				:id="row.original.key"
+				:name="row.original.name"
+				:description="row.original.description"
+				:updated_at="row.original.updated_at"
+				:created_at="row.original.created_at"
+				:enabled="row.original.enabled"
+			>
+				<template #title-right>
+					<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
 				</template>
-
-				<template #description>
-					<DescriptionViewer :value="row.original.description" />
-				</template>
-
 				<div class="flex flex-col gap-2">
 					<span class="text-xs text-muted font-medium">{{ t('entity.command.command') }}</span>
 					<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-elevated rounded-md p-3">{{
 						row.original.command
 					}}</pre>
 				</div>
-
-				<template #footer>
-					<div class="flex gap-4 items-center justify-between text-xs text-muted">
-						<span class="flex gap-1.5 items-center">
-							<UIcon name="i-tabler-clock" class="size-4" />
-							<strong>{{ t('entity.command.timeout') }}:</strong>
-							{{ row.original.timeout }}s
-						</span>
-						<span class="flex gap-1.5 items-center">
-							<UIcon name="i-tabler-calendar-time" class="size-4" />
-							<strong>{{ t('entity.common.updated_at') }}:</strong>
-							{{ new Date(row.original.updated_at).toLocaleString() }}
-						</span>
-					</div>
-				</template>
-			</UCard>
+			</ItemCard>
 		</template>
 	</ListTable>
 	<EmptyList
