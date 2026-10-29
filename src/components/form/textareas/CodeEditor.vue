@@ -8,6 +8,7 @@ import {
 	StreamLanguage,
 	syntaxHighlighting,
 } from '@codemirror/language'
+import { linter, lintGutter, lintKeymap, type Diagnostic, type LintSource } from '@codemirror/lint'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import {
 	drawSelection,
@@ -19,6 +20,7 @@ import {
 	placeholder as placeholderExtension,
 } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
+import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -40,6 +42,8 @@ const props = withDefaults(
 		tabSize?: number
 		minRows?: number
 		maxRows?: number
+		/** Linter adicional (CodeMirror `LintSource`). Se combina con el linter propio del lenguaje. */
+		lint?: LintSource
 	}>(),
 	{ lineNumbers: true, tabSize: 2, minRows: 6, maxRows: 24 },
 )
@@ -48,12 +52,17 @@ const model = defineModel<string>({ default: '' })
 const language = defineModel<CodeLanguage>('language', { default: 'plain' })
 
 const { t: $t } = useI18n()
+const colorMode = useColorMode()
 
 const host = useTemplateRef<HTMLDivElement>('host')
 const view = shallowRef<EditorView>()
 
 const languageCompartment = new Compartment()
 const editableCompartment = new Compartment()
+const lintCompartment = new Compartment()
+const darkCompartment = new Compartment()
+
+const isDark = computed(() => colorMode.value === 'dark')
 
 // Cada lenguaje se importa bajo demanda (code splitting)
 const languageLoaders: Record<CodeLanguage, () => Promise<Extension>> = {
@@ -70,6 +79,89 @@ const LANGUAGE_NAMES: Record<Exclude<CodeLanguage, 'plain'>, string> = {
 	yaml: 'YAML',
 	json: 'JSON',
 	php: 'PHP',
+}
+
+// Linters por lenguaje (import bajo demanda). Bash y PHP no traen linter propio:
+// para esos casos se puede pasar uno con la prop `lint`.
+const lintLoaders: Partial<Record<CodeLanguage, () => Promise<LintSource>>> = {
+	json: async () => {
+		const { jsonLanguage, jsonParseLinter } = await import('@codemirror/lang-json')
+		const parseLinter = jsonParseLinter()
+
+		return view => {
+			const doc = view.state.doc.toString()
+			const diagnostics: Diagnostic[] = [...parseLinter(view)]
+			const tree = jsonLanguage.parser.parse(doc)
+
+			// JSON.parse acepta claves repetidas (se queda con la última), así que se detectan aparte.
+			// Se recorren solo los objetos: sus hijos directos `Property` contienen `PropertyName`.
+			tree.iterate({
+				enter(node) {
+					if (node.name !== 'Object') return
+
+					const seen = new Set<string>()
+					for (let property = node.node.firstChild; property; property = property.nextSibling) {
+						if (property.name !== 'Property') continue
+
+						const name = property.firstChild
+						if (name?.name !== 'PropertyName') continue
+
+						const raw = doc.slice(name.from, name.to)
+						let key = raw
+						try {
+							// Normaliza escapes: "\u0070epe" y "pepe" son la misma clave
+							key = JSON.parse(raw) as string
+						} catch {
+							// Si no es un string válido, se compara el texto tal cual
+						}
+
+						if (seen.has(key)) {
+							diagnostics.push({
+								from: name.from,
+								to: name.to,
+								severity: 'warning',
+								// `escapeParameter` global convierte `"` en `&quot;`; el tooltip de lint es texto plano
+								message: $t(
+									'form.shared.code_editor.lint.duplicate_key',
+									{ key: raw },
+									{ escapeParameter: false },
+								),
+							})
+						}
+						seen.add(key)
+					}
+				},
+			})
+
+			return diagnostics
+		}
+	},
+	yaml: async () => {
+		const { parseDocument } = await import('yaml')
+		return view => {
+			const doc = view.state.doc.toString()
+			const clamp = (pos: number) => Math.max(0, Math.min(pos, doc.length))
+			const toDiagnostic = (
+				item: { pos: [number, number]; message: string },
+				severity: 'error' | 'warning',
+			): Diagnostic => ({
+				from: clamp(item.pos[0]),
+				to: clamp(item.pos[1]),
+				severity,
+				message: item.message,
+			})
+
+			try {
+				const parsed = parseDocument(doc, { prettyErrors: false })
+				return [
+					...parsed.errors.map(error => toDiagnostic(error, 'error')),
+					...parsed.warnings.map(warning => toDiagnostic(warning, 'warning')),
+				]
+			} catch (error) {
+				return [{ from: 0, to: 0, severity: 'error', message: (error as Error).message }]
+			}
+		}
+	},
 }
 
 const allowedLanguages = computed<readonly CodeLanguage[]>(() =>
@@ -213,6 +305,62 @@ const theme = EditorView.theme({
 		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 25%, transparent)',
 	},
 	'.cm-placeholder': { color: 'var(--ui-text-dimmed)' },
+	// Lint: tooltip, subrayados y panel de diagnósticos con los tokens del tema (sin colores fijos)
+	'.cm-tooltip': {
+		backgroundColor: 'var(--ui-bg-elevated)',
+		color: 'var(--ui-text-highlighted)',
+		border: '1px solid var(--ui-border)',
+		borderRadius: '0.375rem',
+	},
+	'.cm-tooltip .cm-tooltip-arrow:before': {
+		borderTopColor: 'var(--ui-border)',
+		borderBottomColor: 'var(--ui-border)',
+	},
+	'.cm-tooltip .cm-tooltip-arrow:after': {
+		borderTopColor: 'var(--ui-bg-elevated)',
+		borderBottomColor: 'var(--ui-bg-elevated)',
+	},
+	'.cm-tooltip-lint': { padding: '0', margin: '0' },
+	'.cm-diagnostic': { padding: '0.375rem 0.5rem 0.375rem 0.625rem' },
+	'.cm-diagnostic-error': { borderLeft: '5px solid var(--ui-error)' },
+	'.cm-diagnostic-warning': { borderLeft: '5px solid var(--ui-warning)' },
+	'.cm-diagnostic-info': { borderLeft: '5px solid var(--ui-info)' },
+	'.cm-diagnostic-hint': { borderLeft: '5px solid var(--ui-primary)' },
+	'.cm-diagnosticSource': { color: 'var(--ui-text-dimmed)', opacity: '1' },
+	'.cm-diagnosticAction': {
+		backgroundColor: 'var(--ui-bg-accented)',
+		color: 'var(--ui-text-highlighted)',
+		borderRadius: '0.25rem',
+	},
+	'.cm-lintRange-error': {
+		backgroundImage: 'none',
+		textDecoration: 'underline wavy var(--ui-error)',
+		textUnderlineOffset: '2px',
+	},
+	'.cm-lintRange-warning': {
+		backgroundImage: 'none',
+		textDecoration: 'underline wavy var(--ui-warning)',
+		textUnderlineOffset: '2px',
+	},
+	'.cm-lintRange-info': {
+		backgroundImage: 'none',
+		textDecoration: 'underline wavy var(--ui-info)',
+		textUnderlineOffset: '2px',
+	},
+	'.cm-lintRange-hint': {
+		backgroundImage: 'none',
+		textDecoration: 'underline wavy var(--ui-primary)',
+		textUnderlineOffset: '2px',
+	},
+	'.cm-lintRange-active': {
+		backgroundColor: 'color-mix(in oklab, var(--ui-warning) 20%, transparent)',
+	},
+	'.cm-panels': {
+		backgroundColor: 'var(--ui-bg-elevated)',
+		color: 'var(--ui-text-highlighted)',
+	},
+	'.cm-panel.cm-panel-lint': { borderTop: '1px solid var(--ui-border)' },
+	'.cm-panel.cm-panel-lint ul [aria-selected]': { backgroundColor: 'var(--ui-bg-accented)' },
 })
 
 function editableExtensions(): Extension {
@@ -302,6 +450,22 @@ async function applyLanguage(lang: CodeLanguage) {
 	view.value?.dispatch({ effects: languageCompartment.reconfigure(extension) })
 }
 
+async function applyLint(lang: CodeLanguage) {
+	const custom = props.lint
+	const loader = lintLoaders[lang]
+	const builtin = loader ? await loader() : null
+
+	// Si el lenguaje o el linter personalizado cambiaron mientras cargaba, se descarta
+	if (language.value !== lang || props.lint !== custom) return
+
+	const source: LintSource | null =
+		custom && builtin ? async view => [...(await builtin(view)), ...(await custom(view))] : (custom ?? builtin)
+
+	view.value?.dispatch({
+		effects: lintCompartment.reconfigure(source ? [linter(source), lintGutter()] : []),
+	})
+}
+
 onMounted(() => {
 	view.value = new EditorView({
 		parent: host.value!,
@@ -316,11 +480,13 @@ onMounted(() => {
 				highlightActiveLine(),
 				EditorState.tabSize.of(props.tabSize),
 				indentUnit.of(' '.repeat(props.tabSize)),
-				keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+				keymap.of([...defaultKeymap, ...historyKeymap, ...lintKeymap, indentWithTab]),
 				syntaxHighlighting(highlightStyle),
 				theme,
+				darkCompartment.of(EditorView.darkTheme.of(isDark.value)),
 				props.placeholder ? placeholderExtension(props.placeholder) : [],
 				languageCompartment.of([]),
+				lintCompartment.of([]),
 				editableCompartment.of(editableExtensions()),
 				EditorView.updateListener.of(update => {
 					if (update.docChanged) model.value = update.state.doc.toString()
@@ -330,6 +496,7 @@ onMounted(() => {
 	})
 
 	applyLanguage(language.value)
+	applyLint(language.value)
 })
 
 // Cambios externos del v-model → editor (si coinciden con el documento, no hace nada)
@@ -339,7 +506,21 @@ watch(model, value => {
 	current.dispatch({ changes: { from: 0, to: current.state.doc.length, insert: value } })
 })
 
-watch(language, applyLanguage)
+watch(language, lang => {
+	applyLanguage(lang)
+	applyLint(lang)
+})
+
+watch(
+	() => props.lint,
+	() => applyLint(language.value),
+)
+
+// El facet `darkTheme` hace que los widgets propios de CodeMirror (tooltips, paneles,
+// autocompletado…) usen sus variantes oscuras; los colores concretos vienen del tema.
+watch(isDark, dark => {
+	view.value?.dispatch({ effects: darkCompartment.reconfigure(EditorView.darkTheme.of(dark)) })
+})
 
 watch(
 	() => [props.readonly, props.disabled],
