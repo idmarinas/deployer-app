@@ -223,7 +223,7 @@ function extractRegexGroups(patternIndex: number) {
 
 	ensureRegexGroups(patternIndex)
 	const groups = pattern.groups
-	const extracted: Array<{ key: string, index: number }> = []
+	const extracted: Array<{ key: string; index: number }> = []
 
 	let i = 0
 	let groupIndex = 0
@@ -259,8 +259,7 @@ function extractRegexGroups(patternIndex: number) {
 						const name = regexStr.slice(nameStart, j)
 						groupIndex++
 						extracted.push({ key: name, index: groupIndex })
-					}
-					else {
+					} else {
 						groupIndex++
 					}
 					i++
@@ -346,14 +345,7 @@ const nameMaxLength = schema.select.shape.name.maxLength || 120
 		class="md:col-span-2"
 		required
 	>
-		<UTextarea
-			v-model="state.command"
-			:rows="5"
-			autocomplete="off"
-			spellcheck="false"
-			class="w-full font-mono"
-			:placeholder="t('form.commands.command.placeholder')"
-		/>
+		<CodeEditor v-model="state.command" :languages="['bash']" :placeholder="t('form.commands.command.placeholder')" />
 	</UFormField>
 
 	<UFormField
@@ -522,7 +514,9 @@ const nameMaxLength = schema.select.shape.name.maxLength || 120
 						<p class="text-xs text-muted">{{ t('form.commands.parser.regex.groups_help') }}</p>
 
 						<div
-							v-for="([groupKey, groupValue], groupIndex) in Object.entries(pattern.groups || {}).sort((a, b) => Number(a[1]) - Number(b[1]))"
+							v-for="([groupKey, groupValue], groupIndex) in Object.entries(pattern.groups || {}).sort(
+								(a, b) => Number(a[1]) - Number(b[1]),
+							)"
 							:key="groupKey + '-' + groupIndex"
 							class="grid grid-cols-1 items-end gap-2 md:grid-cols-12"
 						>
