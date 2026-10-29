@@ -11,6 +11,8 @@ import { useTableColumns } from '@/composables/useTableColumns'
 import { useCommandsListAll } from '@/loaders/commands'
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
+
+import UBadge from '@nuxt/ui/components/Badge.vue'
 </script>
 
 <script setup lang="ts">
@@ -34,7 +36,10 @@ const columns: TableColumn<Command>[] = [
 	{
 		accessorKey: 'key',
 		header: () => t('entity.command.key'),
-		cell: ({ row }) => h('span', { class: 'font-mono text-xs' }, row.original.key),
+		cell: ({ row }) => [
+			h('span', { class: 'font-mono text-xs' }, row.original.key),
+			row.original.internal ? h(UBadge, { label: 'Internal', class: 'mr-2', size: 'xs', variant: 'soft' }) : undefined,
+		],
 	},
 	{
 		accessorKey: 'name',
@@ -87,6 +92,7 @@ onMounted(() => {
 				:enabled="row.original.enabled"
 			>
 				<template #title-right>
+					<UBadge v-if="row.original.internal" variant="soft" icon="i-tabler-device-desktop" label="Internal" />
 					<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
 				</template>
 				<div class="flex flex-col gap-2">
