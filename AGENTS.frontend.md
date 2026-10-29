@@ -512,3 +512,25 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
 - **i18n:** los mensajes de validación son claves `form.schema_form.errors.*` (nunca strings en español). Labels de variantes/títulos: `form.schema_form.*` y `form.compose_schema.*` (vía `resolveTitle`/`resolveDescription`).
 - **No reinventar:** si un caso no se renderiza, resolver/compilar con las utilidades de `jsl.ts` antes de escribir un parser manual de `$ref`/`allOf`.
 - **Testing:** `tests/{jsl,validate,schema-form,render,normalize}.test.ts` cubren clasificación, validación, defaults, render y normalizadores (incluido `widgetsNormalizer` + marcado `x-widget` sin warnings). **Ojo:** `schema-form.test.ts`, `render.test.ts`, `normalize.test.ts` y `jsl.test.ts` importan `@/schemas/compose-spec.json` / `@/schemas/composer-schema.json`, que **ya no existen** → esos 4 tests están rotos a la espera de actualización (`bun test` no los resuelve hoy; `validate.test.ts` sí sigue operativo). El núcleo que prueban está intacto.
+
+---
+
+## 9. `CodeEditor` (editor de código)
+
+Componente `src/components/form/textareas/CodeEditor.vue`, **exclusivo para campos de código** (p. ej. comandos). Basado en **CodeMirror 6** (no Tiptap: el antiguo `UEditor` + `CodeBlockLowlight` se sustituyó porque no devolvía el texto editado al `v-model`).
+
+- **Dependencias:** `@codemirror/{state,view,commands,language,legacy-modes,lang-yaml,lang-json,lang-php}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
+- **Modelos:** `v-model` (texto, siempre con saltos `\n`) y `v-model:language` (`CodeLanguage`, por defecto `'plain'`).
+- **Tipos exportados** (del bloque `<script>` normal): `CODE_LANGUAGES` y `CodeLanguage` (`'bash' | 'yaml' | 'json' | 'php' | 'plain'`). Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
+- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers`, `tabSize`, `minRows`, `maxRows`. `language`, `readonly` y `disabled` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
+- **Restricción de lenguajes:** si el lenguaje actual no está en `languages`, el componente lo cambia al primero permitido (vía `v-model:language`). Con `language="x"` estático (sin `v-model:language`) el selector no puede cambiar el valor.
+- **Bloques bash (`heredoc` y `bash -c`):** con `language === 'bash'` la barra muestra dos `USwitch` mutuamente excluyentes. El estado **se deriva del texto** (si se edita o borra el bloque a mano, el switch se actualiza solo):
+  - **Bloque heredoc:** envuelve el cuerpo en `bash <<'DEPLOYER_EOF'` … `DEPLOYER_EOF`. El marcador se elige libre (`DEPLOYER_EOF`, `DEPLOYER_EOF_1`, …) para no colisionar con el contenido. La cabecera se detecta de forma genérica (`<<'MARCADOR'`, con o sin `-`, cualquier intérprete) siempre que la última línea no vacía sea el marcador.
+  - **Bash -c:** envuelve el cuerpo en `bash -c '` … `'` (al generar se usa el formato bloque). Detecta tanto el formato bloque (`bash -c '` en una línea y `'` de cierre en otra) como el inline de una o varias líneas (`bash -c 'comando'`). Admite `sh -c '` y rutas (`/bin/bash -c '`). Las comillas simples del cuerpo se escapan como `'\''` al generar y se desescapan al leer.
+  - Activar un switch **convierte** el bloque del otro formato conservando el cuerpo; desactivarlo quita el envoltorio. Todo va en una única transacción de CodeMirror: el cursor se conserva y `Ctrl+Z` revierte el cambio completo.
+- **Colores:** tokens `--ui-*` de Nuxt UI (sin hexadecimales), válidos para tema claro y oscuro. Fuente `font-pcb`.
+- **i18n:** `form.shared.code_editor.{language,plain,heredoc.{label,help},bash_c.{label,help}}`. Los nombres de lenguaje (Bash, YAML, JSON, PHP) son nombres propios y no se traducen.
+
+```vue
+<CodeEditor v-model="form.command" v-model:language="form.language" selectable :languages="['bash', 'php']" />
+```
