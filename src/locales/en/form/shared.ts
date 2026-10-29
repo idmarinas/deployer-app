@@ -68,6 +68,9 @@ export default {
 			label: 'Bash -c',
 			help: "Wraps the script in bash -c ' … '. Inner single quotes are escaped automatically.",
 		},
+		lint: {
+			duplicate_key: 'Duplicate key: {key}',
+		},
 	},
 	select: {
 		framework: {

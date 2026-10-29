@@ -68,6 +68,9 @@ export default {
 			label: 'Bash -c',
 			help: "Envuelve el script en bash -c ' … '. Las comillas simples del interior se escapan automáticamente.",
 		},
+		lint: {
+			duplicate_key: 'Clave duplicada: {key}',
+		},
 	},
 	select: {
 		framework: {
