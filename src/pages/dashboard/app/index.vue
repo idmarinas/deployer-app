@@ -56,7 +56,25 @@ const { t } = useI18n()
 		]"
 	>
 		<template #info><TabAppInfo /></template>
-		<template #database><TabDatabaseInfo /></template>
+		<template #database>
+			<UTabs
+				:items="[
+					{
+						icon: ICONS.database.database,
+						label: t('common.common.info'),
+						slot: 'dbInfo',
+					},
+					{
+						icon: ICONS.database.databaseImport,
+						label: t('pages.app.settings.sections.database.defaults'),
+						slot: 'dbSeed',
+					},
+				]"
+			>
+				<template #dbInfo><TabDatabaseInfo /></template>
+				<template #dbSeed><TabDatabaseSeed /></template>
+			</UTabs>
+		</template>
 		<template #migrations><TabMigrations /></template>
 		<template #security><TabSecurity /></template>
 	</UTabs>
