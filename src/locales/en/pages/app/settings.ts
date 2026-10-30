@@ -11,6 +11,7 @@ export default {
 		},
 		database: {
 			label: 'Database',
+			info: 'Information',
 			description: 'Database information and management',
 			path: 'File path',
 			not_configured: 'Not configured',
@@ -48,14 +49,16 @@ export default {
 			description: 'Management of the encryption keys for sensitive fields',
 			current_version: 'Current version',
 			rotate: 'Rotate key',
-			rotate_success: 'Key rotated successfully (new version: {version}). {reencrypted} values re-encrypted, {purged} keys purged',
+			rotate_success:
+				'Key rotated successfully (new version: {version}). {reencrypted} values re-encrypted, {purged} keys purged',
 			rotate_error: 'Error rotating the key',
 			load_error: 'Error loading the encryption keys',
 			scan: 'Scan and re-encrypt all',
 			scan_success: 'Scan completed: {reencrypted} values re-encrypted, {purged} keys purged',
 			scan_error: 'Error scanning and re-encrypting',
 			no_fields: 'There are no encrypted fields',
-			warning: 'When rotating a key, all encrypted values of that field are immediately re-encrypted with the new version and unused old keys are purged.',
+			warning:
+				'When rotating a key, all encrypted values of that field are immediately re-encrypted with the new version and unused old keys are purged.',
 			purged: '{count} key(s) purged',
 			versions_in_use: '{count} old key(s) still in use',
 		},

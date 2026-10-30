@@ -11,6 +11,7 @@ export default {
 		},
 		database: {
 			label: 'Base de datos',
+			info: 'Información',
 			description: 'Información y gestión de la base de datos',
 			path: 'Ruta del archivo',
 			not_configured: 'No configurada',
@@ -48,14 +49,16 @@ export default {
 			description: 'Gestión de las claves de cifrado de los campos sensibles',
 			current_version: 'Versión actual',
 			rotate: 'Rotar clave',
-			rotate_success: 'Clave rotada correctamente (nueva versión: {version}). {reencrypted} valores re-cifrados, {purged} claves purgadas',
+			rotate_success:
+				'Clave rotada correctamente (nueva versión: {version}). {reencrypted} valores re-cifrados, {purged} claves purgadas',
 			rotate_error: 'Error al rotar la clave',
 			load_error: 'Error al cargar las claves de cifrado',
 			scan: 'Escanear y re-cifrar todo',
 			scan_success: 'Escaneo completado: {reencrypted} valores re-cifrados, {purged} claves purgadas',
 			scan_error: 'Error al escanear y re-cifrar',
 			no_fields: 'No hay campos cifrados',
-			warning: 'Al rotar una clave, todos los valores cifrados de ese campo se re-cifran inmediatamente con la nueva versión y las claves antiguas sin uso se purgan.',
+			warning:
+				'Al rotar una clave, todos los valores cifrados de ese campo se re-cifran inmediatamente con la nueva versión y las claves antiguas sin uso se purgan.',
 			purged: '{count} clave(s) purgada(s)',
 			versions_in_use: '{count} clave(s) antigua(s) aún en uso',
 		},

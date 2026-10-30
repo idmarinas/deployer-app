@@ -60,8 +60,8 @@ const { t } = useI18n()
 			<UTabs
 				:items="[
 					{
-						icon: ICONS.database.database,
-						label: t('common.common.info'),
+						icon: ICONS.misc.infoCircle,
+						label: t('pages.app.settings.sections.database.info'),
 						slot: 'dbInfo',
 					},
 					{
