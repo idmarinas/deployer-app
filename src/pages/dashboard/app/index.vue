@@ -65,7 +65,7 @@ const { t } = useI18n()
 						slot: 'dbInfo',
 					},
 					{
-						icon: ICONS.database.databaseImport,
+						icon: 'i-tabler-restore',
 						label: t('pages.app.settings.sections.database.defaults'),
 						slot: 'dbSeed',
 					},
