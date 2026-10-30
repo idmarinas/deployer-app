@@ -1,6 +1,9 @@
 export default defineNuxtConfig({
 	modules: ['@nuxtjs/i18n'],
 	extends: ['github:idmarinas/nuxt-layers/docs-bundle#master', 'docus'],
+	site: {
+		url: 'https://idmarinas.github.io',
+	},
 	i18n: {
 		locales: [
 			{ code: 'en', name: 'English' },
