@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const props = withDefaults(
 	defineProps<{
-		id: number
+		id: number | string
 		name: string
 		description?: JSONContent
 		enabled?: boolean
