@@ -55,6 +55,20 @@ export default defineNuxtConfig({
 					'Pinia Colada gestiona el estado de datos del servidor: consultas con caching, deduplicación e invalidación automática hacia la BD local.',
 				to: 'https://pinia-colada.esm.dev',
 			},
+			{
+				icon: 'i-tabler-article',
+				title: 'TipTap Editor',
+				description:
+					'TipTap aporta el editor de texto enriquecido de los formularios: descripciones con formato guardadas como JSON y renderizadas como HTML en las vistas.',
+				to: 'https://tiptap.dev',
+			},
+			{
+				icon: 'i-simple-icons-codemirror',
+				title: 'CodeMirror Editor',
+				description:
+					'CodeMirror es el editor de código de los comandos: resaltado de sintaxis Bash, numeración de líneas, linting y utilidades para envolver el script en heredoc o bash -c.',
+				to: 'https://codemirror.net',
+			},
 		],
 		socials: {
 			x: 'https://x.com/idmarinas',
@@ -82,11 +96,11 @@ export default defineNuxtConfig({
 			],
 		},
 	},
-	$production: {
-		llms: {
-			domain: 'https://idmarinas.github.io/deployer-app',
-		},
-	},
+	// $production: {
+	// 	llms: {
+	// 		domain: 'https://idmarinas.github.io/deployer-app',
+	// 	},
+	// },
 	vite: {
 		optimizeDeps: {
 			include: ['@vue/devtools-core', '@vue/devtools-kit'],

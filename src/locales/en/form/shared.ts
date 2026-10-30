@@ -57,6 +57,21 @@ export default {
 			use_special: 'Use special characters',
 		},
 	},
+	code_editor: {
+		language: 'Language',
+		plain: 'Plain text',
+		heredoc: {
+			label: 'Heredoc block',
+			help: "Wraps the script in bash <<'DEPLOYER_EOF' … DEPLOYER_EOF.",
+		},
+		bash_c: {
+			label: 'Bash -c',
+			help: "Wraps the script in bash -c ' … '. Inner single quotes are escaped automatically.",
+		},
+		lint: {
+			duplicate_key: 'Duplicate key: {key}',
+		},
+	},
 	select: {
 		framework: {
 			symfony: {

@@ -11,7 +11,7 @@ use commands::database::{get_app_info, get_database_info, query_raw};
 use commands::database::manage::{create_database_file, initialize_database, validate_database_sqlite};
 use commands::database::migrations::{execute_migrations, get_migrations_info, has_migrations_pending};
 use commands::hosts::{
-    host_check_metrics, host_check_system_info, host_check_updates, host_update_packages,
+    host_update_packages,
     test_connection,
 };
 use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
@@ -54,9 +54,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Hosts - non-CRUD
             test_connection,
-            host_check_system_info,
-            host_check_metrics,
-            host_check_updates,
+
+
+
             host_update_packages,
             // Passkeys - non-CRUD
             derive_passkey_info,

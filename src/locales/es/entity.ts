@@ -36,6 +36,15 @@ export default {
 		passphrase: 'Frase de contraseña',
 		fingerprint: 'Huella digital',
 	},
+	command: {
+		label: 'Comando',
+		key: 'Clave',
+		name: 'Nombre',
+		description: 'Descripción',
+		command: 'Comando',
+		timeout: 'Timeout',
+		enabled: 'Habilitado',
+	},
 	project: {
 		name: 'Nombre',
 		description: 'Descripción',

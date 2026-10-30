@@ -82,6 +82,11 @@ export const MODULE_ICONS: Record<ModulesName, ModuleIconSet> = {
 		singular: 'i-tabler-key',
 		off: 'i-tabler-key-off',
 	},
+	commands: {
+		plural: 'i-tabler-terminal-2',
+		singular: 'i-tabler-terminal',
+		off: 'i-tabler-terminal',
+	},
 	// tasks: {
 	// 	plural: 'i-tabler-list-check',
 	// 	singular: 'i-tabler-list-details',

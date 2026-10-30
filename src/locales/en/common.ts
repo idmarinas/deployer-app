@@ -26,6 +26,7 @@ export default {
 		filter: 'Filter',
 		enable: 'Enable',
 		disable: 'Disable',
+		test: 'Test',
 	},
 
 	confirm: {

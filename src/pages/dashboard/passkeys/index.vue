@@ -43,11 +43,11 @@ const columns: TableColumn<Passkey>[] = [
 	},
 	{
 		accessorKey: 'name',
-		header: t('pages.passkeys.table.columns.name'),
+		header: () => t('pages.passkeys.table.columns.name'),
 	},
 	{
 		accessorKey: 'key_type',
-		header: t('pages.passkeys.table.columns.type'),
+		header: () => t('pages.passkeys.table.columns.type'),
 		cell: ({ row }) =>
 			h(UBadge, {
 				color: 'info',
@@ -58,7 +58,7 @@ const columns: TableColumn<Passkey>[] = [
 	},
 	{
 		accessorKey: 'fingerprint',
-		header: t('pages.passkeys.table.columns.fingerprint'),
+		header: () => t('pages.passkeys.table.columns.fingerprint'),
 		cell: ({ row }) => row.original.fingerprint?.replace('SHA256:', '').slice(0, 20),
 	},
 	tableColumnEnabled,

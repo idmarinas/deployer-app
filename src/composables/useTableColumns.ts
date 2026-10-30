@@ -15,7 +15,13 @@ import { ICONS } from '@/utils/icons'
 
 export interface TableColumnsOptions {
 	moduleName?: ModulesName
-	deleteFn?: (id: number) => Promise<boolean>
+	/**
+	 * Nombre del param de ruta que identifica la fila (por defecto `id`).
+	 * Para entidades con PK string (p.ej. `key` en commands) se usa el nombre
+	 * de la columna: `dashboard-commands-key-edit` con param `key`.
+	 */
+	idParam?: string
+	deleteFn?(id: number | string): Promise<boolean>
 	onReload?: () => Promise<void> | void
 }
 
@@ -40,7 +46,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 
 	const enabledColumn: TableColumn<T> = {
 		accessorKey: 'enabled',
-		header: t('common.status.enabled'),
+		header: () => t('common.status.enabled'),
 		cell({ row }) {
 			const label = row.getValue('enabled') ? t('common.status.active') : t('common.status.inactive')
 			const color = row.getValue('enabled') ? 'success' : 'error'
@@ -59,6 +65,8 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 			const defaultButtons: PositionedButton[] = []
 
 			if (options?.moduleName && options?.deleteFn) {
+				const idParam = options.idParam ?? 'id'
+
 				defaultButtons.push({
 					id: 'edit',
 					icon: ICONS.actions.edit,
@@ -66,10 +74,11 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					color: 'info',
 					variant: 'ghost',
 					tooltip: true,
+					disabled: (row.original as any)?.internal || false,
 					onClick() {
 						router.push({
-							name: `dashboard-${options.moduleName}-id-edit` as any,
-							params: { id: (row.original as any).id },
+							name: `dashboard-${options.moduleName}-${idParam}-edit` as any,
+							params: { [idParam]: (row.original as any)[idParam] } as any,
 						})
 					},
 				})
@@ -81,6 +90,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					color: 'error',
 					variant: 'ghost',
 					tooltip: true,
+					disabled: (row.original as any)?.internal || false,
 					async onClick() {
 						const result = await confirmDialog({
 							type: 'cancel_delete',
@@ -89,7 +99,7 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 						})
 
 						if (result) {
-							await options.deleteFn!((row.original as any).id)
+							await options.deleteFn!((row.original as any)[idParam] as number | string)
 
 							if (options.onReload) {
 								await options.onReload()

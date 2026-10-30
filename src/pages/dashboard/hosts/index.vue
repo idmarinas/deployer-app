@@ -44,22 +44,22 @@ const columns: TableColumn<Host>[] = [
 	},
 	{
 		accessorKey: 'name',
-		header: t('pages.hosts.table.columns.name'),
+		header: () => t('pages.hosts.table.columns.name'),
 		cell: ({ row }) => h(ValueViewer, { value: row.getValue('name') as string }),
 	},
 	{
 		accessorKey: 'host',
-		header: t('pages.hosts.table.columns.ip'),
+		header: () => t('pages.hosts.table.columns.ip'),
 		cell: ({ row }) => h(ValueViewer, { value: row.getValue('host') as string }),
 	},
 	{
 		accessorKey: 'port',
-		header: t('pages.hosts.table.columns.port'),
+		header: () => t('pages.hosts.table.columns.port'),
 		cell: ({ row }) => h(ValueViewer, { value: row.getValue('port') as number }),
 	},
 	{
 		accessorKey: 'auth_type',
-		header: t('pages.hosts.table.columns.auth_type'),
+		header: () => t('pages.hosts.table.columns.auth_type'),
 		cell({ row }) {
 			const label =
 				row.getValue('auth_type') === 'password'

@@ -69,9 +69,11 @@ bun run tables:generate        # Regenera src-tauri/src/tables.rs (constantes de
 - **Drag & drop (Tauri):** Sortable.js requiere `forceFallback: true` (HTML5 nativo no funciona en webviews). Contenedores condicionales requieren `watchElement: true`.
 - **Vite ignora `src-tauri/`** en el watch (configurado en `vite.config.ts`). Los cambios en Rust requieren rebuild explícito de Tauri.
 - **Vault Stronghold:** el frontend es el **único escritor** del vault (plugin `tauri_plugin_stronghold`); Rust lo abre solo para **leer** (`StrongholdVault::open`) y nunca debe escribir claves desde Rust. Claves versionadas `encrypt:{tabla}.{col}:{version}`; valor en BD `ENC:{version}:<base64>`. Detalles en `AGENTS.backend.md` §4.
+- **Seed de comandos (`src/composables/deployer/seed_data/commands.ts`):** los scripts de shell que contengan barras invertidas (`\"`, `\$`, `\\`, `\n`…) deben escribirse con `` String.raw`...` ``. Una plantilla literal normal consume los escapes antes de guardar el comando en SQLite (`\"` → `"`, `\$7` → `$7`) y el script queda roto en el servidor, aunque pegado a mano desde la UI funcione. Los comandos sin barras invertidas (p. ej. `upgradable_packages`) pueden usar plantilla normal.
 - **Formularios JSON-Schema:** sistema basado en `json-schema-library` (jsl) en `src/utils/schema-form/*` + `src/components/form/schema/*` + `useSchemaToForm`. Núcleo **agnóstico** (`JsonSchemaEditor.vue`, `SchemaField*`); los wrappers `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue` quedaron retirados (importaban los JSON de `@/schemas/`, eliminados del proyecto). Detalles en `AGENTS.frontend.md` §8.
 
 ## Guías detalladas
 
 - Backend (Rust/BD/cifrado/SSH/comandos): [`AGENTS.backend.md`](./AGENTS.backend.md)
 - Frontend (Vue/temas/i18n/queries/componentes): [`AGENTS.frontend.md`](./AGENTS.frontend.md)
+- Documentación (`docs/content/`): [`AGENTS.docs.md`](./AGENTS.docs.md)

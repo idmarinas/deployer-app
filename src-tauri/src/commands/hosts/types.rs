@@ -70,26 +70,3 @@ pub struct HostSystemInfo {
     #[serde(default)]
     pub last_checked_at: Option<String>,
 }
-
-// ============================================================================
-// Métricas dinámicas (JSON almacenado en deployer_hosts.status_info)
-// ============================================================================
-
-/// Métricas dinámicas del servidor capturadas en un momento dado.
-/// Almacenada como JSON en `status_info`.
-#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct HostStatusMetrics {
-    /// Porcentaje de uso CPU (ej: "23.45").
-    #[serde(default)]
-    pub cpu_usage: String,
-    /// Porcentaje de uso RAM (ej: "67.89").
-    #[serde(default)]
-    pub ram_usage: String,
-    /// Porcentaje de uso disco (ej: "45.12").
-    #[serde(default)]
-    pub disk_usage: String,
-    /// Timestamp ISO 8601 de cuándo se capturaron estas métricas.
-    #[serde(default)]
-    pub last_checked_at: Option<String>,
-}

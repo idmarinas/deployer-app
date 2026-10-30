@@ -1,28 +1,17 @@
-import type { CommandResponse } from '../../types/tauri-types'
+import type { CommandResponse } from '@/types/tauri-types'
 
-import { StepperItem } from '@nuxt/ui'
-import { useColorMode } from '@vueuse/core'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-import { setAppSettings } from '@/composables/deployer/useAppSettings'
-import { ICONS } from '@/utils/icons'
+import { appConfigureSteps, StepItem, StepStatus } from '@/composables/deployer/appConfigureSteps'
 import { invoke } from '@tauri-apps/api/core'
-
-type StepStatus = 'idle' | 'loading' | 'success' | 'error'
-
-interface StepItem extends Omit<StepperItem, 'key'> {
-	id: string
-	status: StepStatus
-	invoke: string | Function
-}
 
 export function useAppConfigure() {
 	const toast = useToast()
 	const router = useRouter()
-	const { locale, t } = useI18n()
-	const colorMode = useColorMode()
+	const { t } = useI18n()
+	const { createSteps, loadSteps } = appConfigureSteps()
 
 	const currentStep = ref<string | undefined>(undefined)
 	const steps = ref<StepItem[]>([])
@@ -62,91 +51,7 @@ export function useAppConfigure() {
 		currentStep.value = undefined
 
 		// Pasos para la configuración inicial
-		steps.value = [
-			{
-				id: 'create_file',
-				icon: 'i-tabler-file-database',
-				title: t('pages.app.setup.steps.title.create_file'),
-				description: t('pages.app.setup.steps.description.idle.create_file'),
-				status: 'idle',
-				invoke: 'create_database_file',
-			},
-			{
-				id: 'initialize',
-				icon: 'i-tabler-database-plus',
-				title: t('pages.app.setup.steps.title.initialize'),
-				description: t('pages.app.setup.steps.description.idle.initialize'),
-				status: 'idle',
-				invoke: 'initialize_database',
-			},
-			{
-				id: 'migrations',
-				icon: ICONS.database.databaseImport,
-				title: t('pages.app.setup.steps.title.migrations'),
-				description: t('pages.app.setup.steps.description.idle.migrations'),
-				status: 'idle',
-				invoke: 'execute_migrations',
-			},
-			{
-				id: 'validate',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.app.setup.steps.title.validate'),
-				description: t('pages.app.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
-			},
-			{
-				id: 'save_path',
-				icon: 'i-tabler-database-search',
-				title: t('pages.app.setup.steps.title.save_path'),
-				description: t('pages.app.setup.steps.description.idle.save_path'),
-				status: 'idle',
-				async invoke() {
-					try {
-						await invoke<CommandResponse>('set_database_path', { path })
-
-						return {
-							success: true,
-						}
-					} catch {
-						return {
-							success: false,
-							message_key: 'pages.app.setup.toast.error.save_path',
-							message_params: {},
-						}
-					}
-				},
-			},
-			{
-				id: 'seed',
-				icon: 'i-tabler-database-import',
-				title: t('pages.app.setup.steps.title.seed'),
-				description: t('pages.app.setup.steps.description.idle.seed'),
-				status: 'idle',
-				async invoke(): Promise<CommandResponse> {
-					try {
-						await setAppSettings([
-							{ key: 'locale', value: locale.value },
-							{ key: 'theme_color', value: colorMode.value },
-						])
-
-						return {
-							success: true,
-							data: null,
-							message_key: 'tauri.deployer_settings.success.saved',
-							message_params: {},
-						}
-					} catch (e) {
-						return {
-							success: false,
-							data: null,
-							message_key: 'tauri.deployer_settings.errors.save_failed',
-							message_params: { reason: String(e) },
-						}
-					}
-				},
-			},
-		]
+		steps.value = createSteps(path)
 
 		// Validar que la ruta del archivo .sqlite no sea nula
 		if (!path) {
@@ -198,54 +103,7 @@ export function useAppConfigure() {
 		}
 
 		// Pasos para seleccionar .sqlite existente
-		steps.value = [
-			{
-				id: 'validate_pre',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.app.setup.steps.title.validate'),
-				description: t('pages.app.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
-			},
-			{
-				id: 'migrations',
-				icon: ICONS.database.databaseCog,
-				title: t('pages.app.setup.steps.title.migrations'),
-				description: t('pages.app.setup.steps.description.idle.migrations'),
-				status: 'idle',
-				invoke: 'execute_migrations',
-			},
-			{
-				id: 'validate_post',
-				icon: 'i-tabler-database-smile',
-				title: t('pages.app.setup.steps.title.validate'),
-				description: t('pages.app.setup.steps.description.idle.validate'),
-				status: 'idle',
-				invoke: 'validate_database_sqlite',
-			},
-			{
-				id: 'save_path',
-				icon: ICONS.database.databaseImport,
-				title: t('pages.app.setup.steps.title.save_path'),
-				description: t('pages.app.setup.steps.description.idle.save_path'),
-				status: 'idle',
-				async invoke() {
-					try {
-						await invoke<CommandResponse>('set_database_path', { path })
-
-						return {
-							success: true,
-						}
-					} catch {
-						return {
-							success: false,
-							message_key: 'pages.app.setup.toast.error.save_path',
-							message_params: {},
-						}
-					}
-				},
-			},
-		]
+		steps.value = loadSteps(path)
 
 		const all_steps_completed = await executeSetupSteps(path)
 

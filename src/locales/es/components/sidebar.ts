@@ -5,6 +5,7 @@ export default {
 	projects: 'Proyectos',
 	passkeys: 'Claves de acceso',
 	hosts: 'Servidores',
+	commands: 'Comandos',
 	variables: 'Variables',
 	tasks: 'Tareas',
 	deployments: 'Despliegues',

@@ -36,6 +36,15 @@ export default {
 		passphrase: 'Passphrase',
 		fingerprint: 'Fingerprint',
 	},
+	command: {
+		label: 'Command',
+		key: 'Key',
+		name: 'Name',
+		description: 'Description',
+		command: 'Command',
+		timeout: 'Timeout',
+		enabled: 'Enabled',
+	},
 	project: {
 		name: 'Name',
 		description: 'Description',

@@ -17,4 +17,12 @@ export default {
 			description: 'Add a new host to which projects can be deployed.',
 		},
 	},
+	commands: {
+		title: 'No commands found',
+		description: 'It looks like you have not added any commands. Create one to get started.',
+		add: {
+			label: 'Add command',
+			description: 'Add a new reusable command to run on the hosts.',
+		},
+	},
 } satisfies LocaleMessageValue

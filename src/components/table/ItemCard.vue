@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const props = withDefaults(
 	defineProps<{
-		id: number
+		id: number | string
 		name: string
 		description?: JSONContent
 		enabled?: boolean
@@ -32,7 +32,7 @@ const { t, locale } = useI18n()
 					</UChip>
 					<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ id }} </UBadge>
 				</div>
-				<div>
+				<div class="flex items-center gap-3">
 					<slot name="title-right" />
 				</div>
 			</div>
