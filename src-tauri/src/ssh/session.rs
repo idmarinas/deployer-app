@@ -1,5 +1,5 @@
 use russh::client;
-use russh::keys::{PrivateKey, PrivateKeyWithHashAlg};
+use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
@@ -19,7 +19,7 @@ impl client::Handler for SshClientHandler {
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::PublicKey,
+        _server_public_key: &PublicKeyOrCertificate
     ) -> Result<bool, Self::Error> {
         Ok(true)
     }
