@@ -57,6 +57,7 @@ export default {
 		yes: 'Yes',
 		no: 'No',
 		deprecated: 'Deprecated',
+		info: 'Information',
 	},
 
 	back: {
