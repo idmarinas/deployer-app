@@ -24,6 +24,7 @@ export default {
 			page_size: 'Page size',
 			other_tables: 'Other tables',
 			migrations: 'Migrations',
+			defaults: 'Default data',
 			migrations_applied: '1 applied | {count} applied',
 			migration_version: 'v{version}',
 			migration_success: 'Successful',

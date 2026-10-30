@@ -24,6 +24,7 @@ export default {
 			page_size: 'Tamaño de página',
 			other_tables: 'Otras tablas',
 			migrations: 'Migraciones',
+			defaults: 'Datos predeterminados',
 			migrations_applied: '1 aplicada | {count} aplicadas',
 			migration_version: 'v{version}',
 			migration_success: 'Correcta',
