@@ -1,7 +1,17 @@
-import { Command } from '@/types/entities'
+import type { Command } from '@/types/entities'
+import type { SeedRecord } from './types'
+
+import { sql } from 'drizzle-orm'
 import { ComposerTranslation } from 'vue-i18n'
 
-export const commands = (t: ComposerTranslation): Omit<Command, 'deleted_at'>[] => [
+import { commands as commandsTable } from '@/drizzle/schema'
+import { ModulesName } from '@/utils/deployer-app'
+import { getModuleIcon } from '@/utils/icons'
+import { createSeedSource } from './createSeedSource'
+
+type CommandSeed = Omit<Command & SeedRecord, 'deleted_at'>
+
+export const commands = (t: ComposerTranslation): CommandSeed[] => [
 	{
 		key: 'system_metrics',
 		name: t('seed.commands.system_metrics.name'),
@@ -137,5 +147,22 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 		created_at: new Date().toISOString(),
 	},
 ]
+
+export const commandsSeedSource = createSeedSource<CommandSeed>({
+	id: 'commands',
+	file: 'commands.ts',
+	icon: getModuleIcon(ModulesName.Commands),
+	label: t => t('seed.sources.commands.label'),
+	cacheKey: ['commands'],
+	table: commandsTable,
+	// En esta tabla la clave (`key`) es el identificador y es de texto.
+	idField: 'key',
+	// `custom = 0` protege los comandos creados o modificados por el usuario.
+	seedColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'updated_at'],
+	seedWhere: sql`custom = '0'`,
+	resetColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'internal', 'custom', 'updated_at'],
+	resetValues: { deleted_at: null },
+	defaults: commands,
+})
 
 export default commands

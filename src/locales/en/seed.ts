@@ -1,6 +1,11 @@
 import type { LocaleMessageValue } from 'vue-i18n'
 
 export default {
+	sources: {
+		commands: {
+			label: 'Commands',
+		},
+	},
 	commands: {
 		system_metrics: {
 			name: 'System metrics',
