@@ -49,12 +49,12 @@ export function useSideberMenu() {
 				// description: 'Comandos reutilizables para ejecutar en los servidores'
 			},
 			// Variables
-			// {
-			//   label: t('components.sidebar.variables'),
-			//   icon: getModuleIcon('variables'),
-			//   to: {name: 'dashboard-global_variables'},
-			//   // description: 'Variables reutilizables en todos los proyectos'
-			// },
+			{
+				label: t('components.sidebar.variables'),
+				icon: getModuleIcon(ModulesName.Variables),
+				to: { name: 'dashboard-variables' },
+				// description: 'Variables reutilizables en todos los proyectos'
+			},
 			// Tareas Globales
 			// {
 			//   label: t('components.sidebar.tasks'),
@@ -120,13 +120,13 @@ export function useSideberMenu() {
 					to: '/dashboard/commands/add',
 					kbds: ['shift', 'C'],
 				},
-				// {
-				//   label: t('components.navigation.add.variable.label'),
-				//   suffix: t('components.navigation.add.variable.description'),
-				//   icon: getModuleIcon('variables'),
-				//   to: '/dashboard/variables/add',
-				//   kbds: ['shift', 'V']
-				// },
+				{
+					label: t('components.navigation.add.variable.label'),
+					suffix: t('components.navigation.add.variable.description'),
+					icon: getModuleIcon(ModulesName.Variables),
+					to: '/dashboard/variables/add',
+					kbds: ['shift', 'V'],
+				},
 				// {
 				// 	label: t('components.navigation.add.docker_compose.label'),
 				// 	suffix: t('components.navigation.add.docker_compose.description'),
@@ -198,13 +198,13 @@ export function useDashboardButton() {
 			to: { name: 'dashboard-commands-add' },
 			kbds: ['shift', 'C'],
 		},
-		// {
-		//   label: t('components.navigation.add.variable.label'),
-		//   description: t('components.navigation.add.variable.description'),
-		//   icon: getModuleIcon('variables'),
-		//   to: '/dashboard/variables/add',
-		//   kbds: ['shift', 'V']
-		// },
+		{
+			label: t('components.navigation.add.variable.label'),
+			description: t('components.navigation.add.variable.description'),
+			icon: getModuleIcon(ModulesName.Variables),
+			to: '/dashboard/variables/add',
+			kbds: ['shift', 'V'],
+		},
 	])
 
 	return items
