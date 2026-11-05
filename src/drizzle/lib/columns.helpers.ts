@@ -23,6 +23,8 @@ export const enabled = integer({ mode: 'boolean' }).notNull().default(false)
 
 export const internal = integer({ mode: 'boolean' }).notNull().default(false)
 
+export const boolean = integer({ mode: 'boolean' }).notNull().default(false)
+
 export const file_table = {
 	id: integer().primaryKey({ autoIncrement: true }),
 	module_id: integer().notNull(),
@@ -40,3 +42,5 @@ export const file_table = {
 	icon: text().notNull().default('i-vscode-icons-default-file'),
 	...timestamps,
 }
+
+export const id = integer().primaryKey({ autoIncrement: true })
