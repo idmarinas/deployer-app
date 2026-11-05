@@ -67,16 +67,11 @@ export const MODULE_ICONS: Record<ModulesName, ModuleIconSet> = {
 	// 	singular: 'i-tabler-send',
 	// 	off: 'i-tabler-send-off',
 	// },
-	// variables: {
-	// 	plural: 'i-tabler-variable',
-	// 	singular: 'i-tabler-variable',
-	// 	off: 'i-tabler-variable-off',
-	// },
-	// global_variables: {
-	// 	plural: 'i-tabler-variable',
-	// 	singular: 'i-tabler-variable',
-	// 	off: 'i-tabler-variable-off',
-	// },
+	variables: {
+		plural: 'i-tabler-variable',
+		singular: 'i-tabler-variable',
+		off: 'i-tabler-variable-off',
+	},
 	passkeys: {
 		plural: 'i-tabler-key',
 		singular: 'i-tabler-key',
