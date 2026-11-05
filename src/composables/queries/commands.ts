@@ -17,7 +17,7 @@ export function useCommandQuery() {
 	const notify = createQueryNotifier({ toaster, t })
 
 	async function findAll(): Promise<Command[]> {
-		return db
+		return await db
 			.select()
 			.from(deployer_commands)
 			.where(isNull(deployer_commands.deleted_at))

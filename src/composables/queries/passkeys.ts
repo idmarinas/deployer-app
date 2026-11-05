@@ -19,7 +19,7 @@ export function usePasskeyQuery() {
 	const notify = createQueryNotifier({ toaster, t })
 
 	async function findAll(): Promise<Passkey[]> {
-		return db.query.passkeys.findMany().catch(e => {
+		return await db.query.passkeys.findMany().catch(e => {
 			notify.fail(e, {
 				title: t('overlays.toast.title.error'),
 				description: t('overlays.toast.description.error'),
