@@ -11,7 +11,7 @@ type ToolbarModuleResult = {
 	toolbar?: ToolbarManager
 }
 
-function createToolbarModule(NAME: ModulesName): ToolbarModuleResult {
+export function createToolbarModule(NAME: ModulesName): ToolbarModuleResult {
 	const existing = inject<ToolbarManager | null>(createToolbarKey(NAME), null)
 
 	if (existing) {
