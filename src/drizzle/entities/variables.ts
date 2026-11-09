@@ -12,7 +12,7 @@ export const variables = sqliteTable(
 		description,
 		enabled,
 		is_secret: boolean,
-		value: encryptedText('value', { condition: 'is_secret' }),
+		value: encryptedText('value', { condition: 'is_secret' }).notNull(),
 		...timestamps,
 	},
 	table => [index('deployer_variable_idx_enabled').on(table.enabled)],
