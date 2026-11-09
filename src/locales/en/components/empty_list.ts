@@ -25,4 +25,12 @@ export default {
 			description: 'Add a new reusable command to run on the hosts.',
 		},
 	},
+	variables: {
+		title: 'No variables found',
+		description: 'It looks like you have not added any variables. Create one to get started.',
+		add: {
+			label: 'Add variable',
+			description: 'Add a new reusable global variable.',
+		},
+	},
 } satisfies LocaleMessageValue

@@ -25,4 +25,12 @@ export default {
 			description: 'Añadir un nuevo comando reutilizable para ejecutar en los servidores.',
 		},
 	},
+	variables: {
+		title: 'No se han encontrado variables',
+		description: 'Parece que no has añadido ninguna variable. Crea una para empezar.',
+		add: {
+			label: 'Añadir variable',
+			description: 'Añadir una nueva variable global reutilizable.',
+		},
+	},
 } satisfies LocaleMessageValue

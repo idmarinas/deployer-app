@@ -12,6 +12,7 @@ export default {
 			passkey: 'clave de acceso | claves de acceso',
 			command: 'comando | comandos',
 			global_variable: 'variable global | variables globales',
+			variable: 'variable | variables',
 			docker_compose: 'docker compose | docker composes',
 		},
 		text: (ctx: MessageContext) => {
