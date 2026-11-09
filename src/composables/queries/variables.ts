@@ -40,8 +40,8 @@ export function useVariableQuery() {
 
 	async function create(data: Omit<Variable, 'id'>): Promise<Variable | undefined> {
 		const notice = notify.loading(
-			t('notifications.variables.validation.loading.title'),
-			t('notifications.variables.validation.loading.description'),
+			t('notifications.variables.create.loading.title'),
+			t('notifications.variables.create.loading.description'),
 		)
 
 		const enriched = {
@@ -52,6 +52,8 @@ export function useVariableQuery() {
 		return await db
 			.insert(variables)
 			.values(enriched)
+			// `returning()` no pasa por el enmascarado del proxy: si la variable es
+			// secreta, `value` vuelve como token `ENC:`. No consumir ese campo.
 			.returning()
 			.then(async rows => {
 				const row = firstRow(rows)
@@ -87,12 +89,20 @@ export function useVariableQuery() {
 			t('notifications.variables.update.loading.description'),
 		)
 
+		const current = await find(id)
+
+		if (current?.is_secret) {
+			data.is_secret = true
+		}
+
 		data.updated_at = new Date().toISOString()
 
 		return await db
 			.update(variables)
 			.set(data)
 			.where(eq(variables.id, id))
+			// `returning()` no pasa por el enmascarado del proxy: si la variable es
+			// secreta, `value` vuelve como token `ENC:`. No consumir ese campo.
 			.returning()
 			.then(async rows => {
 				const row = firstRow(rows)
