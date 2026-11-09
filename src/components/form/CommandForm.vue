@@ -294,8 +294,8 @@ const transformOptions = computed(() => [
 	{ label: t('form.commands.parser.transform.boolean'), value: 'boolean' },
 ])
 
-const keyMaxLength = schema.select.shape.key.maxLength || 64
-const nameMaxLength = schema.select.shape.name.maxLength || 120
+const keyMaxLength = schema.insert.shape.key.maxLength || 64
+const nameMaxLength = schema.insert.shape.name.maxLength || 120
 </script>
 
 <template>

@@ -40,11 +40,11 @@ const { t, n } = useI18n()
 			autocomplete="off"
 			class="w-full"
 			:ui="{ trailing: 'pointer-events-none' }"
-			:maxlength="schema.select.shape.name.maxLength || undefined"
+			:maxlength="schema.insert.shape.name.maxLength || undefined"
 		>
 			<template #trailing>
 				<div id="character-count" class="text-xs text-muted tabular-nums" aria-live="polite" role="status">
-					{{ n(state.name?.length ?? 0, 'n') }}/{{ n(schema.select.shape.name.maxLength || 0, 'n') }}
+					{{ n(state.name?.length ?? 0, 'n') }}/{{ n(schema.insert.shape.name.maxLength || 0, 'n') }}
 				</div>
 			</template>
 		</UInput>
