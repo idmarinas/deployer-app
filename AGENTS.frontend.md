@@ -49,7 +49,7 @@ theme/                   <- Temas personalizados de componentes Nuxt UI (raíz d
 └── tooltip.ts
 ```
 
-> **Nota sobre el historial:** los catálogos de `projects`, `tasks`, `variables` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts` y `passkeys.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
+> **Nota sobre el historial:** los catálogos de `projects`, `tasks` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El módulo **`variables`** se reintrodujo como módulo activo propio (`pages/dashboard/variables/`, `loaders/variables.ts`, `composables/queries/variables.ts`). El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts` y `variables.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
 
 ---
 
@@ -257,9 +257,9 @@ Al añadir o modificar cualquier theme file, verificar:
 
 ### Composables de datos (`useQuery.ts`)
 
-- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`).
-- Las **queries CRUD** (findAll/find/create/update/remove + notificaciones por toast) se agrupan en el barrel **`composables/useQuery.ts`** (`useQuery()` → `{ hosts, passkeys, projects... }`) y en `src/composables/queries/{hosts,passkeys,shared}.ts`; las páginas de hosts/passkeys las consumen con `const { hosts: hostQuery } = useQuery()`. `useQuery` es el único barrel de queries (no hay barrel por loader).
-- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
+- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts`, `variables.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`, `loadVariablesList()`).
+- Las **queries CRUD** (findAll/find/create/update/remove + notificaciones por toast) se agrupan en el barrel **`composables/useQuery.ts`** (`useQuery()` → `{ hosts, passkeys, projects... }`) y en `src/composables/queries/{hosts,passkeys,variables,shared}.ts`; las páginas de hosts/passkeys las consumen con `const { hosts: hostQuery } = useQuery()`. `useQuery` es el único barrel de queries (no hay barrel por loader).
+- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`, `useVariablesValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
 
   ```ts
   // composables/validation/useHostValidation.ts (extracto)
@@ -324,7 +324,7 @@ getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, pa
 
 Las páginas activas (`pages/dashboard/{app,hosts,passkeys,console,theme}` y `deployer/`) ya usan `ICONS`/`getModuleIcon`. **Aún quedan iconos `i-tabler-*` hardcodeados** en algunos archivos activos (p.ej. `useToolbarButtons.ts`, `DeployerAppMenu.vue`, `useConfigureDeployerApp.ts`, `useMigrations.ts`, `useToaster.ts`, `TableServerUpdates.vue`, `ReviewFilesDialog.vue` y el componente de muestra `ThemePreview.vue`). Al tocar cualquiera de ellos, migrar a `ICONS`/`getModuleIcon`; en código nuevo nunca hardcodear.
 
-> `getModuleIcon` cubre el `ModuleName` completo (8 módulos), sin importar que algunos (deployments, variables, global_variables, tasks, projects, docker_composes) ya no tengan páginas propias en el código activo.
+> `getModuleIcon` cubre el `ModuleName` completo (8 módulos). Algunos módulos sin páginas propias en el código activo (deployments, global_variables, tasks, projects, docker_composes) conservan el icono para no romper el tipo; `variables` sí tiene páginas activas.
 
 ---
 
@@ -439,13 +439,13 @@ Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con stream
 - `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
 - Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`).
 
-> Los catálogos de `projects`, `tasks`, `variables` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`.
+> Los catálogos de `projects`, `tasks` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`. `variables` es de nuevo un módulo activo, con Drizzle + loaders propios.
 
 ---
 
 ### Drag & drop (`useSortable`): **sin uso activo** (feature retirada)
 
-La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`variables`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
+La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
 
 Si en el futuro se reintrodujera drag & drop, aplicar estas reglas (aprendidas de la implementación retirada, aún válidas para Tauri):
 
@@ -462,6 +462,22 @@ Cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pin
 - **Solo reasignar `.value` completo dispara reactividad**: `data.value = { ...data.value, prop: nuevo }`. Este es el patrón que hay que usar para ver el cambio reflejado sin recargar.
 - **Alternativa más simple, pero más lenta**: usar el `reload` del propio loader (o `invalidate`/refetch de `pinia-colada`) tras la mutación. Correcto, pero dispara una consulta completa a la BD (con `isLoading` de por medio) en cada llamada — usar solo donde la frecuencia es baja.
 - **Regla práctica:** después de crear/actualizar/borrar algo que afecte a un objeto ya cargado en un loader, o reasignar `.value` completo con spread usando los datos en memoria, o hacer refetch del loader. Nunca dejar solo una mutación anidada como única fuente de verdad para el render.
+
+---
+
+## 6d. Gotcha: entidades con `value: string` y `defineColadaLoader`
+
+`defineColadaLoader` aplica `Exclude<Data, NavigationResult>` al tipo de `data`. `NavigationResult` de vue-router es una clase con una propiedad `value` (acepta un `string`), así que **cualquier entidad que tenga `value: string` encaja estructuralmente** y el tipo se colapsa a `never`/`undefined`.
+
+- Afecta a `Variable` (`value` es el valor de la variable). En `pages/dashboard/variables/[id]/edit.vue` el loader se consume con un `computed` que recupera el tipo real:
+
+  ```ts
+  const { data: entityData } = loadVariableById()
+  const entity = computed(() => entityData.value as Variable | undefined)
+  ```
+
+- No funciona añadir una marca/brand opcional: la asignabilidad estructural la ignora. Si aparece otra entidad con `value: string` en un loader, aplicar el mismo cast en el consumidor (o envolver el resultado en un objeto sin `value` en la raíz).
+- Los loaders de lista (`loadVariablesList`) no se ven afectados porque `Data` es un array.
 
 ---
 
