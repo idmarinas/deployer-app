@@ -9,7 +9,7 @@ import { db } from '@/drizzle/drizzle'
 import { variables } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
 
-export function useVariablesQuery() {
+export function useVariableQuery() {
 	const cacheQuery = useQueryCache()
 	const toaster = useToaster()
 	// Composer global: seguro fuera de setup (loaders, invalidateQueries)
