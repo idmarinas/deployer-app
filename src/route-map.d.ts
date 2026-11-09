@@ -49,6 +49,8 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/hosts'
       | '/dashboard/passkeys'
       | '/dashboard/passkeys/[...path]'
+      | '/dashboard/variables'
+      | '/dashboard/variables/[...path]'
       | 'dashboard-app'
       | 'dashboard-commands'
       | 'dashboard-commands-add'
@@ -65,6 +67,10 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-passkeys-id'
       | 'dashboard-passkeys-id-edit'
       | 'dashboard-theme'
+      | 'dashboard-variables'
+      | 'dashboard-variables-add'
+      | 'dashboard-variables-id'
+      | 'dashboard-variables-id-edit'
     >,
     'dashboard-home': RouteRecordInfo<
       'dashboard-home',
@@ -230,6 +236,52 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dashboard/variables': RouteRecordInfo<
+      '/dashboard/variables',
+      '/dashboard/variables',
+      Record<never, never>,
+      Record<never, never>,
+      | '/dashboard/variables/[...path]'
+      | 'dashboard-variables'
+      | 'dashboard-variables-add'
+      | 'dashboard-variables-id'
+      | 'dashboard-variables-id-edit'
+    >,
+    'dashboard-variables': RouteRecordInfo<
+      'dashboard-variables',
+      '/dashboard/variables',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'dashboard-variables-id': RouteRecordInfo<
+      'dashboard-variables-id',
+      '/dashboard/variables/:id(\\d+)',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
+    'dashboard-variables-id-edit': RouteRecordInfo<
+      'dashboard-variables-id-edit',
+      '/dashboard/variables/:id(\\d+)/edit',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
+    '/dashboard/variables/[...path]': RouteRecordInfo<
+      '/dashboard/variables/[...path]',
+      '/dashboard/variables/:path(.*)',
+      { path: ParamValue<true> },
+      { path: ParamValue<false> },
+      | never
+    >,
+    'dashboard-variables-add': RouteRecordInfo<
+      'dashboard-variables-add',
+      '/dashboard/variables/add',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/deployer': RouteRecordInfo<
       '/deployer',
       '/deployer',
@@ -290,6 +342,8 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/hosts'
         | '/dashboard/passkeys'
         | '/dashboard/passkeys/[...path]'
+        | '/dashboard/variables'
+        | '/dashboard/variables/[...path]'
         | 'dashboard-app'
         | 'dashboard-commands'
         | 'dashboard-commands-add'
@@ -306,6 +360,10 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-passkeys-id'
         | 'dashboard-passkeys-id-edit'
         | 'dashboard-theme'
+        | 'dashboard-variables'
+        | 'dashboard-variables-add'
+        | 'dashboard-variables-id'
+        | 'dashboard-variables-id-edit'
       views:
         | 'default'
       pathParamNames:
@@ -496,6 +554,59 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/theme.vue': {
       routes:
         | 'dashboard-theme'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/variables.vue': {
+      routes:
+        | '/dashboard/variables'
+        | '/dashboard/variables/[...path]'
+        | 'dashboard-variables'
+        | 'dashboard-variables-add'
+        | 'dashboard-variables-id'
+        | 'dashboard-variables-id-edit'
+      views:
+        | 'default'
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/variables/index.vue': {
+      routes:
+        | 'dashboard-variables'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/variables/[id]/(view).vue': {
+      routes:
+        | 'dashboard-variables-id'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/variables/[id]/edit.vue': {
+      routes:
+        | 'dashboard-variables-id-edit'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/variables/[...path].vue': {
+      routes:
+        | '/dashboard/variables/[...path]'
+      views:
+        | never
+      pathParamNames:
+        | 'path'
+    }
+    'src/pages/dashboard/variables/add.vue': {
+      routes:
+        | 'dashboard-variables-add'
       views:
         | never
       pathParamNames:
