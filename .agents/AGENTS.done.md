@@ -2,6 +2,23 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (10 nov 2026 — Comandos guardados en BD: `deployer_commands` como fuente única)
+
+**Nota del usuario:** el plan `AGENTS.commands-db.PLAN.md` se da por completado. Detalle en `AGENTS.commands-db.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Entidad + migración**: tabla `deployer_commands` (PK `key`; columnas `name`, `description`, `command`, `parser` JSON, `timeout`, `custom`, `internal`, `enabled`, timestamps) en `src/drizzle/entities/commands.ts`, exportada en `schema.ts`. Migración `20261028172340_commands_v0.2.0.sql` aplanada en `src-tauri/migrations/` y `TABLE_COMMANDS` regenerado en `tables.rs`.
+2. **Runner desde BD**: carpeta `src/utils/commands/` (`types.ts`, `parsers.ts`, `results.ts`, `runner.ts`); sin `registry.ts` ni definiciones TS hardcodeadas en runtime. `runCommand(key, hostId)` lee la definición de `deployer_commands` y `runCustomCommand` sirve para pruebas ad-hoc del formulario.
+3. **CRUD + loaders**: `src/composables/queries/commands.ts` (findAll/find/create/update/remove con notifier y soft-delete) y `src/loaders/commands.ts` (`useCommandsListAll`, `useCommandByKey`, `useCommandOptions`).
+4. **UI de gestión**: panel `commands.vue`, listado `commands/index.vue` (tabla expandible, badge de parser, acciones probar/editar/borrar), `add.vue`, `[key]/edit.vue`, `CommandForm.vue` (selector parser raw/json/line-based/regex con reglas y grupos) y `CommandTestDialog.vue` vía `useDialog`.
+5. **Consumidor en hosts**: `(view).vue` ejecuta `system_info`, `system_metrics` y `upgradable_packages` vía `runCommand<T>()`.
+6. **i18n + menú**: claves es/en espejo (dialogs, form, notifications, pages, validation, seed) y entradas en `useNavigationMenu.ts` (sidebar, búsqueda y campo "+").
+7. **Seed**: `src/composables/deployer/seed_data/commands.ts` (system_metrics, system_info, upgradable_packages) integrado en `SEED_SOURCES` con UI en `TabDatabaseSeed.vue`.
+8. **Cierre del plan (10 nov 2026)**: `runCommand()` valida ahora `enabled` (los comandos deshabilitados no se ejecutan) y lanza errores traducidos vía i18n (`utils.commands.errors.not_found` / `disabled`, es+en) en lugar de un string en español hardcodeado. `bun run i18n:types` y `bun run build` verdes.
+
+**Resultado:** la BD es la fuente única de comandos en runtime; se crean, editan, deshabilitan y borran desde la UI sin tocar código ni recompilar.
+
+---
+
 ## Tareas completadas (11 sep 2026 — Comando remoto universal tipo n8n, fase 1: nodos en TS)
 
 **Nota del usuario**: el plan `AGENTS.universal-remote.PLAN.md` se da por completado; el usuario continúa con comandos **guardados y mantenidos en BD** (ver `AGENTS.commands-db.PLAN.md`). Detalle en `AGENTS.universal-remote.PLAN.md` (archivado en `.agents/plans.done/`).
