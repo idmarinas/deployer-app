@@ -91,13 +91,21 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type HostPackage = { name: string, current_version: string, available_version: string, 
+export type HostPackage = { name: string, current_version: string, 
+/**
+ * Revisión de empaquetado de la versión actual (ej: "1" en "29.9.2-1"). `null` si la versión no tiene.
+ */
+current_revision: string | null, available_version: string, 
+/**
+ * Revisión de empaquetado de la versión disponible. `null` si la versión no tiene.
+ */
+available_revision: string | null, 
 /**
  * Repositorio de origen (ej: "jammy-updates", "jammy-security").
  */
 repo: string, 
 /**
- * Tipo de actualización: "major", "minor", "patch" o "unknown".
+ * Tipo de actualización: "major", "minor", "patch", "packaging" o "unknown".
  */
 update_type: string, 
 /**
@@ -179,7 +187,7 @@ use_sudo: boolean | null, };
 
 export type HostUpdateResult = { command: string, output: string, exit_code: number, };
 
-export type HostUpdatesSummary = { total: number, security: number, major: number, minor: number, patch: number, };
+export type HostUpdatesSummary = { total: number, security: number, major: number, minor: number, patch: number, packaging: number, };
 
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 

@@ -228,6 +228,7 @@ export const ICONS = {
 		encrypt: 'i-tabler-key',
 		empty: 'i-tabler-circle-dashed',
 		workingdir: 'i-tabler-folder',
+		package: 'i-tabler-package',
 	},
 
 	/** Para las tabs de compose.yaml */

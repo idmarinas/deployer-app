@@ -65,7 +65,7 @@ export function useHostQuery() {
 		}
 		data.server_updates = {
 			packages: [],
-			summary: { total: 0, security: 0, major: 0, minor: 0, patch: 0 },
+			summary: { total: 0, security: 0, major: 0, minor: 0, patch: 0, packaging: 0 },
 			last_checked_at: null,
 		}
 

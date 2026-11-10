@@ -48,6 +48,8 @@ export default {
 		major: 'Major',
 		security: 'Security',
 		unknown: 'Unknown',
+		packaging: 'Packaging',
+		revision: 'Packaging revision: only the package changes, not the software',
 	},
 
 	common: {

@@ -50,6 +50,8 @@ export default {
 		major: 'Mayor',
 		security: 'Seguridad',
 		unknown: 'Desconocido',
+		packaging: 'Empaquetado',
+		revision: 'Revisión de empaquetado: solo cambia el empaquetado, no el software',
 	},
 
 	common: {
