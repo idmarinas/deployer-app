@@ -130,9 +130,12 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 			type: 'regex',
 			patterns: [
 				{
-					pattern: '^\\s*([^/\\s]+)/(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\[[^\\]]*upgradable to:\\s*(\\S+)\\s*\\]',
+					// apt list --upgradable: name/repo VERSION arch [upgradable from: CURRENT]
+					// La versión se captura sin epoch (`5:`) ni sufijo Debian (`~debian.12~bookworm`).
+					pattern:
+						'^\\s*([^/\\s]+)/(\\S+)\\s+(?:\\d+:)?([^\\s~]+)(?:~\\S*)?\\s+\\S+\\s+\\[[^\\]]*upgradable from:\\s*(?:\\d+:)?([^\\s~]+)(?:~\\S*)?\\s*\\]',
 					flags: 'gm',
-					groups: { name: 1, repo: 2, current_version: 3, available_version: 4 },
+					groups: { name: 1, repo: 2, available_version: 3, current_version: 4 },
 				},
 				{
 					pattern:
