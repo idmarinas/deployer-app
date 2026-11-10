@@ -1,5 +1,6 @@
 import { db } from '@/drizzle/drizzle'
 import { commands as commandsTable } from '@/drizzle/schema'
+import { i18n } from '@/i18n'
 import type { CommandResponse, RemoteCommandResult, RemoteConsoleEvent } from '@/types/tauri-types'
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { and, eq, isNull } from 'drizzle-orm'
@@ -18,6 +19,9 @@ export async function runCommand<T = unknown>(
 	hostId: number,
 	options?: { working_dir?: string; timeout_secs?: number },
 ): Promise<CommandRunResult<T>> {
+	// Composer global: seguro fuera de setup (patrón queries/commands.ts)
+	const { t } = i18n.global
+
 	const row = await db
 		.select()
 		.from(commandsTable)
@@ -27,7 +31,11 @@ export async function runCommand<T = unknown>(
 		.catch(() => undefined)
 
 	if (!row) {
-		throw new Error(`Comando no encontrado: ${commandKey}`)
+		throw new Error(t('utils.commands.errors.not_found', { key: commandKey }))
+	}
+
+	if (!row.enabled) {
+		throw new Error(t('utils.commands.errors.disabled', { key: commandKey }))
 	}
 
 	const definition: CommandDefinition = {
