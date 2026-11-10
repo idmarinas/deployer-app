@@ -49,6 +49,7 @@ export default {
 		minor: 'Menor',
 		major: 'Mayor',
 		security: 'Seguridad',
+		unknown: 'Desconocido',
 	},
 
 	common: {
