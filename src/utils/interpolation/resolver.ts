@@ -38,6 +38,10 @@ function issueToError(issue: InterpolationIssue): InterpolationError {
 
 /** Resuelve una entrada del ámbito `global` aplicando las reglas de secreto. */
 function resolveGlobalVariable(entry: unknown, ref: TemplateReference, options: InterpolationOptions): unknown {
+	// Misma regla que `checkReference`: una ruta inexistente bloquea la ejecución
+	// en lugar de resolverse como cadena vacía.
+	if (entry === undefined) throw createError('unknown_variable', ref)
+
 	if (!isInterpolationVariable(entry)) return entry
 
 	if (entry.enabled === false) {
