@@ -1,9 +1,9 @@
 <script lang="ts">
-import type { CodeHighlighter } from '@/components/form/textareas/CodeEditor.vue'
 import type { GlobalVariableScope, GlobalVariableScopeEntry } from '@/drizzle/lib/variables'
+import type { InterpolationCompletionEntry } from '@/plugins/codemirror/autocomplete/variables'
+import type { CodeHighlighter } from '@/plugins/codemirror/types'
 import type { LineRule, OutputParser, RegexPattern } from '@/utils/commands/types'
 import type { InterpolationRoots } from '@/utils/interpolation'
-import type { InterpolationCompletionEntry } from '@/utils/interpolation/completion'
 import type { LintSource } from '@codemirror/lint'
 import type { JSONContent } from '@tiptap/vue-3'
 
@@ -12,8 +12,8 @@ import { useI18n } from 'vue-i18n'
 
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
 import { loadGlobalScopeMetadata } from '@/drizzle/lib/variables'
+import { createInterpolationCompletion } from '@/plugins/codemirror/autocomplete/variables'
 import { findReferences, isInterpolationVariable, REDACTED_MARKER, validateTemplate } from '@/utils/interpolation'
-import { createInterpolationCompletion } from '@/utils/interpolation/completion'
 
 type ParserType = OutputParser['type']
 </script>
