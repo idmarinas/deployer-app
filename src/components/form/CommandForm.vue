@@ -464,21 +464,6 @@ const nameMaxLength = schema.insert.shape.name.maxLength || 120
 		required
 	>
 		<div class="flex w-full flex-col gap-2">
-			<!-- Cuadro de ayuda: disparadores del autocompletado del editor. -->
-			<div class="rounded-lg border border-default bg-elevated p-2.5">
-				<p class="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted">
-					<UIcon name="i-tabler-variable" class="size-4 shrink-0" />
-					{{ t('form.commands.variables.help') }}
-				</p>
-				<ul class="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-					<li v-for="tip in variableTips" :key="tip.trigger" class="flex items-center gap-2">
-						<code class="shrink-0 rounded-sm bg-accented px-1 font-mono text-highlighted">{{ tip.trigger }}</code>
-						<span class="text-dimmed">{{ tip.label }}</span>
-					</li>
-				</ul>
-				<p class="mt-1.5 text-xs text-dimmed">{{ t('form.commands.variables.secret_help') }}</p>
-			</div>
-
 			<CodeEditor
 				v-model="state.command"
 				:languages="['bash']"
@@ -498,6 +483,20 @@ const nameMaxLength = schema.insert.shape.name.maxLength || 120
 					<span>{{ t(issue.messageKey, issue.messageParams) }}</span>
 				</li>
 			</ul>
+			<!-- Cuadro de ayuda: disparadores del autocompletado del editor. -->
+			<div class="rounded-lg border border-default bg-elevated p-2.5">
+				<p class="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted">
+					<UIcon name="i-tabler-variable" class="size-4 shrink-0" />
+					{{ t('form.commands.variables.help') }}
+				</p>
+				<ul class="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+					<li v-for="tip in variableTips" :key="tip.trigger" class="flex items-center gap-2">
+						<code class="shrink-0 rounded-sm bg-accented px-1 font-mono text-highlighted">{{ tip.trigger }}</code>
+						<span class="text-dimmed">{{ tip.label }}</span>
+					</li>
+				</ul>
+				<p class="mt-1.5 text-xs text-dimmed">{{ t('form.commands.variables.secret_help') }}</p>
+			</div>
 		</div>
 	</UFormField>
 
