@@ -27,7 +27,7 @@ const { data: items, isLoading, status, reload } = loadVariablesList()
 /** Expresión de interpolación tal como debe escribirse en un comando. */
 const usageOf = (slug: string) => `{{global.${slug}}}`
 
-const { tableColumnExpand, tableColumnActions } = useTableColumns<Variable>({
+const { tableColumnExpand, tableColumnActions, tableColumnEnabled } = useTableColumns<Variable>({
 	moduleName: ModulesName.Variables,
 	deleteFn: variableQuery.remove,
 	onReload: reload,
@@ -58,6 +58,7 @@ const columns: TableColumn<Variable>[] = [
 			return h(UBadge, { label, color, icon })
 		},
 	},
+	tableColumnEnabled,
 	tableColumnActions(),
 ]
 </script>
