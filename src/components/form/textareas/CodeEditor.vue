@@ -6,6 +6,7 @@ import type { LintSource } from '@codemirror/lint'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useColorMode } from '@vueuse/core'
+import { basicSetup } from 'codemirror'
 import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -192,9 +193,8 @@ onMounted(() => {
 		state: EditorState.create({
 			doc: model.value,
 			extensions: [
+				basicSetup,
 				...createBaseExtensions({
-					lineNumbers: props.lineNumbers,
-					tabSize: props.tabSize,
 					placeholder: props.placeholder,
 					onDocChange: value => {
 						model.value = value

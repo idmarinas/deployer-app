@@ -10,6 +10,8 @@ export const languageLoaders: Record<CodeLanguage, () => Promise<Extension>> = {
 	yaml: async () => (await import('@codemirror/lang-yaml')).yaml(),
 	json: async () => (await import('@codemirror/lang-json')).json(),
 	php: async () => (await import('@codemirror/lang-php')).php(),
+	html: async () => (await import('@codemirror/lang-html')).html(),
+	javascript: async () => (await import('@codemirror/lang-javascript')).javascript(),
 	plain: async () => [],
 }
 
@@ -18,6 +20,8 @@ export const LANGUAGE_NAMES: Record<Exclude<CodeLanguage, 'plain'>, string> = {
 	bash: 'Bash',
 	yaml: 'YAML',
 	json: 'JSON',
+	javascript: 'JavaScript',
+	html: 'HTML',
 	php: 'PHP',
 }
 

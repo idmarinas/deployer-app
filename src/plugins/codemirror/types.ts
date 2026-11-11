@@ -1,4 +1,4 @@
-export const CODE_LANGUAGES = ['bash', 'yaml', 'json', 'php', 'plain'] as const
+export const CODE_LANGUAGES = ['bash', 'yaml', 'json', 'javascript', 'html', 'php', 'plain'] as const
 export type CodeLanguage = (typeof CODE_LANGUAGES)[number]
 
 /** Rango resaltado dentro del editor. */
