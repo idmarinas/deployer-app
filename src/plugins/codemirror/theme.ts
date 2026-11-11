@@ -13,6 +13,20 @@ export const codeHighlightStyle = HighlightStyle.define([
 	{ tag: [t.typeName, t.className, t.atom], color: 'var(--ui-primary)' },
 	{ tag: [t.operator, t.punctuation, t.bracket], color: 'var(--ui-text-muted)' },
 	{ tag: t.invalid, color: 'var(--ui-error)' },
+	// Resto de tags que cubría el `defaultHighlightStyle` de `basicSetup` (con tokens, no hexadecimales)
+	{ tag: [t.regexp, t.escape], color: 'var(--ui-warning)' },
+	{ tag: [t.meta, t.processingInstruction], color: 'var(--ui-text-dimmed)' },
+	{ tag: [t.link, t.url], color: 'var(--ui-primary)', textDecoration: 'underline' },
+	{ tag: t.heading, fontWeight: 'bold', textDecoration: 'underline' },
+	{ tag: t.emphasis, fontStyle: 'italic' },
+	{ tag: t.strong, fontWeight: 'bold' },
+	{ tag: t.strikethrough, textDecoration: 'line-through' },
+	{ tag: t.inserted, color: 'var(--ui-success)' },
+	{ tag: t.deleted, color: 'var(--ui-error)' },
+	{
+		tag: [t.namespace, t.macroName, t.special(t.variableName), t.local(t.variableName)],
+		color: 'var(--ui-info)',
+	},
 ])
 
 // Icono de candado (Tabler) para las variables secretas del autocompletado.
@@ -44,6 +58,45 @@ export const codeEditorTheme = EditorView.theme({
 		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 25%, transparent)',
 	},
 	'.cm-placeholder': { color: 'var(--ui-text-dimmed)' },
+	// Caracteres especiales, coincidencias de selección y búsqueda (los aporta `createBaseExtensions`)
+	'.cm-specialChar': { color: 'var(--ui-warning)' },
+	'.cm-selectionMatch': {
+		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 18%, transparent)',
+	},
+	'.cm-selectionMatch-main': {
+		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 28%, transparent)',
+	},
+	'.cm-searchMatch': {
+		backgroundColor: 'color-mix(in oklab, var(--ui-warning) 28%, transparent)',
+	},
+	'.cm-searchMatch-selected': {
+		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 35%, transparent)',
+	},
+	// Plegado de bloques: el marcador por defecto es gris claro y desentona en oscuro
+	'.cm-foldPlaceholder': {
+		backgroundColor: 'var(--ui-bg-elevated)',
+		border: '1px solid var(--ui-border)',
+		borderRadius: '0.25rem',
+		color: 'var(--ui-text-dimmed)',
+		margin: '0 1px',
+		padding: '0 2px',
+	},
+	// Panel de búsqueda: inputs y botones con los tokens del tema
+	'.cm-textfield': {
+		backgroundColor: 'var(--ui-bg-default)',
+		border: '1px solid var(--ui-border)',
+		borderRadius: '0.25rem',
+		color: 'var(--ui-text-highlighted)',
+		padding: '0.125rem 0.375rem',
+	},
+	'.cm-button': {
+		backgroundColor: 'var(--ui-bg-accented)',
+		backgroundImage: 'none',
+		border: '1px solid var(--ui-border)',
+		borderRadius: '0.25rem',
+		color: 'var(--ui-text-highlighted)',
+	},
+	'.cm-panel.cm-search [name=close]': { color: 'var(--ui-text-dimmed)' },
 	// Lint: tooltip, subrayados y panel de diagnósticos con los tokens del tema (sin colores fijos)
 	'.cm-tooltip': {
 		backgroundColor: 'var(--ui-bg-elevated)',
