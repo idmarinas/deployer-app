@@ -24,6 +24,9 @@ const variableQuery = useVariableQuery()
 const { t } = useI18n()
 const { data: items, isLoading, status, reload } = loadVariablesList()
 
+/** Expresión de interpolación tal como debe escribirse en un comando. */
+const usageOf = (slug: string) => `{{global.${slug}}}`
+
 const { tableColumnExpand, tableColumnActions } = useTableColumns<Variable>({
 	moduleName: ModulesName.Variables,
 	deleteFn: variableQuery.remove,
@@ -69,19 +72,21 @@ const columns: TableColumn<Variable>[] = [
 				:updated_at="row.original.updated_at"
 				:created_at="row.original.created_at"
 			>
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-					<div class="md:col-span-3 flex flex-col gap-1">
+				<!-- Dos columnas a los extremos; el espacio central es flexible y, si no cabe, la segunda baja. -->
+				<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+					<div class="flex flex-col gap-1">
 						<span class="text-xs text-muted font-medium">{{ t('entity.variable.value') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon name="i-tabler-file-description" class="text-muted size-4" />
-							<pre><ValueViewer :value="row.original.value" only-text /></pre>
+						<span class="flex items-start gap-1.5 text-sm font-mono text-foreground">
+							<UIcon name="i-tabler-file-description" class="text-muted size-4 shrink-0" />
+							<ValueViewer :value="row.original.value" only-text />
 						</span>
 					</div>
 					<div class="flex flex-col gap-1">
 						<span class="text-xs text-muted font-medium">{{ t('entity.variable.usage') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon name="i-tabler-variable" class="text-muted size-4" />
-							&#123;&#123;{{ row.original.slug }}&#125;&#125;
+						<span class="flex items-center gap-1.5 text-sm font-mono text-foreground">
+							<UIcon name="i-tabler-variable" class="text-muted size-4 shrink-0" />
+							<code class="truncate">{{ usageOf(row.original.slug) }}</code>
+							<Clipboard :source="usageOf(row.original.slug)" only-icon size="xs" class="shrink-0" />
 						</span>
 					</div>
 				</div>
