@@ -1,4 +1,5 @@
 <script lang="ts">
+import { autocompletion, type CompletionSource } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import {
 	bracketMatching,
@@ -9,8 +10,9 @@ import {
 	syntaxHighlighting,
 } from '@codemirror/language'
 import { linter, lintGutter, lintKeymap, type Diagnostic, type LintSource } from '@codemirror/lint'
-import { Compartment, EditorState, type Extension } from '@codemirror/state'
+import { Compartment, EditorState, type Extension, type Range } from '@codemirror/state'
 import {
+	Decoration,
 	drawSelection,
 	EditorView,
 	highlightActiveLine,
@@ -18,6 +20,9 @@ import {
 	keymap,
 	lineNumbers as lineNumbersExtension,
 	placeholder as placeholderExtension,
+	ViewPlugin,
+	type DecorationSet,
+	type ViewUpdate,
 } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
 import { useColorMode } from '@vueuse/core'
@@ -26,6 +31,17 @@ import { useI18n } from 'vue-i18n'
 
 export const CODE_LANGUAGES = ['bash', 'yaml', 'json', 'php', 'plain'] as const
 export type CodeLanguage = (typeof CODE_LANGUAGES)[number]
+
+/** Rango resaltado dentro del editor. */
+export interface CodeHighlightRange {
+	from: number
+	to: number
+	/** `variable` usa el color primario; `secret`, el ámbar de aviso. */
+	kind: 'variable' | 'secret'
+}
+
+/** Calcula los rangos a resaltar a partir del texto del documento. */
+export type CodeHighlighter = (text: string) => readonly CodeHighlightRange[]
 </script>
 
 <script setup lang="ts">
@@ -44,6 +60,10 @@ const props = withDefaults(
 		maxRows?: number
 		/** Linter adicional (CodeMirror `LintSource`). Se combina con el linter propio del lenguaje. */
 		lint?: LintSource
+		/** Fuente de autocompletado adicional (CodeMirror `CompletionSource`). */
+		autocomplete?: CompletionSource
+		/** Resalta rangos del documento (p. ej. variables interpoladas). */
+		highlight?: CodeHighlighter
 	}>(),
 	{ lineNumbers: true, tabSize: 2, minRows: 6, maxRows: 24 },
 )
@@ -60,6 +80,8 @@ const view = shallowRef<EditorView>()
 const languageCompartment = new Compartment()
 const editableCompartment = new Compartment()
 const lintCompartment = new Compartment()
+const autocompleteCompartment = new Compartment()
+const highlightCompartment = new Compartment()
 const darkCompartment = new Compartment()
 
 const isDark = computed(() => colorMode.value === 'dark')
@@ -121,11 +143,7 @@ const lintLoaders: Partial<Record<CodeLanguage, () => Promise<LintSource>>> = {
 								to: name.to,
 								severity: 'warning',
 								// `escapeParameter` global convierte `"` en `&quot;`; el tooltip de lint es texto plano
-								message: $t(
-									'form.shared.code_editor.lint.duplicate_key',
-									{ key: raw },
-									{ escapeParameter: false },
-								),
+								message: $t('form.shared.code_editor.lint.duplicate_key', { key: raw }, { escapeParameter: false }),
 							})
 						}
 						seen.add(key)
@@ -281,6 +299,11 @@ const highlightStyle = HighlightStyle.define([
 	{ tag: t.invalid, color: 'var(--ui-error)' },
 ])
 
+// Icono de candado (Tabler) para las variables secretas del autocompletado.
+// Se usa como máscara para heredar el color del tema.
+const SECRET_ICON_MASK =
+	"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -6'/%3E%3Cpath d='M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0'/%3E%3Cpath d='M8 11v-4a4 4 0 1 1 8 0v4'/%3E%3C/svg%3E\")"
+
 const theme = EditorView.theme({
 	'&': {
 		color: 'var(--ui-text-highlighted)',
@@ -355,6 +378,94 @@ const theme = EditorView.theme({
 	'.cm-lintRange-active': {
 		backgroundColor: 'color-mix(in oklab, var(--ui-warning) 20%, transparent)',
 	},
+	// Autocompletado: misma paleta que el resto de tooltips
+	'.cm-tooltip-autocomplete': {
+		backgroundColor: 'var(--ui-bg-elevated)',
+		border: '1px solid var(--ui-border)',
+		borderRadius: '0.375rem',
+		boxShadow: '0 8px 24px -12px color-mix(in oklab, var(--ui-text-highlighted) 30%, transparent)',
+		overflow: 'hidden',
+	},
+	'.cm-tooltip-autocomplete > ul': {
+		fontFamily: 'inherit',
+		fontSize: '0.8125rem',
+		maxHeight: '14rem',
+	},
+	'.cm-tooltip-autocomplete > ul > li': {
+		// Dos líneas: título junto al icono y detalle a ancho completo debajo.
+		display: 'flex',
+		flexWrap: 'wrap',
+		alignItems: 'center',
+		columnGap: '0.375rem',
+		padding: '0.25rem 0.5rem',
+		lineHeight: '1.4',
+	},
+	'.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+		backgroundColor: 'var(--ui-bg-accented)',
+		color: 'var(--ui-text-highlighted)',
+	},
+	'.cm-completionIcon': {
+		color: 'var(--ui-text-muted)',
+		// El espaciado lo aporta el `column-gap` del `li`.
+		width: '1em',
+		paddingRight: '0',
+		textAlign: 'center',
+	},
+	'.cm-completionIcon-secret': {
+		color: 'var(--ui-warning)',
+		opacity: '1',
+		'&::after': {
+			content: '""',
+			display: 'inline-block',
+			verticalAlign: '-0.1em',
+			width: '0.85em',
+			height: '0.85em',
+			backgroundColor: 'currentColor',
+			maskImage: SECRET_ICON_MASK,
+			WebkitMaskImage: SECRET_ICON_MASK,
+			maskSize: 'contain',
+			WebkitMaskSize: 'contain',
+			maskRepeat: 'no-repeat',
+			WebkitMaskRepeat: 'no-repeat',
+			maskPosition: 'center',
+			WebkitMaskPosition: 'center',
+		},
+	},
+	'.cm-completionLabel': {
+		fontFamily: 'inherit',
+		minWidth: '0',
+		overflow: 'hidden',
+		textOverflow: 'ellipsis',
+		whiteSpace: 'nowrap',
+	},
+	'.cm-completionMatchedText': {
+		color: 'var(--ui-primary)',
+		fontWeight: '600',
+		textDecoration: 'none',
+	},
+	'.cm-completionDetail': {
+		// Ruta y valor en una segunda línea, alineados bajo el título.
+		flex: '0 0 100%',
+		boxSizing: 'border-box',
+		paddingLeft: '1.25rem',
+		overflow: 'hidden',
+		textOverflow: 'ellipsis',
+		whiteSpace: 'nowrap',
+		color: 'var(--ui-text-dimmed)',
+		fontSize: '0.75rem',
+		fontStyle: 'normal',
+	},
+	// Variables interpoladas: mismo código de color que la vista previa
+	'.cm-interpolation': {
+		borderRadius: '0.125rem',
+		backgroundColor: 'color-mix(in oklab, var(--ui-primary) 12%, transparent)',
+		color: 'var(--ui-primary)',
+	},
+	'.cm-interpolation-secret': {
+		borderRadius: '0.125rem',
+		backgroundColor: 'color-mix(in oklab, var(--ui-warning) 14%, transparent)',
+		color: 'var(--ui-warning)',
+	},
 	'.cm-panels': {
 		backgroundColor: 'var(--ui-bg-elevated)',
 		color: 'var(--ui-text-highlighted)',
@@ -366,6 +477,43 @@ const theme = EditorView.theme({
 function editableExtensions(): Extension {
 	const locked = props.readonly || props.disabled
 	return [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)]
+}
+
+/**
+ * Resalta los rangos que devuelve `source`.
+ *
+ * Se recalcula al cambiar el documento; una fuente nueva llega por el
+ * compartimento y recrea el plugin. Los rangos son marcas (no bloques), así que
+ * el texto sigue siendo editable con normalidad.
+ */
+function highlightExtension(source: CodeHighlighter): Extension {
+	function build(state: EditorState): DecorationSet {
+		const ranges: Range<Decoration>[] = []
+
+		for (const item of source(state.doc.toString())) {
+			if (item.from >= item.to) continue
+
+			const className = item.kind === 'secret' ? 'cm-interpolation-secret' : 'cm-interpolation'
+			ranges.push(Decoration.mark({ class: className }).range(item.from, item.to))
+		}
+
+		return Decoration.set(ranges, true)
+	}
+
+	return ViewPlugin.fromClass(
+		class {
+			decorations: DecorationSet
+
+			constructor(editorView: EditorView) {
+				this.decorations = build(editorView.state)
+			}
+
+			update(update: ViewUpdate) {
+				if (update.docChanged) this.decorations = build(update.state)
+			}
+		},
+		{ decorations: plugin => plugin.decorations },
+	)
 }
 
 /** Marcador que no aparezca ya en el cuerpo (`DEPLOYER_EOF`, `DEPLOYER_EOF_1`, ...). */
@@ -443,6 +591,30 @@ function setFormat(target: BashFormat | null) {
 	})
 }
 
+/**
+ * Inserta texto en la posición del cursor (o sustituye la selección) y deja el
+ * cursor justo después. Si el editor aún no está montado, lo añade al final.
+ */
+function insertAtCursor(text: string) {
+	if (!text || props.readonly || props.disabled) return
+
+	const current = view.value
+	if (!current) {
+		model.value += text
+		return
+	}
+
+	const { from, to } = current.state.selection.main
+	current.dispatch({
+		changes: { from, to, insert: text },
+		selection: { anchor: from + text.length },
+		scrollIntoView: true,
+	})
+	current.focus()
+}
+
+defineExpose({ insertAtCursor })
+
 async function applyLanguage(lang: CodeLanguage) {
 	const extension = await languageLoaders[lang]()
 	// Si el lenguaje cambió mientras cargaba, esta respuesta llega tarde: se descarta
@@ -463,6 +635,22 @@ async function applyLint(lang: CodeLanguage) {
 
 	view.value?.dispatch({
 		effects: lintCompartment.reconfigure(source ? [linter(source), lintGutter()] : []),
+	})
+}
+
+/** (Re)configura la fuente de autocompletado. Sin fuente, la extensión se desactiva. */
+function applyAutocomplete(source: CompletionSource | undefined) {
+	view.value?.dispatch({
+		effects: autocompleteCompartment.reconfigure(
+			source ? autocompletion({ override: [source], activateOnTyping: true, closeOnBlur: true }) : [],
+		),
+	})
+}
+
+/** (Re)configura el resaltado de rangos. Sin fuente, la extensión se desactiva. */
+function applyHighlight(source: CodeHighlighter | undefined) {
+	view.value?.dispatch({
+		effects: highlightCompartment.reconfigure(source ? highlightExtension(source) : []),
 	})
 }
 
@@ -487,6 +675,8 @@ onMounted(() => {
 				props.placeholder ? placeholderExtension(props.placeholder) : [],
 				languageCompartment.of([]),
 				lintCompartment.of([]),
+				autocompleteCompartment.of([]),
+				highlightCompartment.of([]),
 				editableCompartment.of(editableExtensions()),
 				EditorView.updateListener.of(update => {
 					if (update.docChanged) model.value = update.state.doc.toString()
@@ -497,6 +687,8 @@ onMounted(() => {
 
 	applyLanguage(language.value)
 	applyLint(language.value)
+	applyAutocomplete(props.autocomplete)
+	applyHighlight(props.highlight)
 })
 
 // Cambios externos del v-model → editor (si coinciden con el documento, no hace nada)
@@ -514,6 +706,16 @@ watch(language, lang => {
 watch(
 	() => props.lint,
 	() => applyLint(language.value),
+)
+
+watch(
+	() => props.autocomplete,
+	source => applyAutocomplete(source),
+)
+
+watch(
+	() => props.highlight,
+	source => applyHighlight(source),
 )
 
 // El facet `darkTheme` hace que los widgets propios de CodeMirror (tooltips, paneles,

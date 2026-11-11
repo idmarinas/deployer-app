@@ -1,11 +1,19 @@
 <script lang="ts">
+import type { CodeHighlighter } from '@/components/form/textareas/CodeEditor.vue'
+import type { GlobalVariableScope, GlobalVariableScopeEntry } from '@/drizzle/lib/variables'
 import type { LineRule, OutputParser, RegexPattern } from '@/utils/commands/types'
+import type { InterpolationRoots } from '@/utils/interpolation'
+import type { InterpolationCompletionEntry } from '@/utils/interpolation/completion'
+import type { LintSource } from '@codemirror/lint'
 import type { JSONContent } from '@tiptap/vue-3'
 
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useSchemaValidation } from '@/composables/useSchemaValidation'
+import { loadGlobalScopeMetadata } from '@/drizzle/lib/variables'
+import { findReferences, isInterpolationVariable, REDACTED_MARKER, validateTemplate } from '@/utils/interpolation'
+import { createInterpolationCompletion } from '@/utils/interpolation/completion'
 
 type ParserType = OutputParser['type']
 </script>
@@ -31,7 +39,117 @@ const props = withDefaults(
 )
 
 const { commands: schema } = useSchemaValidation()
-const { t, n } = useI18n()
+const { t, n, locale } = useI18n()
+
+const globalScope = ref<GlobalVariableScope>({})
+const scopeLoaded = ref(false)
+
+const interpolationRoots = computed<InterpolationRoots>(() => ({ global: globalScope.value }))
+
+// El linter se reconstruye cuando cambian las variables o el idioma; CodeMirror
+// vuelve a ejecutarlo al recibir una nueva `LintSource`.
+const interpolationLint = computed<LintSource>(() => {
+	void locale.value
+
+	if (!scopeLoaded.value) return () => []
+
+	const roots = interpolationRoots.value
+
+	return view =>
+		validateTemplate(view.state.doc.toString(), roots)
+			// Las secretas son variables válidas: avisarlas da impresión de error.
+			.filter(issue => issue.severity === 'error')
+			.map(issue => ({
+				from: issue.start,
+				to: issue.end,
+				severity: issue.severity,
+				message: t(issue.messageKey, issue.messageParams, { escapeParameter: false }),
+			}))
+})
+
+const interpolationIssues = computed(() => {
+	if (!scopeLoaded.value) return []
+
+	return validateTemplate(state.value.command ?? '', interpolationRoots.value).filter(
+		issue => issue.severity === 'error',
+	)
+})
+
+/**
+ * Resalta las referencias del comando igual que la vista previa del diálogo de
+ * prueba: color primario para variables normales y ámbar para secretas.
+ */
+const interpolationHighlight = computed<CodeHighlighter>(() => {
+	const roots = interpolationRoots.value
+
+	return text =>
+		findReferences(text).map(ref => {
+			const variable = roots.global?.[ref.segments[1] ?? '']
+
+			return {
+				from: ref.start,
+				to: ref.end,
+				kind: isInterpolationVariable(variable) && variable.isSecret ? 'secret' : 'variable',
+			}
+		})
+})
+
+/** Disparadores del autocompletado que se listan en el cuadro de ayuda del editor. */
+const variableTips = computed(() => [
+	{ trigger: '{{', label: t('form.commands.variables.tips.scopes') },
+	{ trigger: '{{g', label: t('form.commands.variables.tips.root') },
+	{ trigger: '{{global.', label: t('form.commands.variables.tips.path') },
+	{ trigger: '{{global.de', label: t('form.commands.variables.tips.filter_path') },
+	{ trigger: '{{de', label: t('form.commands.variables.tips.filter_slug') },
+	{ trigger: '\\{{', label: t('form.commands.variables.tips.escape') },
+])
+
+/** Longitud máxima del valor que se muestra en la lista (se recorta con `…`). */
+const VALUE_PREVIEW_LENGTH = 40
+
+/** Valor visible de una variable: enmascarado si es secreta y en una sola línea. */
+function formatVariableValue(variable: GlobalVariableScopeEntry): string {
+	if (variable.isSecret) return REDACTED_MARKER
+
+	const value = variable.value.replace(/\s+/g, ' ').trim()
+	if (!value) return t('form.commands.variables.empty_value')
+
+	return value.length > VALUE_PREVIEW_LENGTH ? `${value.slice(0, VALUE_PREVIEW_LENGTH)}…` : value
+}
+
+/**
+ * Entradas del autocompletado. Las secretas se incluyen: solo se inserta la
+ * expresión `{{global.slug}}`, nunca su valor, que se muestra enmascarado.
+ */
+const interpolationEntries = computed<InterpolationCompletionEntry[]>(() =>
+	Object.values(globalScope.value)
+		.filter(variable => variable.enabled)
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map(variable => ({
+			path: `global.${variable.slug}`,
+			label: variable.name,
+			detail: `global.${variable.slug} [${formatVariableValue(variable)}]`,
+			secret: variable.isSecret,
+		})),
+)
+
+// La fuente lee `interpolationEntries` en cada pulsación, así que puede crearse una sola vez.
+const interpolationCompletion = createInterpolationCompletion({
+	getEntries: () => interpolationEntries.value,
+	// Solo se ofrecen los ámbitos con raíz disponible; `global` siempre lo está.
+	getScopes: () => Object.keys(interpolationRoots.value),
+})
+
+onMounted(async () => {
+	try {
+		globalScope.value = await loadGlobalScopeMetadata()
+		scopeLoaded.value = true
+	} catch {
+		// Sin metadatos no se puede validar: se oculta el linter en lugar de
+		// marcar todas las referencias como inexistentes.
+		scopeLoaded.value = false
+	}
+})
 
 function createDefaultLineRule(): LineRule {
 	return { match: '', key: '', transform: 'string' }
@@ -345,7 +463,42 @@ const nameMaxLength = schema.insert.shape.name.maxLength || 120
 		class="md:col-span-2"
 		required
 	>
-		<CodeEditor v-model="state.command" :languages="['bash']" :placeholder="t('form.commands.command.placeholder')" />
+		<div class="flex w-full flex-col gap-2">
+			<!-- Cuadro de ayuda: disparadores del autocompletado del editor. -->
+			<div class="rounded-lg border border-default bg-elevated p-2.5">
+				<p class="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted">
+					<UIcon name="i-tabler-variable" class="size-4 shrink-0" />
+					{{ t('form.commands.variables.help') }}
+				</p>
+				<ul class="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+					<li v-for="tip in variableTips" :key="tip.trigger" class="flex items-center gap-2">
+						<code class="shrink-0 rounded-sm bg-accented px-1 font-mono text-highlighted">{{ tip.trigger }}</code>
+						<span class="text-dimmed">{{ tip.label }}</span>
+					</li>
+				</ul>
+				<p class="mt-1.5 text-xs text-dimmed">{{ t('form.commands.variables.secret_help') }}</p>
+			</div>
+
+			<CodeEditor
+				v-model="state.command"
+				:languages="['bash']"
+				:lint="interpolationLint"
+				:autocomplete="interpolationCompletion"
+				:highlight="interpolationHighlight"
+				:placeholder="t('form.commands.command.placeholder')"
+			/>
+
+			<ul v-if="interpolationIssues.length > 0" class="flex flex-col gap-1">
+				<li
+					v-for="issue in interpolationIssues"
+					:key="`${issue.start}-${issue.code}`"
+					class="flex items-start gap-1.5 text-xs text-error"
+				>
+					<UIcon name="i-tabler-alert-circle" class="mt-0.5 size-4 shrink-0" />
+					<span>{{ t(issue.messageKey, issue.messageParams) }}</span>
+				</li>
+			</ul>
+		</div>
 	</UFormField>
 
 	<UFormField

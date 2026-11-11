@@ -283,6 +283,7 @@ export const ENCRYPTED_FIELDS = [
 	{ scope: encryptScope('deployer_hosts', 'password'), label: 'deployer_hosts.password', table: 'deployer_hosts', field: 'password' },
 	{ scope: encryptScope('deployer_passkeys', 'key_content'), label: 'deployer_passkeys.key_content', table: 'deployer_passkeys', field: 'key_content' },
 	{ scope: encryptScope('deployer_passkeys', 'passphrase'), label: 'deployer_passkeys.passphrase', table: 'deployer_passkeys', field: 'passphrase' },
+	{ scope: encryptScope('deployer_variables', 'value'), label: 'deployer_variables.value', table: 'deployer_variables', field: 'value' },
 ] as const
 
 /**
