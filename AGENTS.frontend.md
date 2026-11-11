@@ -19,6 +19,7 @@ src/
 ├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
 ├── locales/             <- i18n (es/, _loader.ts)
 ├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,theme}, deployer/, deployer/(setup))
+├── plugins/             <- Extensiones reutilizables de CodeMirror (plugins/codemirror/)
 ├── types/               <- Tipos (entities.ts, tauri-types.d.ts auto-generados)
 └── utils/               <- Funciones puras sin reactividad de Vue
 
@@ -535,10 +536,23 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
 
 Componente `src/components/form/textareas/CodeEditor.vue`, **exclusivo para campos de código** (p. ej. comandos). Basado en **CodeMirror 6** (no Tiptap: el antiguo `UEditor` + `CodeBlockLowlight` se sustituyó porque no devolvía el texto editado al `v-model`).
 
-- **Dependencias:** `@codemirror/{state,view,commands,language,legacy-modes,lang-yaml,lang-json,lang-php}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
+Las extensiones viven en **`src/plugins/codemirror/`** y son reutilizables por cualquier consumidor:
+
+- `types.ts` — `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange`, `CodeHighlighter`.
+- `languages.ts` — `languageLoaders`, `LANGUAGE_NAMES` y `createLintLoader(formatDuplicateKey)`.
+- `lint/` — `createLintExtensions`, `createJsonLintSource` (errores + claves duplicadas) y `createYamlLintSource`.
+- `theme.ts` — `codeEditorTheme`, `codeHighlightStyle` y `SECRET_ICON_MASK`.
+- `setup.ts` — `createBaseExtensions(...)` y `createDarkThemeExtension(...)`.
+- `highlight.ts`, `editable.ts` y `autocomplete/index.ts` — extensiones reutilizables (resaltado de rangos, solo lectura y autocompletado).
+- `autocomplete/variables.ts` — autocompletado de variables `{{…}}` (`createInterpolationCompletion`), antes en `src/utils/interpolation/completion.ts`.
+- `bash/blocks.ts` y `bash/format.ts` — detección/envoltura de bloques bash y `setBashFormat`.
+- `index.ts` — barrel público de la carpeta.
+
+- **Dependencias:** `@codemirror/{state,view,commands,language,lint,autocomplete,legacy-modes,lang-yaml,lang-json,lang-php}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
 - **Modelos:** `v-model` (texto, siempre con saltos `\n`) y `v-model:language` (`CodeLanguage`, por defecto `'plain'`).
-- **Tipos exportados** (del bloque `<script>` normal): `CODE_LANGUAGES` y `CodeLanguage` (`'bash' | 'yaml' | 'json' | 'php' | 'plain'`). Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
-- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers`, `tabSize`, `minRows`, `maxRows`, `lint` (CodeMirror `LintSource` opcional). `language`, `readonly`, `disabled` y `lint` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
+- **Tipos exportados:** `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange` y `CodeHighlighter`. `CodeEditor.vue` los re-exporta desde `src/plugins/codemirror/types.ts` por compatibilidad. Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
+- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers`, `tabSize`, `minRows`, `maxRows`, `lint` (CodeMirror `LintSource` opcional), `autocomplete` (CodeMirror `CompletionSource` opcional), `highlight` (función que devuelve los rangos a resaltar) y `extensions` (extensiones CodeMirror adicionales). `language`, `readonly`, `disabled`, `lint`, `autocomplete`, `highlight` y `extensions` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
+- **Extensiones propias:** `extensions` acepta una extensión o un array (`Extension | readonly Extension[]`). Se aplican al final, en un `Compartment` propio, y se reconfiguran si la prop cambia. Ejemplo: `<CodeEditor v-model="code" :extensions="[myKeymap]" />`.
 - **Restricción de lenguajes:** si el lenguaje actual no está en `languages`, el componente lo cambia al primero permitido (vía `v-model:language`). Con `language="x"` estático (sin `v-model:language`) el selector no puede cambiar el valor.
 - **Bloques bash (`heredoc` y `bash -c`):** con `language === 'bash'` la barra muestra dos `USwitch` mutuamente excluyentes. El estado **se deriva del texto** (si se edita o borra el bloque a mano, el switch se actualiza solo):
   - **Bloque heredoc:** envuelve el cuerpo en `bash <<'DEPLOYER_EOF'` … `DEPLOYER_EOF`. El marcador se elige libre (`DEPLOYER_EOF`, `DEPLOYER_EOF_1`, …) para no colisionar con el contenido. La cabecera se detecta de forma genérica (`<<'MARCADOR'`, con o sin `-`, cualquier intérprete) siempre que la última línea no vacía sea el marcador.
