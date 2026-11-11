@@ -2,6 +2,21 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (11 nov 2026 — Sistema de interpolación de variables globales)
+
+**Nota del usuario:** el plan `AGENTS.variable-interpolation.PLAN.md` se da por completado; el autocompletado se verificó en la app. Detalle en `AGENTS.variable-interpolation.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Motor puro** (`src/utils/interpolation/`): formato `{{ámbito.ruta}}` sin espacios, escape `\{{`, raíces desconocidas literales, modo estricto (`unknown_variable`, `disabled_variable`, `scope_not_available`, `invalid_path`), secretas enmascaradas (`••••••`) salvo al ejecutar y redacción de errores.
+2. **Carga de variables** (`src/drizzle/lib/variables.ts`): metadatos para UI/linter/preview y lectura cruda + descifrado puntual de secretas solo para ejecución (sin `withDecryption`).
+3. **Ejecución**: `runner.ts` y `useRemoteCommand.ts` interpolan `command`/`working_dir` y redactan errores. Al cerrar el plan se corrigió que una variable global inexistente se resolviera como cadena vacía: ahora lanza `unknown_variable` y bloquea la ejecución.
+4. **UI**: autocompletado en `CodeEditor` (`{{` lista los ámbitos disponibles; variables con nombre y `global.slug [valor]`, candado para secretas), resaltado de variables, linter solo con errores, cuadro de ayuda de disparadores y vista previa con pestañas *Interpolada*/*Original* en `CommandTestDialog`.
+5. **Listado de variables**: muestra y copia `{{global.slug}}`.
+6. **i18n y documentación**: claves `es`/`en` y `docs/content/es/008.variables/`.
+
+**Resultado:** `bun run build` verde, Prettier OK y motor probado contra los casos de la verificación prevista.
+
+---
+
 ## Tareas completadas (10 nov 2026 — Comandos guardados en BD: `deployer_commands` como fuente única)
 
 **Nota del usuario:** el plan `AGENTS.commands-db.PLAN.md` se da por completado. Detalle en `AGENTS.commands-db.PLAN.md` (archivado en `.agents/plans.done/`).
