@@ -47,17 +47,21 @@ const { t, locale } = useI18n()
 		</template>
 
 		<template #footer>
-			<div class="flex gap-4 items-center justify-between text-xs text-muted">
-				<span class="flex gap-1.5 items-center">
-					<UIcon name="i-tabler-calendar-plus" class="size-4" />
-					<strong>{{ t('entity.common.created_at') }}:</strong>
-					{{ new Date(created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}
-				</span>
-				<span class="flex gap-1.5 items-center">
-					<UIcon name="i-tabler-calendar-time" class="size-4" />
-					<strong>{{ t('entity.common.updated_at') }}:</strong>
-					{{ new Date(updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}
-				</span>
+			<div class="@container flex gap-4 items-center justify-between text-xs text-muted">
+				<div class="flex flex-col @2xl:flex-row gap-1.5 items-center">
+					<div class="flex gap-1.5">
+						<UIcon name="i-tabler-calendar-plus" class="size-4" />
+						<strong>{{ t('entity.common.created_at') }}:</strong>
+					</div>
+					<div>{{ new Date(created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
+				</div>
+				<div class="flex flex-col @2xl:flex-row gap-1.5 items-center">
+					<div class="flex gap-1.5">
+						<UIcon name="i-tabler-calendar-time" class="size-4" />
+						<strong>{{ t('entity.common.updated_at') }}:</strong>
+					</div>
+					<div>{{ new Date(updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
+				</div>
 			</div>
 		</template>
 	</UCard>
