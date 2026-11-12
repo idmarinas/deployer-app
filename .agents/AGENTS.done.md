@@ -2,6 +2,21 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (12 nov 2026 — Variables globales: inmutabilidad y endurecimiento del cifrado)
+
+**Nota del usuario:** el análisis `AGENTS.variables.ANALYSIS.md` queda consolidado aquí y se elimina. El trabajo aplazado vive en `plans/AGENTS.futuro.PLAN.md` §2 (`FUT-VAR-*`).
+
+1. **`slug` inmutable**: se elimina del esquema de update (`.omit({ slug: true })`) y `update()` escribe siempre el valor actual. El renombrado con búsqueda de referencias queda en `FUT-VAR-02`.
+2. **`is_secret` unidireccional**: una variable secreta no puede volver a ser pública. La regla se aplica en validación (refine async) y en la capa de consultas, sin triggers de SQLite. `is_secret` viaja siempre en el mismo `UPDATE` que `value` para que el cifrado condicional del proxy funcione.
+3. **Normalización centralizada**: nuevo `src/utils/variables.ts` (`VariableUpdateData`, `normalizeVariableUpdate()`), usado por `src/composables/queries/variables.ts`. Si la fila no existe, `update()` sale con aviso.
+4. **Centinelas endurecidos**: `isCiphertextToken()` en `src/drizzle/lib/stronghold.ts` valida el formato real (`ENC:{version}:<base64>` y `ENC:<base64>` con ≥ 28 bytes decodificados). `stripEncryptedValues()` y `encryptParams()` solo descartan `BLANK_VALUE` y `''`; `decryptRow()` y `maskEncryptedFields()` usan la guarda estricta. Un `ENC:` de usuario se cifra en lugar de guardarse en claro.
+5. **i18n**: clave `validation.variables.is_secret.immutable` en `es` y `en`; `bun run i18n:types` ejecutado.
+6. **Verificación**: script temporal con 15 comprobaciones (detección de tokens, strip de centinelas, conservación de `slug`/`is_secret`) y `bun run build` verde.
+
+**Pendiente:** round-trip real en Tauri (`FUT-TECH-01`). **Deuda y mejoras:** `FUT-VAR-01` a `FUT-VAR-11` en `plans/AGENTS.futuro.PLAN.md`.
+
+---
+
 ## Tareas completadas (12 nov 2026 — Extraer las extensiones de CodeMirror de `CodeEditor.vue`)
 
 **Nota del usuario:** el plan `AGENTS.codemirror-extensions.PLAN.md` se da por completado; la verificación manual en UI queda aceptada por decisión del usuario. Detalle en `AGENTS.codemirror-extensions.PLAN.md` (archivado en `.agents/plans.done/`).
