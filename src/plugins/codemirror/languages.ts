@@ -2,6 +2,7 @@ import { StreamLanguage } from '@codemirror/language'
 import type { LintSource } from '@codemirror/lint'
 import type { Extension } from '@codemirror/state'
 
+import { withAutocomplete } from './autocomplete'
 import type { CodeLanguage } from './types'
 
 // Cada lenguaje se importa bajo demanda (code splitting)
@@ -9,7 +10,14 @@ export const languageLoaders: Record<CodeLanguage, () => Promise<Extension>> = {
 	bash: async () => StreamLanguage.define((await import('@codemirror/legacy-modes/mode/shell')).shell),
 	yaml: async () => (await import('@codemirror/lang-yaml')).yaml(),
 	json: async () => (await import('@codemirror/lang-json')).json(),
-	php: async () => (await import('@codemirror/lang-php')).php(),
+	php: async () => {
+		const [{ php, phpLanguage }, { phpCompletionSource }] = await Promise.all([
+			import('@codemirror/lang-php'),
+			import('./autocomplete/php'),
+		])
+		// `php()` no trae autocompletado propio; se le añade una lista básica
+		return [php(), withAutocomplete(phpLanguage, phpCompletionSource)]
+	},
 	html: async () => (await import('@codemirror/lang-html')).html(),
 	javascript: async () => (await import('@codemirror/lang-javascript')).javascript(),
 	plain: async () => [],
