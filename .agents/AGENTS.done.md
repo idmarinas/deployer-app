@@ -2,6 +2,21 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (12 nov 2026 — Extraer las extensiones de CodeMirror de `CodeEditor.vue`)
+
+**Nota del usuario:** el plan `AGENTS.codemirror-extensions.PLAN.md` se da por completado; la verificación manual en UI queda aceptada por decisión del usuario. Detalle en `AGENTS.codemirror-extensions.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Módulos reutilizables** en `src/plugins/codemirror/`: `types.ts`, `theme.ts`, `highlight.ts`, `editable.ts`, `setup.ts`, `languages.ts`, `lint/{index,json,yaml}.ts`, `autocomplete/{index,variables,php}.ts`, `bash/{blocks,format}.ts` y `index.ts` como barrel público.
+2. **`CodeEditor.vue` adelgazado** de 783 a 317 líneas: solo orquestación Vue + template; nueva prop `extensions` (`Extension | readonly Extension[]`) en un `Compartment` propio y reactiva a cambios.
+3. **`basicSetup` sustituido** por `createBaseExtensions` con toggle por funcionalidad (lineNumbers, history, foldGutter, closeBrackets, search, autocomplete, multipleSelections) y `createDarkThemeExtension` aparte; se retira el meta-paquete `codemirror` y se añade `@codemirror/search`. El tema propio cubre los widgets que aportaba `defaultHighlightStyle`.
+4. **Autocompletado aditivo por lenguaje**: la prop `autocomplete` se registra vía `languageData` (ya no sustituye a las fuentes del lenguaje); helper `withAutocomplete` y `autocomplete/php.ts` con lista básica (mínimo real PHP 7.0, sin 8.x). JavaScript y HTML conservan su autocompletado nativo.
+5. **Movido** `src/utils/interpolation/completion.ts` → `src/plugins/codemirror/autocomplete/variables.ts`; `CommandForm.vue` importa de la nueva ruta.
+6. **Documentación**: `AGENTS.frontend.md` §1 y §9 actualizadas (estructura, props, dependencias, base del editor, tema, lint y autocompletado por lenguaje).
+
+**Resultado:** comportamiento del editor sin cambios funcionales; verificación por inspección y `bunx vue-tsc --noEmit` con los módulos de este plan limpios. Queda como deuda ajena un error de tipos en `src/utils/tiptap/SchemaSanitizerExtension.ts` (`@tiptap/pm/model` inexistente, resto del editor Tiptap retirado).
+
+---
+
 ## Tareas completadas (11 nov 2026 — Sistema de interpolación de variables globales)
 
 **Nota del usuario:** el plan `AGENTS.variable-interpolation.PLAN.md` se da por completado; el autocompletado se verificó en la app. Detalle en `AGENTS.variable-interpolation.PLAN.md` (archivado en `.agents/plans.done/`).
