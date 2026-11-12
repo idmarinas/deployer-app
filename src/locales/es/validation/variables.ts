@@ -16,4 +16,7 @@ export default {
 	value: {
 		required: 'Debes introducir un valor cuando la variable está activa o es secreta.',
 	},
+	is_secret: {
+		immutable: 'Una variable secreta no puede volver a ser pública.',
+	},
 } satisfies LocaleMessageValue

@@ -68,41 +68,32 @@ export function useVariablesValidation(id?: number) {
 					return (await db.$count(variables, where)) <= 0
 				}, t('validation.variables.name.not_unique'))
 				.optional(),
-		slug: z =>
-			z
-				.trim()
-				.min(3, t('validation.variables.slug.min'))
-				.max(120, t('validation.variables.slug.max'))
-				.regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/, t('validation.variables.slug.format'))
-				.refine(async value => {
-					if (!value) return false
+		is_secret: z =>
+			z.optional().refine(async value => {
+				if (value !== false || !id) return true
 
-					let where = eq(variables.slug, value)
-					if (id) {
-						where = and(where, ne(variables.id, id))!
-					}
-
-					return (await db.$count(variables, where)) <= 0
-				}, t('validation.variables.slug.not_unique'))
-				.optional(),
+				return (await db.$count(variables, and(eq(variables.id, id), eq(variables.is_secret, true)))) <= 0
+			}, t('validation.variables.is_secret.immutable')),
 		enabled: z => z.default(false).optional(),
 		updated_at: z => z,
 		created_at: z => z,
 		deleted_at: z => z.nullable(),
-	}).superRefine((data, ctx) => {
-		if (
-			data.value !== undefined &&
-			data.value !== null &&
-			(data.enabled || data.is_secret) &&
-			!String(data.value).trim()
-		) {
-			ctx.addIssue({
-				code: 'custom',
-				path: ['value'],
-				message: t('validation.variables.value.required'),
-			})
-		}
 	})
+		.omit({ slug: true })
+		.superRefine((data, ctx) => {
+			if (
+				data.value !== undefined &&
+				data.value !== null &&
+				(data.enabled || data.is_secret) &&
+				!String(data.value).trim()
+			) {
+				ctx.addIssue({
+					code: 'custom',
+					path: ['value'],
+					message: t('validation.variables.value.required'),
+				})
+			}
+		})
 
 	return { select, insert, update }
 }

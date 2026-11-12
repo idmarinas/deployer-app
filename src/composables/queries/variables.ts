@@ -1,4 +1,5 @@
 import type { Variable } from '@/types/entities'
+import type { VariableUpdateData } from '@/utils/variables'
 
 import { useQueryCache } from '@pinia/colada'
 import { eq } from 'drizzle-orm'
@@ -8,6 +9,7 @@ import useToaster from '@/composables/useToaster'
 import { db } from '@/drizzle/drizzle'
 import { variables } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
+import { normalizeVariableUpdate } from '@/utils/variables'
 
 export function useVariableQuery() {
 	const cacheQuery = useQueryCache()
@@ -83,7 +85,7 @@ export function useVariableQuery() {
 			})
 	}
 
-	async function update(id: number, data: Partial<Omit<Variable, 'created_at'>>): Promise<Variable | undefined> {
+	async function update(id: number, data: VariableUpdateData): Promise<Variable | undefined> {
 		const notice = notify.loading(
 			t('notifications.variables.update.loading.title'),
 			t('notifications.variables.update.loading.description'),
@@ -91,15 +93,21 @@ export function useVariableQuery() {
 
 		const current = await find(id)
 
-		if (current?.is_secret) {
-			data.is_secret = true
+		if (!current) {
+			notify.fail(
+				new Error('variable_not_found'),
+				{ title: t('notifications.variables.update.error.title') },
+				notice.id,
+			)
+
+			return undefined
 		}
 
-		data.updated_at = new Date().toISOString()
+		const payload = normalizeVariableUpdate(current, data)
 
 		return await db
 			.update(variables)
-			.set(data)
+			.set(payload)
 			.where(eq(variables.id, id))
 			// `returning()` no pasa por el enmascarado del proxy: si la variable es
 			// secreta, `value` vuelve como token `ENC:`. No consumir ese campo.

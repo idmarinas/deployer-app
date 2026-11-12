@@ -209,12 +209,31 @@ export function splitCiphertextVersion(ciphertext: string): { version: number; p
 }
 
 /**
+ * Indica si un valor tiene el formato de un ciphertext real
+ * (`ENC:{version}:<base64>` o `ENC:<base64>`), no solo el prefijo `ENC:`.
+ *
+ * Valida que el payload base64 decodifique y tenga al menos nonce (12 bytes) +
+ * tag GCM (16 bytes) = 28 bytes. Así un texto de usuario que empiece por `ENC:`
+ * no se confunde con un token y puede cifrarse correctamente.
+ */
+export function isCiphertextToken(value: unknown): value is string {
+	if (typeof value !== 'string' || !value.startsWith(ENC_PREFIX)) return false
+
+	try {
+		const { payload } = splitCiphertextVersion(value)
+		return fromBase64(payload).length >= 28
+	} catch {
+		return false
+	}
+}
+
+/**
  * Cifra un texto plano con AES-256-GCM usando la versión actual de la clave.
  * Resultado: `ENC:{version}:<base64(nonce_12_bytes + ciphertext)>`.
- * Si el valor ya está cifrado, lo devuelve tal cual (no re-cifra).
+ * Si el valor ya es un ciphertext real, lo devuelve tal cual (no re-cifra).
  */
 export async function encrypt(scope: string, plaintext: string): Promise<string> {
-	if (plaintext.startsWith(ENC_PREFIX)) return plaintext
+	if (isCiphertextToken(plaintext)) return plaintext
 
 	const { key, version } = await getCryptoKey(scope)
 	const iv = crypto.getRandomValues(new Uint8Array(12))

@@ -1,13 +1,12 @@
 import { getTableName } from 'drizzle-orm'
 
 import type { EncryptedFieldInfo, EncryptedFieldRef, EncryptedFieldsInfo } from '@/drizzle/drizzle.interfaces'
-import { decrypt, encrypt, encryptScope } from '@/drizzle/lib/stronghold'
+import { decrypt, encrypt, encryptScope, isCiphertextToken } from '@/drizzle/lib/stronghold'
 import * as tablesSchema from '@/drizzle/schema'
 
 const schema = tablesSchema
 
 export const BLANK_VALUE = '__BLANK__e5362baf-c777-4d57-a609-6eaf1f9e87f6'
-export const ENC_PREFIX = 'ENC:'
 
 // ====================================================================
 // Detección automática de campos cifrados desde el schema
@@ -141,12 +140,18 @@ function isTruthy(val: unknown): boolean {
 }
 
 // ====================================================================
-// Strip de valores cifrados en escrituras (sentinel/ENC:)
+// Strip de valores en blanco en escrituras (`BLANK_VALUE`)
 // ====================================================================
 
-function isEncryptedPlaceholder(val: unknown): boolean {
-	if (typeof val !== 'string') return false
-	return val === BLANK_VALUE || val.startsWith(ENC_PREFIX)
+/**
+ * `true` solo para el centinela exacto de valor enmascarado.
+ *
+ * Un texto de usuario que empiece por `ENC:` **no** es un placeholder: debe
+ * cifrarse como cualquier otro valor. Los ciphertexts reales no se envían al
+ * proxy (para escribirlos sin re-cifrar se usa `query_raw`).
+ */
+function isBlankPlaceholder(val: unknown): boolean {
+	return val === BLANK_VALUE
 }
 
 export function stripEncryptedValues(
@@ -179,7 +184,7 @@ export function stripEncryptedValues(
 		const col = columnNames[i]
 		const val = params[i]
 
-		if (allEncrypted.includes(col) && isEncryptedPlaceholder(val)) {
+		if (allEncrypted.includes(col) && isBlankPlaceholder(val)) {
 			continue
 		}
 
@@ -269,7 +274,7 @@ export async function encryptParams(
 			const col = columnNames[i]
 			if (col === undefined) return val
 			if (typeof val !== 'string') return val
-			if (val === '' || val.startsWith(ENC_PREFIX) || val === BLANK_VALUE) return val
+			if (val === '' || val === BLANK_VALUE) return val
 
 			const ref = encryptedFieldsInfo.encrypt.find(f => f.field === col)
 			if (ref) {
@@ -321,7 +326,7 @@ export async function decryptRow(row: unknown[], colNames: string[], info: Encry
 			const colName = colNames[i]
 			if (colName === undefined) return val
 			if (typeof val !== 'string') return val
-			if (!val.startsWith(ENC_PREFIX)) return val
+			if (!isCiphertextToken(val)) return val
 
 			const scope = getEncryptedScopeForRow(row, colNames, colName, info)
 			if (!scope) return val
@@ -340,7 +345,7 @@ export function maskEncryptedFields(row: unknown[], colNames: string[], info: En
 		const colName = colNames[i]
 		if (colName === undefined) return val
 		if (typeof val !== 'string') return val
-		if (!val.startsWith(ENC_PREFIX)) return val
+		if (!isCiphertextToken(val)) return val
 		if (!getEncryptedScopeForRow(row, colNames, colName, info)) return val
 		return BLANK_VALUE
 	})
