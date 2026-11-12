@@ -58,6 +58,25 @@ export default {
 			},
 		},
 	},
+	restore: {
+		loading: {
+			title: 'Restaurando clave de acceso...',
+			description: 'Restaurando la clave de acceso "{name}" en la base de datos...',
+		},
+		success: {
+			title: 'Clave de acceso restaurada correctamente.',
+			description: 'Clave de acceso "{name}" restaurada correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al restaurar la clave de acceso.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al restaurar la clave de acceso "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
 	validation: {
 		loading: {
 			title: 'Validando clave de acceso...',

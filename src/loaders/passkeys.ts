@@ -2,6 +2,7 @@ import { usePasskeyQuery } from '@/composables/queries/passkeys'
 
 import { db } from '@/drizzle/drizzle'
 import { passkeys as passkeysSchema } from '@/drizzle/schema'
+import { isNull } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export const useSelectPasskeys = defineColadaLoader({
@@ -15,6 +16,7 @@ export const useSelectPasskeys = defineColadaLoader({
 				enabled: passkeysSchema.enabled,
 			})
 			.from(passkeysSchema)
+			.where(isNull(passkeysSchema.deleted_at))
 	},
 })
 

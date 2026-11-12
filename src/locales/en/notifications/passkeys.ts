@@ -58,6 +58,25 @@ export default {
 			},
 		},
 	},
+	restore: {
+		loading: {
+			title: 'Restoring access key...',
+			description: 'Restoring access key "{name}" in the database...',
+		},
+		success: {
+			title: 'Access key restored successfully.',
+			description: 'Access key "{name}" restored successfully in the database.',
+		},
+		error: {
+			title: 'Error restoring the access key.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error restoring access key "${ctx.named('name')}" in the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
 	validation: {
 		loading: {
 			title: 'Validating access key...',

@@ -50,7 +50,6 @@ declare module 'vue-router/auto-routes' {
       | '/dashboard/passkeys'
       | '/dashboard/passkeys/[...path]'
       | '/dashboard/variables'
-      | '/dashboard/variables/[...path]'
       | 'dashboard-app'
       | 'dashboard-commands'
       | 'dashboard-commands-add'
@@ -241,7 +240,6 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/variables',
       Record<never, never>,
       Record<never, never>,
-      | '/dashboard/variables/[...path]'
       | 'dashboard-variables'
       | 'dashboard-variables-add'
       | 'dashboard-variables-id'
@@ -266,13 +264,6 @@ declare module 'vue-router/auto-routes' {
       '/dashboard/variables/:id(\\d+)/edit',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
-      | never
-    >,
-    '/dashboard/variables/[...path]': RouteRecordInfo<
-      '/dashboard/variables/[...path]',
-      '/dashboard/variables/:path(.*)',
-      { path: ParamValue<true> },
-      { path: ParamValue<false> },
       | never
     >,
     'dashboard-variables-add': RouteRecordInfo<
@@ -343,7 +334,6 @@ declare module 'vue-router/auto-routes' {
         | '/dashboard/passkeys'
         | '/dashboard/passkeys/[...path]'
         | '/dashboard/variables'
-        | '/dashboard/variables/[...path]'
         | 'dashboard-app'
         | 'dashboard-commands'
         | 'dashboard-commands-add'
@@ -562,7 +552,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/variables.vue': {
       routes:
         | '/dashboard/variables'
-        | '/dashboard/variables/[...path]'
         | 'dashboard-variables'
         | 'dashboard-variables-add'
         | 'dashboard-variables-id'
@@ -595,14 +584,6 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
-    }
-    'src/pages/dashboard/variables/[...path].vue': {
-      routes:
-        | '/dashboard/variables/[...path]'
-      views:
-        | never
-      pathParamNames:
-        | 'path'
     }
     'src/pages/dashboard/variables/add.vue': {
       routes:

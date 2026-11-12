@@ -12,6 +12,9 @@ export function useCommandValidation(key?: string) {
 
 	const select = createSelectSchema(commands)
 
+	// Unicidad: las filas soft-deleted siguen ocupando los índices UNIQUE de la BD
+	// (`key`, `name`), así que `$count` NO filtra por `deleted_at` (si lo hiciera,
+	// el INSERT fallaría).
 	const insert = createInsertSchema(commands, {
 		key: z =>
 			z

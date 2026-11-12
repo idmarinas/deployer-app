@@ -60,6 +60,26 @@ export default {
 		},
 	},
 
+	restore: {
+		loading: {
+			title: 'Restaurando servidor...',
+			description: 'Restaurando el servidor "{name}" en la base de datos...',
+		},
+		success: {
+			title: 'Servidor restaurado correctamente.',
+			description: 'Servidor "{name}" restaurado correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al restaurar el servidor.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al restaurar el servidor "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+
 	test_connection: {
 		loading: {
 			title: 'Probando conexión',

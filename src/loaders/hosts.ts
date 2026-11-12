@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/drizzle'
 import { hosts } from '@/drizzle/schema'
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export interface HostSelectItem {
@@ -16,7 +16,7 @@ export const useHostById = defineColadaLoader('dashboard-hosts-id', {
 		await db
 			.select()
 			.from(hosts)
-			.where(eq(hosts.id, Number.parseInt(to.params.id)))
+			.where(and(eq(hosts.id, Number.parseInt(to.params.id)), isNull(hosts.deleted_at)))
 			.limit(1)
 			.then(data => data[0])
 			.catch(() => undefined),
@@ -28,6 +28,7 @@ export const useHostListAll = defineColadaLoader('dashboard-hosts', {
 		await db
 			.select()
 			.from(hosts)
+			.where(isNull(hosts.deleted_at))
 			.then(data => data)
 			.catch(() => []),
 })
@@ -43,6 +44,7 @@ export const useHostSelectPopulate = defineColadaLoader({
 				enabled: hosts.enabled,
 			})
 			.from(hosts)
+			.where(isNull(hosts.deleted_at))
 			.orderBy(asc(hosts.name))
 			.then(data => data as unknown as HostSelectItem[])
 			.catch(() => [] as HostSelectItem[]),

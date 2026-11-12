@@ -1,10 +1,12 @@
 import type { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
 import type { EntryKey, QueryCache } from '@pinia/colada'
+import type { Composer } from 'vue-i18n'
 import { DrizzleQueryError } from 'drizzle-orm'
 
-import {
+import type {
 	ErrorFallback,
 	QueryErrorInfo,
+	QueryNotifier,
 	QueryNotifierDeps,
 	QueryOperation,
 } from '@/composables/queries/shared.interfaces'
@@ -66,7 +68,38 @@ export async function invalidateCacheQueries(cacheQuery: QueryCache, key: EntryK
 	await cacheQuery.invalidateQueries({ key }, 'all')
 }
 
-export type QueryNotifier = ReturnType<typeof createQueryNotifier>
+/**
+ * Fecha actual en ISO-8601. Se usa para `created_at`/`updated_at` de las
+ * mutaciones CRUD.
+ */
+export function nowIso(): string {
+	return new Date().toISOString()
+}
+
+/**
+ * Añade `created_at` y `updated_at` con la misma marca temporal.
+ *
+ * Las entidades pueden sobrescribirlos después si necesitan otra política
+ * (p. ej. conservar un `created_at` recibido).
+ */
+export function withTimestamps<T extends object>(
+	data: T,
+	now = nowIso(),
+): T & { created_at: string; updated_at: string } {
+	return { ...data, created_at: now, updated_at: now }
+}
+
+/**
+ * Textos de fallback comunes a los errores de lectura (`findAll`/`find`).
+ * Si el error es un `QueryRawError`, `notify.fail` mostrará su clave i18n
+ * estructurada en lugar de estos textos.
+ */
+export function readErrorFallback(t: Composer['t']): ErrorFallback {
+	return {
+		title: t('overlays.toast.title.error'),
+		description: t('overlays.toast.description.error'),
+	}
+}
 
 /**
  * Agrupa las notificaciones del ciclo de vida de una operación CRUD, agnóstico
@@ -81,7 +114,7 @@ export type QueryNotifier = ReturnType<typeof createQueryNotifier>
  * Sin `noticeId` (lecturas `findAll`/`find`), `fail` crea un toast independiente;
  * con `noticeId` (mutaciones) actualiza el aviso persistente.
  */
-export function createQueryNotifier({ toaster, t }: QueryNotifierDeps) {
+export function createQueryNotifier({ toaster, t }: QueryNotifierDeps): QueryNotifier {
 	function loading(title: string, description?: string): Toast {
 		return toaster.warning(title, description, { duration: 0 })
 	}

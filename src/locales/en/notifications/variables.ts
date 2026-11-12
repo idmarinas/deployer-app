@@ -61,4 +61,23 @@ export default {
 			},
 		},
 	},
+	restore: {
+		loading: {
+			title: 'Restoring variable...',
+			description: 'Restoring variable "{name}" in the database...',
+		},
+		success: {
+			title: 'Variable restored successfully.',
+			description: 'Variable "{name}" restored successfully in the database.',
+		},
+		error: {
+			title: 'Error restoring the variable.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error restoring the variable "${ctx.named('name')}" in the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
 } satisfies LocaleMessageValue

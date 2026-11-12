@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/drizzle'
 import { variables } from '@/drizzle/schema'
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { defineColadaLoader } from 'vue-router/experimental/pinia-colada'
 
 export const loadVariableById = defineColadaLoader('dashboard-variables-id-edit', {
@@ -9,7 +9,7 @@ export const loadVariableById = defineColadaLoader('dashboard-variables-id-edit'
 		await db
 			.select()
 			.from(variables)
-			.where(eq(variables.id, Number.parseInt(to.params.id)))
+			.where(and(eq(variables.id, Number.parseInt(to.params.id)), isNull(variables.deleted_at)))
 			.limit(1)
 			.then(data => data[0])
 			.catch(() => undefined),
@@ -21,6 +21,7 @@ export const loadVariablesList = defineColadaLoader('dashboard-variables', {
 		await db
 			.select()
 			.from(variables)
+			.where(isNull(variables.deleted_at))
 			.orderBy(asc(variables.id))
 			.catch(() => []),
 })

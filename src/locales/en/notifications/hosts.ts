@@ -60,6 +60,26 @@ export default {
 		},
 	},
 
+	restore: {
+		loading: {
+			title: 'Restoring host...',
+			description: 'Restoring host "{name}" in the database...',
+		},
+		success: {
+			title: 'Host restored successfully.',
+			description: 'Host "{name}" restored successfully in the database.',
+		},
+		error: {
+			title: 'Error restoring the host.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error restoring host "${ctx.named('name')}" in the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
+
 	test_connection: {
 		loading: {
 			title: 'Testing connection',

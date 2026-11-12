@@ -58,4 +58,23 @@ export default {
 			},
 		},
 	},
+	restore: {
+		loading: {
+			title: 'Restaurando comando...',
+			description: 'Restaurando el comando "{name}" en la base de datos...',
+		},
+		success: {
+			title: 'Comando restaurado correctamente.',
+			description: 'Comando "{name}" restaurado correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al restaurar el comando.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al restaurar el comando "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
 } satisfies LocaleMessageValue

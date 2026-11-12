@@ -11,6 +11,9 @@ export function useVariablesValidation(id?: number) {
 
 	const select = createSelectSchema(variables)
 
+	// Unicidad: las filas soft-deleted siguen ocupando los índices UNIQUE de la BD
+	// (`name`, `slug`), así que `$count` NO filtra por `deleted_at` (si lo hiciera,
+	// el INSERT fallaría).
 	const insert = createInsertSchema(variables, {
 		name: z =>
 			z

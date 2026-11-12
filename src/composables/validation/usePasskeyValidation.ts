@@ -11,6 +11,8 @@ export function usePasskeyValidation(id?: number) {
 
 	const select = createSelectSchema(passkeys)
 
+	// Unicidad: las filas soft-deleted siguen ocupando el índice UNIQUE de la BD,
+	// así que `$count` NO filtra por `deleted_at` (si lo hiciera, el INSERT fallaría).
 	const insert = createInsertSchema(passkeys, {
 		name: z =>
 			z
