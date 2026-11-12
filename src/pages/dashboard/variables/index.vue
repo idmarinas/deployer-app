@@ -2,7 +2,7 @@
 import type { Variable } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h } from 'vue'
+import { h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useVariableQuery } from '@/composables/queries/variables'
@@ -22,7 +22,7 @@ definePage({
 
 const variableQuery = useVariableQuery()
 const { t } = useI18n()
-const { data: items, isLoading, status, reload } = loadVariablesList()
+const { data: items, isLoading, status, reload, refresh } = loadVariablesList()
 
 /** Expresión de interpolación tal como debe escribirse en un comando. */
 const usageOf = (slug: string) => `{{global.${slug}}}`
@@ -61,6 +61,10 @@ const columns: TableColumn<Variable>[] = [
 	tableColumnEnabled,
 	tableColumnActions(),
 ]
+
+onMounted(() => {
+	refresh()
+})
 </script>
 
 <template>
