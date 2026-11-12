@@ -74,6 +74,7 @@ onMounted(() => {
 				:id="row.original.id"
 				:name="row.original.name"
 				:description="row.original.description"
+				:enabled="row.original.enabled"
 				:updated_at="row.original.updated_at"
 				:created_at="row.original.created_at"
 			>
