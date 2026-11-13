@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "5cbb4b76-bad7-4cbe-b763-1bd6800ebf00",
+  "id": "72ed05c8-0e5f-4d55-8434-99853f4aa427",
   "prevIds": [
     "edd5e6fd-b6d1-40e1-afee-91b813a15bb1"
   ],
@@ -585,7 +585,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
+      "onDelete": "RESTRICT",
       "nameExplicit": false,
       "name": "fk_deployer_hosts_key_id_deployer_passkeys_id_fk",
       "entityType": "fks",
@@ -602,6 +602,24 @@
     },
     {
       "columns": [
+        "id"
+      ],
+      "nameExplicit": true,
+      "name": "deployer_host_pk_id",
+      "entityType": "pks",
+      "table": "deployer_hosts"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": true,
+      "name": "deployer_passkey_pk_id",
+      "entityType": "pks",
+      "table": "deployer_passkeys"
+    },
+    {
+      "columns": [
         "key"
       ],
       "nameExplicit": true,
@@ -613,28 +631,10 @@
       "columns": [
         "id"
       ],
-      "nameExplicit": false,
-      "name": "deployer_hosts_pk",
-      "table": "deployer_hosts",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "deployer_passkeys_pk",
-      "table": "deployer_passkeys",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "deployer_variables_pk",
-      "table": "deployer_variables",
-      "entityType": "pks"
+      "nameExplicit": true,
+      "name": "deployer_variable_pk_id",
+      "entityType": "pks",
+      "table": "deployer_variables"
     },
     {
       "columns": [
