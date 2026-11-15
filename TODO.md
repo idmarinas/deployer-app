@@ -94,8 +94,6 @@ Puede ser más complicado migrar de lo que parece.
 
 ### Passkeys
 
-1. Poder ver la cláve pública.
-   - Se puede guardar en la tabla, para evitar tener que calcularla cada vez.
 2. Comprobar si se le puede poner una duración a la clave.
    - No se puede hacer. La clave no permite esto.
    - Alternativa: Usar el campo `created_at` como orientación para aconsejar un cambio.
