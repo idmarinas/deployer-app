@@ -2,12 +2,13 @@
 import type { Passkey } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted, resolveComponent } from 'vue'
+import { computed, h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
+import { usePasskeysTrash } from '@/loaders/trash'
 import { isEncryptedValue } from '@/utils/crypto'
 import { ICONS } from '@/utils/icons'
 
@@ -28,10 +29,14 @@ const router = useRouter()
 const { t, locale } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
 const passkeyQuery = usePasskeyQuery()
+const trash = usePasskeysTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Passkey>({
 	moduleName: ModulesName.Passkeys,
 	deleteFn: passkeyQuery.remove,
+	findReferences: passkeyQuery.findReferences,
 	onReload: reload,
 })
 
@@ -98,72 +103,89 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
-		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-			>
-				<template #title-right>
-					<UBadge
-						color="info"
-						variant="subtle"
-						:icon="ICONS.auth.key"
-						:label="row.original.key_type.toLocaleUpperCase(locale)"
-					/>
+	<UTabs
+		:items="[
+			{ label: t('common.tabs.active'), icon: ICONS.status.check, slot: 'active' },
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				slot: 'trash',
+			},
+		]"
+	>
+		<template #active>
+			<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+				<template #expanded="{ row }">
+					<ItemCard
+						:id="row.original.id"
+						:name="row.original.name"
+						:description="row.original.description"
+						:updated_at="row.original.updated_at"
+						:created_at="row.original.created_at"
+					>
+						<template #title-right>
+							<UBadge
+								color="info"
+								variant="subtle"
+								:icon="ICONS.auth.key"
+								:label="row.original.key_type.toLocaleUpperCase(locale)"
+							/>
+						</template>
+						<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.passkey.key_content') }}</span>
+								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+									<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+									<span class="font-mono text-xs">
+										••••••••••••••••••••••••••••<br />
+										••••••••••••••••••••••••••••
+									</span>
+								</span>
+							</div>
+
+							<div class="flex flex-col gap-1 col-span-2">
+								<span class="text-xs text-muted font-medium">{{ t('entity.passkey.fingerprint') }}</span>
+								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+									<UIcon :name="ICONS.auth.fingerprint" class="text-muted size-4" />
+									{{ row.original.fingerprint }}
+								</span>
+							</div>
+
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">
+									{{ t('entity.passkey.passphrase') }}
+								</span>
+								<span class="text-sm text-foreground flex items-center gap-2">
+									<template v-if="row.original.passphrase && isEncryptedValue(row.original.passphrase)">
+										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+										<UBadge variant="subtle" size="sm" color="success" class="font-mono">
+											<span class="font-mono text-xs">•••••••••••</span>
+										</UBadge>
+									</template>
+									<template v-else>
+										<UIcon :name="ICONS.auth.lockOpen" class="text-muted size-4" />
+										<UBadge variant="subtle" size="sm" color="warning" class="font-mono">
+											<span class="font-mono text-xs">{{ t('common.empty.label') }}</span>
+										</UBadge>
+									</template>
+								</span>
+							</div>
+						</div>
+					</ItemCard>
 				</template>
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.passkey.key_content') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-							<span class="font-mono text-xs">
-								••••••••••••••••••••••••••••<br />
-								••••••••••••••••••••••••••••
-							</span>
-						</span>
-					</div>
-
-					<div class="flex flex-col gap-1 col-span-2">
-						<span class="text-xs text-muted font-medium">{{ t('entity.passkey.fingerprint') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon :name="ICONS.auth.fingerprint" class="text-muted size-4" />
-							{{ row.original.fingerprint }}
-						</span>
-					</div>
-
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">
-							{{ t('entity.passkey.passphrase') }}
-						</span>
-						<span class="text-sm text-foreground flex items-center gap-2">
-							<template v-if="row.original.passphrase && isEncryptedValue(row.original.passphrase)">
-								<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-								<UBadge variant="subtle" size="sm" color="success" class="font-mono">
-									<span class="font-mono text-xs">•••••••••••</span>
-								</UBadge>
-							</template>
-							<template v-else>
-								<UIcon :name="ICONS.auth.lockOpen" class="text-muted size-4" />
-								<UBadge variant="subtle" size="sm" color="warning" class="font-mono">
-									<span class="font-mono text-xs">{{ t('common.empty.label') }}</span>
-								</UBadge>
-							</template>
-						</span>
-					</div>
-				</div>
-			</ItemCard>
+			</ListTable>
+			<EmptyList
+				v-else-if="!isLoading && status === 'success' && items.length === 0"
+				:module="ModulesName.Passkeys"
+				:reload-fn="reload"
+				:add-route="{ name: 'dashboard-passkeys-add' }"
+			/>
+			<Loading v-else-if="isLoading" what="passkey" plural />
+			<GeneralError v-else />
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Passkeys"
-		:reload-fn="reload"
-		:add-route="{ name: 'dashboard-passkeys-add' }"
-	/>
-	<Loading v-else-if="isLoading" what="passkey" plural />
-	<GeneralError v-else />
+
+		<template #trash>
+			<TrashTable :module="ModulesName.Passkeys" :empty-title="t('components.trash.empty.list_title')" />
+		</template>
+	</UTabs>
 </template>

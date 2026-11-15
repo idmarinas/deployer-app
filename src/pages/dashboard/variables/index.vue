@@ -2,15 +2,17 @@
 import type { Variable } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted } from 'vue'
+import { computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useVariableQuery } from '@/composables/queries/variables'
 import { useTableColumns } from '@/composables/useTableColumns'
+import { useVariablesTrash } from '@/loaders/trash'
 import { loadVariablesList } from '@/loaders/variables'
 
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
+import { findVariableUsages } from '@/utils/interpolation/usages'
 
 import UBadge from '@nuxt/ui/components/Badge.vue'
 </script>
@@ -23,6 +25,9 @@ definePage({
 const variableQuery = useVariableQuery()
 const { t } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = loadVariablesList()
+const trash = useVariablesTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
 
 /** Expresión de interpolación tal como debe escribirse en un comando. */
 const usageOf = (slug: string) => `{{global.${slug}}}`
@@ -30,6 +35,7 @@ const usageOf = (slug: string) => `{{global.${slug}}}`
 const { tableColumnExpand, tableColumnActions, tableColumnEnabled } = useTableColumns<Variable>({
 	moduleName: ModulesName.Variables,
 	deleteFn: variableQuery.remove,
+	findVariableUsages,
 	onReload: reload,
 })
 
@@ -68,43 +74,60 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
-		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:enabled="row.original.enabled"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-			>
-				<!-- Dos columnas a los extremos; el espacio central es flexible y, si no cabe, la segunda baja. -->
-				<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.variable.value') }}</span>
-						<span class="flex items-start gap-1.5 text-sm font-mono text-foreground">
-							<UIcon name="i-tabler-file-description" class="text-muted size-4 shrink-0" />
-							<ValueViewer :value="row.original.value" only-text />
-						</span>
-					</div>
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.variable.usage') }}</span>
-						<span class="flex items-center gap-1.5 text-sm font-mono text-foreground">
-							<UIcon name="i-tabler-variable" class="text-muted size-4 shrink-0" />
-							<code class="truncate">{{ usageOf(row.original.slug) }}</code>
-							<Clipboard :source="usageOf(row.original.slug)" only-icon size="xs" class="shrink-0" />
-						</span>
-					</div>
-				</div>
-			</ItemCard>
+	<UTabs
+		:items="[
+			{ label: t('common.tabs.active'), icon: ICONS.status.check, slot: 'active' },
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				slot: 'trash',
+			},
+		]"
+	>
+		<template #active>
+			<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+				<template #expanded="{ row }">
+					<ItemCard
+						:id="row.original.id"
+						:name="row.original.name"
+						:description="row.original.description"
+						:enabled="row.original.enabled"
+						:updated_at="row.original.updated_at"
+						:created_at="row.original.created_at"
+					>
+						<!-- Dos columnas a los extremos; el espacio central es flexible y, si no cabe, la segunda baja. -->
+						<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.variable.value') }}</span>
+								<span class="flex items-start gap-1.5 text-sm font-mono text-foreground">
+									<UIcon name="i-tabler-file-description" class="text-muted size-4 shrink-0" />
+									<ValueViewer :value="row.original.value" only-text />
+								</span>
+							</div>
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.variable.usage') }}</span>
+								<span class="flex items-center gap-1.5 text-sm font-mono text-foreground">
+									<UIcon name="i-tabler-variable" class="text-muted size-4 shrink-0" />
+									<code class="truncate">{{ usageOf(row.original.slug) }}</code>
+									<Clipboard :source="usageOf(row.original.slug)" only-icon size="xs" class="shrink-0" />
+								</span>
+							</div>
+						</div>
+					</ItemCard>
+				</template>
+			</ListTable>
+			<EmptyList
+				v-else-if="!isLoading && status === 'success' && items.length === 0"
+				:module="ModulesName.Variables"
+				:reload-fn="reload"
+				:add-route="{ name: 'dashboard-variables-add' }"
+			/>
+			<Loading v-else-if="isLoading" what="variable" plural />
+			<GeneralError v-else />
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Variables"
-		:reload-fn="reload"
-		:add-route="{ name: 'dashboard-variables-add' }"
-	/>
-	<Loading v-else-if="isLoading" what="variable" plural />
-	<GeneralError v-else />
+
+		<template #trash>
+			<TrashTable :module="ModulesName.Variables" :empty-title="t('components.trash.empty.list_title')" />
+		</template>
+	</UTabs>
 </template>

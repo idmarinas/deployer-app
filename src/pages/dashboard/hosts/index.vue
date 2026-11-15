@@ -2,12 +2,13 @@
 import type { Host } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted, resolveComponent } from 'vue'
+import { computed, h, onMounted, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useHostListAll } from '@/loaders/hosts'
+import { useHostsTrash } from '@/loaders/trash'
 import { ICONS } from '@/utils/icons'
 
 import ValueViewer from '@/components/view/ValueViewer.vue'
@@ -24,8 +25,11 @@ definePage({
 const UBadge = resolveComponent('UBadge')
 
 const { data: items, isLoading, status, reload } = useHostListAll()
-
 const { t } = useI18n()
+const trash = useHostsTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
+
 const router = useRouter()
 const hostQuery = useHostQuery()
 const { useButtons } = useToolbarButtons(ModulesName.Hosts, isLoading, hostQuery.remove)
@@ -100,69 +104,86 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
-		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:created_at="row.original.created_at"
-				:updated_at="row.original.updated_at"
-				:enabled="row.original.enabled"
-			>
-				<!-- Grid de detalles -->
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon :name="ICONS.server.server" class="text-muted size-4" />
-							<ValueViewer :value="row.original.host" :only-text="true" />
-						</span>
-					</div>
+	<UTabs
+		:items="[
+			{ label: t('common.tabs.active'), icon: ICONS.status.check, slot: 'active' },
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				slot: 'trash',
+			},
+		]"
+	>
+		<template #active>
+			<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+				<template #expanded="{ row }">
+					<ItemCard
+						:id="row.original.id"
+						:name="row.original.name"
+						:description="row.original.description"
+						:created_at="row.original.created_at"
+						:updated_at="row.original.updated_at"
+						:enabled="row.original.enabled"
+					>
+						<!-- Grid de detalles -->
+						<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.host.host') }}</span>
+								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+									<UIcon :name="ICONS.server.server" class="text-muted size-4" />
+									<ValueViewer :value="row.original.host" :only-text="true" />
+								</span>
+							</div>
 
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
-							<ValueViewer :value="row.original.port" :only-text="true" />
-						</span>
-					</div>
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.host.port') }}</span>
+								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+									<UIcon :name="ICONS.server.plugConnected" class="text-muted size-4" />
+									<ValueViewer :value="row.original.port" :only-text="true" />
+								</span>
+							</div>
 
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
-						<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
-							<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
-							<ValueViewer :value="row.original.username" :only-text="true" />
-						</span>
-					</div>
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">{{ t('entity.host.username') }}</span>
+								<span class="text-sm font-mono text-foreground flex items-center gap-1.5">
+									<UIcon :name="ICONS.auth.user" class="text-muted size-4" />
+									<ValueViewer :value="row.original.username" :only-text="true" />
+								</span>
+							</div>
 
-					<div class="flex flex-col gap-1">
-						<span class="text-xs text-muted font-medium">
-							{{ row.original.auth_type === 'password' ? t('entity.host.password') : t('entity.host.key_id') }}
-						</span>
-						<span class="text-sm text-foreground flex items-center gap-1.5">
-							<template v-if="row.original.auth_type === 'password'">
-								<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
-								<span class="font-mono text-xs">••••••••</span>
-							</template>
-							<template v-else>
-								<UIcon :name="ICONS.auth.key" class="text-muted size-4" />
-								<UBadge variant="subtle" size="sm" color="info" class="font-mono">
-									ID: {{ row.original.key_id || '-' }}
-								</UBadge>
-							</template>
-						</span>
-					</div>
-				</div>
-			</ItemCard>
+							<div class="flex flex-col gap-1">
+								<span class="text-xs text-muted font-medium">
+									{{ row.original.auth_type === 'password' ? t('entity.host.password') : t('entity.host.key_id') }}
+								</span>
+								<span class="text-sm text-foreground flex items-center gap-1.5">
+									<template v-if="row.original.auth_type === 'password'">
+										<UIcon :name="ICONS.auth.lock" class="text-muted size-4" />
+										<span class="font-mono text-xs">••••••••</span>
+									</template>
+									<template v-else>
+										<UIcon :name="ICONS.auth.key" class="text-muted size-4" />
+										<UBadge variant="subtle" size="sm" color="info" class="font-mono">
+											ID: {{ row.original.key_id || '-' }}
+										</UBadge>
+									</template>
+								</span>
+							</div>
+						</div>
+					</ItemCard>
+				</template>
+			</ListTable>
+			<EmptyList
+				v-else-if="!isLoading && status === 'success' && items.length === 0"
+				:module="ModulesName.Hosts"
+				:add-route="{ name: 'dashboard-hosts-add' }"
+				:reload-fn="reload"
+			/>
+			<Loading v-else-if="isLoading" what="host" plural />
+			<GeneralError v-else />
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Hosts"
-		:add-route="{ name: 'dashboard-hosts-add' }"
-		:reload-fn="reload"
-	/>
-	<Loading v-else-if="isLoading" what="host" plural />
-	<GeneralError v-else />
+
+		<template #trash>
+			<TrashTable :module="ModulesName.Hosts" :empty-title="t('components.trash.empty.list_title')" />
+		</template>
+	</UTabs>
 </template>

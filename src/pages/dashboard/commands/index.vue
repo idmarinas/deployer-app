@@ -2,13 +2,14 @@
 import type { Command } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted } from 'vue'
+import { computed, h, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useCommandQuery } from '@/composables/queries/commands'
 import { useCommandTestDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useCommandsListAll } from '@/loaders/commands'
+import { useCommandsTrash } from '@/loaders/trash'
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
 
@@ -23,6 +24,9 @@ definePage({
 const { t } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = useCommandsListAll()
 const commandQuery = useCommandQuery()
+const trash = useCommandsTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Command>({
 	moduleName: ModulesName.Commands,
@@ -38,7 +42,9 @@ const columns: TableColumn<Command>[] = [
 		header: () => t('entity.command.key'),
 		cell: ({ row }) => [
 			h('span', { class: 'font-mono text-xs' }, row.original.key),
-			row.original.internal ? h(UBadge, { label: 'Internal', class: 'mr-2', size: 'xs', variant: 'soft' }) : undefined,
+			row.original.internal
+				? h(UBadge, { label: t('entity.command.internal'), class: 'mr-2', size: 'xs', variant: 'soft' })
+				: undefined,
 		],
 	},
 	{
@@ -81,35 +87,57 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
-		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.key"
-				:name="row.original.name"
-				:description="row.original.description"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-				:enabled="row.original.enabled"
-			>
-				<template #title-right>
-					<UBadge v-if="row.original.internal" variant="soft" icon="i-tabler-device-desktop" label="Internal" />
-					<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
+	<UTabs
+		:items="[
+			{ label: t('common.tabs.active'), icon: ICONS.status.check, slot: 'active' },
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				slot: 'trash',
+			},
+		]"
+	>
+		<template #active>
+			<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+				<template #expanded="{ row }">
+					<ItemCard
+						:id="row.original.key"
+						:name="row.original.name"
+						:description="row.original.description"
+						:updated_at="row.original.updated_at"
+						:created_at="row.original.created_at"
+						:enabled="row.original.enabled"
+					>
+						<template #title-right>
+							<UBadge
+								v-if="row.original.internal"
+								variant="soft"
+								:icon="ICONS.server.deviceDesktop"
+								:label="t('entity.command.internal')"
+							/>
+							<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
+						</template>
+						<div class="flex flex-col gap-2">
+							<span class="text-xs text-muted font-medium">{{ t('entity.command.command') }}</span>
+							<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-elevated rounded-md p-3">{{
+								row.original.command
+							}}</pre>
+						</div>
+					</ItemCard>
 				</template>
-				<div class="flex flex-col gap-2">
-					<span class="text-xs text-muted font-medium">{{ t('entity.command.command') }}</span>
-					<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-elevated rounded-md p-3">{{
-						row.original.command
-					}}</pre>
-				</div>
-			</ItemCard>
+			</ListTable>
+			<EmptyList
+				v-else-if="!isLoading && status === 'success' && items.length === 0"
+				:module="ModulesName.Commands"
+				:reload-fn="reload"
+				:add-route="{ name: 'dashboard-commands-add' }"
+			/>
+			<Loading v-else-if="isLoading" what="command" plural />
+			<GeneralError v-else />
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Commands"
-		:reload-fn="reload"
-		:add-route="{ name: 'dashboard-commands-add' }"
-	/>
-	<Loading v-else-if="isLoading" what="command" plural />
-	<GeneralError v-else />
+
+		<template #trash>
+			<TrashTable :module="ModulesName.Commands" :empty-title="t('components.trash.empty.list_title')" />
+		</template>
+	</UTabs>
 </template>

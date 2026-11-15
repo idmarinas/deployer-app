@@ -35,7 +35,12 @@ const isOperating = ref(false)
 const isLoadingOrOperating = computed(() => isLoading.value || isOperating.value)
 const pageTitle = computed(() => itemData.value?.name || '')
 
-const { useViewButtons } = useToolbarButtons(ModulesName.Passkeys, isLoadingOrOperating, passkeysQuery.remove)
+const { useViewButtons } = useToolbarButtons(
+	ModulesName.Passkeys,
+	isLoadingOrOperating,
+	passkeysQuery.remove,
+	passkeysQuery.findReferences,
+)
 
 const buttons: PositionedButton[] = [
 	{ id: 'cancel', action: 'remove' },
