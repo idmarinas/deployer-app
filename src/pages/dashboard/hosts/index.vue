@@ -183,7 +183,7 @@ onMounted(() => {
 		</template>
 
 		<template #trash>
-			<TrashTable :module="ModulesName.Hosts" :empty-title="t('components.trash.empty.list_title')" />
+			<TrashTable :module="ModulesName.Hosts" context="list" />
 		</template>
 	</UTabs>
 </template>

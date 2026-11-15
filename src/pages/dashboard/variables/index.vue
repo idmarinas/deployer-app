@@ -127,7 +127,7 @@ onMounted(() => {
 		</template>
 
 		<template #trash>
-			<TrashTable :module="ModulesName.Variables" :empty-title="t('components.trash.empty.list_title')" />
+			<TrashTable :module="ModulesName.Variables" context="list" />
 		</template>
 	</UTabs>
 </template>

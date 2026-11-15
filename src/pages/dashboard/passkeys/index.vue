@@ -185,7 +185,7 @@ onMounted(() => {
 		</template>
 
 		<template #trash>
-			<TrashTable :module="ModulesName.Passkeys" :empty-title="t('components.trash.empty.list_title')" />
+			<TrashTable :module="ModulesName.Passkeys" context="list" />
 		</template>
 	</UTabs>
 </template>
