@@ -53,7 +53,7 @@ const emits = defineEmits<{
 				@click="emits('close', false)"
 			/>
 			<UButton
-				:label="t(`overlays.dialog.${type}.confirm`)"
+				:label="confirmLabel ?? t(`overlays.dialog.${type}.confirm`)"
 				:color="confirmColor"
 				:icon="confirmIcon"
 				@click="emits('close', true)"
