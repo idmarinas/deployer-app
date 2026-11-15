@@ -9,6 +9,7 @@ import type {
 	QueryNotifier,
 	QueryNotifierDeps,
 	QueryOperation,
+	ToasterOptions,
 } from '@/composables/queries/shared.interfaces'
 import { QueryRawError } from '@/drizzle/drizzle'
 
@@ -123,8 +124,13 @@ export function createQueryNotifier({ toaster, t }: QueryNotifierDeps): QueryNot
 		toaster.update(noticeId, 'warning', title, description)
 	}
 
-	function success(noticeId: string | number, title: string, description?: string): void {
-		toaster.update(noticeId, 'success', title, description)
+	function success(
+		noticeId: string | number,
+		title: string,
+		description?: string,
+		options?: ToasterOptions,
+	): void {
+		toaster.update(noticeId, 'success', title, description, options)
 	}
 
 	function fail(e: unknown, fallback: ErrorFallback, noticeId?: string | number): void {

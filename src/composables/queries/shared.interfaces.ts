@@ -9,7 +9,16 @@ import useToaster from '@/composables/useToaster'
 // Errores estructurados de las operaciones CRUD
 // ====================================================================
 
-export type QueryOperation = 'findAll' | 'find' | 'create' | 'update' | 'remove' | 'restore'
+export type QueryOperation =
+	| 'findAll'
+	| 'find'
+	| 'create'
+	| 'update'
+	| 'remove'
+	| 'restore'
+	| 'purge'
+	| 'purgeAll'
+	| 'findReferences'
 
 export interface QueryErrorInfo {
 	/** Operación CRUD que falló. */
@@ -37,6 +46,9 @@ export interface QueryNotifierDeps {
 	t: Composer['t']
 }
 
+/** Opciones aceptadas por `useToaster` (`Partial<Omit<Toast, 'title' | 'description'>>`). */
+export type ToasterOptions = Partial<Omit<Toast, 'title' | 'description'>>
+
 /**
  * Contrato de `createQueryNotifier` (`src/composables/queries/shared.ts`).
  *
@@ -48,8 +60,8 @@ export interface QueryNotifier {
 	loading: (title: string, description?: string) => Toast
 	/** Cambia el aviso persistente a la siguiente fase (mismo toast). */
 	phase: (noticeId: string | number, title: string, description?: string) => void
-	/** Cierra el ciclo con éxito. */
-	success: (noticeId: string | number, title: string, description?: string) => void
+	/** Cierra el ciclo con éxito. `options` permite añadir acciones (p. ej. Deshacer). */
+	success: (noticeId: string | number, title: string, description?: string, options?: ToasterOptions) => void
 	/** Muestra un error estructurado o los textos de fallback. */
 	fail: (e: unknown, fallback: ErrorFallback, noticeId?: string | number) => void
 }
@@ -90,6 +102,53 @@ export interface CrudSoftDelete {
 	updatedAt?: AnyColumn
 }
 
+/**
+ * Referencia entrante declarada por una entidad.
+ *
+ * `remove()` comprueba estas referencias antes de borrar y solo desvincula
+ * (pone la FK a `NULL`) con `{ unlink: true }`.
+ */
+export interface CrudReference {
+	/** Tabla que contiene la clave foránea. */
+	table: SQLiteTable
+	/** Columna de la tabla que apunta a la entidad. */
+	column: AnyColumn
+	/** Clave i18n del nombre legible de la entidad referenciante. */
+	labelKey: string
+	/** Prefijo de caché de la entidad referenciante (se invalida al desvincular). */
+	cacheKey?: string
+}
+
+/** Fila que referencia a la entidad. */
+export interface CrudReferenceRow {
+	id: number | string
+	name: string
+}
+
+/** Referencias agrupadas por entidad para el diálogo de borrado. */
+export interface CrudReferenceMatch {
+	/** Clave i18n del nombre legible de la entidad referenciante. */
+	labelKey: string
+	/** Filas que apuntan a la entidad. */
+	rows: CrudReferenceRow[]
+}
+
+/** Opciones de `remove()`. */
+export interface CrudRemoveOptions {
+	/** `true` = borrado físico; solo permitido si la fila ya está en la papelera. */
+	purge?: boolean
+	/** Desvincula las referencias declaradas antes de borrar. */
+	unlink?: boolean
+}
+
+/** Resultado de `purgeDeleted()`. */
+export interface CrudPurgeAllResult {
+	/** Filas borradas físicamente. */
+	purged: number
+	/** Filas que no se purgaron por tener referencias entrantes o ser `internal`. */
+	blocked: number
+}
+
 export interface CrudConfig<TTable extends SQLiteTable, TCreate, TUpdate> {
 	/** Tabla Drizzle sobre la que opera la factoría. */
 	table: TTable
@@ -121,16 +180,30 @@ export interface CrudConfig<TTable extends SQLiteTable, TCreate, TUpdate> {
 	 * (loading/success/error) al idioma correspondiente.
 	 */
 	softDelete?: CrudSoftDelete
+	/** Columna `internal`: las filas internas no se borran ni se purgan. */
+	internalColumn?: AnyColumn
+	/** Referencias entrantes que bloquean el borrado hasta desvincularlas. */
+	references?: CrudReference[]
 }
 
 export interface CrudApi<TTable extends SQLiteTable, TKey extends string | number, TCreate, TUpdate> {
 	findAll: (options?: CrudListOptions) => Promise<CrudRow<TTable>[]>
-	find: (key: TKey) => Promise<CrudRow<TTable> | undefined>
+	/** Busca por clave aplicando (o no) el filtro de soft-delete. */
+	find: (key: TKey, options?: CrudListOptions) => Promise<CrudRow<TTable> | undefined>
 	create: (data: TCreate) => Promise<CrudRow<TTable> | undefined>
 	update: (key: TKey, data: TUpdate) => Promise<CrudRow<TTable> | undefined>
-	remove: (key: TKey) => Promise<boolean>
+	/**
+	 * Borra la fila. Sin opciones hace borrado lógico (o físico si la entidad no
+	 * tiene soft-delete). Con `{ purge: true }` elimina físicamente una fila que
+	 * ya está en la papelera. Con `{ unlink: true }` desvincula las referencias.
+	 */
+	remove: (key: TKey, options?: CrudRemoveOptions) => Promise<boolean>
 	/** Reactiva una fila soft-deleted. Si la entidad no usa soft-delete, devuelve `false`. */
 	restore: (key: TKey) => Promise<boolean>
+	/** Vacía la papelera de la tabla, respetando referencias e `internal`. */
+	purgeDeleted: () => Promise<CrudPurgeAllResult>
+	/** Filas de otras entidades que apuntan a `key`. */
+	findReferences: (key: TKey) => Promise<CrudReferenceMatch[]>
 	/** `true` si la entidad está configurada con soft-delete. */
 	supportsSoftDelete: boolean
 }
