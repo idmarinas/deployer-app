@@ -180,8 +180,6 @@ export interface CrudConfig<TTable extends SQLiteTable, TCreate, TUpdate> {
 	 * (loading/success/error) al idioma correspondiente.
 	 */
 	softDelete?: CrudSoftDelete
-	/** Columna `internal`: las filas internas no se borran ni se purgan. */
-	internalColumn?: AnyColumn
 	/** Referencias entrantes que bloquean el borrado hasta desvincularlas. */
 	references?: CrudReference[]
 }
