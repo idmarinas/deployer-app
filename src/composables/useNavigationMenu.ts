@@ -78,6 +78,12 @@ export function useSideberMenu() {
 			icon: ICONS.server.terminal,
 			to: { name: 'dashboard-console' },
 		},
+		// Papelera
+		{
+			label: t('components.sidebar.trash'),
+			icon: ICONS.actions.trash,
+			to: { name: 'dashboard-trash' },
+		},
 	])
 
 	const searchGroups = computed<CommandPaletteGroup[]>(() => [
