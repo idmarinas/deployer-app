@@ -163,6 +163,8 @@ export const commandsSeedSource = createSeedSource<CommandSeed>({
 	// `custom = 0` protege los comandos creados o modificados por el usuario.
 	seedColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'updated_at'],
 	seedWhere: sql`custom = '0'`,
+	// Los comandos internos (los únicos sembrados) deben estar siempre activos.
+	seedValues: { deleted_at: null },
 	resetColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'internal', 'custom', 'updated_at'],
 	resetValues: { deleted_at: null },
 	defaults: commands,

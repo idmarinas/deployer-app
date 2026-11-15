@@ -93,6 +93,7 @@ export function createSeedSource<TRecord extends object>(config: SeedSourceConfi
 					? {
 							columns: config.seedColumns,
 							where: config.seedWhere,
+							values: config.seedValues,
 						}
 					: undefined,
 			)

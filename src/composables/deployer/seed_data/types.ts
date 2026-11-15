@@ -73,6 +73,8 @@ export interface SeedSourceConfig<TRecord extends object> {
 	 * por ejemplo, para respetar los registros personalizados (`custom = 0`).
 	 */
 	seedWhere?: SQL
+	/** Valores fijos que el seed aplica siempre sobre las filas actualizadas (p. ej. `deleted_at: null`). */
+	seedValues?: SeedRow
 	/** Columnas que se sobrescriben al restablecer los valores predeterminados. */
 	resetColumns: readonly (keyof TRecord & string)[]
 	/** Valores fijos que se aplican siempre en un reset (p. ej. `deleted_at: null`). */
