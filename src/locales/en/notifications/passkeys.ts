@@ -50,6 +50,10 @@ export default {
 		},
 		error: {
 			title: 'Error deleting the access key.',
+			referenced: {
+				title: 'An access key that is in use cannot be deleted.',
+				description: 'Access key "{name}" is assigned to one or more hosts. Unlink it before deleting it.',
+			},
 			description: (ctx: MessageContext) => {
 				const details = ctx.named('details')
 				const base = `Error deleting access key "${ctx.named('name')}" from the database.`
@@ -75,6 +79,47 @@ export default {
 
 				return details ? `${base} Details: ${details}` : base
 			},
+		},
+	},
+	purge: {
+		loading: {
+			title: 'Permanently deleting access key...',
+			description: 'Deleting access key "{name}" from the database...',
+		},
+		success: {
+			title: 'Access key permanently deleted.',
+			description: 'Access key "{name}" was permanently deleted from the database.',
+		},
+		error: {
+			title: 'Error permanently deleting the access key.',
+			referenced: {
+				title: 'An access key that is in use cannot be deleted.',
+				description: 'Access key "{name}" is assigned to one or more hosts. Unlink it before deleting it.',
+			},
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error permanently deleting access key "${ctx.named('name')}" from the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
+	purgeAll: {
+		loading: {
+			title: 'Removing deleted items...',
+			description: 'Permanently deleting the access keys marked as deleted...',
+		},
+		success: {
+			title: 'Deleted items removed.',
+			description: 'Deleted access keys: {purged}. Blocked by references: {blocked}.',
+		},
+		warning: {
+			title: 'Some access keys could not be deleted.',
+			description: '{blocked} access key(s) could not be removed because they are assigned to hosts.',
+		},
+		error: {
+			title: 'Error removing deleted items.',
+			description: '{purged} were deleted and {blocked} remain blocked. Details: {details}',
 		},
 	},
 	validation: {

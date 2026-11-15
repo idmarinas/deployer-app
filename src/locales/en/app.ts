@@ -14,6 +14,7 @@ export default {
 			global_variable: 'global variable | global variables',
 			variable: 'variable | variables',
 			docker_compose: 'docker compose | docker composes',
+			trash: 'trash item | trash items',
 		},
 		text: (ctx: MessageContext) => {
 			return `Loading ${ctx.linked(`app.loading.what.${ctx.named('what') || 'default'}`)}…`

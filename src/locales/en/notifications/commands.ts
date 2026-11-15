@@ -50,6 +50,10 @@ export default {
 		},
 		error: {
 			title: 'Error deleting the command.',
+			internal: {
+				title: 'An internal command cannot be deleted.',
+				description: 'The internal command "{name}" cannot be deleted from the database.',
+			},
 			description: (ctx: MessageContext) => {
 				const details = ctx.named('details')
 				const base = `Error deleting the command "${ctx.named('name')}" from the database.`
@@ -75,6 +79,47 @@ export default {
 
 				return details ? `${base} Details: ${details}` : base
 			},
+		},
+	},
+	purge: {
+		loading: {
+			title: 'Permanently deleting command...',
+			description: 'Deleting command "{name}" from the database...',
+		},
+		success: {
+			title: 'Command permanently deleted.',
+			description: 'Command "{name}" was permanently deleted from the database.',
+		},
+		error: {
+			title: 'Error permanently deleting the command.',
+			internal: {
+				title: 'An internal command cannot be deleted.',
+				description: 'The internal command "{name}" cannot be deleted from the database.',
+			},
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error permanently deleting the command "${ctx.named('name')}" from the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
+	purgeAll: {
+		loading: {
+			title: 'Removing deleted items...',
+			description: 'Permanently deleting the commands marked as deleted...',
+		},
+		success: {
+			title: 'Deleted items removed.',
+			description: 'Deleted commands: {purged}. Blocked: {blocked}.',
+		},
+		warning: {
+			title: 'Some commands could not be deleted.',
+			description: '{blocked} command(s) could not be removed because they are internal or referenced.',
+		},
+		error: {
+			title: 'Error removing deleted items.',
+			description: '{purged} were deleted and {blocked} remain blocked. Details: {details}',
 		},
 	},
 } satisfies LocaleMessageValue

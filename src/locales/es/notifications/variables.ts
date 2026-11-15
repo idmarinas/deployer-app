@@ -80,4 +80,41 @@ export default {
 			},
 		},
 	},
+	purge: {
+		loading: {
+			title: 'Eliminando variable definitivamente...',
+			description: 'Borrando la variable "{name}" de la base de datos...',
+		},
+		success: {
+			title: 'Variable eliminada definitivamente.',
+			description: 'Variable "{name}" eliminada definitivamente de la base de datos.',
+		},
+		error: {
+			title: 'Error al eliminar la variable definitivamente.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al eliminar definitivamente la variable "${ctx.named('name')}" de la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	purgeAll: {
+		loading: {
+			title: 'Eliminando borrados...',
+			description: 'Eliminando definitivamente las variables marcadas como borradas...',
+		},
+		success: {
+			title: 'Eliminados elementos borrados.',
+			description: 'Variables eliminadas: {purged}. Bloqueadas por referencias: {blocked}.',
+		},
+		warning: {
+			title: 'Algunas variables no se pudieron eliminar.',
+			description: '{blocked} variable(s) siguen bloqueadas por tener referencias.',
+		},
+		error: {
+			title: 'Error al eliminar los elementos borrados.',
+			description: 'Se eliminaron {purged} y quedaron {blocked} bloqueadas. Detalles: {details}',
+		},
+	},
 } satisfies LocaleMessageValue

@@ -80,6 +80,45 @@ export default {
 		},
 	},
 
+	purge: {
+		loading: {
+			title: 'Permanently deleting host...',
+			description: 'Deleting host "{name}" from the database...',
+		},
+		success: {
+			title: 'Host permanently deleted.',
+			description: 'Host "{name}" was permanently deleted from the database.',
+		},
+		error: {
+			title: 'Error permanently deleting the host.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error permanently deleting host "${ctx.named('name')}" from the database.`
+
+				return details ? `${base} Details: ${details}` : base
+			},
+		},
+	},
+
+	purgeAll: {
+		loading: {
+			title: 'Removing deleted items...',
+			description: 'Permanently deleting the hosts marked as deleted...',
+		},
+		success: {
+			title: 'Deleted items removed.',
+			description: 'Deleted hosts: {purged}. Blocked by references: {blocked}.',
+		},
+		warning: {
+			title: 'Some hosts could not be deleted.',
+			description: '{blocked} host(s) could not be removed because they are referenced.',
+		},
+		error: {
+			title: 'Error removing deleted items.',
+			description: '{purged} were deleted and {blocked} remain blocked. Details: {details}',
+		},
+	},
+
 	test_connection: {
 		loading: {
 			title: 'Testing connection',

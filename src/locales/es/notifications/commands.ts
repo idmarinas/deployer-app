@@ -50,6 +50,10 @@ export default {
 		},
 		error: {
 			title: 'Error al eliminar el comando.',
+			internal: {
+				title: 'No se puede eliminar un comando interno.',
+				description: 'El comando interno "{name}" no se puede eliminar de la base de datos.',
+			},
 			description: (ctx: MessageContext) => {
 				const details = ctx.named('details')
 				const base = `Error al eliminar el comando "${ctx.named('name')}" de la base de datos.`
@@ -75,6 +79,47 @@ export default {
 
 				return details ? `${base} Detalles: ${details}` : base
 			},
+		},
+	},
+	purge: {
+		loading: {
+			title: 'Eliminando comando definitivamente...',
+			description: 'Borrando el comando "{name}" de la base de datos...',
+		},
+		success: {
+			title: 'Comando eliminado definitivamente.',
+			description: 'Comando "{name}" eliminado definitivamente de la base de datos.',
+		},
+		error: {
+			title: 'Error al eliminar el comando definitivamente.',
+			internal: {
+				title: 'No se puede eliminar un comando interno.',
+				description: 'El comando interno "{name}" no se puede eliminar de la base de datos.',
+			},
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al eliminar definitivamente el comando "${ctx.named('name')}" de la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	purgeAll: {
+		loading: {
+			title: 'Eliminando borrados...',
+			description: 'Eliminando definitivamente los comandos marcados como borrados...',
+		},
+		success: {
+			title: 'Eliminados elementos borrados.',
+			description: 'Comandos eliminados: {purged}. Bloqueados: {blocked}.',
+		},
+		warning: {
+			title: 'Algunos comandos no se pudieron eliminar.',
+			description: '{blocked} comando(s) siguen bloqueados por ser internos o tener referencias.',
+		},
+		error: {
+			title: 'Error al eliminar los elementos borrados.',
+			description: 'Se eliminaron {purged} y quedaron {blocked} bloqueados. Detalles: {details}',
 		},
 	},
 } satisfies LocaleMessageValue

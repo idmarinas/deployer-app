@@ -80,6 +80,45 @@ export default {
 		},
 	},
 
+	purge: {
+		loading: {
+			title: 'Eliminando servidor definitivamente...',
+			description: 'Borrando el servidor "{name}" de la base de datos...',
+		},
+		success: {
+			title: 'Servidor eliminado definitivamente.',
+			description: 'Servidor "{name}" eliminado definitivamente de la base de datos.',
+		},
+		error: {
+			title: 'Error al eliminar el servidor definitivamente.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al eliminar definitivamente el servidor "${ctx.named('name')}" de la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+
+	purgeAll: {
+		loading: {
+			title: 'Eliminando borrados...',
+			description: 'Eliminando definitivamente los servidores marcados como borrados...',
+		},
+		success: {
+			title: 'Eliminados elementos borrados.',
+			description: 'Servidores eliminados: {purged}. Bloqueados por referencias: {blocked}.',
+		},
+		warning: {
+			title: 'Algunos servidores no se pudieron eliminar.',
+			description: '{blocked} servidor(es) siguen bloqueados por tener referencias.',
+		},
+		error: {
+			title: 'Error al eliminar los elementos borrados.',
+			description: 'Se eliminaron {purged} y quedaron {blocked} bloqueados. Detalles: {details}',
+		},
+	},
+
 	test_connection: {
 		loading: {
 			title: 'Probando conexión',

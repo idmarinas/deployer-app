@@ -41,8 +41,10 @@ export default {
 		name: 'Name',
 		description: 'Description',
 		command: 'Command',
+		parser: 'Parser',
 		timeout: 'Timeout',
 		enabled: 'Enabled',
+		internal: 'Internal',
 	},
 	project: {
 		name: 'Name',
