@@ -1,3 +1,4 @@
+import type { CrudReferenceMatch, CrudRemoveOptions } from '@/composables/queries/shared.interfaces'
 import type { PositionedButton } from '@/composables/usePositionedButtons'
 import type { CommandResponse } from '@/types/tauri-types'
 import type { Ref, ShallowRef } from 'vue'
@@ -9,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useConfirmDialog } from '@/composables/useDialog'
+import { useCrudDeleteConfirm } from '@/composables/useCrudDeleteConfirm'
 import useToaster from '@/composables/useToaster'
 import { ICONS } from '@/utils/icons'
 
@@ -18,12 +20,15 @@ import { invoke } from '@tauri-apps/api/core'
 export function useToolbarButtons(
 	moduleName: ModulesName,
 	loading: Ref<boolean>,
-	deleteFn?: (id: number) => Promise<boolean>,
+	deleteFn?: (id: number, options?: CrudRemoveOptions) => Promise<boolean>,
+	/** Referencias entrantes de la fila; si se indica, el borrado las desvincula. */
+	findReferences?: (id: number) => Promise<CrudReferenceMatch[]>,
 ) {
 	const router = useRouter()
 	const toaster = useToaster()
 	const { t } = useI18n()
 	const { resolveButtons } = usePositionedButtons()
+	const deleteConfirm = useCrudDeleteConfirm()
 
 	function useViewButtons(
 		item: ShallowRef<{ name: string; id: number }>,
@@ -53,21 +58,28 @@ export function useToolbarButtons(
 				color: 'error',
 				loading,
 				async onClick() {
-					const dialog = useConfirmDialog()
+					if (deleteFn) {
+						const removed = await deleteConfirm.softDelete({
+							id: item.value.id,
+							name: item.value.name,
+							remove: (id, options) => deleteFn(Number(id), options),
+							findReferences: findReferences ? () => findReferences(item.value.id) : undefined,
+						})
 
-					const result = await dialog({
-						title: t('common.confirm.delete.label'),
-						description: t('common.confirm.delete.description', { name: item.value.name }),
-						type: 'cancel_delete',
-					})
+						if (!removed) return
+					} else {
+						const dialog = useConfirmDialog()
 
-					if (result) {
-						if (deleteFn) {
-							await deleteFn(item.value.id)
-						}
+						const result = await dialog({
+							title: t('common.confirm.delete.label'),
+							description: t('common.confirm.delete.description', { name: item.value.name }),
+							type: 'cancel_delete',
+						})
 
-						await router.push({ name: `dashboard-${moduleName}` as any })
+						if (!result) return
 					}
+
+					await router.push({ name: `dashboard-${moduleName}` as any })
 				},
 				tooltip,
 			},
