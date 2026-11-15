@@ -66,6 +66,7 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-passkeys-id'
       | 'dashboard-passkeys-id-edit'
       | 'dashboard-theme'
+      | 'dashboard-trash'
       | 'dashboard-variables'
       | 'dashboard-variables-add'
       | 'dashboard-variables-id'
@@ -235,6 +236,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'dashboard-trash': RouteRecordInfo<
+      'dashboard-trash',
+      '/dashboard/trash',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/dashboard/variables': RouteRecordInfo<
       '/dashboard/variables',
       '/dashboard/variables',
@@ -350,6 +358,7 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-passkeys-id'
         | 'dashboard-passkeys-id-edit'
         | 'dashboard-theme'
+        | 'dashboard-trash'
         | 'dashboard-variables'
         | 'dashboard-variables-add'
         | 'dashboard-variables-id'
@@ -544,6 +553,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/theme.vue': {
       routes:
         | 'dashboard-theme'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/trash.vue': {
+      routes:
+        | 'dashboard-trash'
       views:
         | never
       pathParamNames:
