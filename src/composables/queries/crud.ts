@@ -17,6 +17,10 @@ import type {
 	CrudConfig,
 	CrudListOptions,
 	CrudMutationContext,
+	CrudPurgeAllResult,
+	CrudReference,
+	CrudReferenceMatch,
+	CrudRemoveOptions,
 	CrudRow,
 } from '@/composables/queries/shared.interfaces'
 import useToaster from '@/composables/useToaster'
@@ -39,11 +43,11 @@ import { i18n } from '@/i18n'
  * 4. Notificación de éxito o error.
  *
  * Las claves i18n se generan por convención:
- * `<i18nPrefix>.{create|update|delete|restore}.{loading|success|error}.{title|description}`.
+ * `<i18nPrefix>.{create|update|delete|purge|purgeAll|restore}.{loading|success|error}.{title|description}`.
  *
  * **Importante:** `returning()` no pasa por el enmascarado del proxy. Si la
  * entidad tiene campos `encryptedText(...)`, no se debe consumir su valor a
- * partir de la fila devuelta por `create`/`update`.
+ * partir de la fila devuelta por `create`/`update`; aquí solo se usa la clave.
  */
 export function createCrudQuery<TTable extends SQLiteTable, TKey extends string | number, TCreate, TUpdate>(
 	config: CrudConfig<TTable, TCreate, TUpdate>,
@@ -56,12 +60,20 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 
 	const { table, softDelete } = config
 	const prefix = config.i18nPrefix
+	const references: CrudReference[] = config.references ?? []
 
 	const activeWhere = softDelete ? isNull(softDelete.deletedAt) : undefined
 	const deletedWhere = softDelete ? isNotNull(softDelete.deletedAt) : undefined
 
 	function invalidate(): Promise<void> {
 		return invalidateCacheQueries(cacheQuery, [config.cacheKey])
+	}
+
+	/** Invalida también las cachés de las entidades desvinculadas. */
+	async function invalidateReferences(): Promise<void> {
+		const keys = new Set(references.map(reference => reference.cacheKey).filter((key): key is string => Boolean(key)))
+
+		await Promise.all([...keys].map(key => invalidateCacheQueries(cacheQuery, [key])))
 	}
 
 	function nameOfInput(data: unknown): string {
@@ -72,6 +84,15 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 
 	function updatedAtSet(now: string): Record<string, unknown> {
 		return softDelete?.updatedAt ? { [softDelete.updatedAt.name]: now } : {}
+	}
+
+	function keyOf(row: CrudRow<TTable>): TKey {
+		return (row as Record<string, unknown>)[config.primaryKey.name] as TKey
+	}
+
+	/** Las filas con `internal = true` no se borran ni se purgan. */
+	function isInternal(row: CrudRow<TTable>): boolean {
+		return Boolean((row as Record<string, unknown>).internal)
 	}
 
 	function listWhere(options: CrudListOptions): SQL | undefined {
@@ -99,10 +120,11 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 
 	/**
 	 * Busca por clave aplicando (o no) el filtro de soft-delete.
-	 * `deleted` = `true` busca solo filas eliminadas (para `restore`).
+	 * `onlyDeleted` busca solo filas eliminadas; `includeDeleted` no filtra.
+	 * Sustituye a la antigua `findByKey()` privada.
 	 */
-	async function findByKey(key: TKey, deleted = false): Promise<CrudRow<TTable> | undefined> {
-		const where = and(eq(config.primaryKey, key), config.listWhere, deleted ? deletedWhere : activeWhere)
+	async function find(key: TKey, options: CrudListOptions = {}): Promise<CrudRow<TTable> | undefined> {
+		const where = and(eq(config.primaryKey, key), listWhere(options))
 
 		return await Promise.resolve(db.select().from(table).where(where).limit(1))
 			.then(rows => firstRow(rows as unknown as CrudRow<TTable>[]))
@@ -112,8 +134,54 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 			})
 	}
 
-	async function find(key: TKey): Promise<CrudRow<TTable> | undefined> {
-		return await findByKey(key)
+	/** Filas de otras entidades que apuntan a `key`, agrupadas por entidad. */
+	async function findReferences(key: TKey): Promise<CrudReferenceMatch[]> {
+		if (references.length === 0) return []
+
+		const matches: CrudReferenceMatch[] = []
+
+		for (const reference of references) {
+			const rows = await Promise.resolve(db.select().from(reference.table).where(eq(reference.column, key)))
+				.then(result => result as unknown as Record<string, unknown>[])
+				.catch(e => {
+					notify.fail(e, readErrorFallback(t))
+					return []
+				})
+
+			if (rows.length === 0) continue
+
+			matches.push({
+				labelKey: reference.labelKey,
+				rows: rows.map(row => ({
+					id: (row.id ?? row.key ?? '') as number | string,
+					name: String(row.name ?? row.title ?? row.id ?? row.key ?? ''),
+				})),
+			})
+		}
+
+		return matches
+	}
+
+	/** Pone a `NULL` las FK declaradas que apuntan a `key`. */
+	async function unlinkReferences(key: TKey): Promise<void> {
+		for (const reference of references) {
+			await Promise.resolve(
+				db
+					.update(reference.table)
+					.set({ [reference.column.name]: null } as never)
+					.where(eq(reference.column, key)),
+			)
+		}
+
+		await invalidateReferences()
+	}
+
+	/** Error de negocio con textos ya traducidos (referencias, filas internas). */
+	function notifyBlocked(titleKey: string, descriptionKey: string, params: Record<string, unknown>): void {
+		notify.fail(new Error(titleKey), {
+			title: t(titleKey),
+			description: t(descriptionKey, params),
+		})
 	}
 
 	async function create(data: TCreate): Promise<CrudRow<TTable> | undefined> {
@@ -172,7 +240,7 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 			const rows = await db
 				.update(table)
 				.set(payload as never)
-				.where(eq(config.primaryKey, key))
+				.where(and(eq(config.primaryKey, key), activeWhere))
 				.returning()
 			const row = firstRow(rows as unknown as CrudRow<TTable>[])
 
@@ -203,34 +271,157 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 		}
 	}
 
-	async function remove(key: TKey): Promise<boolean> {
+	/** `DELETE` físico con guarda de estado (solo filas en papelera). */
+	async function purgeRow(key: TKey): Promise<boolean> {
+		if (!softDelete) return false
+
+		const rows = await Promise.resolve(
+			db
+				.delete(table)
+				.where(and(eq(config.primaryKey, key), deletedWhere))
+				.returning({ key: config.primaryKey }),
+		)
+
+		return rows.length > 0
+	}
+
+	async function remove(key: TKey, options: CrudRemoveOptions = {}): Promise<boolean> {
+		const { purge = false, unlink = false } = options
+
+		if (purge) {
+			// La purga solo aplica a entidades con papelera y a filas ya borradas.
+			if (!softDelete) return false
+
+			const current = await find(key, { onlyDeleted: true })
+			if (!current) return false
+
+			const name = config.nameOf(current)
+
+			if (isInternal(current)) {
+				notifyBlocked(`${prefix}.purge.error.internal.title`, `${prefix}.purge.error.internal.description`, {
+					name,
+				})
+
+				return false
+			}
+
+			const matches = await findReferences(key)
+
+			if (matches.length > 0 && !unlink) {
+				notifyBlocked(`${prefix}.purge.error.referenced.title`, `${prefix}.purge.error.referenced.description`, {
+					name,
+				})
+
+				return false
+			}
+
+			const notice = notify.loading(
+				t(`${prefix}.purge.loading.title`),
+				t(`${prefix}.purge.loading.description`, { name }),
+			)
+
+			try {
+				if (matches.length > 0) await unlinkReferences(key)
+
+				const purged = await purgeRow(key)
+				if (!purged) return false
+
+				await invalidate()
+				notify.success(
+					notice.id,
+					t(`${prefix}.purge.success.title`),
+					t(`${prefix}.purge.success.description`, { name }),
+				)
+
+				return true
+			} catch (e) {
+				notify.fail(
+					e,
+					{
+						title: t(`${prefix}.purge.error.title`),
+						description: t(`${prefix}.purge.error.description`, { name, details: e }),
+					},
+					notice.id,
+				)
+
+				return false
+			}
+		}
+
 		const current = await find(key)
 		if (!current) return false
 
 		const name = config.nameOf(current)
+
+		if (isInternal(current)) {
+			notifyBlocked(`${prefix}.delete.error.internal.title`, `${prefix}.delete.error.internal.description`, {
+				name,
+			})
+
+			return false
+		}
+
+		const matches = await findReferences(key)
+
+		if (matches.length > 0 && !unlink) {
+			notifyBlocked(`${prefix}.delete.error.referenced.title`, `${prefix}.delete.error.referenced.description`, {
+				name,
+			})
+
+			return false
+		}
+
 		const notice = notify.loading(
 			t(`${prefix}.delete.loading.title`),
 			t(`${prefix}.delete.loading.description`, { name }),
 		)
 
 		try {
+			if (matches.length > 0) await unlinkReferences(key)
+
 			if (softDelete) {
 				const now = nowIso()
+				const rows = await Promise.resolve(
+					db
+						.update(table)
+						.set({ [softDelete.deletedAt.name]: now, ...updatedAtSet(now) } as never)
+						.where(and(eq(config.primaryKey, key), activeWhere))
+						.returning({ key: config.primaryKey }),
+				)
 
-				await db
-					.update(table)
-					.set({ [softDelete.deletedAt.name]: now, ...updatedAtSet(now) } as never)
-					.where(eq(config.primaryKey, key))
+				if (rows.length === 0) return false
+
+				await invalidate()
+				notify.success(
+					notice.id,
+					t(`${prefix}.delete.success.title`),
+					t(`${prefix}.delete.success.description`, { name }),
+					{
+						duration: 8000,
+						actions: [
+							{
+								label: t('common.actions.undo'),
+								onClick: () => {
+									void restore(key)
+								},
+							},
+						],
+					},
+				)
 			} else {
-				await db.delete(table).where(eq(config.primaryKey, key))
-			}
+				const rows = await Promise.resolve(
+					db.delete(table).where(eq(config.primaryKey, key)).returning({ key: config.primaryKey }),
+				)
 
-			await invalidate()
-			notify.success(
-				notice.id,
-				t(`${prefix}.delete.success.title`),
-				t(`${prefix}.delete.success.description`, { name }),
-			)
+				if (rows.length === 0) return false
+
+				await invalidate()
+				notify.success(
+					notice.id,
+					t(`${prefix}.delete.success.title`),
+					t(`${prefix}.delete.success.description`, { name }),
+				)
+			}
 
 			return true
 		} catch (e) {
@@ -250,7 +441,7 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 	async function restore(key: TKey): Promise<boolean> {
 		if (!softDelete) return false
 
-		const current = await findByKey(key, true)
+		const current = await find(key, { onlyDeleted: true })
 		if (!current) return false
 
 		const name = config.nameOf(current)
@@ -260,10 +451,15 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 		)
 
 		try {
-			await db
-				.update(table)
-				.set({ [softDelete.deletedAt.name]: null, ...updatedAtSet(nowIso()) } as never)
-				.where(eq(config.primaryKey, key))
+			const rows = await Promise.resolve(
+				db
+					.update(table)
+					.set({ [softDelete.deletedAt.name]: null, ...updatedAtSet(nowIso()) } as never)
+					.where(and(eq(config.primaryKey, key), deletedWhere))
+					.returning({ key: config.primaryKey }),
+			)
+
+			if (rows.length === 0) return false
 
 			await invalidate()
 			notify.success(
@@ -287,6 +483,77 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 		}
 	}
 
+	/**
+	 * Vacía la papelera de la tabla.
+	 *
+	 * El proxy no expone transacciones: la purga es secuencial y un fallo en una
+	 * fila no revierte las anteriores. Las filas con referencias (o `internal`)
+	 * se dejan en papelera y se cuentan como `blocked`.
+	 */
+	async function purgeDeleted(): Promise<CrudPurgeAllResult> {
+		const result: CrudPurgeAllResult = { purged: 0, blocked: 0 }
+
+		if (!softDelete) return result
+
+		const rows = await findAll({ onlyDeleted: true })
+		if (rows.length === 0) return result
+
+		const notice = notify.loading(t(`${prefix}.purgeAll.loading.title`), t(`${prefix}.purgeAll.loading.description`))
+
+		try {
+			for (const row of rows) {
+				if (isInternal(row)) {
+					result.blocked++
+					continue
+				}
+
+				const key = keyOf(row)
+				const matches = await findReferences(key)
+
+				if (matches.length > 0) {
+					result.blocked++
+					continue
+				}
+
+				if (await purgeRow(key)) result.purged++
+			}
+
+			await invalidate()
+			notify.success(
+				notice.id,
+				t(`${prefix}.purgeAll.success.title`),
+				t(`${prefix}.purgeAll.success.description`, {
+					purged: result.purged,
+					blocked: result.blocked,
+				}),
+			)
+
+			if (result.blocked > 0) {
+				toaster.warning(
+					t(`${prefix}.purgeAll.warning.title`),
+					t(`${prefix}.purgeAll.warning.description`, { blocked: result.blocked }),
+				)
+			}
+
+			return result
+		} catch (e) {
+			notify.fail(
+				e,
+				{
+					title: t(`${prefix}.purgeAll.error.title`),
+					description: t(`${prefix}.purgeAll.error.description`, {
+						purged: result.purged,
+						blocked: result.blocked,
+						details: e,
+					}),
+				},
+				notice.id,
+			)
+
+			return result
+		}
+	}
+
 	return {
 		findAll,
 		find,
@@ -294,6 +561,8 @@ export function createCrudQuery<TTable extends SQLiteTable, TKey extends string 
 		update,
 		remove,
 		restore,
+		purgeDeleted,
+		findReferences,
 		supportsSoftDelete: Boolean(softDelete),
 	}
 }
