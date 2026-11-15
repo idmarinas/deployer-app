@@ -19,7 +19,7 @@ export const hosts = sqliteTable(
 			.notNull()
 			.default('password'),
 		password: encryptedText('password'),
-		key_id: integer().references(() => passkeys.id, { onDelete: 'set null' }),
+		key_id: integer().references(() => passkeys.id, { onDelete: 'restrict' }),
 		system_info: text({ mode: 'json' })
 			.$type<HostSystemInfo>()
 			.notNull()
