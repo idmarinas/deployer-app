@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { createCrudQuery } from '@/composables/queries/crud'
 import { withTimestamps } from '@/composables/queries/shared'
 import { QueryRawError } from '@/drizzle/drizzle'
-import { passkeys } from '@/drizzle/schema'
+import { hosts as deployer_hosts, passkeys } from '@/drizzle/schema'
 
 /**
  * CRUD de passkeys.
@@ -54,5 +54,13 @@ export function usePasskeyQuery() {
 			deletedAt: passkeys.deleted_at,
 			updatedAt: passkeys.updated_at,
 		},
+		references: [
+			{
+				table: deployer_hosts,
+				column: deployer_hosts.key_id,
+				labelKey: 'entity.host.label',
+				cacheKey: 'hosts',
+			},
+		],
 	})
 }
