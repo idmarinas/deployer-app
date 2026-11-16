@@ -8,30 +8,45 @@ import { RouteLocationRaw } from 'vue-router'
 <script setup lang="ts">
 const { t } = useI18n()
 
-const props = defineProps<{
-	module: ModulesName
-	reloadFn: () => void
-	addRoute?: RouteLocationRaw
-}>()
+const props = withDefaults(
+	defineProps<{
+		module: ModulesName
+		reloadFn: () => void
+		addRoute?: RouteLocationRaw
+		/** Si se omite, usa el título del módulo en `components.empty_list`. */
+		title?: string
+		/** Si se omite, usa la descripción del módulo en `components.empty_list`. */
+		description?: string
+		/** Oculta el botón de alta (p. ej. en la pestaña Inactivos). */
+		showAdd?: boolean
+	}>(),
+	{
+		showAdd: true,
+	},
+)
 </script>
 
 <template>
 	<UEmpty
 		:icon="getModuleIcon(props.module)"
-		:title="t(`components.empty_list.${props.module}.title`)"
-		:description="t(`components.empty_list.${props.module}.description`)"
+		:title="props.title ?? t(`components.empty_list.${props.module}.title`)"
+		:description="props.description ?? t(`components.empty_list.${props.module}.description`)"
 		:actions="[
-			{
-				icon: ICONS.actions.add,
-				label: t(`components.empty_list.${props.module}.add.label`),
-				to: props.addRoute,
-			},
+			...(props.showAdd
+				? [
+						{
+							icon: ICONS.actions.add,
+							label: t(`components.empty_list.${props.module}.add.label`),
+							to: props.addRoute,
+						},
+					]
+				: []),
 			{
 				icon: ICONS.actions.refresh,
 				label: t('common.actions.refresh'),
 				color: 'neutral',
 				variant: 'soft',
-				onClick: () => reloadFn(),
+				onClick: () => props.reloadFn(),
 			},
 		]"
 	/>

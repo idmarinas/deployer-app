@@ -41,6 +41,7 @@ export default {
 
 	tabs: {
 		active: 'Activos',
+		inactive: 'Inactivos',
 		trash: 'Borrados',
 	},
 
@@ -59,8 +60,7 @@ export default {
 			description:
 				'Se eliminarán definitivamente todas las filas de la papelera de esta tabla. Esta acción no se puede deshacer.',
 			confirm_title: 'Confirmar vaciado',
-			confirm_description:
-				'Última confirmación: las filas se borrarán de la base de datos y no se podrán recuperar.',
+			confirm_description: 'Última confirmación: las filas se borrarán de la base de datos y no se podrán recuperar.',
 		},
 		purge_deleted: {
 			label: 'Eliminar borrados',

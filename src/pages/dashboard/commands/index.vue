@@ -2,7 +2,7 @@
 import type { Command } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { computed, h, onMounted } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useCommandQuery } from '@/composables/queries/commands'
@@ -27,6 +27,13 @@ const commandQuery = useCommandQuery()
 const trash = useCommandsTrash()
 
 const trashCount = computed(() => trash.data.value?.length ?? 0)
+const activeItems = computed(() => (items.value ?? []).filter(item => item.enabled))
+const inactiveItems = computed(() => (items.value ?? []).filter(item => !item.enabled))
+
+/** Pestaña seleccionada; el contenido se renderiza fuera de `UTabs` (ver `EntityListTab`). */
+const tab = ref('active')
+const isInactive = computed(() => tab.value === 'inactive')
+const isTrash = computed(() => tab.value === 'trash')
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Command>({
 	moduleName: ModulesName.Commands,
@@ -88,56 +95,64 @@ onMounted(() => {
 
 <template>
 	<UTabs
+		v-model="tab"
+		:content="false"
 		:items="[
-			{ label: t('common.tabs.active'), icon: ICONS.status.check, slot: 'active' },
+			{ label: t('common.tabs.active'), icon: ICONS.status.check, value: 'active' },
+			{
+				label: `${t('common.tabs.inactive')} ${inactiveItems.length > 0 ? `(${inactiveItems.length})` : ''}`,
+				icon: ICONS.status.cross,
+				value: 'inactive',
+			},
 			{
 				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
 				icon: ICONS.actions.trash,
-				slot: 'trash',
+				value: 'trash',
 			},
 		]"
-	>
-		<template #active>
-			<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
-				<template #expanded="{ row }">
-					<ItemCard
-						:id="row.original.key"
-						:name="row.original.name"
-						:description="row.original.description"
-						:updated_at="row.original.updated_at"
-						:created_at="row.original.created_at"
-						:enabled="row.original.enabled"
-					>
-						<template #title-right>
-							<UBadge
-								v-if="row.original.internal"
-								variant="soft"
-								:icon="ICONS.server.deviceDesktop"
-								:label="t('entity.command.internal')"
-							/>
-							<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
-						</template>
-						<div class="flex flex-col gap-2">
-							<span class="text-xs text-muted font-medium">{{ t('entity.command.command') }}</span>
-							<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-elevated rounded-md p-3">{{
-								row.original.command
-							}}</pre>
-						</div>
-					</ItemCard>
-				</template>
-			</ListTable>
-			<EmptyList
-				v-else-if="!isLoading && status === 'success' && items.length === 0"
-				:module="ModulesName.Commands"
-				:reload-fn="reload"
-				:add-route="{ name: 'dashboard-commands-add' }"
-			/>
-			<Loading v-else-if="isLoading" what="command" plural />
-			<GeneralError v-else />
-		</template>
+	/>
 
-		<template #trash>
-			<TrashTable :module="ModulesName.Commands" context="list" />
+	<TrashTable v-if="isTrash" :module="ModulesName.Commands" context="list" />
+
+	<EntityListTab
+		v-else
+		:columns="columns"
+		:items="isInactive ? inactiveItems : activeItems"
+		:is-loading="isLoading"
+		:status="status"
+		:module="ModulesName.Commands"
+		:reload-fn="reload"
+		:add-route="{ name: 'dashboard-commands-add' }"
+		:show-add="!isInactive"
+		:title="isInactive ? t('components.empty_list.inactive.title') : undefined"
+		:description="isInactive ? t('components.empty_list.inactive.description') : undefined"
+		what="command"
+	>
+		<template #expanded="{ row }">
+			<ItemCard
+				:id="row.original.key"
+				:name="row.original.name"
+				:description="row.original.description"
+				:updated_at="row.original.updated_at"
+				:created_at="row.original.created_at"
+				:enabled="row.original.enabled"
+			>
+				<template #title-right>
+					<UBadge
+						v-if="row.original.internal"
+						variant="soft"
+						:icon="ICONS.server.deviceDesktop"
+						:label="t('entity.command.internal')"
+					/>
+					<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
+				</template>
+				<div class="flex flex-col gap-2">
+					<span class="text-xs text-muted font-medium">{{ t('entity.command.command') }}</span>
+					<pre class="font-mono text-xs whitespace-pre-wrap break-all bg-elevated rounded-md p-3">{{
+						row.original.command
+					}}</pre>
+				</div>
+			</ItemCard>
 		</template>
-	</UTabs>
+	</EntityListTab>
 </template>

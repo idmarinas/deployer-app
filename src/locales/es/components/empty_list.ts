@@ -33,4 +33,8 @@ export default {
 			description: 'Añadir una nueva variable global reutilizable.',
 		},
 	},
+	inactive: {
+		title: 'Sin inactivos',
+		description: 'No hay elementos inactivos en esta tabla.',
+	},
 } satisfies LocaleMessageValue

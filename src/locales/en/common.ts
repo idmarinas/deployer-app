@@ -39,6 +39,7 @@ export default {
 
 	tabs: {
 		active: 'Active',
+		inactive: 'Inactive',
 		trash: 'Deleted',
 	},
 
