@@ -2,6 +2,31 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (16 nov 2026 — Pestaña Inactivos en los listados)
+
+**Nota del usuario:** los listados separan las filas deshabilitadas en una pestaña propia. La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará junto con la del soft-delete.
+
+1. **Tres pestañas**: **Activos** / **Inactivos** / **Borrados** en variables, hosts, commands y passkeys. `UTabs` usa `v-model` y `:content="false"`; el contenido se renderiza fuera para conservar filtros y estado al cambiar de pestaña.
+2. **Filtrado**: Activos = `enabled === true` y no borradas; Inactivos = `enabled === false` y no borradas. El contador aparece solo en Inactivos y Borrados cuando es mayor que 0.
+3. **Componente compartido** `src/components/table/EntityListTab.vue` (lista, vacío, carga y error; slot `expanded`) y `EmptyList` acepta `title`/`description`/`showAdd`. El vacío de Inactivos usa `components.empty_list.inactive.*` sin botón de alta.
+4. **Documentación e i18n**: `AGENTS.frontend.md` y las páginas de variables, hosts, commands y passkeys en `docs/content/es/`; claves `es`/`en` (`common.tabs.inactive` y `components.empty_list.inactive.*`) y `bun run i18n:types` regenerado.
+5. **Verificación**: Prettier, `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-16).
+
+---
+
+## Tareas completadas (16 nov 2026 — Soft delete estilo Doctrine: papelera y purga)
+
+**Nota del usuario:** el plan `AGENTS.soft-delete.PLAN.md` se da por completado. Detalle en `AGENTS.soft-delete.PLAN.md` (archivado en `.agents/plans.done/`). La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará aparte; `settings` sigue apartado y es ajeno al plan.
+
+1. **API CRUD** (`src/composables/queries/crud.ts`, `shared.interfaces.ts`): `find(key, options)` unificado con `onlyDeleted`/`includeDeleted` (sin `findByKey()` privada), `remove(key, { purge, unlink })` como única vía de purga (exige fila en papelera), `purgeDeleted()` con recuento `purged`/`blocked`, `findReferences()`, guardas de estado con `returning()` y bloqueo de filas `internal`. Notificaciones `delete`/`purge`/`purgeAll` completas en `es`/`en`.
+2. **Relaciones**: una fila referenciada no se borra hasta desvincularla (`unlink`); `useCrudDeleteConfirm` ofrece **Cancelar** y **Desvincular y eliminar**. Migración de `hosts.key_id` de `set null` a `restrict` (`drizzle/migrations/` + `src-tauri/migrations/`). `findVariableUsages()` (`src/utils/interpolation/usages.ts`) avisa de los comandos que usan una variable por `{{global.<slug>}}`.
+3. **UI de papelera**: `TrashTable`/`TrashDetails` compartidos, página global `src/pages/dashboard/trash.vue` agrupada por tabla y pestañas **Activos**/**Borrados** en los listados de variables, hosts, commands y passkeys. Restaurar, purgar, purga masiva con confirmación doble (**Vaciar papelera** en la página global / **Eliminar borrados** en la pestaña, con `context="list"`) y toast con acción **Deshacer** tras el borrado lógico.
+4. **Seeds e `internal`**: `seedValues`/`seedWhere` en los seeds y `deleted_at = null` para las filas internas, que no se pueden borrar ni purgar.
+5. **Documentación e i18n**: `AGENTS.frontend.md` (API CRUD, papelera e `internal`), `docs/content/es/008.variables/1.overview.md` y `docs/content/es/003.passkeys/2.manage.md` actualizados; claves `es`/`en` completas y `bun run i18n:types` regenerado.
+6. **Verificación**: `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-15/16).
+
+---
+
 ## Tareas completadas (12 nov 2026 — Variables globales: inmutabilidad y endurecimiento del cifrado)
 
 **Nota del usuario:** el análisis `AGENTS.variables.ANALYSIS.md` queda consolidado aquí y se elimina. El trabajo aplazado vive en `plans/AGENTS.futuro.PLAN.md` §2 (`FUT-VAR-*`).
