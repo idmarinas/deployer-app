@@ -4,8 +4,6 @@ import type { JSONContent } from '@tiptap/core'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import ItemCard from '@/components/table/ItemCard.vue'
-import ValueViewer from '@/components/view/ValueViewer.vue'
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
 
@@ -137,9 +135,9 @@ const fields = computed<TrashDetailField[]>(() => {
 			>
 				<dt class="text-xs text-muted font-medium">{{ field.label }}</dt>
 				<dd v-if="field.pre" class="min-w-0">
-					<pre
-						class="bg-elevated rounded-md p-3 font-mono text-xs whitespace-pre-wrap break-all"
-					>{{ field.value }}</pre>
+					<pre class="bg-elevated rounded-md p-3 font-mono text-xs whitespace-pre-wrap break-all">{{
+						field.value
+					}}</pre>
 				</dd>
 				<dd v-else class="text-sm text-foreground" :class="field.mono ? 'font-mono break-all' : ''">
 					<ValueViewer :value="field.value" only-text />

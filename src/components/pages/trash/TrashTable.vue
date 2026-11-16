@@ -6,9 +6,8 @@ import { useI18n } from 'vue-i18n'
 
 import UBadge from '@nuxt/ui/components/Badge.vue'
 
-import TrashDetails from '@/components/trash/TrashDetails.vue'
-import { useCrudDeleteConfirm } from '@/composables/useCrudDeleteConfirm'
 import { useCrudByModule } from '@/composables/queries/registry'
+import { useCrudDeleteConfirm } from '@/composables/useCrudDeleteConfirm'
 import { usePositionedButtons } from '@/composables/usePositionedButtons'
 import { createExpandColumn } from '@/composables/useTableColumns'
 import { useTrashLoader } from '@/loaders/trash'
