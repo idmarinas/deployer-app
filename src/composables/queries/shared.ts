@@ -64,9 +64,19 @@ export function firstRow<TEntity>(rows: TEntity[]): TEntity | undefined {
  * ejecutan tras cada escritura.
  *
  * Seguro fuera de setup: usar con la instancia de `useQueryCache()` del composable.
+ *
+ * **No propaga errores de refetch** (igual que `throwOnError: false` en react-query).
+ * La escritura que originó la invalidación ya se completó y el error de la query
+ * queda en su propio estado (`error`), que la vista consume. Sin esto, borrar una
+ * fila cuyo loader de detalle responde `not-found` tras el borrado
+ * (`usePasskeyById`, `useCommandByKey`) se reportaba como fallo del borrado.
  */
 export async function invalidateCacheQueries(cacheQuery: QueryCache, key: EntryKey): Promise<void> {
-	await cacheQuery.invalidateQueries({ key }, 'all')
+	try {
+		await cacheQuery.invalidateQueries({ key }, 'all')
+	} catch {
+		// El error ya está en el estado de la query invalidada; no debe tumbar la mutación.
+	}
 }
 
 /**
