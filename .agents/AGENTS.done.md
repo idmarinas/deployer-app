@@ -8,9 +8,10 @@
 
 1. **Tres pestañas**: **Activos** / **Inactivos** / **Borrados** en variables, hosts, commands y passkeys. `UTabs` usa `v-model` y `:content="false"`; el contenido se renderiza fuera para conservar filtros y estado al cambiar de pestaña.
 2. **Filtrado**: Activos = `enabled === true` y no borradas; Inactivos = `enabled === false` y no borradas. El contador aparece solo en Inactivos y Borrados cuando es mayor que 0.
-3. **Componente compartido** `src/components/table/EntityListTab.vue` (lista, vacío, carga y error; slot `expanded`) y `EmptyList` acepta `title`/`description`/`showAdd`. El vacío de Inactivos usa `components.empty_list.inactive.*` sin botón de alta.
-4. **Documentación e i18n**: `AGENTS.frontend.md` y las páginas de variables, hosts, commands y passkeys en `docs/content/es/`; claves `es`/`en` (`common.tabs.inactive` y `components.empty_list.inactive.*`) y `bun run i18n:types` regenerado.
-5. **Verificación**: Prettier, `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-16).
+3. **Semáforo**: el indicador de `UTabs` toma el color del estado de la pestaña activa (`success`/`warning`/`error`) y los iconos de las pestañas no activas se tiñen con ese mismo color.
+4. **Componente compartido** `src/components/table/EntityListTab.vue` (lista, vacío, carga y error; slot `expanded`) y `EmptyList` acepta `title`/`description`/`showAdd`. El vacío de Inactivos usa `components.empty_list.inactive.*` sin botón de alta.
+5. **Documentación e i18n**: `AGENTS.frontend.md` y las páginas de variables, hosts, commands y passkeys en `docs/content/es/`; claves `es`/`en` (`common.tabs.inactive` y `components.empty_list.inactive.*`) y `bun run i18n:types` regenerado.
+6. **Verificación**: Prettier, `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-16).
 
 ---
 
