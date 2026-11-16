@@ -36,6 +36,9 @@ const tab = ref('active')
 const isInactive = computed(() => tab.value === 'inactive')
 const isTrash = computed(() => tab.value === 'trash')
 
+/** Color del indicador según la pestaña activa (verde/ámbar/rojo). */
+const tabColor = computed(() => (isTrash.value ? 'error' : isInactive.value ? 'warning' : 'success'))
+
 /** Expresión de interpolación tal como debe escribirse en un comando. */
 const usageOf = (slug: string) => `{{global.${slug}}}`
 
@@ -84,8 +87,13 @@ onMounted(() => {
 	<UTabs
 		v-model="tab"
 		:content="false"
+		:color="tabColor"
 		:items="[
-			{ label: t('common.tabs.active'), icon: ICONS.status.check, value: 'active' },
+			{
+				label: t('common.tabs.active'),
+				icon: ICONS.status.check,
+				value: 'active',
+			},
 			{
 				label: `${t('common.tabs.inactive')} ${inactiveItems.length > 0 ? `(${inactiveItems.length})` : ''}`,
 				icon: ICONS.status.cross,

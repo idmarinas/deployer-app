@@ -37,6 +37,9 @@ const tab = ref('active')
 const isInactive = computed(() => tab.value === 'inactive')
 const isTrash = computed(() => tab.value === 'trash')
 
+/** Color del indicador según la pestaña activa (verde/ámbar/rojo). */
+const tabColor = computed(() => (isTrash.value ? 'error' : isInactive.value ? 'warning' : 'success'))
+
 const router = useRouter()
 const hostQuery = useHostQuery()
 const { useButtons } = useToolbarButtons(ModulesName.Hosts, isLoading, hostQuery.remove)
@@ -114,8 +117,13 @@ onMounted(() => {
 	<UTabs
 		v-model="tab"
 		:content="false"
+		:color="tabColor"
 		:items="[
-			{ label: t('common.tabs.active'), icon: ICONS.status.check, value: 'active' },
+			{
+				label: t('common.tabs.active'),
+				icon: ICONS.status.check,
+				value: 'active',
+			},
 			{
 				label: `${t('common.tabs.inactive')} ${inactiveItems.length > 0 ? `(${inactiveItems.length})` : ''}`,
 				icon: ICONS.status.cross,
