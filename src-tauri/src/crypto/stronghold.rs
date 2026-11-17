@@ -8,6 +8,7 @@ use keyring::{Entry, Error as KeyringError};
 use rand::{rngs::SysRng, TryRng};
 use serde::Serialize;
 use std::path::PathBuf;
+use ts_rs::TS;
 use zeroize::Zeroizing;
 
 const SERVICE_NAME: &str = "deployer-app";
@@ -20,10 +21,12 @@ const EXPECTED_SCOPES: &[&str] = &[
     "encrypt:deployer_hosts.password",
     "encrypt:deployer_passkeys.key_content",
     "encrypt:deployer_passkeys.passphrase",
+    "encrypt:deployer_variables.value",
 ];
 
 /// Reporte de salud del vault de Stronghold.
-#[derive(Serialize)]
+#[derive(Serialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
 pub struct VaultHealthReport {
     pub vault_file_exists: bool,
     pub salt_file_exists: bool,
@@ -168,7 +171,10 @@ impl StrongholdVault {
 
         for &scope in EXPECTED_SCOPES {
             let mut found = false;
-            for version in 0..10 {
+            // La rotación del frontend puede superar la versión 9: ampliar el
+            // escaneo hasta la versión actual (mínimo 0..9, como antes).
+            let max_version = stored_current_version(&client, scope).max(9);
+            for version in 0..=max_version {
                 let key_name = format!("{}:{}", scope, version);
                 if client.store().get(key_name.as_bytes()).ok().flatten().is_some() {
                     report.keys_found.push(key_name);
@@ -184,7 +190,7 @@ impl StrongholdVault {
     }
 
     /// Obtiene la clave AES de una versión concreta para un scope.
-    pub fn get_key_for_version(&self, scope: &str, version: i64) -> Result<Vec<u8>, String> {
+    fn get_key_for_version(&self, scope: &str, version: i64) -> Result<Vec<u8>, String> {
         let key_scope = format!("{}:{}", scope, version);
         let key = self
             .client
@@ -212,11 +218,28 @@ impl StrongholdVault {
     }
 }
 
+/// Lee la versión actual de un scope desde el store (`scope:current`).
+///
+/// El valor se guarda como 8 bytes big-endian. Si falta o es inválido, 0.
+fn stored_current_version(client: &Client, scope: &str) -> i64 {
+    let key_name = format!("{}:current", scope);
+    client
+        .store()
+        .get(key_name.as_bytes())
+        .ok()
+        .flatten()
+        .and_then(|bytes: Vec<u8>| {
+            let version: [u8; 8] = bytes.get(..8)?.try_into().ok()?;
+            Some(i64::from_be_bytes(version))
+        })
+        .unwrap_or(0)
+}
+
 /// Separa la versión de un valor cifrado.
 ///
 /// Formato: `ENC:{version}:<base64>`. Si no hay segmento de versión
 /// (`ENC:<base64>`), se asume versión 0.
-pub fn split_ciphertext_version(ciphertext: &str) -> (i64, &str) {
+fn split_ciphertext_version(ciphertext: &str) -> (i64, &str) {
     if !ciphertext.starts_with("ENC:") {
         return (0, ciphertext);
     }

@@ -1,20 +1,21 @@
 use russh::keys::PrivateKey;
-use russh::Channel;
 use serde::Deserialize;
-use sqlx::{Row, SqlitePool};
+use sqlx::Row;
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::timeout;
 use ts_rs::TS;
 
-use crate::commands::database::path_to_sqlite_url;
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 use crate::crypto::StrongholdVault;
-use crate::helpers::configured_sqlite_options;
+use crate::helpers::open_read_only_pool;
 use crate::params;
 use crate::response::CommandResponse;
-use crate::ssh::{HostCredentials, SshCredentials, SshSession};
+use crate::ssh::{
+    decrypt_host_credentials, fetch_host_credentials, open_command_channel, shell_escape,
+    HostCredentials, SshCredentials, SshSession,
+};
 
 /// Timeout para operaciones SSH (en segundos)
 const SSH_TIMEOUT_SECS: u64 = 15;
@@ -97,7 +98,7 @@ pub async fn export_public_key(
     };
 
     // 3. Obtener datos del host + credenciales de su passkey
-    let (mut host_creds, mut host_key_content, mut host_passphrase) =
+    let (host_creds, host_key_content, host_passphrase) =
         match fetch_host_data(&db_path, input.host_id).await {
             Ok(Some(data)) => data,
             Ok(None) => {
@@ -114,34 +115,9 @@ pub async fn export_public_key(
             }
         };
 
-    // Descifrar credenciales del host
-    if let Some(ref pwd) = host_creds.password {
-        if crypto::is_encrypted(pwd) {
-                host_creds.password = Some(
-                vault
-                    .decrypt_value("encrypt:deployer_hosts.password", pwd)
-                    .map_err(|e| format!("Error al descifrar password: {}", e))?,
-            );
-        }
-    }
-    if let Some(ref kc) = host_key_content {
-        if crypto::is_encrypted(kc) {
-            host_key_content = Some(
-                vault
-                    .decrypt_value("encrypt:deployer_passkeys.key_content", kc)
-                    .map_err(|e| format!("Error al descifrar key_content: {}", e))?,
-            );
-        }
-    }
-    if let Some(ref pp) = host_passphrase {
-        if crypto::is_encrypted(pp) {
-            host_passphrase = Some(
-                vault
-                    .decrypt_value("encrypt:deployer_passkeys.passphrase", pp)
-                    .map_err(|e| format!("Error al descifrar passphrase: {}", e))?,
-            );
-        }
-    }
+    // Descifrar credenciales del host con el helper compartido.
+    let host_credentials =
+        decrypt_host_credentials(&host_creds, host_key_content, host_passphrase, &vault)?;
 
     // 4. Obtener datos de la passkey y descifrar
     let mut passkey = match fetch_passkey_data(&db_path, input.passkey_id).await {
@@ -194,9 +170,7 @@ pub async fn export_public_key(
         Duration::from_secs(SSH_TIMEOUT_SECS),
         try_connect_and_execute(
             &addr,
-            &host_creds,
-            host_key_content.as_deref(),
-            host_passphrase.as_deref(),
+            &host_credentials,
             input.temp_username.as_deref(),
             input.temp_password.as_deref(),
             &public_key_line,
@@ -240,9 +214,7 @@ pub async fn export_public_key(
 /// fallan o no se proporcionaron, usa las credenciales guardadas en BD.
 async fn try_connect_and_execute(
     addr: &str,
-    host_creds: &HostCredentials,
-    host_key_content: Option<&str>,
-    host_passphrase: Option<&str>,
+    host_credentials: &SshCredentials,
     temp_username: Option<&str>,
     temp_password: Option<&str>,
     public_key_line: &str,
@@ -264,34 +236,21 @@ async fn try_connect_and_execute(
         }
     }
 
-    // Intentar con las credenciales guardadas en BD
-    let credentials = SshCredentials {
-        username: host_creds.username.clone(),
-        auth_type: host_creds.auth_type.clone(),
-        password: host_creds.password.clone(),
-        key_content: host_key_content.map(|s| s.to_string()),
-        passphrase: host_passphrase.map(|s| s.to_string()),
-    };
-    let session = SshSession::connect(addr.to_string(), credentials, 0).await?;
+    // Intentar con las credenciales guardadas en BD (ya descifradas)
+    let session = SshSession::connect(addr.to_string(), host_credentials.clone(), 0).await?;
     execute_authorized_keys(session, public_key_line, action).await
 }
 
 /// Abre un canal SSH, ejecuta el comando sobre `~/.ssh/authorized_keys`
 /// y desconecta la sesión limpiamente.
 async fn execute_authorized_keys(
-    session: SshSession,
+    mut session: SshSession,
     public_key_line: &str,
     action: &ExportPublicKeyAction,
 ) -> Result<(), String> {
-    let channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH: {}", e))?;
-
     let command = build_authorized_keys_command(public_key_line, action);
 
-    run_channel_command(channel, &command, action).await?;
+    run_channel_command(&mut session, &command, action).await?;
 
     session.disconnect().await;
 
@@ -300,18 +259,18 @@ async fn execute_authorized_keys(
 
 /// Construye el comando shell para añadir o eliminar la clave de authorized_keys.
 fn build_authorized_keys_command(public_key_line: &str, action: &ExportPublicKeyAction) -> String {
-    let escaped = public_key_line.replace('\'', "'\\''");
+    let escaped = shell_escape(public_key_line);
 
     match action {
         ExportPublicKeyAction::Add => {
             format!(
-                "mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && grep -qxF '{}' ~/.ssh/authorized_keys || echo '{}' >> ~/.ssh/authorized_keys",
+                "mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && grep -qxF {} ~/.ssh/authorized_keys || echo {} >> ~/.ssh/authorized_keys",
                 escaped, escaped
             )
         }
         ExportPublicKeyAction::Remove => {
             format!(
-                "if [ ! -f ~/.ssh/authorized_keys ]; then exit 1; fi; if ! grep -qxF '{}' ~/.ssh/authorized_keys; then exit 2; fi; grep -v -xF '{}' ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp && mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys",
+                "if [ ! -f ~/.ssh/authorized_keys ]; then exit 1; fi; if ! grep -qxF {} ~/.ssh/authorized_keys; then exit 2; fi; grep -v -xF {} ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp && mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys",
                 escaped, escaped
             )
         }
@@ -320,14 +279,11 @@ fn build_authorized_keys_command(public_key_line: &str, action: &ExportPublicKey
 
 /// Ejecuta un comando en el canal SSH y espera su finalización.
 async fn run_channel_command(
-    mut channel: Channel<russh::client::Msg>,
+    session: &mut SshSession,
     command: &str,
     action: &ExportPublicKeyAction,
 ) -> Result<(), String> {
-    channel
-        .exec(true, command)
-        .await
-        .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
+    let mut channel = open_command_channel(session, command).await?;
 
     loop {
         match channel.wait().await {
@@ -378,41 +334,14 @@ async fn fetch_host_data(
     db_path: &str,
     host_id: i64,
 ) -> Result<Option<(HostCredentials, Option<String>, Option<String>)>, String> {
-    let pool = open_pool(db_path).await?;
-
-    let row = sqlx::query(
-        r#"
-        SELECT
-            h.host, h.port, h.username, h.auth_type, h.password,
-            p.key_content, p.passphrase
-        FROM deployer_hosts h
-        LEFT JOIN deployer_passkeys p ON h.key_id = p.id
-        WHERE h.id = ?
-        "#,
-    )
-    .bind(host_id)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| e.to_string())?;
-
+    let pool = open_read_only_pool(db_path).await?;
+    let result = fetch_host_credentials(&pool, host_id, false).await;
     pool.close().await;
-
-    Ok(row.map(|r| {
-        let host_creds = HostCredentials {
-            host: r.get("host"),
-            port: r.get("port"),
-            username: r.get("username"),
-            auth_type: r.get("auth_type"),
-            password: r.try_get("password").ok().flatten(),
-        };
-        let key_content: Option<String> = r.try_get("key_content").ok().flatten();
-        let passphrase: Option<String> = r.try_get("passphrase").ok().flatten();
-        (host_creds, key_content, passphrase)
-    }))
+    result
 }
 
 async fn fetch_passkey_data(db_path: &str, passkey_id: i64) -> Result<Option<PasskeyData>, String> {
-    let pool = open_pool(db_path).await?;
+    let pool = open_read_only_pool(db_path).await?;
 
     let row = sqlx::query("SELECT key_content, passphrase FROM deployer_passkeys WHERE id = ?")
         .bind(passkey_id)
@@ -426,14 +355,6 @@ async fn fetch_passkey_data(db_path: &str, passkey_id: i64) -> Result<Option<Pas
         key_content: r.get("key_content"),
         passphrase: r.get("passphrase"),
     }))
-}
-
-async fn open_pool(db_path: &str) -> Result<SqlitePool, String> {
-    let url = path_to_sqlite_url(db_path);
-    let options = configured_sqlite_options(&url)?.read_only(true);
-    SqlitePool::connect_with(options)
-        .await
-        .map_err(|e| e.to_string())
 }
 
 // ---------------------------------------------------------------------------

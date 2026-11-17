@@ -4,8 +4,9 @@ use tauri::State;
 use tokio_util::sync::CancellationToken;
 
 /// Mensaje de cancelación por usuario (se emite por el Channel como evento
-/// `error` y viaja como `reason` en la respuesta).
-pub const CANCELLED_MSG: &str = "Operación cancelada por el usuario";
+/// `error` y viaja como `reason` en la respuesta). Definido en `ssh::transfer`
+/// para compartirlo con las transferencias SFTP.
+pub use crate::ssh::transfer::CANCELLED_MSG;
 
 /// Estado global del job remoto activo (consola remota).
 ///

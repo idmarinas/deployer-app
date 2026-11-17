@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::params;
 use crate::response::CommandResponse;
-use crate::ssh::{connect_to_host_by_id, shell_escape, SshSession};
+use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshSession};
 
 use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
 use super::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
@@ -111,16 +111,7 @@ async fn run_command_streaming(
 ) -> Result<(String, i64, i64), String> {
     session.ensure_connected().await?;
 
-    let mut ssh_channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH: {}", e))?;
-
-    ssh_channel
-        .exec(true, full_command.as_bytes())
-        .await
-        .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
+    let mut ssh_channel = open_command_channel(session, full_command).await?;
 
     let start = Instant::now();
     let mut output = String::new();

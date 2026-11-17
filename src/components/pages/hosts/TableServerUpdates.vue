@@ -1,5 +1,6 @@
 <script lang="ts">
-import type { CommandResponse, HostPackage, HostServerUpdates, HostUpdateResult } from '@/types/tauri-types'
+import type { HostPackage, HostServerUpdates } from '@/types/entities'
+import type { CommandResponse, HostUpdateResult } from '@/types/tauri-types'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, TableMeta } from '@tanstack/vue-table'
 

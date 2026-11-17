@@ -9,7 +9,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::params;
 use crate::response::CommandResponse;
-use crate::ssh::transfer::{self as transfer_utils, TransferResult};
+use crate::ssh::transfer::{self as transfer_utils, SFTP_BUFFER_SIZE, TransferResult};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session};
 
 use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
@@ -80,7 +80,6 @@ pub async fn ssh_upload_file(
             &src,
             &dest,
             overwrite,
-            None,
             input.chmod.as_deref(),
             Some(&token),
             &mut emit,
@@ -93,7 +92,6 @@ pub async fn ssh_upload_file(
             &src,
             &dest,
             overwrite,
-            None,
             input.chmod.as_deref(),
             Some(&token),
             &mut emit,
@@ -196,7 +194,6 @@ pub async fn ssh_download_file(
                     &src,
                     &dest,
                     overwrite,
-                    None,
                     Some(&token),
                     &mut emit,
                 )
@@ -219,7 +216,6 @@ pub async fn ssh_download_file(
                     &src,
                     &dest,
                     overwrite,
-                    None,
                     Some(&token),
                     &mut emit,
                 )
@@ -260,7 +256,7 @@ pub async fn ssh_download_file(
                 return err_response("tauri.remote.errors.cancelled", CANCELLED_MSG);
             }
 
-            let mut chunk = vec![0u8; 256 * 1024];
+            let mut chunk = vec![0u8; SFTP_BUFFER_SIZE];
             let n = match remote_file.read(&mut chunk).await {
                 Ok(n) => n,
                 Err(e) => {

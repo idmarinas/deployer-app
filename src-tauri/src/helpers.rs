@@ -18,6 +18,15 @@ pub async fn create_configured_pool(url: &str) -> Result<SqlitePool, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Abre un pool de solo lectura para una ruta de BD ya resuelta.
+pub async fn open_read_only_pool(db_path: &str) -> Result<SqlitePool, String> {
+    let url = path_to_sqlite_url(db_path);
+    let options = configured_sqlite_options(&url)?.read_only(true);
+    SqlitePool::connect_with(options)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 pub async fn open_pool(app: &AppHandle) -> Result<(SqlitePool, String), String> {
     let path = get_database_path_internal(app.clone())
         .map_err(|e| e)?

@@ -274,7 +274,6 @@ export default {
   store: {
     errors: {
       check_failed: 'Error checking the database existence. \n Reason: {reason}',
-      get_path_failed: 'Error getting the database path. \n Reason: {reason}',
       open_failed: 'Could not open the configuration storage. \n Reason: {reason}',
       save_failed: 'Could not save the database path. \n Reason: {reason}',
     },

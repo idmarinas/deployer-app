@@ -12,7 +12,7 @@ use crate::crypto::StrongholdVault;
 const CONNECT_TIMEOUT_SECS: u64 = 15;
 
 /// Handler SSH mínimo: acepta cualquier clave de servidor.
-pub struct SshClientHandler;
+pub(crate) struct SshClientHandler;
 
 impl client::Handler for SshClientHandler {
     type Error = russh::Error;
@@ -35,6 +35,7 @@ pub struct HostCredentials {
 }
 
 /// Datos de credenciales SSH ya descifrados, listos para autenticar.
+#[derive(Clone)]
 pub struct SshCredentials {
     pub username: String,
     pub auth_type: AuthType,
@@ -45,7 +46,7 @@ pub struct SshCredentials {
 
 /// Sesión SSH activa con reconexión automática.
 pub struct SshSession {
-    pub handle: client::Handle<SshClientHandler>,
+    pub(crate) handle: client::Handle<SshClientHandler>,
     pub addr: String,
     pub credentials: SshCredentials,
     pub max_reconnect_attempts: u32,
@@ -113,7 +114,7 @@ impl SshSession {
 }
 
 /// Descifra las credenciales del host usando el vault de Stronghold.
-pub fn decrypt_host_credentials(
+pub(crate) fn decrypt_host_credentials(
     host: &HostCredentials,
     key_content: Option<String>,
     passphrase: Option<String>,

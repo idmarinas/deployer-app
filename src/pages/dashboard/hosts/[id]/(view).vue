@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { PositionedButton } from '@/composables/usePositionedButtons'
-import type { Host } from '@/types/entities'
-import type { HostPackage, HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import type { Host, HostPackage, HostServerUpdates, HostStatusMetrics } from '@/types/entities'
+import type { HostSystemInfo } from '@/types/tauri-types'
 import type { SystemInfoResult, SystemMetricsResult } from '@/utils/commands/results'
 import type { Ref, VNode } from 'vue'
 

@@ -9,13 +9,11 @@ use std::path::Path;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
 
-use super::glob::matches_any;
-
 /// Tamaño del buffer de lectura/escritura SFTP (256 KB).
-const SFTP_BUFFER_SIZE: usize = 256 * 1024;
+pub const SFTP_BUFFER_SIZE: usize = 256 * 1024;
 
 /// Mensaje devuelto cuando el usuario cancela la transferencia.
-const CANCELLED_MSG: &str = "Operación cancelada por el usuario";
+pub const CANCELLED_MSG: &str = "Operación cancelada por el usuario";
 
 /// Devuelve `true` si el token de cancelación está activo (o si no hay token,
 /// nunca cancela).
@@ -114,13 +112,11 @@ where
 }
 
 /// Sube un directorio local a una ruta remota de forma recursiva.
-#[allow(clippy::too_many_arguments)]
 pub async fn upload_dir<F>(
     sftp: &russh_sftp::client::SftpSession,
     src_dir: &Path,
     dest_dir: &Path,
     overwrite: bool,
-    exclude: Option<&[String]>,
     chmod: Option<&str>,
     cancel: Option<&CancellationToken>,
     on_output: &mut F,
@@ -145,13 +141,6 @@ where
 
         let entry_path = entry.path();
         let file_name = entry.file_name();
-        let file_name_str = file_name.to_string_lossy();
-
-        if let Some(patterns) = exclude {
-            if matches_any(patterns, &file_name_str) {
-                continue;
-            }
-        }
 
         let dest_entry = dest_dir.join(&file_name);
 
@@ -163,7 +152,6 @@ where
                 &entry_path,
                 &dest_entry,
                 overwrite,
-                exclude,
                 chmod,
                 cancel,
                 on_output,
@@ -190,13 +178,11 @@ where
 
 /// Sube un archivo o directorio local (`src`) a la ruta remota `dest`.
 /// Si `src` es un directorio, la transferencia es recursiva.
-#[allow(clippy::too_many_arguments)]
 pub async fn upload<F>(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
     dest: &Path,
     overwrite: bool,
-    exclude: Option<&[String]>,
     chmod: Option<&str>,
     cancel: Option<&CancellationToken>,
     on_output: &mut F,
@@ -205,10 +191,7 @@ where
     F: FnMut(&str),
 {
     if src.is_dir() {
-        upload_dir(
-            sftp, src, dest, overwrite, exclude, chmod, cancel, on_output,
-        )
-        .await
+        upload_dir(sftp, src, dest, overwrite, chmod, cancel, on_output).await
     } else {
         upload_single_file(sftp, src, dest, overwrite, chmod, cancel, on_output).await
     }
@@ -280,13 +263,11 @@ where
 }
 
 /// Descarga un directorio remoto a una ruta local de forma recursiva.
-#[allow(clippy::too_many_arguments)]
 pub async fn download_dir<F>(
     sftp: &russh_sftp::client::SftpSession,
     src_dir: &Path,
     dest_dir: &Path,
     overwrite: bool,
-    exclude: Option<&[String]>,
     cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
@@ -317,12 +298,6 @@ where
 
         let file_name = entry.file_name();
 
-        if let Some(patterns) = exclude {
-            if matches_any(patterns, &file_name) {
-                continue;
-            }
-        }
-
         let entry_src = src_dir.join(&file_name);
         let entry_dest = dest_dir.join(&file_name);
         let is_dir = entry.file_type().is_dir();
@@ -333,7 +308,6 @@ where
                 &entry_src,
                 &entry_dest,
                 overwrite,
-                exclude,
                 cancel,
                 on_output,
             ))
@@ -352,13 +326,11 @@ where
 
 /// Descarga un archivo o directorio remoto (`src`) a la ruta local `dest`.
 /// Detecta si `src` es un directorio remoto probando `read_dir`.
-#[allow(clippy::too_many_arguments)]
 pub async fn download<F>(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
     dest: &Path,
     overwrite: bool,
-    exclude: Option<&[String]>,
     cancel: Option<&CancellationToken>,
     on_output: &mut F,
 ) -> Result<TransferResult, String>
@@ -373,7 +345,7 @@ where
     };
 
     if is_dir {
-        download_dir(sftp, src, dest, overwrite, exclude, cancel, on_output).await
+        download_dir(sftp, src, dest, overwrite, cancel, on_output).await
     } else {
         download_single_file(sftp, src, dest, overwrite, cancel, on_output).await
     }

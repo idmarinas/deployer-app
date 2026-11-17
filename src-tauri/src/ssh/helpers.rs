@@ -29,6 +29,27 @@ pub fn shell_escape(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
 
+/// Abre un canal SSH y ejecuta `command`, dejando el canal listo para leer mensajes.
+///
+/// No comprueba la conexión: cada caller decide cuándo llamar a `ensure_connected`.
+pub async fn open_command_channel(
+    session: &mut SshSession,
+    command: &str,
+) -> Result<russh::Channel<russh::client::Msg>, String> {
+    let channel = session
+        .handle
+        .channel_open_session()
+        .await
+        .map_err(|e| format!("Error al abrir canal SSH: {}", e))?;
+
+    channel
+        .exec(true, command.as_bytes())
+        .await
+        .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
+
+    Ok(channel)
+}
+
 /// Ejecuta un comando SSH y devuelve (output, exit_code).
 pub async fn run_ssh_command(
     session: &mut SshSession,
@@ -37,16 +58,7 @@ pub async fn run_ssh_command(
 ) -> Result<(String, i64), String> {
     session.ensure_connected().await?;
 
-    let mut ssh_channel = session
-        .handle
-        .channel_open_session()
-        .await
-        .map_err(|e| format!("Error al abrir canal SSH: {}", e))?;
-
-    ssh_channel
-        .exec(true, command.as_bytes())
-        .await
-        .map_err(|e| format!("Error al ejecutar comando SSH: {}", e))?;
+    let mut ssh_channel = open_command_channel(session, command).await?;
 
     let mut output = String::new();
     let mut exit_code: i64 = 0;

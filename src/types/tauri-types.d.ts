@@ -91,60 +91,6 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type HostPackage = { name: string, current_version: string, 
-/**
- * Revisión de empaquetado de la versión actual (ej: "1" en "29.9.2-1"). `null` si la versión no tiene.
- */
-current_revision: string | null, available_version: string, 
-/**
- * Revisión de empaquetado de la versión disponible. `null` si la versión no tiene.
- */
-available_revision: string | null, 
-/**
- * Repositorio de origen (ej: "jammy-updates", "jammy-security").
- */
-repo: string, 
-/**
- * Tipo de actualización: "major", "minor", "patch", "packaging" o "unknown".
- */
-update_type: string, 
-/**
- * True si el paquete proviene de un repositorio de seguridad.
- */
-is_security: boolean, 
-/**
- * Prioridad: "high", "medium" o "low".
- */
-priority: string, };
-
-/**
- * JSON almacenado en deployer_hosts.server_updates.
- * Contiene las actualizaciones disponibles y la última vez que se comprobaron.
- */
-export type HostServerUpdates = { packages: Array<HostPackage>, summary: HostUpdatesSummary, last_checked_at: string | null, };
-
-/**
- * Métricas dinámicas del servidor capturadas en un momento dado.
- * Almacenada como JSON en `status_info`.
- */
-export type HostStatusMetrics = { 
-/**
- * Porcentaje de uso CPU (ej: "23.45").
- */
-cpu_usage: string, 
-/**
- * Porcentaje de uso RAM (ej: "67.89").
- */
-ram_usage: string, 
-/**
- * Porcentaje de uso disco (ej: "45.12").
- */
-disk_usage: string, 
-/**
- * Timestamp ISO 8601 de cuándo se capturaron estas métricas.
- */
-last_checked_at: string | null, };
-
 /**
  * Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
  * Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
@@ -186,8 +132,6 @@ packages: Array<string> | null,
 use_sudo: boolean | null, };
 
 export type HostUpdateResult = { command: string, output: string, exit_code: number, };
-
-export type HostUpdatesSummary = { total: number, security: number, major: number, minor: number, patch: number, packaging: number, };
 
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
@@ -280,3 +224,8 @@ recursive: boolean | null,
 ssh_reconnect_attempts: number | null, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
+
+/**
+ * Reporte de salud del vault de Stronghold.
+ */
+export type VaultHealthReport = { vault_file_exists: boolean, salt_file_exists: boolean, snapshot_loaded: boolean, client_exists: boolean, keys_found: Array<string>, expected_scopes: Array<string>, missing_scopes: Array<string>, };

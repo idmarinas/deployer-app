@@ -1,12 +1,11 @@
 mod commands;
 mod crypto;
 mod helpers;
-mod patch;
 mod response;
 mod ssh;
 pub mod tables;
 
-use commands::database::store::{check_database_exists, get_database_path, set_database_path};
+use commands::database::store::{check_database_exists, set_database_path};
 use commands::database::{get_app_info, get_database_info, query_raw};
 use commands::database::manage::{create_database_file, initialize_database, validate_database_sqlite};
 use commands::database::migrations::{execute_migrations, get_migrations_info, has_migrations_pending};
@@ -54,9 +53,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Hosts - non-CRUD
             test_connection,
-
-
-
             host_update_packages,
             // Passkeys - non-CRUD
             derive_passkey_info,
@@ -68,7 +64,6 @@ pub fn run() {
             ssh_download_file,
             ssh_cancel_remote_job,
             // Database - Store
-            get_database_path,
             set_database_path,
             check_database_exists,
             // Database
