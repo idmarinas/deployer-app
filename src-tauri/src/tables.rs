@@ -14,3 +14,6 @@ pub const TABLE_PASSKEYS: &str = "deployer_passkeys";
 
 /// Tabla: deployer_settings (fuente: settings.ts)
 pub const TABLE_SETTINGS: &str = "deployer_settings";
+
+/// Tabla: deployer_variables (fuente: variables.ts)
+pub const TABLE_VARIABLES: &str = "deployer_variables";

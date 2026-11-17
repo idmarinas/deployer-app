@@ -1,0 +1,120 @@
+import type { LocaleMessageValue, MessageContext } from 'vue-i18n'
+
+export default {
+	create: {
+		loading: {
+			title: 'Creando variable...',
+			description: 'Guardando la variable en la base de datos...',
+		},
+		success: {
+			title: 'Variable creada correctamente.',
+			description: 'Variable "{name}" (ID: {id}) creada correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al crear la variable.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al crear la variable "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	update: {
+		loading: {
+			title: 'Actualizando variable...',
+			description: 'Actualizando la variable en la base de datos...',
+		},
+		success: {
+			title: 'Variable actualizada correctamente.',
+			description: 'Variable "{name}" actualizada correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al actualizar la variable.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al actualizar la variable "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	delete: {
+		loading: {
+			title: 'Eliminando variable...',
+			description: 'Eliminando la variable de la base de datos...',
+		},
+		success: {
+			title: 'Variable eliminada correctamente.',
+			description: 'Variable "{name}" eliminada correctamente de la base de datos.',
+		},
+		error: {
+			title: 'Error al eliminar la variable.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const name = ctx.named('name') as string | undefined
+				const base = name
+					? `Error al eliminar la variable "${name}" de la base de datos.`
+					: 'Error al eliminar la variable de la base de datos.'
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	restore: {
+		loading: {
+			title: 'Restaurando variable...',
+			description: 'Restaurando la variable "{name}" en la base de datos...',
+		},
+		success: {
+			title: 'Variable restaurada correctamente.',
+			description: 'Variable "{name}" restaurada correctamente en la base de datos.',
+		},
+		error: {
+			title: 'Error al restaurar la variable.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al restaurar la variable "${ctx.named('name')}" en la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	purge: {
+		loading: {
+			title: 'Eliminando variable definitivamente...',
+			description: 'Borrando la variable "{name}" de la base de datos...',
+		},
+		success: {
+			title: 'Variable eliminada definitivamente.',
+			description: 'Variable "{name}" eliminada definitivamente de la base de datos.',
+		},
+		error: {
+			title: 'Error al eliminar la variable definitivamente.',
+			description: (ctx: MessageContext) => {
+				const details = ctx.named('details')
+				const base = `Error al eliminar definitivamente la variable "${ctx.named('name')}" de la base de datos.`
+
+				return details ? `${base} Detalles: ${details}` : base
+			},
+		},
+	},
+	purgeAll: {
+		loading: {
+			title: 'Eliminando borrados...',
+			description: 'Eliminando definitivamente las variables marcadas como borradas...',
+		},
+		success: {
+			title: 'Eliminados elementos borrados.',
+			description: 'Variables eliminadas: {purged}. Bloqueadas por referencias: {blocked}.',
+		},
+		warning: {
+			title: 'Algunas variables no se pudieron eliminar.',
+			description: '{blocked} variable(s) siguen bloqueadas por tener referencias.',
+		},
+		error: {
+			title: 'Error al eliminar los elementos borrados.',
+			description: 'Se eliminaron {purged} y quedaron {blocked} bloqueadas. Detalles: {details}',
+		},
+	},
+} satisfies LocaleMessageValue

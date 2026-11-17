@@ -56,7 +56,25 @@ const { t } = useI18n()
 		]"
 	>
 		<template #info><TabAppInfo /></template>
-		<template #database><TabDatabaseInfo /></template>
+		<template #database>
+			<UTabs
+				:items="[
+					{
+						icon: ICONS.misc.infoCircle,
+						label: t('pages.app.settings.sections.database.info'),
+						slot: 'dbInfo',
+					},
+					{
+						icon: 'i-tabler-restore',
+						label: t('pages.app.settings.sections.database.defaults'),
+						slot: 'dbSeed',
+					},
+				]"
+			>
+				<template #dbInfo><TabDatabaseInfo /></template>
+				<template #dbSeed><TabDatabaseSeed /></template>
+			</UTabs>
+		</template>
 		<template #migrations><TabMigrations /></template>
 		<template #security><TabSecurity /></template>
 	</UTabs>

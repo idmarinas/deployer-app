@@ -23,6 +23,19 @@ export default {
 		help: 'Comando bash que se ejecutará en el servidor remoto vía SSH',
 		placeholder: '# Ej: uptime -p',
 	},
+	variables: {
+		help: 'Variables globales disponibles en el editor',
+		tips: {
+			scopes: 'ámbitos disponibles',
+			root: 'todas las variables',
+			path: 'todas las variables globales',
+			filter_path: 'coincide por ruta',
+			filter_slug: 'coincide por slug',
+			escape: 'dejar la expresión literal',
+		},
+		secret_help: 'Las variables secretas se marcan en ámbar y solo se resuelven al ejecutar.',
+		empty_value: 'sin valor',
+	},
 	parser: {
 		label: 'Parser de salida',
 		help: 'Cómo se interpreta la salida del comando para mostrarla y reutilizarla',

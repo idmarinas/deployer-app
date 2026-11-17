@@ -67,16 +67,11 @@ export const MODULE_ICONS: Record<ModulesName, ModuleIconSet> = {
 	// 	singular: 'i-tabler-send',
 	// 	off: 'i-tabler-send-off',
 	// },
-	// variables: {
-	// 	plural: 'i-tabler-variable',
-	// 	singular: 'i-tabler-variable',
-	// 	off: 'i-tabler-variable-off',
-	// },
-	// global_variables: {
-	// 	plural: 'i-tabler-variable',
-	// 	singular: 'i-tabler-variable',
-	// 	off: 'i-tabler-variable-off',
-	// },
+	variables: {
+		plural: 'i-tabler-variable',
+		singular: 'i-tabler-variable',
+		off: 'i-tabler-variable-off',
+	},
 	passkeys: {
 		plural: 'i-tabler-key',
 		singular: 'i-tabler-key',
@@ -138,6 +133,10 @@ export const ICONS = {
 		listDetails: 'i-tabler-list-details',
 		folder: 'i-tabler-folder',
 		folderOpen: 'i-tabler-folder-open',
+		trash: 'i-tabler-trash',
+		purge: 'i-tabler-trash-x',
+		restore: 'i-tabler-restore',
+		undo: 'i-tabler-arrow-back-up',
 	},
 
 	/** Estados / feedback (toasts, alerts, badges) */
@@ -233,6 +232,7 @@ export const ICONS = {
 		encrypt: 'i-tabler-key',
 		empty: 'i-tabler-circle-dashed',
 		workingdir: 'i-tabler-folder',
+		package: 'i-tabler-package',
 	},
 
 	/** Para las tabs de compose.yaml */

@@ -24,7 +24,7 @@ const expanded = ref({})
 	<UTable
 		ref="table"
 		sticky
-		:expanded="expanded"
+		v-model:expanded="expanded"
 		:global-filter="globalFilter"
 		:column-visibility="columnVisibility"
 		:data="items"

@@ -33,6 +33,21 @@ const UCheckbox = resolveComponent('UCheckbox')
 const UBadge = resolveComponent('UBadge')
 const UTooltip = resolveComponent('UTooltip')
 
+/**
+ * Renderiza una versión upstream con su revisión de empaquetado como sufijo
+ * atenuado (tooltip con la explicación). Si no hay revisión, solo la versión.
+ */
+function renderVersion(version: string, revision: string | null | undefined) {
+	if (!revision) return version
+
+	return h(UTooltip, { durationDelay: 0, text: t('common.semver.revision') }, () =>
+		h('span', { class: 'whitespace-nowrap' }, [
+			h('span', {}, version),
+			h('span', { class: 'text-xs text-dimmed underline decoration-dotted underline-offset-2' }, `-${revision}`),
+		]),
+	)
+}
+
 const columns: TableColumn<HostPackage>[] = [
 	{
 		id: 'select',
@@ -67,10 +82,12 @@ const columns: TableColumn<HostPackage>[] = [
 				td: 'text-muted',
 			},
 		},
+		cell: ({ row }) => renderVersion(row.original.current_version, row.original.current_revision),
 	},
 	{
 		accessorKey: 'available_version',
 		header: t('pages.hosts.manage.column_available'),
+		cell: ({ row }) => renderVersion(row.original.available_version, row.original.available_revision),
 		meta: {
 			class: {
 				td: ({ row }) => {
@@ -120,6 +137,10 @@ const columns: TableColumn<HostPackage>[] = [
 				case 'patch':
 					icon = 'i-tabler-bug'
 					color = 'success'
+					break
+				case 'packaging':
+					icon = ICONS.misc.package
+					color = 'neutral'
 					break
 				default:
 					icon = 'i-tabler-question-mark'

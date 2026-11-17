@@ -2,12 +2,13 @@
 import type { Passkey } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted, resolveComponent } from 'vue'
+import { computed, h, onMounted, ref, resolveComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { useCopyPasskeyToServer } from '@/composables/useDialog'
 import { usePasskeysListAll } from '@/loaders/passkeys'
+import { usePasskeysTrash } from '@/loaders/trash'
 import { isEncryptedValue } from '@/utils/crypto'
 import { ICONS } from '@/utils/icons'
 
@@ -28,10 +29,24 @@ const router = useRouter()
 const { t, locale } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = usePasskeysListAll()
 const passkeyQuery = usePasskeyQuery()
+const trash = usePasskeysTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
+const activeItems = computed(() => (items.value ?? []).filter(item => item.enabled))
+const inactiveItems = computed(() => (items.value ?? []).filter(item => !item.enabled))
+
+/** Pestaña seleccionada; el contenido se renderiza fuera de `UTabs` (ver `EntityListTab`). */
+const tab = ref('active')
+const isInactive = computed(() => tab.value === 'inactive')
+const isTrash = computed(() => tab.value === 'trash')
+
+/** Color del indicador según la pestaña activa (verde/ámbar/rojo). */
+const tabColor = computed(() => (isTrash.value ? 'error' : isInactive.value ? 'warning' : 'success'))
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Passkey>({
 	moduleName: ModulesName.Passkeys,
 	deleteFn: passkeyQuery.remove,
+	findReferences: passkeyQuery.findReferences,
 	onReload: reload,
 })
 
@@ -98,7 +113,46 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+	<UTabs
+		v-model="tab"
+		:content="false"
+		:color="tabColor"
+		:items="[
+			{
+				label: t('common.tabs.active'),
+				icon: ICONS.status.check,
+				value: 'active',
+				ui: { leadingIcon: 'text-success group-data-[state=active]:text-inverted' },
+			},
+			{
+				label: `${t('common.tabs.inactive')} ${inactiveItems.length > 0 ? `(${inactiveItems.length})` : ''}`,
+				icon: ICONS.status.cross,
+				value: 'inactive',
+			},
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				value: 'trash',
+			},
+		]"
+	/>
+
+	<TrashTable v-if="isTrash" :module="ModulesName.Passkeys" context="list" />
+
+	<EntityListTab
+		v-else
+		:columns="columns"
+		:items="isInactive ? inactiveItems : activeItems"
+		:is-loading="isLoading"
+		:status="status"
+		:module="ModulesName.Passkeys"
+		:reload-fn="reload"
+		:add-route="{ name: 'dashboard-passkeys-add' }"
+		:show-add="!isInactive"
+		:title="isInactive ? t('components.empty_list.inactive.title') : undefined"
+		:description="isInactive ? t('components.empty_list.inactive.description') : undefined"
+		what="passkey"
+	>
 		<template #expanded="{ row }">
 			<ItemCard
 				:id="row.original.id"
@@ -157,13 +211,5 @@ onMounted(() => {
 				</div>
 			</ItemCard>
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Passkeys"
-		:reload-fn="reload"
-		:add-route="{ name: 'dashboard-passkeys-add' }"
-	/>
-	<Loading v-else-if="isLoading" what="passkey" plural />
-	<GeneralError v-else />
+	</EntityListTab>
 </template>

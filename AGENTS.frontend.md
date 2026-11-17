@@ -19,6 +19,7 @@ src/
 ├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
 ├── locales/             <- i18n (es/, _loader.ts)
 ├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,theme}, deployer/, deployer/(setup))
+├── plugins/             <- Extensiones reutilizables de CodeMirror (plugins/codemirror/)
 ├── types/               <- Tipos (entities.ts, tauri-types.d.ts auto-generados)
 └── utils/               <- Funciones puras sin reactividad de Vue
 
@@ -49,7 +50,7 @@ theme/                   <- Temas personalizados de componentes Nuxt UI (raíz d
 └── tooltip.ts
 ```
 
-> **Nota sobre el historial:** los catálogos de `projects`, `tasks`, `variables` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts` y `passkeys.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
+> **Nota sobre el historial:** los catálogos de `projects`, `tasks` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El módulo **`variables`** se reintrodujo como módulo activo propio (`pages/dashboard/variables/`, `loaders/variables.ts`, `composables/queries/variables.ts`). El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts` y `variables.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
 
 ---
 
@@ -255,11 +256,23 @@ Al añadir o modificar cualquier theme file, verificar:
 - **`/utils`**: Para funciones puras sin reactividad. Si una función no necesita Vue, va aquí.
 - **`/loaders`**: Loaders de datos creados con `defineColadaLoader` de `vue-router/experimental/pinia-colada`. Cada loader exporta una función (ej. `useHostById`) que se usa en el `<script setup>` de la página. Los loaders son **lazy** por defecto y exponen `data`, `isLoading`, `error`.
 
-### Composables de datos (`useQuery.ts`)
+### Composables de datos (`composables/queries/`)
 
-- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`).
-- Las **queries CRUD** (findAll/find/create/update/remove + notificaciones por toast) se agrupan en el barrel **`composables/useQuery.ts`** (`useQuery()` → `{ hosts, passkeys, projects... }`) y en `src/composables/queries/{hosts,passkeys,shared}.ts`; las páginas de hosts/passkeys las consumen con `const { hosts: hostQuery } = useQuery()`. `useQuery` es el único barrel de queries (no hay barrel por loader).
-- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
+- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts`, `variables.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`, `loadVariablesList()`).
+- Las **queries CRUD** (`findAll`/`find`/`create`/`update`/`remove`/`restore`, además de `purgeDeleted`/`findReferences` + notificaciones por toast) se crean con la factoría **`createCrudQuery`** de `src/composables/queries/crud.ts`. Cada entidad (`variables.ts`, `hosts.ts`, `commands.ts`, `passkeys.ts`) solo declara tabla, PK, `cacheKey`, prefijo i18n y hooks (`toInsert`/`toUpdate`/`softDelete`, `references`). El ciclo *toast persistente → sentencia Drizzle → invalidación de caché → toast de éxito/error* vive en la factoría.
+- **API de la factoría**:
+  - `findAll(options?)` y `find(key, options?)` aceptan `CrudListOptions`: por defecto excluyen la papelera; `{ onlyDeleted: true }` lista/lee solo la papelera e `{ includeDeleted: true }` no filtra.
+  - `remove(key)` hace borrado lógico y ofrece **Deshacer** en el toast (acción que llama a `restore`). `remove(key, { purge: true })` borra físicamente una fila que ya está en la papelera. `remove(key, { unlink: true })` pone a `NULL` las FK declaradas en `references` antes de borrar.
+  - `restore(key)` reactiva la fila; `purgeDeleted()` vacía la papelera de la tabla y devuelve `{ purged, blocked }` (las filas referenciadas o `internal` no se purgan). El proxy no expone transacciones: la purga es secuencial.
+  - `findReferences(key)` devuelve las filas de otras entidades que apuntan a la clave, agrupadas por `labelKey`. Solo `passkeys` declara referencias (`hosts.key_id`, FK `ON DELETE RESTRICT`).
+  - Las filas con la columna `internal` a `true` no se pueden borrar ni purgar (hoy solo `commands`); `supportsSoftDelete` indica si la entidad tiene papelera.
+- **Soft-delete / restore**: está activo en todas las entidades (`variables`, `hosts`, `commands`, `passkeys`) con `softDelete: { deletedAt, updatedAt }`. `remove` marca `deleted_at`, `restore` lo vuelve a `NULL`, `findAll({ onlyDeleted: true })` lista la papelera y `find`/`findAll` excluyen las filas eliminadas por defecto. Las lecturas directas que no pasan por la factoría (loaders, `DashboardLastItems.vue`) deben filtrar con `isNull(tabla.deleted_at)`.
+- **Invalidación de caché y errores de refetch**: `invalidateCacheQueries()` (`src/composables/queries/shared.ts`) invalida por prefijo y refresca, pero **no propaga** el error de un refetch fallido. El error queda en el estado `error` de la query afectada; así una mutación ya aplicada no se reporta como fallida. Caso típico: borrar una passkey o un comando desde su vista de detalle invalida `['passkeys']`/`['commands']`, el loader de detalle (`usePasskeyById`/`useCommandByKey`) responde `not-found` y antes ese error aparecía como fallo del borrado.
+- **UI de listados y papelera**: cada listado (`variables`, `hosts`, `commands`, `passkeys`) tiene pestañas **Activos / Inactivos / Borrados** (`UTabs` con `v-model` y `:content="false"`; el contenido se renderiza fuera para no duplicar plantillas ni perder filtros al cambiar de pestaña). **Activos** son las filas con `enabled === true` y sin borrar, **Inactivos** las de `enabled === false` y sin borrar, y **Borrados** usa `TrashTable`. El contador solo aparece en **Inactivos** y **Borrados** cuando es mayor que 0. El color del indicador sigue a la pestaña activa (`success` / `warning` / `error`) y los iconos de las pestañas no activas se tiñen con ese mismo color. La vista de Activos/Inactivos se comparte en `src/components/table/EntityListTab.vue` (lista, vacío, carga y error) y cada página le pasa su slot `expanded`; la pestaña Inactivos usa el estado vacío `components.empty_list.inactive.*` sin botón de alta. La página global sigue llamándose **Papelera** (`src/pages/dashboard/trash.vue`) y agrupa las papeleras de todas las tablas. La tabla compartida es `src/components/pages/trash/TrashTable.vue` y los loaders `src/loaders/trash.ts` usan claves `['<entidad>', 'trash']` (se invalidan con el prefijo `cacheKey`). Cada fila de la papelera se puede expandir en modo solo lectura (`src/components/pages/trash/TrashDetails.vue`) para ver sus campos; las acciones **Restaurar** y **Eliminar definitivamente** viven en la propia fila. La purga masiva se rotula **Vaciar papelera** en la página global y **Eliminar borrados** en la pestaña de cada listado (`TrashTable` recibe `context="list"` y `useCrudDeleteConfirm().purgeAll(fn, onDone, scope)` elige los textos de confirmación). La expansión de `ListTable` usa `v-model:expanded` y la columna `createExpandColumn()` de `useTableColumns.ts`.
+- **Diálogos de borrado**: `useCrudDeleteConfirm` (`src/composables/useCrudDeleteConfirm.ts`) centraliza el borrado lógico, la purga y el vaciado. Antes de borrar consulta `findReferences` y `findVariableUsages`; si hay referencias ofrece **Desvincular y eliminar**, y si solo hay usos de variables ofrece **Eliminar de todos modos**. Las variables se referencian por texto (`{{global.slug}}`), no por FK: `findVariableUsages` (`src/utils/interpolation/usages.ts`) recorre los comandos activos y el aviso no bloquea el borrado (al ejecutar dará `unknown_variable`). El vaciado de papelera pide **confirmación doble**.
+- **Unicidad y soft-delete**: los índices `UNIQUE` actuales son globales, así que una fila eliminada sigue ocupando su `name`/`key`/`slug`. Por eso las validaciones `$count` de `composables/validation/*` **no** filtran por `deleted_at`; para reutilizar un nombre hay que `restore` la fila. Si en el futuro se quieren índices parciales (`WHERE deleted_at IS NULL`), hay que migrarlos en la BD y añadir el filtro `isNull(...)` a los validadores.
+- Las páginas importan cada composable directamente (`import { useHostQuery } from '@/composables/queries/hosts'`); no existe barrel `useQuery.ts` activo.
+- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`, `useVariablesValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
 
   ```ts
   // composables/validation/useHostValidation.ts (extracto)
@@ -324,7 +337,7 @@ getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, pa
 
 Las páginas activas (`pages/dashboard/{app,hosts,passkeys,console,theme}` y `deployer/`) ya usan `ICONS`/`getModuleIcon`. **Aún quedan iconos `i-tabler-*` hardcodeados** en algunos archivos activos (p.ej. `useToolbarButtons.ts`, `DeployerAppMenu.vue`, `useConfigureDeployerApp.ts`, `useMigrations.ts`, `useToaster.ts`, `TableServerUpdates.vue`, `ReviewFilesDialog.vue` y el componente de muestra `ThemePreview.vue`). Al tocar cualquiera de ellos, migrar a `ICONS`/`getModuleIcon`; en código nuevo nunca hardcodear.
 
-> `getModuleIcon` cubre el `ModuleName` completo (8 módulos), sin importar que algunos (deployments, variables, global_variables, tasks, projects, docker_composes) ya no tengan páginas propias en el código activo.
+> `getModuleIcon` cubre el `ModuleName` completo (8 módulos). Algunos módulos sin páginas propias en el código activo (deployments, global_variables, tasks, projects, docker_composes) conservan el icono para no romper el tipo; `variables` sí tiene páginas activas.
 
 ---
 
@@ -439,13 +452,13 @@ Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con stream
 - `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
 - Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`).
 
-> Los catálogos de `projects`, `tasks`, `variables` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`.
+> Los catálogos de `projects`, `tasks` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`. `variables` es de nuevo un módulo activo, con Drizzle + loaders propios.
 
 ---
 
 ### Drag & drop (`useSortable`): **sin uso activo** (feature retirada)
 
-La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`variables`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
+La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
 
 Si en el futuro se reintrodujera drag & drop, aplicar estas reglas (aprendidas de la implementación retirada, aún válidas para Tauri):
 
@@ -462,6 +475,22 @@ Cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pin
 - **Solo reasignar `.value` completo dispara reactividad**: `data.value = { ...data.value, prop: nuevo }`. Este es el patrón que hay que usar para ver el cambio reflejado sin recargar.
 - **Alternativa más simple, pero más lenta**: usar el `reload` del propio loader (o `invalidate`/refetch de `pinia-colada`) tras la mutación. Correcto, pero dispara una consulta completa a la BD (con `isLoading` de por medio) en cada llamada — usar solo donde la frecuencia es baja.
 - **Regla práctica:** después de crear/actualizar/borrar algo que afecte a un objeto ya cargado en un loader, o reasignar `.value` completo con spread usando los datos en memoria, o hacer refetch del loader. Nunca dejar solo una mutación anidada como única fuente de verdad para el render.
+
+---
+
+## 6d. Gotcha: entidades con `value: string` y `defineColadaLoader`
+
+`defineColadaLoader` aplica `Exclude<Data, NavigationResult>` al tipo de `data`. `NavigationResult` de vue-router es una clase con una propiedad `value` (acepta un `string`), así que **cualquier entidad que tenga `value: string` encaja estructuralmente** y el tipo se colapsa a `never`/`undefined`.
+
+- Afecta a `Variable` (`value` es el valor de la variable). En `pages/dashboard/variables/[id]/edit.vue` el loader se consume con un `computed` que recupera el tipo real:
+
+  ```ts
+  const { data: entityData } = loadVariableById()
+  const entity = computed(() => entityData.value as Variable | undefined)
+  ```
+
+- No funciona añadir una marca/brand opcional: la asignabilidad estructural la ignora. Si aparece otra entidad con `value: string` en un loader, aplicar el mismo cast en el consumidor (o envolver el resultado en un objeto sin `value` en la raíz).
+- Los loaders de lista (`loadVariablesList`) no se ven afectados porque `Data` es un array.
 
 ---
 
@@ -519,19 +548,35 @@ Sistema de formularios que renderiza edición visual de documentos basados en un
 
 Componente `src/components/form/textareas/CodeEditor.vue`, **exclusivo para campos de código** (p. ej. comandos). Basado en **CodeMirror 6** (no Tiptap: el antiguo `UEditor` + `CodeBlockLowlight` se sustituyó porque no devolvía el texto editado al `v-model`).
 
-- **Dependencias:** `@codemirror/{state,view,commands,language,legacy-modes,lang-yaml,lang-json,lang-php}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
+Las extensiones viven en **`src/plugins/codemirror/`** y son reutilizables por cualquier consumidor:
+
+- `types.ts` — `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange`, `CodeHighlighter`.
+- `languages.ts` — `languageLoaders`, `LANGUAGE_NAMES` y `createLintLoader(formatDuplicateKey)`.
+- `lint/` — `createLintExtensions`, `createJsonLintSource` (errores + claves duplicadas) y `createYamlLintSource`.
+- `theme.ts` — `codeEditorTheme`, `codeHighlightStyle` y `SECRET_ICON_MASK`.
+- `setup.ts` — `createBaseExtensions(...)` (compone la base del editor; ver más abajo) y `createDarkThemeExtension(...)`.
+- `highlight.ts`, `editable.ts` y `autocomplete/index.ts` — extensiones reutilizables (resaltado de rangos, solo lectura y autocompletado).
+- `autocomplete/variables.ts` — autocompletado de variables `{{…}}` (`createInterpolationCompletion`), antes en `src/utils/interpolation/completion.ts`.
+- `autocomplete/php.ts` — autocompletado básico de PHP (`phpCompletionSource`): keywords, funciones, clases, constantes y superglobales estables entre versiones.
+- `bash/blocks.ts` y `bash/format.ts` — detección/envoltura de bloques bash y `setBashFormat`.
+- `index.ts` — barrel público de la carpeta.
+
+- **Dependencias:** `@codemirror/{state,view,commands,language,lint,search,autocomplete,legacy-modes,lang-yaml,lang-json,lang-php,lang-html,lang-javascript}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). No se usa el meta-paquete `codemirror` (`basicSetup`): la base se compone en `setup.ts`. `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
 - **Modelos:** `v-model` (texto, siempre con saltos `\n`) y `v-model:language` (`CodeLanguage`, por defecto `'plain'`).
-- **Tipos exportados** (del bloque `<script>` normal): `CODE_LANGUAGES` y `CodeLanguage` (`'bash' | 'yaml' | 'json' | 'php' | 'plain'`). Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
-- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers`, `tabSize`, `minRows`, `maxRows`, `lint` (CodeMirror `LintSource` opcional). `language`, `readonly`, `disabled` y `lint` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
+- **Tipos exportados:** `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange` y `CodeHighlighter` viven en `src/plugins/codemirror/types.ts` y se re-exportan desde el barrel `src/plugins/codemirror/index.ts` (no desde `CodeEditor.vue`). Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
+- **Base del editor (`setup.ts`):** `createBaseExtensions` compone lo mismo que `basicSetup` de `codemirror`, pero con cada funcionalidad aislada para poder desactivarla (y con sus keymaps asociados): `lineNumbers`, `tabSize`, `placeholder`, `onDocChange`, `history`, `foldGutter`, `closeBrackets`, `search` (`Ctrl+F` + resaltado de coincidencias), `autocomplete` (fuentes del lenguaje) y `multipleSelections` (selección múltiple/rectangular y cursor de cruz). Todas están activas por defecto. Añade además `indentWithTab`, el tema propio y `codeHighlightStyle`. El autocompletado de una fuente propia (`prop autocomplete`) se registra como `languageData`, por lo que **se suma** a las fuentes del lenguaje (no las sustituye).
+- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers` (por defecto `true`), `tabSize` (por defecto `2`), `minRows`, `maxRows`, `lint` (CodeMirror `LintSource` opcional), `autocomplete` (CodeMirror `CompletionSource` opcional), `highlight` (función que devuelve los rangos a resaltar) y `extensions` (extensiones CodeMirror adicionales). `language`, `readonly`, `disabled`, `lint`, `autocomplete`, `highlight` y `extensions` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
+- **Extensiones propias:** `extensions` acepta una extensión o un array (`Extension | readonly Extension[]`). Se aplican al final, en un `Compartment` propio, y se reconfiguran si la prop cambia. Ejemplo: `<CodeEditor v-model="code" :extensions="[myKeymap]" />`.
 - **Restricción de lenguajes:** si el lenguaje actual no está en `languages`, el componente lo cambia al primero permitido (vía `v-model:language`). Con `language="x"` estático (sin `v-model:language`) el selector no puede cambiar el valor.
 - **Bloques bash (`heredoc` y `bash -c`):** con `language === 'bash'` la barra muestra dos `USwitch` mutuamente excluyentes. El estado **se deriva del texto** (si se edita o borra el bloque a mano, el switch se actualiza solo):
   - **Bloque heredoc:** envuelve el cuerpo en `bash <<'DEPLOYER_EOF'` … `DEPLOYER_EOF`. El marcador se elige libre (`DEPLOYER_EOF`, `DEPLOYER_EOF_1`, …) para no colisionar con el contenido. La cabecera se detecta de forma genérica (`<<'MARCADOR'`, con o sin `-`, cualquier intérprete) siempre que la última línea no vacía sea el marcador.
   - **Bash -c:** envuelve el cuerpo en `bash -c '` … `'` (al generar se usa el formato bloque). Detecta tanto el formato bloque (`bash -c '` en una línea y `'` de cierre en otra) como el inline de una o varias líneas (`bash -c 'comando'`). Admite `sh -c '` y rutas (`/bin/bash -c '`). Las comillas simples del cuerpo se escapan como `'\''` al generar y se desescapan al leer.
   - Activar un switch **convierte** el bloque del otro formato conservando el cuerpo; desactivarlo quita el envoltorio. Todo va en una única transacción de CodeMirror: el cursor se conserva y `Ctrl+Z` revierte el cambio completo.
-- **Lint:** `@codemirror/lint`, con linters propios cargados bajo demanda por lenguaje: JSON (`jsonParseLinter` + detección de **claves duplicadas** recorriendo el árbol de `jsonLanguage`, porque `JSON.parse` las acepta) y YAML (`parseDocument` de `yaml`, que ya marca claves duplicadas). Bash y PHP no traen linter propio; para esos casos se pasa uno con la prop `lint` (se combina con el del lenguaje). El gutter de lint y sus atajos (`lintKeymap`) solo se activan cuando hay alguna fuente de diagnósticos.
-- **Tema claro/oscuro:** los colores del editor, tooltips y panel de lint salen de tokens `--ui-*`. Además, el facet `EditorView.darkTheme` se sincroniza con `useColorMode()` para que los widgets internos de CodeMirror (tooltips, paneles, autocompletado…) usen sus variantes oscuras; sin él CodeMirror asume tema claro y el tooltip de lint queda con fondo claro y texto claro.
+- **Lint:** `@codemirror/lint`, con linters propios cargados bajo demanda por lenguaje: JSON (`jsonParseLinter` + detección de **claves duplicadas** recorriendo el árbol de `jsonLanguage`, porque `JSON.parse` las acepta) y YAML (`parseDocument` de `yaml`, que ya marca claves duplicadas). Bash, PHP, HTML y JavaScript no traen linter propio; para esos casos se pasa uno con la prop `lint` (se combina con el del lenguaje). El gutter de lint y sus atajos (`lintKeymap`) solo se activan cuando hay alguna fuente de diagnósticos.
+- **Autocompletado por lenguaje:** `autocompletion()` está siempre activo y lee las fuentes que cada lenguaje declara vía `languageData`. **JavaScript** (snippets, keywords y variables/propiedades del ámbito con `localCompletionSource`) y **HTML** (etiquetas, atributos y JS/CSS anidados) ya traen autocompletado; **PHP** usa la lista básica de `autocomplete/php.ts` (keywords, funciones, clases, constantes y superglobales; mínimo real PHP 7.0, sin nada de 8.x); **JSON**, **YAML** y **Bash** no traen ninguna. Para añadir una fuente a otro lenguaje, en su loader de `languages.ts`: `const { php, phpLanguage } = await import('@codemirror/lang-php'); return [php(), withAutocomplete(phpLanguage, completeFromList([...]))]` (helper `withAutocomplete` del barrel). Para una fuente puntual, la prop `autocomplete` la suma a las del lenguaje sin sustituirlas.
+- **Tema claro/oscuro:** los colores del editor, tooltips, autocompletado, panel de lint, plegado y panel de búsqueda salen de tokens `--ui-*`. Además, el facet `EditorView.darkTheme` se sincroniza con `useColorMode()` para que los widgets internos de CodeMirror (tooltips, paneles, autocompletado…) usen sus variantes oscuras; sin él CodeMirror asume tema claro y el tooltip de lint queda con fondo claro y texto claro. El tema cubre explícitamente `.cm-foldPlaceholder`, `.cm-selectionMatch`, `.cm-searchMatch`, `.cm-specialChar`, `.cm-textfield` y `.cm-button` (los aporta `createBaseExtensions`, no `basicSetup`).
 - **Colores:** tokens `--ui-*` de Nuxt UI (sin hexadecimales), válidos para tema claro y oscuro. Fuente `font-pcb`.
-- **i18n:** `form.shared.code_editor.{language,plain,heredoc.{label,help},bash_c.{label,help}}`. Los nombres de lenguaje (Bash, YAML, JSON, PHP) son nombres propios y no se traducen.
+- **i18n:** `form.shared.code_editor.{language,plain,heredoc.{label,help},bash_c.{label,help}}`. Los nombres de lenguaje (Bash, YAML, JSON, PHP, HTML, JavaScript) son nombres propios y no se traducen.
 
 ```vue
 <CodeEditor v-model="form.command" v-model:language="form.language" selectable :languages="['bash', 'php']" />

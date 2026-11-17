@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { db } from '@/drizzle/drizzle'
 import { getSqliteTableByModuleName, ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon, ICONS } from '@/utils/icons'
-import { asc } from 'drizzle-orm'
+import { asc, isNull } from 'drizzle-orm'
 </script>
 
 <script setup lang="ts">
@@ -22,6 +22,7 @@ onMounted(async () => {
 
 	db.select()
 		.from(table)
+		.where(isNull(table.deleted_at))
 		.limit(5)
 		.orderBy(asc(table.created_at))
 		.then(rows => (items.value = rows))

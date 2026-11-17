@@ -26,6 +26,10 @@
    - Se añade una entrada en `.agents/AGENTS.done.md` (este archivo **sustituye** a `AGENTS.todo.done.md`) con una **pequeña nota** y la **referencia al plan** terminado.
    - Se **elimina la referencia al plan** de `### Tareas en curso`.
 6. Leer `@AGENTS.md` para entender el proyecto y las reglas técnicas globales (incluida la de migraciones SQL). Si es necesario, actualizar los archivos AGENTS.
+7. **Verificación en los planes.**
+   - Los planes **no** incluyen una sección de verificación automática ni los comandos `bun run i18n:types`, `bunx vue-tsc --noEmit` ni `bun run build`.
+   - La verificación es **manual** e incluye esos comandos junto con las pruebas funcionales descritas en el plan.
+   - El plan solo describe los pasos manuales; no programa ejecuciones automáticas.
 
 ### Tareas
 
@@ -47,6 +51,7 @@
 - **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
 - **Planificando:** Sistema de ajustes (a futuro) → `.agents/plans/AGENTS.settings-system.PLAN.md`
 - **Planificando:** Sustituir `query_raw` por `tauri-plugin-sql` → `.agents/plans/AGENTS.plugin-sql.PLAN.md`
+- **Planificando:** Soft delete (papelera y purga) → `.agents/plans/AGENTS.soft-delete.PLAN.md`
 
 ## Notas de documentación (pendientes, sin plan)
 

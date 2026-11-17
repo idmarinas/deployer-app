@@ -1,14 +1,16 @@
 import type { TableColumn } from '@nuxt/ui'
+import type { CrudReferenceMatch } from '@/composables/queries/shared.interfaces'
+import type { VariableUsage } from '@/utils/interpolation/usages'
 
 import { h } from 'vue'
 
-import { useConfirmDialog } from '@/composables/useDialog'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import UBadge from '@nuxt/ui/components/Badge.vue'
 import UButton from '@nuxt/ui/components/Button.vue'
 
+import { useCrudDeleteConfirm } from '@/composables/useCrudDeleteConfirm'
 import { usePositionedButtons, type PositionedButton } from '@/composables/usePositionedButtons'
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
@@ -17,20 +19,24 @@ export interface TableColumnsOptions {
 	moduleName?: ModulesName
 	/**
 	 * Nombre del param de ruta que identifica la fila (por defecto `id`).
-	 * Para entidades con PK string (p.ej. `key` en commands) se usa el nombre
+	 * Para entidades con PK string (p. ej. `key` en commands) se usa el nombre
 	 * de la columna: `dashboard-commands-key-edit` con param `key`.
 	 */
 	idParam?: string
 	deleteFn?(id: number | string): Promise<boolean>
+	/** Referencias entrantes de la fila (se listan antes de borrar). */
+	findReferences?(id: number | string): Promise<CrudReferenceMatch[]>
+	/** Usos de la variable global (por `slug`) en comandos activos. */
+	findVariableUsages?(slug: string): Promise<VariableUsage[]>
 	onReload?: () => Promise<void> | void
 }
 
-export function useTableColumns<T>(options?: TableColumnsOptions) {
-	const { t } = useI18n()
-	const router = useRouter()
-	const confirmDialog = useConfirmDialog()
-
-	const expandColumn: TableColumn<T> = {
+/**
+ * Columna que alterna la fila expandible de `ListTable`.
+ * El estado de expansión lo gestiona `ListTable` con `v-model:expanded`.
+ */
+export function createExpandColumn<T>(): TableColumn<T> {
+	return {
 		id: 'expand',
 		enableHiding: false,
 		cell: ({ row }) =>
@@ -43,6 +49,14 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 				onClick: () => row.toggleExpanded(),
 			}),
 	}
+}
+
+export function useTableColumns<T>(options?: TableColumnsOptions) {
+	const { t } = useI18n()
+	const router = useRouter()
+	const deleteConfirm = useCrudDeleteConfirm()
+
+	const expandColumn = createExpandColumn<T>()
 
 	const enabledColumn: TableColumn<T> = {
 		accessorKey: 'enabled',
@@ -92,19 +106,23 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					tooltip: true,
 					disabled: (row.original as any)?.internal || false,
 					async onClick() {
-						const result = await confirmDialog({
-							type: 'cancel_delete',
-							title: t('common.confirm.delete.label'),
-							description: t('common.confirm.delete.description', { name: (row.original as any).name }),
+						const id = (row.original as any)[idParam] as number | string
+
+						await deleteConfirm.softDelete({
+							id,
+							name: String((row.original as any).name ?? id),
+							remove: options.deleteFn!,
+							findReferences: options.findReferences
+								? () => options.findReferences!(id)
+								: undefined,
+							findVariableUsages: options.findVariableUsages
+								? () =>
+										options.findVariableUsages!(
+											String((row.original as any).slug ?? (row.original as any).name ?? ''),
+										)
+								: undefined,
+							onDone: options.onReload,
 						})
-
-						if (result) {
-							await options.deleteFn!((row.original as any)[idParam] as number | string)
-
-							if (options.onReload) {
-								await options.onReload()
-							}
-						}
 					},
 				})
 			}

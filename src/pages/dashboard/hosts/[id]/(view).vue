@@ -237,9 +237,31 @@ function toArray(value: unknown): string[] {
 	return [String(value)]
 }
 
-/** Deduce el tipo de actualización comparando versiones actual y disponible. */
-function computeUpdateType(current: string, available: string): string {
-	if (!current || !available || current === available) return 'unknown'
+/**
+ * Divide una versión de paquete en versión upstream y revisión de empaquetado.
+ * Formato Debian: `29.9.2-1` → upstream `29.9.2`, revisión `1`.
+ * Si no hay guion (versión nativa), la revisión queda vacía.
+ */
+function splitPackageVersion(version: string): { upstream: string; revision: string } {
+	const index = version.lastIndexOf('-')
+
+	if (index === -1) return { upstream: version, revision: '' }
+
+	return { upstream: version.slice(0, index), revision: version.slice(index + 1) }
+}
+
+/**
+ * Deduce el tipo de actualización comparando versiones upstream actual y
+ * disponible. Si solo cambia la revisión de empaquetado, devuelve "packaging"
+ * (el software es el mismo, solo se reempaquetó).
+ */
+function computeUpdateType(current: string, available: string, currentRevision: string, availableRevision: string): string {
+	if (!current || !available) return 'unknown'
+
+	// Misma versión upstream: solo hay novedad si cambió la revisión de empaquetado.
+	if (current === available) {
+		return currentRevision !== availableRevision ? 'packaging' : 'unknown'
+	}
 
 	const parse = (version: string): number[] =>
 		version
@@ -289,14 +311,29 @@ async function checkUpdates() {
 		const availables = toArray(parsed.available_version)
 
 		const packages: HostPackage[] = names.map((name, i) => {
-			const current_version = currents[i] || ''
-			const available_version = availables[i] || ''
+			const current = splitPackageVersion(currents[i] || '')
+			const available = splitPackageVersion(availables[i] || '')
 			const repo = repos[i] || ''
 			const is_security = repo.toLowerCase().includes('security')
-			const update_type = computeUpdateType(current_version, available_version)
+			const update_type = computeUpdateType(
+				current.upstream,
+				available.upstream,
+				current.revision,
+				available.revision,
+			)
 			const priority = is_security ? 'high' : update_type === 'major' ? 'medium' : 'low'
 
-			return { name, current_version, available_version, repo, update_type, is_security, priority }
+			return {
+				name,
+				current_version: current.upstream,
+				current_revision: current.revision || null,
+				available_version: available.upstream,
+				available_revision: available.revision || null,
+				repo,
+				update_type,
+				is_security,
+				priority,
+			}
 		})
 
 		const count = packages.length
@@ -308,6 +345,7 @@ async function checkUpdates() {
 				major: packages.filter(pkg => pkg.update_type === 'major').length,
 				minor: packages.filter(pkg => pkg.update_type === 'minor').length,
 				patch: packages.filter(pkg => pkg.update_type === 'patch').length,
+				packaging: packages.filter(pkg => pkg.update_type === 'packaging').length,
 			},
 			last_checked_at: new Date().toISOString(),
 		}
@@ -516,6 +554,7 @@ provide<Ref<boolean>>('isOperating', isOperating)
 										major: 0,
 										minor: 0,
 										patch: 0,
+										packaging: 0,
 										security: 0,
 									},
 									packages: [],

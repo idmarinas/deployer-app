@@ -1,6 +1,14 @@
 import { db } from '@/drizzle/drizzle'
+import { loadGlobalScopeForExecution } from '@/drizzle/lib/variables'
 import { commands as commandsTable } from '@/drizzle/schema'
+import { i18n } from '@/i18n'
 import type { CommandResponse, RemoteCommandResult, RemoteConsoleEvent } from '@/types/tauri-types'
+import {
+	collectSecretValues,
+	InterpolationError,
+	interpolateString,
+	redactSecrets,
+} from '@/utils/interpolation'
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { and, eq, isNull } from 'drizzle-orm'
 import { parseOutput } from './parsers'
@@ -18,6 +26,9 @@ export async function runCommand<T = unknown>(
 	hostId: number,
 	options?: { working_dir?: string; timeout_secs?: number },
 ): Promise<CommandRunResult<T>> {
+	// Composer global: seguro fuera de setup (patrón queries/commands.ts)
+	const { t } = i18n.global
+
 	const row = await db
 		.select()
 		.from(commandsTable)
@@ -27,7 +38,11 @@ export async function runCommand<T = unknown>(
 		.catch(() => undefined)
 
 	if (!row) {
-		throw new Error(`Comando no encontrado: ${commandKey}`)
+		throw new Error(t('utils.commands.errors.not_found', { key: commandKey }))
+	}
+
+	if (!row.enabled) {
+		throw new Error(t('utils.commands.errors.disabled', { key: commandKey }))
 	}
 
 	const definition: CommandDefinition = {
@@ -58,13 +73,34 @@ async function executeCommand<T>(
 	hostId: number,
 	options?: { working_dir?: string; timeout_secs?: number },
 ): Promise<CommandRunResult<T>> {
+	const { t } = i18n.global
+	const globalScope = await loadGlobalScopeForExecution()
+	const roots = { global: globalScope }
+	const secrets = collectSecretValues(roots)
+
+	let command: string
+	let workingDir: string | undefined
+
+	try {
+		command = interpolateString(definition.command, roots, { maskSecrets: false })
+		workingDir = options?.working_dir
+			? interpolateString(options.working_dir, roots, { maskSecrets: false })
+			: options?.working_dir
+	} catch (error) {
+		if (error instanceof InterpolationError) {
+			throw new Error(redactSecrets(t(error.messageKey, error.messageParams), secrets))
+		}
+
+		throw error
+	}
+
 	const channel = new Channel<RemoteConsoleEvent>()
 	channel.onmessage = () => {}
 
 	const input = {
 		host_id: hostId,
-		command: definition.command,
-		working_dir: options?.working_dir ?? null,
+		command,
+		working_dir: workingDir ?? null,
 		timeout_secs: options?.timeout_secs ?? definition.timeout_secs ?? null,
 		ssh_reconnect_attempts: null,
 	}
@@ -81,7 +117,7 @@ async function executeCommand<T>(
 	const { exit_code, output, duration_seconds } = response.data
 
 	if (exit_code > 0) {
-		throw new Error(output)
+		throw new Error(redactSecrets(output, secrets))
 	}
 
 	const parsed = parseOutput<T>(output, definition.parser)

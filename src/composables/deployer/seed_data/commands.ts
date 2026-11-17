@@ -1,7 +1,17 @@
-import { Command } from '@/types/entities'
+import type { Command } from '@/types/entities'
+import type { SeedRecord } from './types'
+
+import { sql } from 'drizzle-orm'
 import { ComposerTranslation } from 'vue-i18n'
 
-export const commands = (t: ComposerTranslation): Omit<Command, 'deleted_at'>[] => [
+import { commands as commandsTable } from '@/drizzle/schema'
+import { ModulesName } from '@/utils/deployer-app'
+import { getModuleIcon } from '@/utils/icons'
+import { createSeedSource } from './createSeedSource'
+
+type CommandSeed = Omit<Command & SeedRecord, 'deleted_at'>
+
+export const commands = (t: ComposerTranslation): CommandSeed[] => [
 	{
 		key: 'system_metrics',
 		name: t('seed.commands.system_metrics.name'),
@@ -120,9 +130,12 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 			type: 'regex',
 			patterns: [
 				{
-					pattern: '^\\s*([^/\\s]+)/(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\[[^\\]]*upgradable to:\\s*(\\S+)\\s*\\]',
+					// apt list --upgradable: name/repo VERSION arch [upgradable from: CURRENT]
+					// La versión se captura sin epoch (`5:`) ni sufijo Debian (`~debian.12~bookworm`).
+					pattern:
+						'^\\s*([^/\\s]+)/(\\S+)\\s+(?:\\d+:)?([^\\s~]+)(?:~\\S*)?\\s+\\S+\\s+\\[[^\\]]*upgradable from:\\s*(?:\\d+:)?([^\\s~]+)(?:~\\S*)?\\s*\\]',
 					flags: 'gm',
-					groups: { name: 1, repo: 2, current_version: 3, available_version: 4 },
+					groups: { name: 1, repo: 2, available_version: 3, current_version: 4 },
 				},
 				{
 					pattern:
@@ -137,5 +150,24 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 		created_at: new Date().toISOString(),
 	},
 ]
+
+export const commandsSeedSource = createSeedSource<CommandSeed>({
+	id: 'commands',
+	file: 'commands.ts',
+	icon: getModuleIcon(ModulesName.Commands),
+	label: t => t('seed.sources.commands.label'),
+	cacheKey: ['commands'],
+	table: commandsTable,
+	// En esta tabla la clave (`key`) es el identificador y es de texto.
+	idField: 'key',
+	// `custom = 0` protege los comandos creados o modificados por el usuario.
+	seedColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'updated_at'],
+	seedWhere: sql`custom = '0'`,
+	// Los comandos internos (los únicos sembrados) deben estar siempre activos.
+	seedValues: { deleted_at: null },
+	resetColumns: ['name', 'description', 'command', 'parser', 'timeout', 'enabled', 'internal', 'custom', 'updated_at'],
+	resetValues: { deleted_at: null },
+	defaults: commands,
+})
 
 export default commands

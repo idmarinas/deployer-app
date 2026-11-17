@@ -11,6 +11,10 @@ import type {
 } from '@/types/tauri-types'
 import { ref } from 'vue'
 
+import { loadGlobalScopeForExecution } from '@/drizzle/lib/variables'
+import { i18n } from '@/i18n'
+import { collectSecretValues, InterpolationError, interpolateString, redactSecrets } from '@/utils/interpolation'
+
 /**
  * Composable de consola remota.
  *
@@ -35,7 +39,11 @@ export default function useRemoteCommand() {
 		errorMessage.value = ''
 	}
 
-	async function run<T>(commandName: string, input: unknown): Promise<CommandResponse<T> | null> {
+	async function run<T>(
+		commandName: string,
+		input: unknown,
+		secrets: readonly string[] = [],
+	): Promise<CommandResponse<T> | null> {
 		isRunning.value = true
 		lastExitCode.value = null
 		errorMessage.value = ''
@@ -50,7 +58,7 @@ export default function useRemoteCommand() {
 					lastExitCode.value = event.exit_code
 					break
 				case 'error':
-					errorMessage.value = event.message
+					errorMessage.value = redactSecrets(event.message, secrets)
 					break
 			}
 		}
@@ -58,15 +66,39 @@ export default function useRemoteCommand() {
 		try {
 			return await invoke<CommandResponse<T>>(commandName, { input, channel })
 		} catch (e) {
-			errorMessage.value = String(e)
+			errorMessage.value = redactSecrets(String(e), secrets)
 			return null
 		} finally {
 			isRunning.value = false
 		}
 	}
 
-	function execute(input: RemoteCommandInput) {
-		return run<RemoteCommandResult>('ssh_execute_command', input)
+	async function execute(input: RemoteCommandInput) {
+		const { t } = i18n.global
+
+		let command: string
+		let workingDir = input.working_dir
+		let secrets: string[] = []
+
+		try {
+			const globalScope = await loadGlobalScopeForExecution()
+			const roots = { global: globalScope }
+			secrets = collectSecretValues(roots)
+
+			command = interpolateString(input.command, roots, { maskSecrets: false })
+			if (workingDir) {
+				workingDir = interpolateString(workingDir, roots, { maskSecrets: false })
+			}
+		} catch (error) {
+			errorMessage.value = redactSecrets(
+				error instanceof InterpolationError ? t(error.messageKey, error.messageParams) : String(error),
+				secrets,
+			)
+
+			return null
+		}
+
+		return run<RemoteCommandResult>('ssh_execute_command', { ...input, command, working_dir: workingDir }, secrets)
 	}
 
 	function upload(input: RemoteUploadInput) {

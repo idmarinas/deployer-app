@@ -1,7 +1,5 @@
 # TODO
 
-- Documentación (`docs/content/`, es primero y en después): [`AGENTS.docs.md`](./AGENTS.docs.md)
-
 1. Inputs, Crear un warpper para Inputs, Textareas, Selects, etc. que se puedan crear de una forma mas sencilla, con ciertos añadidos.
    - Ejemplo el trailing, que agrega un contador de límite de caracteres.
 2. Integrar la edición en la lista de items (en host, en la vista de todos los host integrar ver la información del host y poder editarlo)
@@ -18,6 +16,7 @@
 12. Página de lista:
    1. En las páginas de lista, cambiar la forma en la que se borran los items.
       1. Cuando se borra un item, marcar dicho item de la lista (destacandolo) y luego borrar solo ese item, sin necesidad de recargar toda la lista.
+   2. Crear componentes comunes para evitar tener que duplicar código.
 13. Cambiar base de datos:
    1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
 
@@ -25,68 +24,7 @@
 
 Puede ser más complicado migrar de lo que parece.
 
-```typescript
-  async function changeDatabasePath() {
-   // Para cambiar la BD usar la misma lógica de cuando se carga un archivo .sqlite en (setup).vue
-  const selected = await open({
-  directory: false,
-  multiple: false,
-  title: t('pages.app.settings.sections.database.change'),
-  filters: [
-   {
-   name: 'SQLite Files',
-   extensions: ['sqlite'],
-   },
-  ],
-  })
-
-  if (!selected) return
-
-  isChangingDb.value = true
-
-  try {
-  const setResponse = await invoke<CommandResponse>('set_database_path', { path: selected })
-
-  if (!setResponse.success) {
-   toast.add({
-   title: t('overlays.toast.title.error'),
-   description: t('pages.app.settings.sections.database.change_error'),
-   color: 'error',
-   })
-   return
-  }
-
-  const migrationResponse = await invoke<CommandResponse>('execute_migrations')
-
-  if (!migrationResponse.success) {
-   toast.add({
-   title: t('overlays.toast.title.error'),
-   description: t('pages.app.settings.sections.database.change_error'),
-   color: 'error',
-   })
-   return
-  }
-
-  toast.add({
-   title: t('overlays.toast.title.success'),
-   description: t('pages.app.settings.sections.database.change_success'),
-   color: 'success',
-  })
-
-  window.location.reload()
-  } catch {
-  toast.add({
-   title: t('overlays.toast.title.error'),
-   description: t('pages.app.settings.sections.database.change_error'),
-   color: 'error',
-  })
-  } finally {
-  isChangingDb.value = false
-  }
-  }
-```
-
-## Versión 0.2.0
+## Versión 0.3.0
 
 1. Nada
 
@@ -94,8 +32,6 @@ Puede ser más complicado migrar de lo que parece.
 
 ### Passkeys
 
-1. Poder ver la cláve pública.
-   - Se puede guardar en la tabla, para evitar tener que calcularla cada vez.
 2. Comprobar si se le puede poner una duración a la clave.
    - No se puede hacer. La clave no permite esto.
    - Alternativa: Usar el campo `created_at` como orientación para aconsejar un cambio.
@@ -126,15 +62,9 @@ Puede ser más complicado migrar de lo que parece.
    1. Se genere primero el nuevo sin sustituir al antiguo
    2. Que se suba a una nueva completa y cuando se complete el despliegue se haga una redirección (Algo similar a DeployerPHP)
 
-### Commands (antes Tasks)
-
-1. Este nombre para el proposito que tiene este módulo no es adecuado
-   - Actualmente este módulo su proposito es crear los comandos que se va a ejecutar para cada proyecto.
-2. Cambiar el nombre por "Commands" que es más apropiado para lo que va a hacer.
-
 ### Tasks (nueva versión)
 
-1. Este es un módulo nuevo. que no tiene nada que ver con el de arriba.
+1. Este es un módulo nuevo.
 2. Este nuevo módulo su función es para crear tareas que se ejecutarán por la aplicación a ciertos intervalos y en un cron.
 3. IDEA, este es un módulo que es una IDEA, no es definitivo.
 4. Propositos para lo que se pensó:

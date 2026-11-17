@@ -1,12 +1,15 @@
 import type { Toast } from '@nuxt/ui/runtime/composables/useToast.js'
 import type { EntryKey, QueryCache } from '@pinia/colada'
+import type { Composer } from 'vue-i18n'
 import { DrizzleQueryError } from 'drizzle-orm'
 
-import {
+import type {
 	ErrorFallback,
 	QueryErrorInfo,
+	QueryNotifier,
 	QueryNotifierDeps,
 	QueryOperation,
+	ToasterOptions,
 } from '@/composables/queries/shared.interfaces'
 import { QueryRawError } from '@/drizzle/drizzle'
 
@@ -61,12 +64,53 @@ export function firstRow<TEntity>(rows: TEntity[]): TEntity | undefined {
  * ejecutan tras cada escritura.
  *
  * Seguro fuera de setup: usar con la instancia de `useQueryCache()` del composable.
+ *
+ * **No propaga errores de refetch** (igual que `throwOnError: false` en react-query).
+ * La escritura que originó la invalidación ya se completó y el error de la query
+ * queda en su propio estado (`error`), que la vista consume. Sin esto, borrar una
+ * fila cuyo loader de detalle responde `not-found` tras el borrado
+ * (`usePasskeyById`, `useCommandByKey`) se reportaba como fallo del borrado.
  */
 export async function invalidateCacheQueries(cacheQuery: QueryCache, key: EntryKey): Promise<void> {
-	await cacheQuery.invalidateQueries({ key }, 'all')
+	try {
+		await cacheQuery.invalidateQueries({ key }, 'all')
+	} catch {
+		// El error ya está en el estado de la query invalidada; no debe tumbar la mutación.
+	}
 }
 
-export type QueryNotifier = ReturnType<typeof createQueryNotifier>
+/**
+ * Fecha actual en ISO-8601. Se usa para `created_at`/`updated_at` de las
+ * mutaciones CRUD.
+ */
+export function nowIso(): string {
+	return new Date().toISOString()
+}
+
+/**
+ * Añade `created_at` y `updated_at` con la misma marca temporal.
+ *
+ * Las entidades pueden sobrescribirlos después si necesitan otra política
+ * (p. ej. conservar un `created_at` recibido).
+ */
+export function withTimestamps<T extends object>(
+	data: T,
+	now = nowIso(),
+): T & { created_at: string; updated_at: string } {
+	return { ...data, created_at: now, updated_at: now }
+}
+
+/**
+ * Textos de fallback comunes a los errores de lectura (`findAll`/`find`).
+ * Si el error es un `QueryRawError`, `notify.fail` mostrará su clave i18n
+ * estructurada en lugar de estos textos.
+ */
+export function readErrorFallback(t: Composer['t']): ErrorFallback {
+	return {
+		title: t('overlays.toast.title.error'),
+		description: t('overlays.toast.description.error'),
+	}
+}
 
 /**
  * Agrupa las notificaciones del ciclo de vida de una operación CRUD, agnóstico
@@ -81,7 +125,7 @@ export type QueryNotifier = ReturnType<typeof createQueryNotifier>
  * Sin `noticeId` (lecturas `findAll`/`find`), `fail` crea un toast independiente;
  * con `noticeId` (mutaciones) actualiza el aviso persistente.
  */
-export function createQueryNotifier({ toaster, t }: QueryNotifierDeps) {
+export function createQueryNotifier({ toaster, t }: QueryNotifierDeps): QueryNotifier {
 	function loading(title: string, description?: string): Toast {
 		return toaster.warning(title, description, { duration: 0 })
 	}
@@ -90,8 +134,13 @@ export function createQueryNotifier({ toaster, t }: QueryNotifierDeps) {
 		toaster.update(noticeId, 'warning', title, description)
 	}
 
-	function success(noticeId: string | number, title: string, description?: string): void {
-		toaster.update(noticeId, 'success', title, description)
+	function success(
+		noticeId: string | number,
+		title: string,
+		description?: string,
+		options?: ToasterOptions,
+	): void {
+		toaster.update(noticeId, 'success', title, description, options)
 	}
 
 	function fail(e: unknown, fallback: ErrorFallback, noticeId?: string | number): void {

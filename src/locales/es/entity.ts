@@ -21,11 +21,10 @@ export default {
 		key_id: 'ID de clave',
 		enabled: 'Habilitado',
 	},
-	global_variable: {
+	variable: {
 		value: 'Valor',
-		usage: 'Usala como',
+		usage: 'Úsala como',
 		is_secret: 'Es secreta',
-		data_type: 'Tipo de dato',
 	},
 	passkey: {
 		name: 'Nombre',
@@ -42,8 +41,10 @@ export default {
 		name: 'Nombre',
 		description: 'Descripción',
 		command: 'Comando',
+		parser: 'Parser',
 		timeout: 'Timeout',
 		enabled: 'Habilitado',
+		internal: 'Interno',
 	},
 	project: {
 		name: 'Nombre',

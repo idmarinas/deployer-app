@@ -12,6 +12,8 @@ export interface ConfirmDialogOptions {
 	title: string
 	description?: string
 	type: 'yes_no' | 'cancel_confirm' | 'cancel_delete' | 'cancel_update'
+	/** Texto del botón de confirmación; si se omite se usa `overlays.dialog.<type>.confirm`. */
+	confirmLabel?: string
 }
 
 export interface CommandTestDialogOptions {

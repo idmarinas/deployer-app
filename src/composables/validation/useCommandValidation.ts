@@ -12,6 +12,9 @@ export function useCommandValidation(key?: string) {
 
 	const select = createSelectSchema(commands)
 
+	// Unicidad: las filas soft-deleted siguen ocupando los índices UNIQUE de la BD
+	// (`key`, `name`), así que `$count` NO filtra por `deleted_at` (si lo hiciera,
+	// el INSERT fallaría).
 	const insert = createInsertSchema(commands, {
 		key: z =>
 			z
@@ -19,7 +22,7 @@ export function useCommandValidation(key?: string) {
 				.nonempty(t('validation.commands.key.required'))
 				.regex(/^[a-z0-9]+(?:_[a-z0-9]+)*$/, t('validation.commands.key.format'))
 				.min(3, t('validation.commands.key.min'))
-				.max(64, t('validation.commands.key.max'))
+				.max(120, t('validation.commands.key.max'))
 				.refine(async value => {
 					if (!value) return false
 
@@ -38,10 +41,7 @@ export function useCommandValidation(key?: string) {
 		command: z.string().nonempty(t('validation.commands.command.required')),
 		parser: z => z.default({ type: 'raw' } satisfies OutputParser),
 		timeout: z =>
-			z
-				.min(1, t('validation.commands.timeout.min'))
-				.max(3600, t('validation.commands.timeout.max'))
-				.default(300),
+			z.min(1, t('validation.commands.timeout.min')).max(3600, t('validation.commands.timeout.max')).default(300),
 		enabled: z => z.default(false),
 		updated_at: z => z,
 		created_at: z => z,

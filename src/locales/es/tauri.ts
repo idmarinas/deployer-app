@@ -197,6 +197,7 @@ export default {
   },
   remote: {
     errors: {
+      cancelled: 'Operación cancelada por el usuario. \n Razón: {reason}',
       connection_failed: 'No se pudo conectar con el servidor. \n Razón: {reason}',
       execution_failed: 'Error al ejecutar el comando en el servidor. \n Razón: {reason}',
       transfer_failed: 'Error en la transferencia de archivos. \n Razón: {reason}',

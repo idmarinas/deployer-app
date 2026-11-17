@@ -5,6 +5,7 @@ export default defineNuxtConfig({
 		url: 'https://idmarinas.github.io',
 	},
 	i18n: {
+		baseUrl: 'https://idmarinas.github.io',
 		locales: [
 			{ code: 'en', name: 'English' },
 			{ code: 'es', name: 'Español' },

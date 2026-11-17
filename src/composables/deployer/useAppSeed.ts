@@ -1,36 +1,33 @@
-import commandsList from '@/composables/deployer/seed_data/commands'
-import { db } from '@/drizzle/drizzle'
-import { commands } from '@/drizzle/schema'
+import type { SeedKey } from './seed_data'
+
 import { i18n } from '@/i18n'
-import { sql } from 'drizzle-orm'
+
+import { SEED_SOURCES } from './seed_data'
 
 export function useAppSeed() {
 	const { t } = i18n.global
 
-	async function commandsFn() {
-		await db
-			.insert(commands)
-			.values(commandsList(t))
-			.onConflictDoUpdate({
-				target: commands.key,
-				targetWhere: sql`custom = '0'`,
-				set: {
-					name: sql`excluded.name`,
-					description: sql`excluded.description`,
-					command: sql`excluded.command`,
-					parser: sql`excluded.parser`,
-					timeout: sql`excluded.timeout`,
-					enabled: sql`excluded.enabled`,
-					updated_at: sql`excluded.updated_at`,
-				},
-			})
+	/** Inserta los datos predeterminados que falten (respeta los personalizados). */
+	async function execute() {
+		for (const source of SEED_SOURCES) {
+			await source.seed(t)
+		}
 	}
 
-	async function execute() {
-		await commandsFn()
+	/**
+	 * Restaura los datos predeterminados de un origen completo o de un registro
+	 * concreto. Sin `sourceId` restaura todos los orígenes.
+	 */
+	async function reset(sourceId?: string, keys?: readonly SeedKey[]) {
+		const sources = sourceId ? SEED_SOURCES.filter(source => source.id === sourceId) : SEED_SOURCES
+
+		for (const source of sources) {
+			await source.reset(t, keys)
+		}
 	}
 
 	return {
 		execute,
+		reset,
 	}
 }

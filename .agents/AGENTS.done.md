@@ -2,6 +2,94 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (16 nov 2026 — Pestaña Inactivos en los listados)
+
+**Nota del usuario:** los listados separan las filas deshabilitadas en una pestaña propia. La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará junto con la del soft-delete.
+
+1. **Tres pestañas**: **Activos** / **Inactivos** / **Borrados** en variables, hosts, commands y passkeys. `UTabs` usa `v-model` y `:content="false"`; el contenido se renderiza fuera para conservar filtros y estado al cambiar de pestaña.
+2. **Filtrado**: Activos = `enabled === true` y no borradas; Inactivos = `enabled === false` y no borradas. El contador aparece solo en Inactivos y Borrados cuando es mayor que 0.
+3. **Semáforo**: el indicador de `UTabs` toma el color del estado de la pestaña activa (`success`/`warning`/`error`) y los iconos de las pestañas no activas se tiñen con ese mismo color.
+4. **Componente compartido** `src/components/table/EntityListTab.vue` (lista, vacío, carga y error; slot `expanded`) y `EmptyList` acepta `title`/`description`/`showAdd`. El vacío de Inactivos usa `components.empty_list.inactive.*` sin botón de alta.
+5. **Documentación e i18n**: `AGENTS.frontend.md` y las páginas de variables, hosts, commands y passkeys en `docs/content/es/`; claves `es`/`en` (`common.tabs.inactive` y `components.empty_list.inactive.*`) y `bun run i18n:types` regenerado.
+6. **Verificación**: Prettier, `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-16).
+
+---
+
+## Tareas completadas (16 nov 2026 — Soft delete estilo Doctrine: papelera y purga)
+
+**Nota del usuario:** el plan `AGENTS.soft-delete.PLAN.md` se da por completado. Detalle en `AGENTS.soft-delete.PLAN.md` (archivado en `.agents/plans.done/`). La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará aparte; `settings` sigue apartado y es ajeno al plan.
+
+1. **API CRUD** (`src/composables/queries/crud.ts`, `shared.interfaces.ts`): `find(key, options)` unificado con `onlyDeleted`/`includeDeleted` (sin `findByKey()` privada), `remove(key, { purge, unlink })` como única vía de purga (exige fila en papelera), `purgeDeleted()` con recuento `purged`/`blocked`, `findReferences()`, guardas de estado con `returning()` y bloqueo de filas `internal`. Notificaciones `delete`/`purge`/`purgeAll` completas en `es`/`en`.
+2. **Relaciones**: una fila referenciada no se borra hasta desvincularla (`unlink`); `useCrudDeleteConfirm` ofrece **Cancelar** y **Desvincular y eliminar**. Migración de `hosts.key_id` de `set null` a `restrict` (`drizzle/migrations/` + `src-tauri/migrations/`). `findVariableUsages()` (`src/utils/interpolation/usages.ts`) avisa de los comandos que usan una variable por `{{global.<slug>}}`.
+3. **UI de papelera**: `TrashTable`/`TrashDetails` compartidos, página global `src/pages/dashboard/trash.vue` agrupada por tabla y pestañas **Activos**/**Borrados** en los listados de variables, hosts, commands y passkeys. Restaurar, purgar, purga masiva con confirmación doble (**Vaciar papelera** en la página global / **Eliminar borrados** en la pestaña, con `context="list"`) y toast con acción **Deshacer** tras el borrado lógico.
+4. **Seeds e `internal`**: `seedValues`/`seedWhere` en los seeds y `deleted_at = null` para las filas internas, que no se pueden borrar ni purgar.
+5. **Documentación e i18n**: `AGENTS.frontend.md` (API CRUD, papelera e `internal`), `docs/content/es/008.variables/1.overview.md` y `docs/content/es/003.passkeys/2.manage.md` actualizados; claves `es`/`en` completas y `bun run i18n:types` regenerado.
+6. **Verificación**: `bun run i18n:types`, `bunx vue-tsc --noEmit` y `bun run build` verdes (2026-11-15/16).
+
+---
+
+## Tareas completadas (12 nov 2026 — Variables globales: inmutabilidad y endurecimiento del cifrado)
+
+**Nota del usuario:** el análisis `AGENTS.variables.ANALYSIS.md` queda consolidado aquí y se elimina. El trabajo aplazado vive en `plans/AGENTS.futuro.PLAN.md` §2 (`FUT-VAR-*`).
+
+1. **`slug` inmutable**: se elimina del esquema de update (`.omit({ slug: true })`) y `update()` escribe siempre el valor actual. El renombrado con búsqueda de referencias queda en `FUT-VAR-02`.
+2. **`is_secret` unidireccional**: una variable secreta no puede volver a ser pública. La regla se aplica en validación (refine async) y en la capa de consultas, sin triggers de SQLite. `is_secret` viaja siempre en el mismo `UPDATE` que `value` para que el cifrado condicional del proxy funcione.
+3. **Normalización centralizada**: nuevo `src/utils/variables.ts` (`VariableUpdateData`, `normalizeVariableUpdate()`), usado por `src/composables/queries/variables.ts`. Si la fila no existe, `update()` sale con aviso.
+4. **Centinelas endurecidos**: `isCiphertextToken()` en `src/drizzle/lib/stronghold.ts` valida el formato real (`ENC:{version}:<base64>` y `ENC:<base64>` con ≥ 28 bytes decodificados). `stripEncryptedValues()` y `encryptParams()` solo descartan `BLANK_VALUE` y `''`; `decryptRow()` y `maskEncryptedFields()` usan la guarda estricta. Un `ENC:` de usuario se cifra en lugar de guardarse en claro.
+5. **i18n**: clave `validation.variables.is_secret.immutable` en `es` y `en`; `bun run i18n:types` ejecutado.
+6. **Verificación**: script temporal con 15 comprobaciones (detección de tokens, strip de centinelas, conservación de `slug`/`is_secret`) y `bun run build` verde.
+
+**Pendiente:** round-trip real en Tauri (`FUT-TECH-01`). **Deuda y mejoras:** `FUT-VAR-01` a `FUT-VAR-11` en `plans/AGENTS.futuro.PLAN.md`.
+
+---
+
+## Tareas completadas (12 nov 2026 — Extraer las extensiones de CodeMirror de `CodeEditor.vue`)
+
+**Nota del usuario:** el plan `AGENTS.codemirror-extensions.PLAN.md` se da por completado; la verificación manual en UI queda aceptada por decisión del usuario. Detalle en `AGENTS.codemirror-extensions.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Módulos reutilizables** en `src/plugins/codemirror/`: `types.ts`, `theme.ts`, `highlight.ts`, `editable.ts`, `setup.ts`, `languages.ts`, `lint/{index,json,yaml}.ts`, `autocomplete/{index,variables,php}.ts`, `bash/{blocks,format}.ts` y `index.ts` como barrel público.
+2. **`CodeEditor.vue` adelgazado** de 783 a 317 líneas: solo orquestación Vue + template; nueva prop `extensions` (`Extension | readonly Extension[]`) en un `Compartment` propio y reactiva a cambios.
+3. **`basicSetup` sustituido** por `createBaseExtensions` con toggle por funcionalidad (lineNumbers, history, foldGutter, closeBrackets, search, autocomplete, multipleSelections) y `createDarkThemeExtension` aparte; se retira el meta-paquete `codemirror` y se añade `@codemirror/search`. El tema propio cubre los widgets que aportaba `defaultHighlightStyle`.
+4. **Autocompletado aditivo por lenguaje**: la prop `autocomplete` se registra vía `languageData` (ya no sustituye a las fuentes del lenguaje); helper `withAutocomplete` y `autocomplete/php.ts` con lista básica (mínimo real PHP 7.0, sin 8.x). JavaScript y HTML conservan su autocompletado nativo.
+5. **Movido** `src/utils/interpolation/completion.ts` → `src/plugins/codemirror/autocomplete/variables.ts`; `CommandForm.vue` importa de la nueva ruta.
+6. **Documentación**: `AGENTS.frontend.md` §1 y §9 actualizadas (estructura, props, dependencias, base del editor, tema, lint y autocompletado por lenguaje).
+
+**Resultado:** comportamiento del editor sin cambios funcionales; verificación por inspección y `bunx vue-tsc --noEmit` con los módulos de este plan limpios. Queda como deuda ajena un error de tipos en `src/utils/tiptap/SchemaSanitizerExtension.ts` (`@tiptap/pm/model` inexistente, resto del editor Tiptap retirado).
+
+---
+
+## Tareas completadas (11 nov 2026 — Sistema de interpolación de variables globales)
+
+**Nota del usuario:** el plan `AGENTS.variable-interpolation.PLAN.md` se da por completado; el autocompletado se verificó en la app. Detalle en `AGENTS.variable-interpolation.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Motor puro** (`src/utils/interpolation/`): formato `{{ámbito.ruta}}` sin espacios, escape `\{{`, raíces desconocidas literales, modo estricto (`unknown_variable`, `disabled_variable`, `scope_not_available`, `invalid_path`), secretas enmascaradas (`••••••`) salvo al ejecutar y redacción de errores.
+2. **Carga de variables** (`src/drizzle/lib/variables.ts`): metadatos para UI/linter/preview y lectura cruda + descifrado puntual de secretas solo para ejecución (sin `withDecryption`).
+3. **Ejecución**: `runner.ts` y `useRemoteCommand.ts` interpolan `command`/`working_dir` y redactan errores. Al cerrar el plan se corrigió que una variable global inexistente se resolviera como cadena vacía: ahora lanza `unknown_variable` y bloquea la ejecución.
+4. **UI**: autocompletado en `CodeEditor` (`{{` lista los ámbitos disponibles; variables con nombre y `global.slug [valor]`, candado para secretas), resaltado de variables, linter solo con errores, cuadro de ayuda de disparadores y vista previa con pestañas *Interpolada*/*Original* en `CommandTestDialog`.
+5. **Listado de variables**: muestra y copia `{{global.slug}}`.
+6. **i18n y documentación**: claves `es`/`en` y `docs/content/es/008.variables/`.
+
+**Resultado:** `bun run build` verde, Prettier OK y motor probado contra los casos de la verificación prevista.
+
+---
+
+## Tareas completadas (10 nov 2026 — Comandos guardados en BD: `deployer_commands` como fuente única)
+
+**Nota del usuario:** el plan `AGENTS.commands-db.PLAN.md` se da por completado. Detalle en `AGENTS.commands-db.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Entidad + migración**: tabla `deployer_commands` (PK `key`; columnas `name`, `description`, `command`, `parser` JSON, `timeout`, `custom`, `internal`, `enabled`, timestamps) en `src/drizzle/entities/commands.ts`, exportada en `schema.ts`. Migración `20261028172340_commands_v0.2.0.sql` aplanada en `src-tauri/migrations/` y `TABLE_COMMANDS` regenerado en `tables.rs`.
+2. **Runner desde BD**: carpeta `src/utils/commands/` (`types.ts`, `parsers.ts`, `results.ts`, `runner.ts`); sin `registry.ts` ni definiciones TS hardcodeadas en runtime. `runCommand(key, hostId)` lee la definición de `deployer_commands` y `runCustomCommand` sirve para pruebas ad-hoc del formulario.
+3. **CRUD + loaders**: `src/composables/queries/commands.ts` (findAll/find/create/update/remove con notifier y soft-delete) y `src/loaders/commands.ts` (`useCommandsListAll`, `useCommandByKey`, `useCommandOptions`).
+4. **UI de gestión**: panel `commands.vue`, listado `commands/index.vue` (tabla expandible, badge de parser, acciones probar/editar/borrar), `add.vue`, `[key]/edit.vue`, `CommandForm.vue` (selector parser raw/json/line-based/regex con reglas y grupos) y `CommandTestDialog.vue` vía `useDialog`.
+5. **Consumidor en hosts**: `(view).vue` ejecuta `system_info`, `system_metrics` y `upgradable_packages` vía `runCommand<T>()`.
+6. **i18n + menú**: claves es/en espejo (dialogs, form, notifications, pages, validation, seed) y entradas en `useNavigationMenu.ts` (sidebar, búsqueda y campo "+").
+7. **Seed**: `src/composables/deployer/seed_data/commands.ts` (system_metrics, system_info, upgradable_packages) integrado en `SEED_SOURCES` con UI en `TabDatabaseSeed.vue`.
+8. **Cierre del plan (10 nov 2026)**: `runCommand()` valida ahora `enabled` (los comandos deshabilitados no se ejecutan) y lanza errores traducidos vía i18n (`utils.commands.errors.not_found` / `disabled`, es+en) en lugar de un string en español hardcodeado. `bun run i18n:types` y `bun run build` verdes.
+
+**Resultado:** la BD es la fuente única de comandos en runtime; se crean, editan, deshabilitan y borran desde la UI sin tocar código ni recompilar.
+
+---
+
 ## Tareas completadas (11 sep 2026 — Comando remoto universal tipo n8n, fase 1: nodos en TS)
 
 **Nota del usuario**: el plan `AGENTS.universal-remote.PLAN.md` se da por completado; el usuario continúa con comandos **guardados y mantenidos en BD** (ver `AGENTS.commands-db.PLAN.md`). Detalle en `AGENTS.universal-remote.PLAN.md` (archivado en `.agents/plans.done/`).

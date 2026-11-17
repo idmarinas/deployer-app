@@ -11,6 +11,8 @@ export function useHostValidation(id?: number) {
 
 	const select = createSelectSchema(hosts)
 
+	// Unicidad: las filas soft-deleted siguen ocupando el índice UNIQUE de la BD,
+	// así que `$count` NO filtra por `deleted_at` (si lo hiciera, el INSERT fallaría).
 	const insert = createInsertSchema(hosts, {
 		name: z =>
 			z

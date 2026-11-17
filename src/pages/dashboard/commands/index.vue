@@ -2,13 +2,14 @@
 import type { Command } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 
-import { h, onMounted } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useCommandQuery } from '@/composables/queries/commands'
 import { useCommandTestDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import { useCommandsListAll } from '@/loaders/commands'
+import { useCommandsTrash } from '@/loaders/trash'
 import { ModulesName } from '@/utils/deployer-app'
 import { ICONS } from '@/utils/icons'
 
@@ -23,6 +24,19 @@ definePage({
 const { t } = useI18n()
 const { data: items, isLoading, status, reload, refresh } = useCommandsListAll()
 const commandQuery = useCommandQuery()
+const trash = useCommandsTrash()
+
+const trashCount = computed(() => trash.data.value?.length ?? 0)
+const activeItems = computed(() => (items.value ?? []).filter(item => item.enabled))
+const inactiveItems = computed(() => (items.value ?? []).filter(item => !item.enabled))
+
+/** Pestaña seleccionada; el contenido se renderiza fuera de `UTabs` (ver `EntityListTab`). */
+const tab = ref('active')
+const isInactive = computed(() => tab.value === 'inactive')
+const isTrash = computed(() => tab.value === 'trash')
+
+/** Color del indicador según la pestaña activa (verde/ámbar/rojo). */
+const tabColor = computed(() => (isTrash.value ? 'error' : isInactive.value ? 'warning' : 'success'))
 
 const { tableColumnExpand, tableColumnEnabled, tableColumnActions } = useTableColumns<Command>({
 	moduleName: ModulesName.Commands,
@@ -38,7 +52,9 @@ const columns: TableColumn<Command>[] = [
 		header: () => t('entity.command.key'),
 		cell: ({ row }) => [
 			h('span', { class: 'font-mono text-xs' }, row.original.key),
-			row.original.internal ? h(UBadge, { label: 'Internal', class: 'mr-2', size: 'xs', variant: 'soft' }) : undefined,
+			row.original.internal
+				? h(UBadge, { label: t('entity.command.internal'), class: 'mr-2', size: 'xs', variant: 'soft' })
+				: undefined,
 		],
 	},
 	{
@@ -81,7 +97,45 @@ onMounted(() => {
 </script>
 
 <template>
-	<ListTable v-if="!isLoading && status === 'success' && items.length > 0" :columns="columns" :items="items">
+	<UTabs
+		v-model="tab"
+		:content="false"
+		:color="tabColor"
+		:items="[
+			{
+				label: t('common.tabs.active'),
+				icon: ICONS.status.check,
+				value: 'active',
+			},
+			{
+				label: `${t('common.tabs.inactive')} ${inactiveItems.length > 0 ? `(${inactiveItems.length})` : ''}`,
+				icon: ICONS.status.cross,
+				value: 'inactive',
+			},
+			{
+				label: `${t('common.tabs.trash')} ${trashCount > 0 ? `(${trashCount})` : ''}`,
+				icon: ICONS.actions.trash,
+				value: 'trash',
+			},
+		]"
+	/>
+
+	<TrashTable v-if="isTrash" :module="ModulesName.Commands" context="list" />
+
+	<EntityListTab
+		v-else
+		:columns="columns"
+		:items="isInactive ? inactiveItems : activeItems"
+		:is-loading="isLoading"
+		:status="status"
+		:module="ModulesName.Commands"
+		:reload-fn="reload"
+		:add-route="{ name: 'dashboard-commands-add' }"
+		:show-add="!isInactive"
+		:title="isInactive ? t('components.empty_list.inactive.title') : undefined"
+		:description="isInactive ? t('components.empty_list.inactive.description') : undefined"
+		what="command"
+	>
 		<template #expanded="{ row }">
 			<ItemCard
 				:id="row.original.key"
@@ -92,7 +146,12 @@ onMounted(() => {
 				:enabled="row.original.enabled"
 			>
 				<template #title-right>
-					<UBadge v-if="row.original.internal" variant="soft" icon="i-tabler-device-desktop" label="Internal" />
+					<UBadge
+						v-if="row.original.internal"
+						variant="soft"
+						:icon="ICONS.server.deviceDesktop"
+						:label="t('entity.command.internal')"
+					/>
 					<UBadge color="info" variant="subtle" :icon="ICONS.misc.adjustments" :label="row.original.parser.type" />
 				</template>
 				<div class="flex flex-col gap-2">
@@ -103,13 +162,5 @@ onMounted(() => {
 				</div>
 			</ItemCard>
 		</template>
-	</ListTable>
-	<EmptyList
-		v-else-if="!isLoading && status === 'success' && items.length === 0"
-		:module="ModulesName.Commands"
-		:reload-fn="reload"
-		:add-route="{ name: 'dashboard-commands-add' }"
-	/>
-	<Loading v-else-if="isLoading" what="command" plural />
-	<GeneralError v-else />
+	</EntityListTab>
 </template>

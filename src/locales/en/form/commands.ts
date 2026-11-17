@@ -23,6 +23,19 @@ export default {
 		help: 'Bash command that will run on the remote server via SSH',
 		placeholder: '# e.g. uptime -p',
 	},
+	variables: {
+		help: 'Global variables available in the editor',
+		tips: {
+			scopes: 'available scopes',
+			root: 'all variables',
+			path: 'all global variables',
+			filter_path: 'matches by path',
+			filter_slug: 'matches by slug',
+			escape: 'leave the expression as-is',
+		},
+		secret_help: 'Secret variables are marked in amber and are only resolved when the command runs.',
+		empty_value: 'no value',
+	},
 	parser: {
 		label: 'Output parser',
 		help: 'How the command output is interpreted to display and reuse it',
