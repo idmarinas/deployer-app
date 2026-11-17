@@ -19,6 +19,10 @@
    2. Crear componentes comunes para evitar tener que duplicar código.
 13. Cambiar base de datos:
    1. Cuando se permita cambiar la BD, agregar un setting para ponerle nombre a esa BD y ponerlo en la parte superior izquierda (donde está ahora el nombre de la app)
+14. Notificaciones de la aplicación.
+   1. Un sistema que permita agregar notificaciones de acciones en curso, como por ejemplo actualizar un paquete del servidor
+   2. Se agrega un pequeño contenedor con todas las instrucciones para esa notificación. Permitiendo poder ver su progreso y el resultado final.
+
 
 ## Nuxt
 
