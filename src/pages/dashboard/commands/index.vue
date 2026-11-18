@@ -138,14 +138,7 @@ onMounted(() => {
 		what="command"
 	>
 		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.key"
-				:name="row.original.name"
-				:description="row.original.description"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-				:enabled="row.original.enabled"
-			>
+			<ItemCard v-model="row.original" id-name="key">
 				<template #title-right>
 					<UBadge
 						v-if="row.original.internal"

@@ -154,13 +154,7 @@ onMounted(() => {
 		what="passkey"
 	>
 		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-			>
+			<ItemCard v-model="row.original">
 				<template #title-right>
 					<UBadge
 						color="info"

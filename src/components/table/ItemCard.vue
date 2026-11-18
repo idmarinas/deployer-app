@@ -7,17 +7,20 @@ import { useI18n } from 'vue-i18n'
 <script setup lang="ts">
 const props = withDefaults(
 	defineProps<{
-		id: number | string
-		name: string
-		description?: JSONContent
-		enabled?: boolean
-		created_at: string
-		updated_at: string
+		idName?: string
 	}>(),
 	{
-		enabled: undefined,
+		idName: 'id',
 	},
 )
+const item = defineModel<{
+	name: string
+	description?: JSONContent
+	enabled?: boolean
+	created_at: string
+	updated_at: string
+	[key: string]: any
+}>({ required: true })
 
 const { t, locale } = useI18n()
 </script>
@@ -27,10 +30,10 @@ const { t, locale } = useI18n()
 		<template #title>
 			<div class="flex items-center justify-between">
 				<div class="flex gap-3 items-center">
-					<UChip :color="enabled ? 'success' : 'error'" :show="!(enabled === undefined)">
-						<span class="text-lg font-semibold">{{ name }}</span>
+					<UChip :color="item.enabled ? 'success' : 'error'" :show="!(item.enabled === undefined)">
+						<span class="text-lg font-semibold">{{ item.name }}</span>
 					</UChip>
-					<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ id }} </UBadge>
+					<UBadge color="neutral" variant="soft" size="sm" class="font-mono"> ID: {{ item[props.idName] }} </UBadge>
 				</div>
 				<div class="flex items-center gap-3">
 					<slot name="title-right" />
@@ -39,7 +42,7 @@ const { t, locale } = useI18n()
 		</template>
 
 		<template #description>
-			<DescriptionViewer :value="description" />
+			<DescriptionViewer :value="item.description" />
 		</template>
 
 		<template #default>
@@ -53,14 +56,14 @@ const { t, locale } = useI18n()
 						<UIcon name="i-tabler-calendar-plus" class="size-4" />
 						<strong>{{ t('entity.common.created_at') }}:</strong>
 					</div>
-					<div>{{ new Date(created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
+					<div>{{ new Date(item.created_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
 				</div>
 				<div class="flex flex-col @2xl:flex-row gap-1.5 items-center">
 					<div class="flex gap-1.5">
 						<UIcon name="i-tabler-calendar-time" class="size-4" />
 						<strong>{{ t('entity.common.updated_at') }}:</strong>
 					</div>
-					<div>{{ new Date(updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
+					<div>{{ new Date(item.updated_at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' }) }}</div>
 				</div>
 			</div>
 		</template>
