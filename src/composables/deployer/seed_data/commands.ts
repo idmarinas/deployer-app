@@ -152,6 +152,36 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 		updated_at: new Date().toISOString(),
 		created_at: new Date().toISOString(),
 	},
+	{
+		key: 'update_packages',
+		name: t('seed.commands.update_packages.name'),
+		description: {
+			type: 'doc',
+			content: [
+				{
+					type: 'paragraph',
+					content: [{ type: 'text', text: t('seed.commands.update_packages.description') }],
+				},
+			],
+		},
+		command: String.raw`DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y {{params.packages}}`,
+		custom: false,
+		enabled: true,
+		internal: true,
+		parser: { type: 'raw' },
+		inputs: [
+			{
+				key: 'packages',
+				label: t('seed.commands.update_packages.inputs.packages.label'),
+				type: 'text',
+				required: true,
+				help: t('seed.commands.update_packages.inputs.packages.help'),
+			},
+		],
+		timeout: 300,
+		updated_at: new Date().toISOString(),
+		created_at: new Date().toISOString(),
+	},
 ]
 
 export const commandsSeedSource = createSeedSource<CommandSeed>({
