@@ -2,6 +2,20 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (18 nov 2026 — Parámetros de entrada en comandos)
+
+**Nota del usuario:** dio por completado el plan de implementación al no quedar trabajo funcional pendiente. Detalle en `AGENTS.command-inputs-model.PLAN.md`, `AGENTS.command-inputs-runner.PLAN.md`, `AGENTS.command-inputs-form.PLAN.md`, `AGENTS.command-inputs-dialog.PLAN.md` y `AGENTS.command-inputs-docs.PLAN.md` (archivados en `.agents/plans.done/`). Queda pendiente la verificación manual.
+
+1. **Modelo y contrato** (`model`): `src/utils/inputs/*` (tipos, schema Zod y reexportaciones), locales es/en, columna `deployer_commands.inputs` con migración `20261118154818_commands_inputs`, `CommandDefinition.inputs`, `row.inputs` en el runner, validación al guardar, seed (`seedColumns`/`resetColumns` más los tres registros) y `inputs: []` en el alta.
+2. **Motor** (`runner`): `resolveInputDefaults()`, `CommandRunOptions` con `params`, coacción y validación de valores, relleno de campos declarados sin valor y raíces `{ global, params }` en el runner.
+3. **Editor** (`form`): `CommandInputsEditor.vue` entre `timeout` y el script (alta/baja, reordenación por botones, opciones de `select`, defaults y ayuda), `params` en linter/resaltado/autocompletado y refinamiento asíncrono de defaults.
+4. **Ejecución** (`dialog`): `InputsForm.vue` compartido, bloque de parámetros en `CommandTestDialog.vue`, defaults al abrir, panel de errores y vista previa con `params`; `inputs` propagado por `useDialog` y las tres páginas.
+5. **Documentación** (`docs`): página `6.inputs.md`; overview, manage, testing y built-in actualizados; ámbitos `params` en interpolación; `AGENTS.frontend.md` §3 y gotcha en `AGENTS.md`; changelog `0.4.x` provisional en es/en.
+
+**Verificación:** pendiente de que la haga el usuario (`bunx vue-tsc --noEmit`, `bun run build`; opcional `cd docs && bun run build`). El changelog `0.4.0` sigue provisional hasta la release.
+
+---
+
 ## Tareas completadas (18 nov 2026 — Auditoría del código Rust)
 
 **Nota del usuario:** pidió pasar a la Fase 5 y dar el plan por finalizado. Detalle en `AGENTS.rust-code-audit.PLAN.md` (archivado en `.agents/plans.done/`).
