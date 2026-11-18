@@ -44,6 +44,11 @@ impl std::str::FromStr for AuthType {
 
 /// Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
 /// Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
+///
+/// No se construye en Rust: el frontend la rellena con el parser de `system_info` y
+/// necesita que ts-rs siga exportando el tipo a `tauri-types.d.ts` (lo usan
+/// `src/drizzle/entities/hosts.ts` y la vista de detalle de host).
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub struct HostSystemInfo {
