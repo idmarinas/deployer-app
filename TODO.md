@@ -28,7 +28,7 @@
 
 Puede ser más complicado migrar de lo que parece.
 
-## Versión 0.3.0
+## Versión 0.4.0
 
 1. Nada
 
