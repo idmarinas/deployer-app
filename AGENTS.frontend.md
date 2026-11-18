@@ -289,7 +289,7 @@ Al añadir o modificar cualquier theme file, verificar:
       .max(120, t('validation.hosts.name.max'))
       .refine(async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0, t('validation.hosts.name.not_unique')),
   ```
-- Los **tipos de fila** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`). Los tipos de dominio escritos a mano están en `src/types/entities.ts` (`Command`, `Passkey`, `Host`, `Variable`, `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates`, `HostStatusMetrics`); los inputs/respuestas exportados desde Rust (`AuthType`, `HostSystemInfo`, `CommandResponse`, `VaultHealthReport`, etc.) están en `src/types/tauri-types.d.ts`, generado con `cargo test export_bindings`. No editar el `.d.ts` a mano.
+- Los **tipos de fila** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`). Los tipos de dominio escritos a mano están en `src/types/entities.ts` (`Command`, `Passkey`, `Host`, `Variable`, `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates`, `HostStatusMetrics`, `HostSystemInfo`); los inputs/respuestas exportados desde Rust (`AuthType`, `CommandResponse`, `VaultHealthReport`, etc.) están en `src/types/tauri-types.d.ts`, generado con `cargo test export_bindings`. No editar el `.d.ts` a mano.
 - **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/drizzle/drizzle.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
 
 ### Acceso a la base de datos

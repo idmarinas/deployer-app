@@ -67,7 +67,7 @@ src-tauri/src/
 └── tables.rs              ← AUTOGENERADO (bun run tables:generate) - constantes de nombres de tablas
 ```
 
-> La información del sistema, las métricas, la lista de paquetes actualizables y la aplicación de actualizaciones **ya no son comandos Rust dedicados**: los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` se ejecutan desde el frontend con `ssh_execute_command` y se parsean en TypeScript. Los tipos `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates` y `HostStatusMetrics` viven en `src/types/entities.ts`; `HostSystemInfo` y `AuthType` siguen generándose desde Rust con `ts-rs`.
+> La información del sistema, las métricas, la lista de paquetes actualizables y la aplicación de actualizaciones **ya no son comandos Rust dedicados**: los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` se ejecutan desde el frontend con `ssh_execute_command` y se parsean en TypeScript. Los tipos `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates`, `HostStatusMetrics` y `HostSystemInfo` viven en `src/types/entities.ts`; solo `AuthType` sigue generándose desde Rust con `ts-rs`.
 
 > El feature histórico de **Docker Compose remoto** (`commands/projects/docker/compose/**`) y la **caché de Docker Hub** (`commands/cache/docker/**`) se retiraron del código activo (archivados en `_archived.dist/`). No añadir referencias nuevas a `project_docker_compose_*`, `sync_project_docker_compose_files` ni `cache_docker_*`.
 

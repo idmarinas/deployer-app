@@ -91,48 +91,6 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-/**
- * Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
- * Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
- */
-export type HostSystemInfo = { package_manager: string, package_manager_version: string, kernel: string, arch: string, 
-/**
- * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
- */
-distribution: string, 
-/**
- * Número de cores CPU (ej: "8").
- */
-cpu_cores: string, 
-/**
- * RAM total (ej: "16Gi").
- */
-memory_total: string, 
-/**
- * Disco total (ej: "500G").
- */
-disk_total: string, 
-/**
- * SO y versión (ej: "Ubuntu 22.04 LTS").
- */
-os_release: string, 
-/**
- * Timestamp ISO 8601 de la última vez que se obtuvo esta información.
- */
-last_checked_at: string | null, };
-
-export type HostUpdatePackagesInput = { host_id: number, 
-/**
- * Lista de paquetes a actualizar. None o vacío = todos.
- */
-packages: Array<string> | null, 
-/**
- * Si es true, se ejecuta el comando con sudo.
- */
-use_sudo: boolean | null, };
-
-export type HostUpdateResult = { command: string, output: string, exit_code: number, };
-
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
