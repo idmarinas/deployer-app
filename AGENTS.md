@@ -72,8 +72,19 @@ bun run tables:generate        # Regenera src-tauri/src/tables.rs (constantes de
 - **Seed de comandos (`src/composables/deployer/seed_data/commands.ts`):** los scripts de shell que contengan barras invertidas (`\"`, `\$`, `\\`, `\n`…) deben escribirse con `` String.raw`...` ``. Una plantilla literal normal consume los escapes antes de guardar el comando en SQLite (`\"` → `"`, `\$7` → `$7`) y el script queda roto en el servidor, aunque pegado a mano desde la UI funcione. Los comandos sin barras invertidas (p. ej. `upgradable_packages`) pueden usar plantilla normal.
 - **Formularios JSON-Schema:** sistema basado en `json-schema-library` (jsl) en `src/utils/schema-form/*` + `src/components/form/schema/*` + `useSchemaToForm`. Núcleo **agnóstico** (`JsonSchemaEditor.vue`, `SchemaField*`); los wrappers `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue` quedaron retirados (importaban los JSON de `@/schemas/`, eliminados del proyecto). Detalles en `AGENTS.frontend.md` §8.
 
+## Flujo de planes (plan-workflow)
+
+> Particularidades del proyecto para la skill `plan-workflow` (la estructura de carpetas es fija y la define la skill).
+
+- **Idioma:** español.
+- **Guías a leer antes de empezar:** `AGENTS.md`, `AGENTS.backend.md`, `AGENTS.frontend.md`, `AGENTS.docs.md`.
+- **Verificación (la ejecuta el usuario; el agente no, salvo petición expresa):** `bun run i18n:types`, `bunx vue-tsc --noEmit`, `bun run build`; `cargo check` si se toca Rust. `bun test` no es criterio de aceptación mientras la suite siga sin repararse.
+- **Reglas del proyecto en planes:** migraciones SQL según la sección "Reglas" de este archivo; ignorar `.back` y `.dist`.
+- **Documentación a actualizar si cambia algo:** `AGENTS*.md` y `docs/content/`.
+
 ## Guías detalladas
 
 - Backend (Rust/BD/cifrado/SSH/comandos): [`AGENTS.backend.md`](./AGENTS.backend.md)
 - Frontend (Vue/temas/i18n/queries/componentes): [`AGENTS.frontend.md`](./AGENTS.frontend.md)
 - Documentación (`docs/content/`): [`AGENTS.docs.md`](./AGENTS.docs.md)
+- Planes y tareas (estado en [`AGENTS.todo.md`](./AGENTS.todo.md), diseños y planes en `.agents/`): skill global `plan-workflow`, que define las reglas del flujo. Las particularidades de este proyecto están en la sección "Flujo de planes" de este archivo.
