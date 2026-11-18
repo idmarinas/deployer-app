@@ -17,4 +17,3 @@
 - **Planificando:** Tablas personalizadas → `.agents/plans/AGENTS.custom-tables.PLAN.md`
 - **Planificando:** Sistema de ajustes (a futuro) → `.agents/plans/AGENTS.settings-system.PLAN.md`
 - **Planificando:** Sustituir `query_raw` por `tauri-plugin-sql` → `.agents/plans/AGENTS.plugin-sql.PLAN.md`
-- **Ejecutando:** Auditoría de código Rust (utilidad y sustitución por frontend) → `.agents/plans/AGENTS.rust-code-audit.PLAN.md`

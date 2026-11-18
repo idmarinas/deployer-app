@@ -2,6 +2,20 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (18 nov 2026 — Auditoría del código Rust)
+
+**Nota del usuario:** pidió pasar a la Fase 5 y dar el plan por finalizado. Detalle en `AGENTS.rust-code-audit.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Limpieza**: eliminados `patch.rs`, `ssh/glob.rs` y el parámetro `exclude`; retirado el comando `get_database_path`, conservando `get_database_path_internal`.
+2. **Consolidación SSH**: helpers comunes para credenciales, escape de rutas, canal de comandos, pool de solo lectura y constantes; wrappers y semánticas intactos.
+3. **Tipos y scopes**: 4 tipos de dominio movidos a `src/types/entities.ts`, `VaultHealthReport` generado con `ts-rs`, `EXPECTED_SCOPES` ampliado a 4 scopes (incluida `deployer_variables.value`).
+4. **Documentación**: `AGENTS*.md` actualizados con el inventario real de 23 comandos y la obtención de sistema/métricas/actualizaciones por el frontend. Los changelogs históricos no se tocaron.
+5. **Cierre**: plan archivado y referencia eliminada de `AGENTS.todo.md`.
+
+**Verificación:** comprobaciones estáticas ejecutadas por el agente (`cargo check --all-targets`, `bun run i18n:types`, `bunx vue-tsc --noEmit`, `bun run build`, `cargo test export_bindings`); verificación funcional en `bun run tauri:dev` pendiente de confirmación por el usuario.
+
+---
+
 ## Tareas completadas (16 nov 2026 — Pestaña Inactivos en los listados)
 
 **Nota del usuario:** los listados separan las filas deshabilitadas en una pestaña propia. La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará junto con la del soft-delete.
