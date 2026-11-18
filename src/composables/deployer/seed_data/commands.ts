@@ -164,7 +164,7 @@ printf "{\"kernel\":\"%s\",\"arch\":\"%s\",\"cores\":\"%s\",\"memory_total\":\"%
 				},
 			],
 		},
-		command: String.raw`DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y {{params.packages}}`,
+		command: String.raw`sudo DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y {{params.packages}}`,
 		custom: false,
 		enabled: true,
 		internal: true,
