@@ -17,8 +17,8 @@
 
 ## Propósito del Backend
 
-- **Orquestación SSH/SFTP** para consola remota, test de conexión, check de sistema/métricas y actualizaciones de hosts.
-- **Cifrado/descifrado** transparente de campos sensibles (`hosts.password`, `passkeys.key_content`/`passphrase`) con claves AES gestionadas en el **vault de Stronghold** (`src/drizzle/lib/stronghold.ts` + Web Crypto; Rust abre el vault solo para leer y descifrar credenciales SSH).
+- **Orquestación SSH/SFTP** para consola remota, test de conexión y aplicación de actualizaciones de hosts. La consulta de información del sistema, métricas y paquetes actualizables la ejecuta el frontend (`system_info`, `system_metrics`, `upgradable_packages`) mediante `ssh_execute_command` y parsers TypeScript.
+- **Cifrado/descifrado** transparente de campos sensibles (`hosts.password`, `passkeys.key_content`/`passphrase`, `variables.value` cuando la variable es secreta) con claves AES gestionadas en el **vault de Stronghold** (`src/drizzle/lib/stronghold.ts` + Web Crypto; Rust abre el vault solo para leer y descifrar credenciales SSH).
 - **Generación de claves SSH**, **test de conexión** y **gestión de hosts**.
 - **Inicialización y gestión de la BD** (crear/abrir/validar archivo SQLite, ejecutar migraciones).
 - El **acceso a datos (lecturas y escrituras)** lo hace el frontend con **Drizzle en modo proxy** (vía `query_raw`), que cifra/descifra/enmascara los campos declarados como `encryptedText(...)` en `src/drizzle/lib/schema-types.ts` usando las claves del vault (`src/drizzle/lib/stronghold.ts`); `query_raw` solo ejecuta SQL. Los comandos Rust dedicados solo atienden lógica de backend que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).

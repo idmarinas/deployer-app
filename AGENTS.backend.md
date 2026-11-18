@@ -6,7 +6,7 @@
 
 ## 1. Estructura de Comandos
 
-Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend** (lógica de backend que Drizzle no puede cubrir: SSH/SFTP, cripto de claves, acceso al vault de Stronghold, operaciones/gestión de BD). La infraestructura compartida (`helpers`, `response`, `patch`, `ssh`, `crypto`) vive en `src-tauri/src/` (raíz del crate).
+Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend** (lógica de backend que Drizzle no puede cubrir: SSH/SFTP, cripto de claves, acceso al vault de Stronghold, operaciones/gestión de BD). La infraestructura compartida (`helpers`, `response`, `ssh`, `crypto`) vive en `src-tauri/src/` (raíz del crate).
 
 ### Estructura del crate
 
@@ -14,8 +14,8 @@ Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos co
 src-tauri/src/
 ├── commands/              ← solo comandos frontend (#[tauri::command])
 │   ├── database/          ← Gestión/inicialización de BD + query_raw (proxy Drizzle)
-│   │   ├── store/         ← get_database_path, set_database_path, check_database_exists
-│   │   │   ├── get_database_path.rs
+│   │   ├── store/         ← set_database_path, check_database_exists + helper get_database_path_internal
+│   │   │   ├── get_database_path.rs  ← get_database_path_internal (no es comando Tauri)
 │   │   │   ├── set_database_path.rs
 │   │   │   ├── check_database_exists.rs
 │   │   │   └── mod.rs
@@ -36,9 +36,8 @@ src-tauri/src/
 │   │   └── mod.rs
 │   ├── hosts/             ← Comandos no-CRUD de hosts (el CRUD usa Drizzle)
 │   │   ├── test_connection.rs
-│   │   ├── status.rs      ← host_check_system_info (cooldown 24h) + host_check_metrics (15m)
-│   │   ├── updates.rs     ← host_check_updates + host_update_packages
-│   │   ├── types.rs       ← HostSystemInfo, HostStatusMetrics, HostServerUpdates
+│   │   ├── updates.rs     ← host_update_packages (la consulta de actualizaciones la hace el frontend)
+│   │   ├── types.rs       ← AuthType, HostSystemInfo (exportados con ts-rs)
 │   │   └── mod.rs
 │   ├── passkeys/          ← Comandos no-CRUD de claves (el CRUD usa Drizzle)
 │   │   ├── generate_passkey.rs
@@ -52,24 +51,24 @@ src-tauri/src/
 │   │   ├── cancel.rs      ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
 │   │   ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
 │   │   └── mod.rs
-│   ├── stronghold.rs      ← get_vault_password, get_vault_path (acceso read a crypto/stronghold.rs)
+│   ├── stronghold.rs      ← get_vault_password, get_vault_path, check_vault_health (acceso read a crypto/stronghold.rs)
 │   └── mod.rs             ← re-exports de módulos + macro params!
 ├── crypto/                ← Cripto de las claves de cifrado (vault Stronghold de SOLO lectura)
 │   ├── cipher.rs          ← is_encrypted, constante ENCRYPTED_PREFIX = "ENC:"
-│   ├── stronghold.rs      ← StrongholdVault (abre vault solo lectura), get_or_create_vault_password(), split_ciphertext_version(), decrypt_aes_gcm_payload()
+│   ├── stronghold.rs      ← StrongholdVault (abre vault solo lectura), get_or_create_vault_password(), split_ciphertext_version(), decrypt_aes_gcm_payload(), health_check()/VaultHealthReport, EXPECTED_SCOPES
 │   └── mod.rs
-├── helpers.rs             ← configured_sqlite_options(), create_configured_pool(), open_pool() → (pool, path)
-├── patch.rs               ← Patch<T> (Unset/Null/Value) para updates parciales
+├── helpers.rs             ← configured_sqlite_options(), create_configured_pool(), open_read_only_pool(), open_pool() → (pool, path)
 ├── response.rs            ← CommandResponse<T>
 ├── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, transferencias genéricas)
-│   ├── mod.rs             ← re-exports (connect_to_host_by_id, run_ssh_command, open_sftp_session, shell_escape, SshSession/…)
-│   ├── connect.rs         ← connect_to_host_by_id (SQL host+passkey + descifrado vía vault Stronghold)
+│   ├── mod.rs             ← re-exports (connect_to_host_by_id, fetch_host_credentials, decrypt_host_credentials, run_ssh_command, open_command_channel, open_sftp_session, shell_escape, SshSession/…)
+│   ├── connect.rs         ← connect_to_host_by_id (SQL host+passkey + descifrado vía vault Stronghold), fetch_host_credentials
 │   ├── session.rs         ← SshSession, HostCredentials, SshCredentials, decrypt_host_credentials
-│   ├── helpers.rs         ← open_sftp_session, run_ssh_command, shell_escape
-│   ├── glob.rs
-│   └── transfer.rs        ← transferencias genéricas (aceptan Option<&CancellationToken>)
+│   ├── helpers.rs         ← open_sftp_session, open_command_channel, run_ssh_command, shell_escape (normalización de output)
+│   └── transfer.rs        ← transferencias genéricas (aceptan Option<&CancellationToken>, CANCELLED_MSG, SFTP_BUFFER_SIZE)
 └── tables.rs              ← AUTOGENERADO (bun run tables:generate) - constantes de nombres de tablas
 ```
+
+> La información del sistema, las métricas y la lista de paquetes actualizables **ya no son comandos Rust dedicados**: los comandos guardados `system_info`, `system_metrics` y `upgradable_packages` se ejecutan desde el frontend con `ssh_execute_command` y se parsean en TypeScript. Los tipos `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates` y `HostStatusMetrics` viven en `src/types/entities.ts`; `HostSystemInfo` y `AuthType` siguen generándose desde Rust con `ts-rs`.
 
 > El feature histórico de **Docker Compose remoto** (`commands/projects/docker/compose/**`) y la **caché de Docker Hub** (`commands/cache/docker/**`) se retiraron del código activo (archivados en `_archived.dist/`). No añadir referencias nuevas a `project_docker_compose_*`, `sync_project_docker_compose_files` ni `cache_docker_*`.
 
@@ -183,8 +182,11 @@ AES-256-GCM, nonce aleatorio de 12 bytes por cada cifrado.
 | `deployer_hosts`          | `password`     | Se cifra al escribir; se enmascara (no se expone en claro) al leer |
 | `deployer_passkeys`       | `key_content`  | Se cifra al escribir; se enmascara al leer |
 | `deployer_passkeys`       | `passphrase`   | Se cifra al escribir; se enmascara al leer |
+| `deployer_variables`      | `value`        | Se cifra solo cuando `is_secret` es true; se enmascara al leer |
 
 > `generate_passkey` devuelve la passphrase en claro al frontend; el INSERT vía el proxy (`drizzle.ts`) la cifra al persistir.
+
+> `EXPECTED_SCOPES` en `crypto/stronghold.rs` debe mantenerse sincronizado con esta tabla (4 scopes). `check_vault_health` usa esa lista para informar de scopes ausentes y devuelve el tipo generado `VaultHealthReport` (`src/types/tauri-types.d.ts`).
 
 ### Flujo por operación (frontend)
 
@@ -249,4 +251,4 @@ Devuelve `CommandResponse::err` con claves `tauri.database.errors.query_raw_open
 | `aes-gcm`        | `0.11`  | —                   | `aead` 0.5→0.6: `encrypt`/`decrypt` ahora reciben `&nonce` (borrow). `Nonce::from_slice` deprecado, usar `Nonce::from(bytes)`. `OsRng` ya no se re-exporta desde `aead`.                                                   |
 | `chrono`         | `0.4`   | —                   | Timestamps RFC3339 (p.ej. `last_checked_at` en `system_info`/`status_info`).                                                                                                                                              |
 | `sqlx`           | `0.8.6` | —                   | Queries dinámicas con `sqlx::query(&sql)`. No usar macros que requieran `DATABASE_URL`.                                                                                                                                    |
-| `ts-rs`          | —       | —                   | Exporta los tipos de input/result de los comandos a `src/types/tauri-types.d.ts` (`#[ts(export, export_to = "tauri-types.d.ts")]`) en tiempo de build/check.                              |
+| `ts-rs`          | —       | —                   | Exporta los tipos de input/result de los comandos a `src/types/tauri-types.d.ts` (`#[ts(export, export_to = "tauri-types.d.ts")]`). Regenerar con `cargo test export_bindings`; los tipos manuales de dominio viven en `src/types/entities.ts` y no deben añadirse al `.d.ts` generado. |

@@ -20,7 +20,7 @@ src/
 ├── locales/             <- i18n (es/, _loader.ts)
 ├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,theme}, deployer/, deployer/(setup))
 ├── plugins/             <- Extensiones reutilizables de CodeMirror (plugins/codemirror/)
-├── types/               <- Tipos (entities.ts, tauri-types.d.ts auto-generados)
+├── types/               <- Tipos (entities.ts manual, tauri-types.d.ts generado por ts-rs)
 └── utils/               <- Funciones puras sin reactividad de Vue
 
 theme/                   <- Temas personalizados de componentes Nuxt UI (raíz del proyecto)
@@ -289,7 +289,7 @@ Al añadir o modificar cualquier theme file, verificar:
       .max(120, t('validation.hosts.name.max'))
       .refine(async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0, t('validation.hosts.name.not_unique')),
   ```
-- Los **tipos** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`); los tipos generados por Rust (entidades `Host`, `DockerCompose`, y los inputs/respuestas de comandos) se importan desde `@/types/entities` y `@/types/tauri-types` (auto-generados por `ts-rs`).
+- Los **tipos de fila** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`). Los tipos de dominio escritos a mano están en `src/types/entities.ts` (`Command`, `Passkey`, `Host`, `Variable`, `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates`, `HostStatusMetrics`); los inputs/respuestas exportados desde Rust (`AuthType`, `HostSystemInfo`, `CommandResponse`, `VaultHealthReport`, etc.) están en `src/types/tauri-types.d.ts`, generado con `cargo test export_bindings`. No editar el `.d.ts` a mano.
 - **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/drizzle/drizzle.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
 
 ### Acceso a la base de datos
@@ -393,13 +393,12 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 
 ### Acceso a datos: Drizzle proxy (recomendado para CRUD)
 
-Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/drizzle/lib/schema-types.ts`), emite el SQL, y delega en el comando `query_raw` de Rust, que se encarga de cifrar (escrituras), descifrar (lecturas con `withDecryption`) o enmascarar (lecturas por defecto) los campos.
+Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/drizzle/lib/schema-types.ts`), **cifra/descifra/enmascara en el frontend** con `src/drizzle/lib/stronghold.ts`, emite el SQL y delega en `query_raw` de Rust, que solo ejecuta la sentencia y devuelve `columns` + `rows`.
 
 ```ts
-import { db } from '@/drizzle/drizzle'
-import { hosts, projects_docker_compose } from '@/drizzle/schema'
+import { db, withDecryption } from '@/drizzle/drizzle'
+import { hosts, variables } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { withDecryption } from '@/drizzle/drizzle'
 
 // Lectura sin descifrado (los campos cifrados llegan como BLANK_VALUE)
 const row = await db.select().from(hosts).where(eq(hosts.id, id)).limit(1)
@@ -409,18 +408,18 @@ const raw = await withDecryption(true, () =>
 	db.select().from(hosts).where(eq(hosts.id, id)).limit(1),
 )
 
-// Escritura
-await db.insert(projects_docker_compose).values({ name, host_id })
+// Escritura (value se cifra al persistir si la variable es secreta)
+await db.insert(variables).values({ name, slug, value })
 ```
 
 ### Comandos `invoke` (lógica de backend)
 
 Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
 
-- **Hosts:** `test_connection`, `host_updates`, `host_check_system_info`, `host_check_metrics`, `host_update_packages`.
+- **Hosts:** `test_connection`, `host_update_packages`. La información del sistema, las métricas y las actualizaciones disponibles se obtienen con los comandos guardados `system_info`, `system_metrics` y `upgradable_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*`.
 - **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
-- **BD / setup (deployer):** `get_database_path`, `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
-- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path` — los usa `src/drizzle/lib/stronghold.ts` para cargar el vault (ver también `AGENTS.backend.md` §4).
+- **BD / setup (deployer):** `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
+- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path`, `check_vault_health` — los dos primeros los usa `src/drizzle/lib/stronghold.ts` para cargar el vault; `check_vault_health` devuelve `VaultHealthReport` (ver también `AGENTS.backend.md` §4).
 - **Consola remota (SSH suelto):** `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job`.
 
 > Los comandos de Docker Hub (`cache_docker_search`/`cache_docker_tags`) y de Docker Compose remoto (`sync_project_docker_compose_files`, `project_docker_compose_*`) **se retiraron** del backend — no llamarlos.
