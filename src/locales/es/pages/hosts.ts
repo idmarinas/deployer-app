@@ -57,7 +57,6 @@ export default {
 		column_actions: '',
 		select_all: 'Seleccionar todo',
 		deselect_all: 'Deseleccionar todo',
-		use_sudo: 'Usar sudo',
 	},
 	toast: {
 		update_packages: {
