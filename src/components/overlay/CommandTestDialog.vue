@@ -131,10 +131,7 @@ const paramIssues = computed<Array<{ key: string } & Required<ParamIssueMessage>
 /** Mapa por clave que consume `InputsForm` para pintar el error de cada campo. */
 const paramIssueMap = computed<Record<string, ParamIssueMessage>>(() =>
 	Object.fromEntries(
-		paramIssues.value.map(issue => [
-			issue.key,
-			{ messageKey: issue.messageKey, messageParams: issue.messageParams },
-		]),
+		paramIssues.value.map(issue => [issue.key, { messageKey: issue.messageKey, messageParams: issue.messageParams }]),
 	),
 )
 
@@ -378,7 +375,7 @@ onMounted(async () => {
 						/>
 					</div>
 					<pre
-						class="max-h-48 overflow-auto rounded-md border border-default bg-elevated p-2 font-mono text-xs whitespace-pre-wrap break-words"
+						class="max-h-48 overflow-auto rounded-md border border-default bg-elevated p-2 font-mono text-xs whitespace-pre-wrap wrap-break-word"
 						v-html="previewHtml"
 					/>
 					<!-- Aviso de una línea: las secretas solo se resuelven al ejecutar. -->
