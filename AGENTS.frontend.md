@@ -427,7 +427,7 @@ await db.insert(variables).values({ name, slug, value })
 
 Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
 
-- **Hosts:** `test_connection`, `host_update_packages`. La información del sistema, las métricas y las actualizaciones disponibles se obtienen con los comandos guardados `system_info`, `system_metrics` y `upgradable_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*`.
+- **Hosts:** `test_connection`. La información del sistema, las métricas, las actualizaciones disponibles y la aplicación de actualizaciones se ejecutan con los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*` ni `host_update_packages`.
 - **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
 - **BD / setup (deployer):** `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
 - **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path`, `check_vault_health` — los dos primeros los usa `src/drizzle/lib/stronghold.ts` para cargar el vault; `check_vault_health` devuelve `VaultHealthReport` (ver también `AGENTS.backend.md` §4).
