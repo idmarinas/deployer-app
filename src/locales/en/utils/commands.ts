@@ -4,5 +4,6 @@ export default {
 	errors: {
 		not_found: 'Command "{key}" was not found in the database.',
 		disabled: 'Command "{key}" is disabled and cannot be executed.',
+		missing_params: 'Missing required parameters: {keys}.',
 	},
 } satisfies LocaleMessageValue

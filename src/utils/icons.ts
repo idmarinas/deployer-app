@@ -137,6 +137,8 @@ export const ICONS = {
 		purge: 'i-tabler-trash-x',
 		restore: 'i-tabler-restore',
 		undo: 'i-tabler-arrow-back-up',
+		moveUp: 'i-tabler-arrow-up',
+		moveDown: 'i-tabler-arrow-down',
 	},
 
 	/** Estados / feedback (toasts, alerts, badges) */
@@ -147,6 +149,7 @@ export const ICONS = {
 		circleX: 'i-tabler-circle-x',
 		infoCircle: 'i-tabler-info-circle',
 		exclamationCircle: 'i-tabler-exclamation-circle',
+		alertCircle: 'i-tabler-alert-circle',
 		alertTriangle: 'i-tabler-alert-triangle',
 		loading: 'i-tabler-loader-2',
 	},

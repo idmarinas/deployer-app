@@ -85,6 +85,7 @@ const columns: TableColumn<Command>[] = [
 					parser: row.original.parser,
 					timeout: row.original.timeout,
 					commandKey: row.original.key,
+					inputs: row.original.inputs,
 				})
 			},
 		},

@@ -3,9 +3,46 @@ import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'driz
 import * as z from 'zod'
 
 import { db } from '@/drizzle/drizzle'
+import { loadGlobalScopeMetadata } from '@/drizzle/lib/variables'
+import type { GlobalVariableScope } from '@/drizzle/lib/variables'
 import { commands } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
 import type { OutputParser } from '@/utils/commands/types'
+import { createInputFieldsSchema, resolveInputDefaults } from '@/utils/inputs'
+import type { InputFieldDefinition } from '@/utils/inputs'
+
+/**
+ * Resuelve los `default` con variables globales contra el ámbito actual.
+ *
+ * Solo se ejecuta si algún default usa una expresión; si los metadatos no se
+ * pueden cargar, se omite para no bloquear el guardado (queda la validación
+ * estática de `createInputFieldsSchema`).
+ */
+async function refineInputDefaults(fields: InputFieldDefinition[], ctx: z.RefinementCtx) {
+	if (!fields.some(field => typeof field.default === 'string' && field.default.includes('{{'))) return
+
+	let scope: GlobalVariableScope
+
+	try {
+		scope = await loadGlobalScopeMetadata()
+	} catch {
+		return
+	}
+
+	const { t } = i18n.global
+	const { issues } = resolveInputDefaults(fields, scope)
+	const issue = issues[0]
+
+	if (!issue) return
+
+	const index = fields.findIndex(field => field.key === issue.key)
+
+	ctx.addIssue({
+		code: 'custom',
+		path: [index < 0 ? 0 : index, 'default'],
+		message: t(issue.messageKey, issue.messageParams),
+	})
+}
 
 export function useCommandValidation(key?: string) {
 	const { t } = i18n.global
@@ -40,6 +77,7 @@ export function useCommandValidation(key?: string) {
 				}, t('validation.commands.name.not_unique')),
 		command: z.string().nonempty(t('validation.commands.command.required')),
 		parser: z => z.default({ type: 'raw' } satisfies OutputParser),
+		inputs: () => createInputFieldsSchema().superRefine(refineInputDefaults).default([]),
 		timeout: z =>
 			z.min(1, t('validation.commands.timeout.min')).max(3600, t('validation.commands.timeout.max')).default(300),
 		enabled: z => z.default(false),
@@ -74,6 +112,7 @@ export function useCommandValidation(key?: string) {
 				.optional(),
 		command: z.string(),
 		parser: z => z.default({ type: 'raw' } satisfies OutputParser).optional(),
+		inputs: () => createInputFieldsSchema().superRefine(refineInputDefaults).optional(),
 		timeout: z =>
 			z
 				.min(1, t('validation.commands.timeout.min'))

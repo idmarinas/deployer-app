@@ -302,6 +302,16 @@ Al añadir o modificar cualquier theme file, verificar:
 - Los comandos Rust `invoke('...')` solo se usan para operaciones con lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD).
 - No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
 
+### Parámetros de entrada de comandos (`src/utils/inputs/`)
+
+- **Contrato compartido** con el futuro motor de flujos: `InputFieldDefinition` (`key`, `label`, `type`, `required`, `default`, `options`, `help`) e `InputValues`. Tipos v1: `text`, `number`, `boolean` y `select`; máximo 20 campos.
+- **Persistencia**: `deployer_commands.inputs` es una columna JSON (`text({ mode: 'json' })`) con el array de definiciones, no una tabla hija. Los **valores** de una ejecución nunca se guardan.
+- **Sustitución**: el script referencia `{{params.<key>}}`. El runner construye `params` con los valores recibidos, aplica los `default` de las claves ausentes (`undefined`/`null`) y rellena las declaradas sin valor con `''` (o `false` en booleanos) para que la interpolación no falle.
+- **Defaults**: literal o `{{global.<slug>}}`; solo variables globales existentes, habilitadas y **no secretas**. Se resuelven al abrir el diálogo y otra vez en el runner (`resolveInputDefaults()`); `required` se valida después y `0`/`false` cuentan como presentes.
+- **Listas**: no hay tipo `list`; se pasan como texto separado por espacios. El motor no separa ni valida: el autor decide las comillas (sin comillas para una lista, entrecomillado para un valor único) y el llamante valida los elementos dinámicos.
+- **Componentes**: `CommandInputsEditor.vue` solo edita la definición; `InputsForm.vue` renderiza los valores y es el que compartirán los flujos. El diálogo de comandos carga el ámbito global antes de resolver defaults.
+- **Validación**: `createInputFieldsSchema()` + `validateInputValues()` en `src/utils/inputs/schema.ts`, con refinamiento asíncrono de defaults en `useCommandValidation.ts`.
+
 ---
 
 ## 4b. Sistema de iconos centralizado (`src/utils/icons.ts`)
@@ -359,6 +369,7 @@ El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
 - Los mensajes de error del backend llegan como claves i18n con parámetros `HashMap<String, String>`.
 - El backend es agnóstico al idioma — nunca devuelve strings en español directamente.
 - **Todas las claves de traducción deben estar en `snake_case`** (ej. `database.migrationSuccess`, `hosts.name.not_unique`). No usar `camelCase` ni `kebab-case` en claves de mensajes.
+- **No usar `<...>` como marcador de posición en los mensajes** (p. ej. `params.<clave>`): `escapeParameter: true` en `src/i18n.ts` hace que vue-i18n detecte HTML, avise de «Detected HTML»/«Unclosed or misnested elements» y escape el texto (se vería `params.&lt;clave&gt;`). Para textos planos con huecos, escribir el metavariable sin ángulos (`params.clave`, `global.slug`) o interpolar con `{nombre}`. El HTML real solo en los mensajes que se renderizan con `v-html` (p. ej. las descripciones de actualización de hosts).
 
 ### Carga de mensajes (`src/locales/_loader.ts`)
 

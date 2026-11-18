@@ -3,6 +3,8 @@ import { loadGlobalScopeForExecution } from '@/drizzle/lib/variables'
 import { commands as commandsTable } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
 import type { CommandResponse, RemoteCommandResult, RemoteConsoleEvent } from '@/types/tauri-types'
+import { coerceInputValue, resolveInputDefaults, validateInputValues } from '@/utils/inputs'
+import type { InputValues } from '@/utils/inputs'
 import {
 	collectSecretValues,
 	InterpolationError,
@@ -12,19 +14,19 @@ import {
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { and, eq, isNull } from 'drizzle-orm'
 import { parseOutput } from './parsers'
-import type { CommandDefinition, CommandRunResult } from './types'
+import type { CommandDefinition, CommandRunOptions, CommandRunResult } from './types'
 
 /**
  * Ejecuta un comando almacenado en la BD (`deployer_commands`) en un servidor
  * remoto por su `key`.
  *
- * La BD es la fuente única de la definición (command, parser y timeout); solo
- * se ejecutan comandos con `enabled = 1` y sin `deleted_at`.
+ * La BD es la fuente única de la definición (command, parser, inputs y timeout);
+ * solo se ejecutan comandos con `enabled = 1` y sin `deleted_at`.
  */
 export async function runCommand<T = unknown>(
 	commandKey: string,
 	hostId: number,
-	options?: { working_dir?: string; timeout_secs?: number },
+	options?: CommandRunOptions,
 ): Promise<CommandRunResult<T>> {
 	// Composer global: seguro fuera de setup (patrón queries/commands.ts)
 	const { t } = i18n.global
@@ -50,6 +52,7 @@ export async function runCommand<T = unknown>(
 		name: row.name,
 		command: row.command,
 		parser: row.parser,
+		inputs: row.inputs,
 		timeout_secs: row.timeout,
 	}
 
@@ -63,7 +66,7 @@ export async function runCommand<T = unknown>(
 export function runCustomCommand<T = unknown>(
 	definition: CommandDefinition,
 	hostId: number,
-	options?: { working_dir?: string; timeout_secs?: number },
+	options?: CommandRunOptions,
 ): Promise<CommandRunResult<T>> {
 	return executeCommand<T>(definition, hostId, options)
 }
@@ -71,12 +74,58 @@ export function runCustomCommand<T = unknown>(
 async function executeCommand<T>(
 	definition: CommandDefinition,
 	hostId: number,
-	options?: { working_dir?: string; timeout_secs?: number },
+	options?: CommandRunOptions,
 ): Promise<CommandRunResult<T>> {
 	const { t } = i18n.global
 	const globalScope = await loadGlobalScopeForExecution()
-	const roots = { global: globalScope }
-	const secrets = collectSecretValues(roots)
+	const secrets = collectSecretValues({ global: globalScope })
+	const fields = definition.inputs ?? []
+	const { values: defaults, issues } = resolveInputDefaults(fields, globalScope)
+
+	if (issues.length > 0) {
+		const issue = issues[0]!
+
+		throw new Error(redactSecrets(t(issue.messageKey, issue.messageParams), secrets))
+	}
+
+	const params: InputValues = {}
+
+	for (const field of fields) {
+		const explicit = options?.params?.[field.key]
+		const value = explicit === undefined || explicit === null ? defaults[field.key] : explicit
+		const coercion = coerceInputValue(field, value)
+
+		if (coercion.status === 'invalid') {
+			throw new Error(
+				redactSecrets(
+					t('utils.inputs.errors.value_invalid', { label: field.label, type: field.type }),
+					secrets,
+				),
+			)
+		}
+
+		// Un campo declarado siempre existe en `params`; si está vacío se
+		// interpola como cadena vacía (o `false` en los booleanos).
+		params[field.key] = coercion.status === 'ok' ? coercion.value : field.type === 'boolean' ? false : ''
+	}
+
+	const valueIssues = validateInputValues(fields, params)
+	const firstIssue = valueIssues[0]
+
+	if (firstIssue) {
+		if (firstIssue.code === 'required') {
+			const keys = valueIssues
+				.filter(issue => issue.code === 'required')
+				.map(issue => issue.messageParams.label)
+				.join(', ')
+
+			throw new Error(redactSecrets(t('utils.commands.errors.missing_params', { keys }), secrets))
+		}
+
+		throw new Error(redactSecrets(t(firstIssue.messageKey, firstIssue.messageParams), secrets))
+	}
+
+	const roots = { global: globalScope, params }
 
 	let command: string
 	let workingDir: string | undefined

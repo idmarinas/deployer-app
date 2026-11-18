@@ -1,3 +1,5 @@
+import type { InputFieldDefinition, InputValues } from '@/utils/inputs/types'
+
 /**
  * Definición de un comando remoto: ejecuta un comando en un servidor SSH
  * y parsea la salida según la configuración del parser.
@@ -14,8 +16,20 @@ export interface CommandDefinition {
   command: string
   /** Configuración del parser de salida */
   parser: OutputParser
+  /** Parámetros de entrada declarados por el comando */
+  inputs?: InputFieldDefinition[]
   /** Timeout personalizado en segundos (default: 300) */
   timeout_secs?: number
+}
+
+/** Opciones de ejecución de un comando. */
+export interface CommandRunOptions {
+  /** Directorio de trabajo remoto (admite interpolación) */
+  working_dir?: string
+  /** Timeout en segundos (default: el del comando o 300) */
+  timeout_secs?: number
+  /** Valores de los parámetros de entrada declarados en `definition.inputs` */
+  params?: InputValues
 }
 
 /**

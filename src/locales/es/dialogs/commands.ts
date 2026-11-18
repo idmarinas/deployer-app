@@ -21,5 +21,9 @@ export default {
 		issues: {
 			errors: 'Errores de interpolación',
 		},
+		params: {
+			title: 'Parámetros de entrada',
+			errors: 'Revisa los parámetros',
+		},
 	},
 } satisfies LocaleMessageValue

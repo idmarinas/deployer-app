@@ -36,6 +36,7 @@ const initialState: CommandValidationInsertType = {
 	description: { type: 'doc', content: [{ type: 'paragraph' }] },
 	command: '',
 	parser: { type: 'raw' },
+	inputs: [],
 	timeout: 30,
 	enabled: false,
 	updated_at: '',
@@ -66,6 +67,7 @@ const toolbarButtons: PositionedButton[] = [
 						command: state.value.command,
 						parser: state.value.parser,
 						timeout: state.value.timeout,
+						inputs: state.value.inputs,
 					})
 				},
 			}),

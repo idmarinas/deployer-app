@@ -56,6 +56,7 @@ const toolbarButtons: PositionedButton[] = [
 						parser: state.value.parser,
 						timeout: state.value.timeout,
 						commandKey: state.value.key,
+						inputs: state.value.inputs,
 					})
 				},
 			}),
