@@ -87,6 +87,6 @@ watch(isLoading, () => {
 		class="grid grid-cols-1 md:grid-cols-2 gap-4"
 		@submit="onSubmit"
 	>
-		<HostForm v-model="state" :is-loading="isLoading" />
+		<HostForm v-model="state" :is-loading="isLoading" :host-id="Number.parseInt(route.params.id)" />
 	</UForm>
 </template>

@@ -19,6 +19,8 @@ export const hosts = sqliteTable(
 			.notNull()
 			.default('password'),
 		password: encryptedText('password'),
+		/** Huella SHA256 de la clave del servidor, confirmada por el usuario. */
+		host_key_fingerprint: text(),
 		key_id: integer().references(() => passkeys.id, { onDelete: 'restrict' }),
 		system_info: text({ mode: 'json' })
 			.$type<HostSystemInfo>()

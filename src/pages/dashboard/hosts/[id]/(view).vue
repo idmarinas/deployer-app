@@ -447,6 +447,12 @@ provide<Ref<boolean>>('isOperating', isOperating)
 					:color="hostData.auth_type === 'password' ? 'neutral' : 'info'"
 					:icon="hostData.auth_type === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key"
 				/>
+				<UBadge
+					variant="outline"
+					:label="`${t('pages.hosts.manage.host_key_fingerprint')}: ${hostData.host_key_fingerprint || t('pages.hosts.manage.host_key_fingerprint_empty')}`"
+					icon="i-tabler-fingerprint"
+					class="font-mono"
+				/>
 			</template>
 		</ViewCard>
 

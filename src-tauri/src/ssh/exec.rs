@@ -5,11 +5,12 @@ use tauri::State;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 
-use crate::params;
 use crate::response::CommandResponse;
-use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshSession};
+use crate::ssh::error::err_response;
+use crate::ssh::keys;
+use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshError, SshSession};
 
-use crate::ssh::cancel::{RemoteJobCancel, CANCELLED_MSG};
+use crate::ssh::cancel::RemoteJobCancel;
 use crate::ssh::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
 
 /// Timeout por defecto para la ejecución remota (segundos).
@@ -49,8 +50,8 @@ pub async fn ssh_execute_command(
     {
         Ok(v) => v,
         Err(e) => {
-            emit_error(&channel, &e);
-            return err_response("tauri.remote.errors.connection_failed", &e);
+            emit_error(&channel, e.display_message());
+            return err_response(e);
         }
     };
 
@@ -75,13 +76,8 @@ pub async fn ssh_execute_command(
     let (output, exit_code, duration_seconds) = match run {
         Ok(v) => v,
         Err(e) => {
-            emit_error(&channel, &e);
-            let key = if token.is_cancelled() {
-                "tauri.remote.errors.cancelled"
-            } else {
-                "tauri.remote.errors.execution_failed"
-            };
-            return err_response(key, &e);
+            emit_error(&channel, e.display_message());
+            return err_response(e);
         }
     };
 
@@ -94,9 +90,9 @@ pub async fn ssh_execute_command(
             duration_seconds,
         },
         if exit_code == 0 {
-            "tauri.remote.success.exec"
+            keys::EXEC_OK
         } else {
-            "tauri.remote.exec.completed_with_errors"
+            keys::EXEC_COMPLETED_WITH_ERRORS
         },
     ))
 }
@@ -108,10 +104,12 @@ async fn run_command_streaming(
     timeout_secs: u64,
     channel: &Channel<RemoteConsoleEvent>,
     token: &CancellationToken,
-) -> Result<(String, i64, i64), String> {
+) -> Result<(String, i64, i64), SshError> {
     session.ensure_connected().await?;
 
-    let mut ssh_channel = open_command_channel(session, full_command).await?;
+    let mut ssh_channel = open_command_channel(session, full_command)
+        .await
+        .map_err(SshError::execution_failed)?;
 
     let start = Instant::now();
     let mut output = String::new();
@@ -124,11 +122,15 @@ async fn run_command_streaming(
 
         tokio::select! {
             _ = token.cancelled() => {
-                return Err(CANCELLED_MSG.to_string());
+                return Err(SshError::cancelled());
             }
             result = tokio::time::timeout(Duration::from_secs(timeout_secs), ssh_channel.wait()) => {
-                let msg = result
-                    .map_err(|_| format!("Timeout de {} segundos alcanzado", timeout_secs))?;
+                let msg = result.map_err(|_| {
+                    SshError::execution_failed(format!(
+                        "Timeout de {} segundos alcanzado",
+                        timeout_secs
+                    ))
+                })?;
 
                 match msg {
                     Some(ChannelMsg::Data { ref data })
@@ -187,9 +189,4 @@ fn emit_finished(channel: &Channel<RemoteConsoleEvent>, exit_code: i64, duration
         exit_code,
         duration_seconds,
     });
-}
-
-/// Construye una respuesta de error de nivel de transporte con clave i18n.
-fn err_response<T>(key: &str, reason: &str) -> Result<CommandResponse<T>, String> {
-    Ok(CommandResponse::err(key, params!("reason" => reason)))
 }

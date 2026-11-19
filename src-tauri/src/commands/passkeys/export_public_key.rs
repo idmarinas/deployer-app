@@ -1,24 +1,16 @@
 use russh::keys::PrivateKey;
 use serde::Deserialize;
 use sqlx::Row;
-use std::time::Duration;
 use tauri::AppHandle;
-use tokio::time::timeout;
 use ts_rs::TS;
 
-use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 use crate::crypto::StrongholdVault;
 use crate::helpers::open_read_only_pool;
 use crate::params;
 use crate::response::CommandResponse;
-use crate::ssh::{
-    decrypt_host_credentials, fetch_host_credentials, open_command_channel, shell_escape,
-    HostCredentials, SshCredentials, SshSession,
-};
-
-/// Timeout para operaciones SSH (en segundos)
-const SSH_TIMEOUT_SECS: u64 = 15;
+use crate::ssh::keys;
+use crate::ssh::{connect_to_host_with_temp_credentials, open_command_channel, shell_escape, SshError, SshSession};
 
 // ---------------------------------------------------------------------------
 // Input
@@ -61,15 +53,15 @@ struct PasskeyData {
 
 /// Añade o elimina una clave pública en `~/.ssh/authorized_keys` del host.
 ///
-/// Flujo de autenticación (por orden de prioridad):
-/// 1. Credenciales temporales proporcionadas en el input (temp_username + temp_password)
-/// 2. Credenciales del host guardadas en BD
+/// La conexión la gestiona `ssh/` con el mismo timeout y verificación de
+/// huella que el resto de comandos. Las credenciales temporales se prueban
+/// primero y, si fallan por autenticación, se reintentan las guardadas en BD.
 #[tauri::command]
 pub async fn export_public_key(
     app: AppHandle,
     input: ExportPublicKeyInput,
 ) -> Result<CommandResponse<()>, String> {
-    // 1. Contexto de cifrado — vault de Stronghold
+    // 1. Contexto de cifrado — vault de Stronghold (solo para la passkey).
     let vault = match StrongholdVault::open(&app) {
         Ok(v) => v,
         Err(e) => {
@@ -80,8 +72,8 @@ pub async fn export_public_key(
         }
     };
 
-    // 2. Ruta de BD
-    let db_path = match crate::commands::database::store::get_database_path_internal(app) {
+    // 2. Ruta de BD.
+    let db_path = match crate::commands::database::store::get_database_path_internal(app.clone()) {
         Ok(Some(p)) => p,
         Ok(None) => {
             return Ok(CommandResponse::err(
@@ -97,29 +89,7 @@ pub async fn export_public_key(
         }
     };
 
-    // 3. Obtener datos del host + credenciales de su passkey
-    let (host_creds, host_key_content, host_passphrase) =
-        match fetch_host_data(&db_path, input.host_id).await {
-            Ok(Some(data)) => data,
-            Ok(None) => {
-                return Ok(CommandResponse::err(
-                    "tauri.hosts.error.not_found",
-                    params!("id" => input.host_id.to_string()),
-                ))
-            }
-            Err(e) => {
-                return Ok(CommandResponse::err(
-                    "tauri.hosts.error.database_error",
-                    params!("reason" => e),
-                ))
-            }
-        };
-
-    // Descifrar credenciales del host con el helper compartido.
-    let host_credentials =
-        decrypt_host_credentials(&host_creds, host_key_content, host_passphrase, &vault)?;
-
-    // 4. Obtener datos de la passkey y descifrar
+    // 3. Obtener, descifrar y convertir la passkey en línea de clave pública.
     let mut passkey = match fetch_passkey_data(&db_path, input.passkey_id).await {
         Ok(Some(p)) => p,
         Ok(None) => {
@@ -136,7 +106,6 @@ pub async fn export_public_key(
         }
     };
 
-    // Descifrar contenido de la passkey
     if crypto::is_encrypted(&passkey.key_content) {
         passkey.key_content = vault
             .decrypt_value("encrypt:deployer_passkeys.key_content", &passkey.key_content)
@@ -152,7 +121,6 @@ pub async fn export_public_key(
         }
     }
 
-    // 5. Obtener la clave pública desde la clave privada descifrada
     let public_key_line = match extract_public_key(&passkey) {
         Ok(pk) => pk,
         Err(e) => {
@@ -163,98 +131,48 @@ pub async fn export_public_key(
         }
     };
 
-    // 6. Intentar conexión SSH — primero credenciales temporales, luego las de BD
-    let addr = format!("{}:{}", host_creds.host, host_creds.port);
-
-    let connect_result = timeout(
-        Duration::from_secs(SSH_TIMEOUT_SECS),
-        try_connect_and_execute(
-            &addr,
-            &host_credentials,
-            input.temp_username.as_deref(),
-            input.temp_password.as_deref(),
-            &public_key_line,
-            &input.action,
-        ),
+    // 4. Conexión única a través de `ssh/` (timeout, credenciales y huella).
+    let (mut session, _host) = match connect_to_host_with_temp_credentials(
+        &app,
+        input.host_id,
+        0,
+        false,
+        input.temp_username.as_deref(),
+        input.temp_password.as_deref(),
     )
-    .await;
+    .await
+    {
+        Ok(connection) => connection,
+        Err(e) => return Ok(CommandResponse::err(e.key, e.params)),
+    };
 
-    match connect_result {
-        Ok(Ok(())) => {
-            let key = match input.action {
-                ExportPublicKeyAction::Add => "tauri.passkeys.success.public_key_exported",
-                ExportPublicKeyAction::Remove => "tauri.passkeys.success.public_key_removed",
-            };
-            Ok(CommandResponse::ok_empty(key))
-        }
-        Ok(Err(e)) => {
-            if e.starts_with("tauri.") {
-                Ok(CommandResponse::err(&e, params!()))
-            } else {
-                Ok(CommandResponse::err(
-                    "tauri.hosts.error.connection_failed",
-                    params!("reason" => e),
-                ))
-            }
-        }
-        Err(_) => Ok(CommandResponse::err(
-            "tauri.hosts.error.connection_timeout",
-            params!("timeout" => SSH_TIMEOUT_SECS.to_string()),
-        )),
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Conexión y ejecución SSH
-// ---------------------------------------------------------------------------
-
-/// Intenta conectarse al host y ejecutar la operación sobre authorized_keys.
-///
-/// Prueba primero las credenciales temporales (si se proporcionaron), y si
-/// fallan o no se proporcionaron, usa las credenciales guardadas en BD.
-async fn try_connect_and_execute(
-    addr: &str,
-    host_credentials: &SshCredentials,
-    temp_username: Option<&str>,
-    temp_password: Option<&str>,
-    public_key_line: &str,
-    action: &ExportPublicKeyAction,
-) -> Result<(), String> {
-    // Intentar con credenciales temporales si se proporcionaron
-    if let (Some(user), Some(pass)) = (temp_username, temp_password) {
-        if !user.is_empty() && !pass.is_empty() {
-            let temp_creds = SshCredentials {
-                username: user.to_string(),
-                auth_type: AuthType::Password,
-                password: Some(pass.to_string()),
-                key_content: None,
-                passphrase: None,
-            };
-            if let Ok(session) = SshSession::connect(addr.to_string(), temp_creds, 0).await {
-                return execute_authorized_keys(session, public_key_line, action).await;
-            }
-        }
-    }
-
-    // Intentar con las credenciales guardadas en BD (ya descifradas)
-    let session = SshSession::connect(addr.to_string(), host_credentials.clone(), 0).await?;
-    execute_authorized_keys(session, public_key_line, action).await
-}
-
-/// Abre un canal SSH, ejecuta el comando sobre `~/.ssh/authorized_keys`
-/// y desconecta la sesión limpiamente.
-async fn execute_authorized_keys(
-    mut session: SshSession,
-    public_key_line: &str,
-    action: &ExportPublicKeyAction,
-) -> Result<(), String> {
-    let command = build_authorized_keys_command(public_key_line, action);
-
-    run_channel_command(&mut session, &command, action).await?;
-
+    // 5. Operación sobre authorized_keys.
+    let result = execute_authorized_keys(&mut session, &public_key_line, &input.action).await;
     session.disconnect().await;
 
-    Ok(())
+    if let Err(e) = result {
+        return Ok(CommandResponse::err(e.key, e.params));
+    }
+
+    let key = match input.action {
+        ExportPublicKeyAction::Add => "tauri.passkeys.success.public_key_exported",
+        ExportPublicKeyAction::Remove => "tauri.passkeys.success.public_key_removed",
+    };
+    Ok(CommandResponse::ok_empty(key))
+}
+
+// ---------------------------------------------------------------------------
+// Operación sobre authorized_keys
+// ---------------------------------------------------------------------------
+
+/// Abre un canal SSH, ejecuta el comando sobre `~/.ssh/authorized_keys`.
+async fn execute_authorized_keys(
+    session: &mut SshSession,
+    public_key_line: &str,
+    action: &ExportPublicKeyAction,
+) -> Result<(), SshError> {
+    let command = build_authorized_keys_command(public_key_line, action);
+    run_channel_command(session, &command, action).await
 }
 
 /// Construye el comando shell para añadir o eliminar la clave de authorized_keys.
@@ -282,8 +200,10 @@ async fn run_channel_command(
     session: &mut SshSession,
     command: &str,
     action: &ExportPublicKeyAction,
-) -> Result<(), String> {
-    let mut channel = open_command_channel(session, command).await?;
+) -> Result<(), SshError> {
+    let mut channel = open_command_channel(session, command)
+        .await
+        .map_err(SshError::execution_failed)?;
 
     loop {
         match channel.wait().await {
@@ -295,28 +215,25 @@ async fn run_channel_command(
 
                 if matches!(action, ExportPublicKeyAction::Remove) {
                     return match exit_status {
-                        1 => Err("tauri.passkeys.error.authorized_keys_not_found".to_string()),
-                        2 => {
-                            Err("tauri.passkeys.error.public_key_not_in_authorized_keys"
-                                .to_string())
-                        }
-                        _ => Err(format!(
+                        1 => Err(SshError::new(keys::AUTHORIZED_KEYS_NOT_FOUND)),
+                        2 => Err(SshError::new(keys::PUBLIC_KEY_NOT_IN_AUTHORIZED_KEYS)),
+                        _ => Err(SshError::execution_failed(format!(
                             "El comando SSH terminó con código de error: {}",
                             exit_status
-                        )),
+                        ))),
                     };
                 }
 
-                return Err(format!(
+                return Err(SshError::execution_failed(format!(
                     "El comando SSH terminó con código de error: {}",
                     exit_status
-                ));
+                )));
             }
             Some(russh::ChannelMsg::ExitSignal { signal_name, .. }) => {
-                return Err(format!(
+                return Err(SshError::execution_failed(format!(
                     "El comando SSH fue interrumpido por señal: {:?}",
                     signal_name
-                ));
+                )));
             }
             Some(_) => continue,
         }
@@ -327,18 +244,8 @@ async fn run_channel_command(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers de BD
+// Helper de BD (solo passkey)
 // ---------------------------------------------------------------------------
-
-async fn fetch_host_data(
-    db_path: &str,
-    host_id: i64,
-) -> Result<Option<(HostCredentials, Option<String>, Option<String>)>, String> {
-    let pool = open_read_only_pool(db_path).await?;
-    let result = fetch_host_credentials(&pool, host_id, false).await;
-    pool.close().await;
-    result
-}
 
 async fn fetch_passkey_data(db_path: &str, passkey_id: i64) -> Result<Option<PasskeyData>, String> {
     let pool = open_read_only_pool(db_path).await?;

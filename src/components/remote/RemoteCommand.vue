@@ -54,7 +54,7 @@ async function runCommand() {
 	if (result?.success && result.data?.exit_code === 0) {
 		notifySuccess(t('components.console.feedback.executed'))
 	} else if (result?.success) {
-		notifyFailure(t('tauri.remote.exec.completed_with_errors'))
+		notifyFailure(t('tauri.ssh.exec.completed_with_errors'))
 	} else {
 		notifyFailure(t('components.console.feedback.failed', { reason: props.errorMessage }))
 	}

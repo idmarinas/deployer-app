@@ -37,6 +37,12 @@ export default {
 		label: 'Password',
 		help: 'SSH password for remote connection',
 	},
+	host_key_fingerprint: {
+		label: 'Host fingerprint',
+		help: 'SHA256 fingerprint of the server key. It is obtained by testing the connection and must be confirmed.',
+		check: 'Check and confirm',
+		empty: 'Not confirmed',
+	},
 	key: {
 		label: 'Key',
 		help: 'SSH key for remote connection',

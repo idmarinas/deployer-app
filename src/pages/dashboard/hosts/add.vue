@@ -4,6 +4,7 @@ import type { Form, FormSubmitEvent } from '@nuxt/ui'
 
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
+import { useHostFingerprint } from '@/composables/dashboard/hosts/useHostFingerprint'
 import { useToolbarContentCreate } from '@/composables/dashboard/toolbar/useToolbarContent'
 import { useToolbarForHostsModule } from '@/composables/dashboard/toolbar/useToolbarForModule'
 import { useHostQuery } from '@/composables/queries/hosts'
@@ -20,6 +21,7 @@ const router = useRouter()
 const { toolbar } = useToolbarForHostsModule()
 const { hosts: hostSchema } = useSchemaValidation()
 const hostQuery = useHostQuery()
+const { checkAndConfirm } = useHostFingerprint()
 
 const initialState: HostValidationInsertType = {
 	name: '',
@@ -30,6 +32,7 @@ const initialState: HostValidationInsertType = {
 	username: '',
 	password: '',
 	key_id: null,
+	host_key_fingerprint: null,
 	enabled: false,
 	updated_at: '',
 	created_at: '',
@@ -50,6 +53,13 @@ async function onSubmit(event: FormSubmitEvent<HostValidationInsertType>) {
 		.create(event.data as any)
 		.then(async result => {
 			if (result !== undefined) {
+				// El alta no puede comprobar la huella antes de tener ID: se hace
+				// justo después de guardar y se ofrece confirmarla al usuario.
+				await checkAndConfirm({
+					id: result.id,
+					name: result.name,
+					host_key_fingerprint: result.host_key_fingerprint,
+				})
 				await router.push({ name: 'dashboard-hosts' })
 			}
 		})

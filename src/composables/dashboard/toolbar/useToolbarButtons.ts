@@ -144,13 +144,14 @@ export function useToolbarButtons(
 							),
 						)
 					} else {
+						const reason = result.message_params.reason || t(result.message_key, result.message_params)
 						toaster.toast.update(
 							notice.id,
 							toaster.error(
 								t('notifications.hosts.test_connection.error.title'),
 								t('notifications.hosts.test_connection.error.description', {
 									name: item.name,
-									...result.message_params,
+									reason,
 								}),
 								{
 									id: notice.id,

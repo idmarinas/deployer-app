@@ -37,6 +37,12 @@ export default {
 		label: 'Contraseña',
 		help: 'Contraseña SSH para conexión remota',
 	},
+	host_key_fingerprint: {
+		label: 'Huella del servidor',
+		help: 'Huella SHA256 de la clave del servidor. Se obtiene al comprobar la conexión y debe confirmarse.',
+		check: 'Comprobar y confirmar',
+		empty: 'Sin confirmar',
+	},
 	key: {
 		label: 'Clave',
 		help: 'Clave SSH para conexión remota',

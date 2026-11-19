@@ -1,27 +1,43 @@
 use russh::client;
-use russh::keys::{PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
-use std::sync::Arc;
+use russh::keys::{HashAlg, PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time::timeout;
 
 use crate::commands::hosts::types::AuthType;
 use crate::crypto;
 use crate::crypto::StrongholdVault;
+use crate::ssh::error::{ConnectionFailure, SshError};
 
-/// Timeout por defecto para el establecimiento de la conexión SSH (segundos).
-const CONNECT_TIMEOUT_SECS: u64 = 15;
+/// Única fuente de verdad del plazo de conexión SSH (segundos).
+/// Los comandos no añaden timeouts externos: esta capa reporta el error.
+pub(crate) const SSH_CONNECT_TIMEOUT_SECS: u64 = 15;
 
-/// Handler SSH mínimo: acepta cualquier clave de servidor.
-pub(crate) struct SshClientHandler;
+/// Handler SSH que verifica la clave del servidor contra la huella guardada
+/// en el host. Anota siempre la huella vista para poder mostrarla cuando el
+/// host aún no tiene ninguna confirmada o cuando ha cambiado.
+pub(crate) struct SshClientHandler {
+    expected_fingerprint: Option<String>,
+    observed_fingerprint: Arc<Mutex<Option<String>>>,
+}
 
 impl client::Handler for SshClientHandler {
     type Error = russh::Error;
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &PublicKeyOrCertificate
+        server_public_key: &PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
-        Ok(true)
+        let fingerprint = server_public_key
+            .public_key()
+            .fingerprint(HashAlg::Sha256)
+            .to_string();
+
+        if let Ok(mut observed) = self.observed_fingerprint.lock() {
+            *observed = Some(fingerprint.clone());
+        }
+
+        Ok(self.expected_fingerprint.as_deref() == Some(fingerprint.as_str()))
     }
 }
 
@@ -50,27 +66,31 @@ pub struct SshSession {
     pub addr: String,
     pub credentials: SshCredentials,
     pub max_reconnect_attempts: u32,
+    /// Huella confirmada del host; se reutiliza en cada reconexión.
+    expected_fingerprint: Option<String>,
 }
 
 impl SshSession {
-    /// Establece una nueva conexión SSH y autentica.
+    /// Establece una nueva conexión SSH, verifica la clave del servidor y autentica.
     pub async fn connect(
         addr: String,
         credentials: SshCredentials,
         max_reconnect_attempts: u32,
-    ) -> Result<Self, String> {
-        let handle = connect_and_auth(&addr, &credentials).await?;
+        expected_fingerprint: Option<String>,
+    ) -> Result<Self, SshError> {
+        let handle = connect_and_auth(&addr, &credentials, expected_fingerprint.as_deref()).await?;
         Ok(Self {
             handle,
             addr,
             credentials,
             max_reconnect_attempts,
+            expected_fingerprint,
         })
     }
 
     /// Verifica si la sesión sigue activa y reconecta si es necesario.
     /// Realiza hasta `max_reconnect_attempts` intentos con backoff lineal de 2s.
-    pub async fn ensure_connected(&mut self) -> Result<(), String> {
+    pub async fn ensure_connected(&mut self) -> Result<(), SshError> {
         match self.handle.channel_open_session().await {
             Ok(ch) => {
                 let _ = ch.eof().await;
@@ -83,25 +103,30 @@ impl SshSession {
             let wait = Duration::from_secs(2 * attempt as u64);
             tokio::time::sleep(wait).await;
 
-            match connect_and_auth(&self.addr, &self.credentials).await {
+            match connect_and_auth(
+                &self.addr,
+                &self.credentials,
+                self.expected_fingerprint.as_deref(),
+            )
+            .await
+            {
                 Ok(new_handle) => {
                     self.handle = new_handle;
                     return Ok(());
                 }
-                Err(_) if attempt < self.max_reconnect_attempts => continue,
-                Err(e) => {
-                    return Err(format!(
-                        "No se pudo reconectar tras {} intentos: {}",
-                        self.max_reconnect_attempts, e
-                    ))
+                Err(e @ ConnectionFailure::HostKey { .. }) => return Err(SshError::from(e)),
+                Err(e) if attempt < self.max_reconnect_attempts => {
+                    let _ = e;
+                    continue;
                 }
+                Err(e) => return Err(SshError::from(e)),
             }
         }
 
-        Err(format!(
+        Err(SshError::connection_failed(format!(
             "No se pudo reconectar tras {} intentos",
             self.max_reconnect_attempts
-        ))
+        )))
     }
 
     /// Cierra la sesión SSH limpiamente.
@@ -161,18 +186,45 @@ pub(crate) fn decrypt_host_credentials(
 async fn connect_and_auth(
     addr: &str,
     credentials: &SshCredentials,
-) -> Result<client::Handle<SshClientHandler>, String> {
+    expected_fingerprint: Option<&str>,
+) -> Result<client::Handle<SshClientHandler>, ConnectionFailure> {
+    let observed = Arc::new(Mutex::new(None));
+    let handler = SshClientHandler {
+        expected_fingerprint: expected_fingerprint.map(str::to_string),
+        observed_fingerprint: Arc::clone(&observed),
+    };
     let config = Arc::new(client::Config::default());
 
     let handle = timeout(
-        Duration::from_secs(CONNECT_TIMEOUT_SECS),
-        client::connect(config, addr, SshClientHandler),
+        Duration::from_secs(SSH_CONNECT_TIMEOUT_SECS),
+        client::connect(config, addr, handler),
     )
     .await
-    .map_err(|_| format!("Timeout al conectar con {}", addr))?
-    .map_err(|e| format!("Error de conexión SSH: {}", e))?;
+    .map_err(|_| ConnectionFailure::Timeout)?
+    .map_err(|e| classify_connect_error(e, &observed, expected_fingerprint))?;
 
-    authenticate(handle, credentials).await
+    authenticate(handle, credentials)
+        .await
+        .map_err(ConnectionFailure::Other)
+}
+
+/// Si el handler vio una clave del servidor, el fallo viene de la verificación
+/// de huella; si no, es un fallo de red o de intercambio de claves.
+fn classify_connect_error(
+    error: russh::Error,
+    observed: &Arc<Mutex<Option<String>>>,
+    expected_fingerprint: Option<&str>,
+) -> ConnectionFailure {
+    let seen = observed.lock().ok().and_then(|guard| guard.clone());
+
+    if let Some(fingerprint) = seen {
+        ConnectionFailure::HostKey {
+            observed: fingerprint,
+            expected: expected_fingerprint.map(str::to_string),
+        }
+    } else {
+        ConnectionFailure::Other(format!("Error de conexión SSH: {}", error))
+    }
 }
 
 async fn authenticate(

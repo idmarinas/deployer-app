@@ -132,6 +132,29 @@ export default {
 			title: 'Connection error',
 			description: 'Could not establish connection with host "{name}". \nReason: {reason}',
 		},
+		fingerprint: {
+			title: 'Confirm host fingerprint',
+			description:
+				'Host "{name}" presented fingerprint {fingerprint}. Confirm it to save it and allow future connections.',
+			success: {
+				title: 'Fingerprint confirmed',
+				description: 'Fingerprint for host "{name}" saved successfully.',
+			},
+		},
+		fingerprint_changed: {
+			title: 'Host fingerprint changed',
+			description:
+				'The stored fingerprint for "{name}" was {current}, but it now presents {fingerprint}. Confirm the change only if it is legitimate.',
+			success: {
+				title: 'Fingerprint updated',
+				description: 'New fingerprint for host "{name}" saved successfully.',
+			},
+		},
+		cancelled: {
+			title: 'Confirmation cancelled',
+			description:
+				'The fingerprint for "{name}" was not saved. Connections will remain blocked until you confirm it.',
+		},
 	},
 
 	system_info: {

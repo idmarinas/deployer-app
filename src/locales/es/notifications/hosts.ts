@@ -132,6 +132,29 @@ export default {
 			title: 'Error al conectar',
 			description: 'No se ha podido establecer conexión con el servidor "{name}". \nRazón: {reason}',
 		},
+		fingerprint: {
+			title: 'Confirmar huella del servidor',
+			description:
+				'El servidor "{name}" presentó la huella {fingerprint}. Confírmala para guardarla y permitir futuras conexiones.',
+			success: {
+				title: 'Huella confirmada',
+				description: 'Huella del servidor "{name}" guardada correctamente.',
+			},
+		},
+		fingerprint_changed: {
+			title: 'La huella del servidor ha cambiado',
+			description:
+				'La huella guardada de "{name}" era {current}, pero ahora presenta {fingerprint}. Confirma el cambio solo si es legítimo.',
+			success: {
+				title: 'Huella actualizada',
+				description: 'Nueva huella del servidor "{name}" guardada correctamente.',
+			},
+		},
+		cancelled: {
+			title: 'Confirmación cancelada',
+			description:
+				'No se guardó la huella de "{name}". Las conexiones seguirán bloqueadas hasta que la confirmes.',
+		},
 	},
 
 	system_info: {

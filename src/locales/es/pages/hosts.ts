@@ -41,6 +41,8 @@ export default {
 		distribution: 'Distribución',
 		kernel: 'Kernel',
 		arch: 'Arquitectura',
+		host_key_fingerprint: 'Huella SSH',
+		host_key_fingerprint_empty: 'Sin confirmar',
 		package_manager: 'Gestor de paquetes',
 		uptime: 'Tiempo activo',
 		cpu_cores: 'CPU',

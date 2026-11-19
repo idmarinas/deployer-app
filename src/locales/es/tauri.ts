@@ -132,8 +132,6 @@ export default {
   },
   hosts: {
     error: {
-      connection_failed: 'No se pudo conectar con el servidor. \n Razón: {reason}',
-      connection_timeout: 'No se pudo conectar con el servidor. Tiempo de espera {timeout} agotado.',
       context_failed: 'No se pudo conectar con el servidor. \n Razón: {reason}',
       database_error: 'No se pudo acceder a la base de datos. \n Razón: {reason}',
       no_database_path: 'No se pudo encontrar la base de datos.',
@@ -145,7 +143,6 @@ export default {
       updates_check_failed: 'Error al buscar actualizaciones en el servidor. \n Razón: {reason}',
     },
     success: {
-      connection: 'Conexión establecida correctamente.',
       remote_command_executed: 'Comando ejecutado correctamente.',
     },
     errors: {
@@ -171,13 +168,11 @@ export default {
   },
   passkeys: {
     error: {
-      authorized_keys_not_found: 'El archivo "~/.ssh/authorized_keys" no existe en el servidor.',
       context_failed: 'Error al obtener el contexto de cifrado. \n Razón: {reason}',
       encryption_failed: 'Error al cifrar la clave. \n Razón: {reason}',
       generation_failed: 'Error al generar el par de claves. \n Razón: {reason}',
       not_found: 'Passkey no encontrada',
       public_key_failed: 'No se pudo extraer la clave pública. \n Razón: {reason}',
-      public_key_not_in_authorized_keys: 'La clave pública no está registrada en "~/.ssh/authorized_keys" del servidor.',
       serialization_failed: 'Error al serializar la clave. \n Razón: {reason}',
     },
     errors: {
@@ -195,14 +190,23 @@ export default {
       validation_failed: 'Error de validación de la passkey. \n Razón: {reason}',
     },
   },
-  remote: {
+  ssh: {
     errors: {
+      authorized_keys_not_found: 'El archivo "~/.ssh/authorized_keys" no existe en el servidor.',
       cancelled: 'Operación cancelada por el usuario. \n Razón: {reason}',
       connection_failed: 'No se pudo conectar con el servidor. \n Razón: {reason}',
+      connection_timeout: 'No se pudo conectar con el servidor. Tiempo de espera {timeout} agotado.',
       execution_failed: 'Error al ejecutar el comando en el servidor. \n Razón: {reason}',
+      host_key_mismatch:
+        'La clave del servidor no coincide con la huella guardada. Huella vista: {fingerprint}. Confirma la nueva huella desde la edición del servidor antes de volver a conectar.',
+      host_key_unknown:
+        'El servidor aún no tiene una huella confirmada. Huella vista: {fingerprint}. Confírmala desde la edición del servidor para poder conectar.',
+      public_key_not_in_authorized_keys:
+        'La clave pública no está registrada en "~/.ssh/authorized_keys" del servidor.',
       transfer_failed: 'Error en la transferencia de archivos. \n Razón: {reason}',
     },
     success: {
+      connection: 'Conexión establecida correctamente.',
       exec: 'Comando ejecutado correctamente.',
       upload: 'Archivos subidos correctamente.',
       download: 'Archivos descargados correctamente.',
