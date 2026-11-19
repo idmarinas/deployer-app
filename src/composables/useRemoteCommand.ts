@@ -22,21 +22,24 @@ import { collectSecretValues, InterpolationError, interpolateString, redactSecre
  * (`ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`), acumulando el
  * output en streaming y exponiendo estado reactivo para la UI.
  *
- * El output se acumula línea a línea en `output.value` conforme llegan eventos
- * `output_chunk` del backend. `lastExitCode` recoge el código de salida del
- * evento `finished`, y `errorMessage` los errores de transporte (evento `error`
- * o rechazo del invoke).
+ * El backend emite `started` con el id del job (en `currentJobId`, para poder
+ * cancelarlo de forma selectiva), `output_chunk` con el output acumulado,
+ * `finished` con el código de salida en `lastExitCode` y `error` con los
+ * errores de transporte en `errorMessage` (o el rechazo del invoke).
  */
 export default function useRemoteCommand() {
 	const output = ref('')
 	const isRunning = ref(false)
 	const lastExitCode = ref<number | null>(null)
 	const errorMessage = ref('')
+	/** Id del job en curso, recibido en el evento `started` del backend. */
+	const currentJobId = ref<number | null>(null)
 
 	function clear() {
 		output.value = ''
 		lastExitCode.value = null
 		errorMessage.value = ''
+		currentJobId.value = null
 	}
 
 	async function run<T>(
@@ -47,10 +50,14 @@ export default function useRemoteCommand() {
 		isRunning.value = true
 		lastExitCode.value = null
 		errorMessage.value = ''
+		currentJobId.value = null
 
 		const channel = new Channel<RemoteConsoleEvent>()
 		channel.onmessage = (event: RemoteConsoleEvent) => {
 			switch (event.event) {
+				case 'started':
+					currentJobId.value = event.job_id
+					break
 				case 'output_chunk':
 					output.value += event.chunk
 					break
@@ -109,9 +116,10 @@ export default function useRemoteCommand() {
 		return run<RemoteDownloadResult>('ssh_download_file', input)
 	}
 
-	async function cancel() {
+	async function cancel(jobId?: number) {
 		try {
-			await invoke('ssh_cancel_remote_job')
+			// Sin id, el backend cancela el último job registrado (best-effort).
+			await invoke('ssh_cancel_remote_job', jobId === undefined ? {} : { jobId })
 		} catch {
 			// La cancelación es best-effort: el invoke de la operación remota
 			// notificará el estado real a través del channel.
@@ -123,6 +131,7 @@ export default function useRemoteCommand() {
 		isRunning,
 		lastExitCode,
 		errorMessage,
+		currentJobId,
 		clear,
 		execute,
 		upload,

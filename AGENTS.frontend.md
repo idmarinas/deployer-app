@@ -460,11 +460,11 @@ Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con stream
 
 - Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` §5 «Consola remota»).
 - Frontend: `useRemoteCommand` (`src/composables/useRemoteCommand.ts`) encapsula la creación del `Channel<RemoteConsoleEvent>` y el `invoke`. Expone:
-  - Estado reactivo: `output`, `isRunning`, `lastExitCode`, `errorMessage`.
+  - Estado reactivo: `output`, `isRunning`, `lastExitCode`, `errorMessage`, `currentJobId` (id del job en curso).
   - Acciones: `execute(input)`, `upload(input)`, `download(input)` (devuelven `CommandResponse<T> | null`; `null` = rechazo del invoke).
-  - `cancel()` → `invoke('ssh_cancel_remote_job')` (sin args; best-effort, no espera respuesta del job).
-  - `clear()` para resetear output/estado.
-- Eventos del Channel (`RemoteConsoleEvent`): `output_chunk` (append a `output`), `finished` (guarda `exit_code`), `error` (guarda `message`).
+  - `cancel(jobId?: number)` → `invoke('ssh_cancel_remote_job', { jobId })`; sin id invoca sin argumentos y el backend cancela el último job (best-effort, no espera respuesta del job).
+  - `clear()` para resetear output/estado, incluido `currentJobId`.
+- Eventos del Channel (`RemoteConsoleEvent`): `started` (guarda `job_id` en `currentJobId`), `output_chunk` (append a `output`), `finished` (guarda `exit_code`), `error` (guarda `message`).
 - Componente presentacional: `RemoteConsole.vue` (`src/components/remote/`). Si recibe `hostId` como prop usa ese host fijo; si no, muestra `SelectHost` interno. El botón "Cancelar" (`ICONS.actions.stop`) aparece solo mientras `isRunning`.
 - `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
 - Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`).

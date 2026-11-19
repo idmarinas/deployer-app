@@ -5,7 +5,6 @@ use tauri::AppHandle;
 use tauri::State;
 use tokio::io::AsyncReadExt;
 use tokio::time::Instant;
-use tokio_util::sync::CancellationToken;
 
 use crate::response::CommandResponse;
 use crate::ssh::error::err_response;
@@ -13,7 +12,7 @@ use crate::ssh::keys;
 use crate::ssh::transfer::{self as transfer_utils, SFTP_BUFFER_SIZE, TransferResult};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session, SshError};
 
-use crate::ssh::cancel::{RemoteJobCancel, CANCELLED_MSG};
+use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard, CANCELLED_MSG};
 use crate::ssh::types::{
     RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteTransferResult,
     RemoteUploadInput,
@@ -31,8 +30,9 @@ pub async fn ssh_upload_file(
     channel: Channel<RemoteConsoleEvent>,
     state: State<'_, RemoteJobCancel>,
 ) -> Result<CommandResponse<RemoteTransferResult>, String> {
-    let token = CancellationToken::new();
-    state.register(&token);
+    let (job_id, token) = state.register();
+    let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
+    emit_started(&channel, job_id);
 
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
@@ -140,8 +140,9 @@ pub async fn ssh_download_file(
     channel: Channel<RemoteConsoleEvent>,
     state: State<'_, RemoteJobCancel>,
 ) -> Result<CommandResponse<RemoteDownloadResult>, String> {
-    let token = CancellationToken::new();
-    state.register(&token);
+    let (job_id, token) = state.register();
+    let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
+    emit_started(&channel, job_id);
 
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
@@ -302,6 +303,10 @@ pub async fn ssh_download_file(
 }
 
 // ── Helpers de canal ─────────────────────────────────────────────────────────
+
+fn emit_started(channel: &Channel<RemoteConsoleEvent>, job_id: u64) {
+    let _ = channel.send(RemoteConsoleEvent::Started { job_id });
+}
 
 fn emit_error(channel: &Channel<RemoteConsoleEvent>, message: &str) {
     let _ = channel.send(RemoteConsoleEvent::Error {

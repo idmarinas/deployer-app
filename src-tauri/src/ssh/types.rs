@@ -95,6 +95,8 @@ pub struct RemoteDownloadResult {
 #[serde(tag = "event", rename_all = "snake_case")]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub enum RemoteConsoleEvent {
+    /// Job registrado en el backend; su id permite cancelarlo de forma selectiva.
+    Started { job_id: u64 },
     /// Fragmento de output acumulado del comando o de la transferencia.
     OutputChunk { chunk: String },
     /// Operación finalizada; incluye el código de salida (si aplica).

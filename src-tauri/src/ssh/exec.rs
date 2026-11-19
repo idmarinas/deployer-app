@@ -10,7 +10,7 @@ use crate::ssh::error::err_response;
 use crate::ssh::keys;
 use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshError, SshSession};
 
-use crate::ssh::cancel::RemoteJobCancel;
+use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard};
 use crate::ssh::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
 
 /// Timeout por defecto para la ejecución remota (segundos).
@@ -37,8 +37,9 @@ pub async fn ssh_execute_command(
 ) -> Result<CommandResponse<RemoteCommandResult>, String> {
     let timeout_secs = input.timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS);
 
-    let token = CancellationToken::new();
-    state.register(&token);
+    let (job_id, token) = state.register();
+    let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
+    emit_started(&channel, job_id);
 
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
@@ -117,49 +118,56 @@ async fn run_command_streaming(
     let mut last_emit = Instant::now();
     let mut exit_code: i64 = -1;
 
-    loop {
-        use russh::ChannelMsg;
+    // Un único plazo para toda la ejecución: el output ya no reinicia el reloj.
+    let collect = async {
+        loop {
+            use russh::ChannelMsg;
 
-        tokio::select! {
-            _ = token.cancelled() => {
-                return Err(SshError::cancelled());
-            }
-            result = tokio::time::timeout(Duration::from_secs(timeout_secs), ssh_channel.wait()) => {
-                let msg = result.map_err(|_| {
-                    SshError::execution_failed(format!(
-                        "Timeout de {} segundos alcanzado",
-                        timeout_secs
-                    ))
-                })?;
+            tokio::select! {
+                _ = token.cancelled() => {
+                    return Err(SshError::cancelled());
+                }
+                msg = ssh_channel.wait() => {
+                    match msg {
+                        Some(ChannelMsg::Data { ref data })
+                        | Some(ChannelMsg::ExtendedData { ref data, ext: 1 }) => {
+                            // stdout + stderr, en orden de llegada
+                            let text = String::from_utf8_lossy(data).to_string();
+                            output.push_str(&text);
+                            chunk_buffer.push_str(&text);
 
-                match msg {
-                    Some(ChannelMsg::Data { ref data })
-                    | Some(ChannelMsg::ExtendedData { ref data, ext: 1 }) => {
-                        // stdout + stderr, en orden de llegada
-                        let text = String::from_utf8_lossy(data).to_string();
-                        output.push_str(&text);
-                        chunk_buffer.push_str(&text);
-
-                        if last_emit.elapsed() >= Duration::from_millis(OUTPUT_CHUNK_INTERVAL_MS) {
-                            if !chunk_buffer.is_empty() {
-                                emit_chunk(channel, &chunk_buffer);
-                                chunk_buffer.clear();
-                                last_emit = Instant::now();
+                            if last_emit.elapsed() >= Duration::from_millis(OUTPUT_CHUNK_INTERVAL_MS) {
+                                if !chunk_buffer.is_empty() {
+                                    emit_chunk(channel, &chunk_buffer);
+                                    chunk_buffer.clear();
+                                    last_emit = Instant::now();
+                                }
                             }
                         }
+                        Some(ChannelMsg::ExitStatus { exit_status }) => {
+                            exit_code = exit_status as i64;
+                        }
+                        // EOF llega antes que ExitStatus en OpenSSH; NO cortar aquí:
+                        // esperar al cierre del canal para capturar el exit code real.
+                        Some(ChannelMsg::Eof) => {}
+                        Some(ChannelMsg::Close) | None => break,
+                        _ => {}
                     }
-                    Some(ChannelMsg::ExitStatus { exit_status }) => {
-                        exit_code = exit_status as i64;
-                    }
-                    // EOF llega antes que ExitStatus en OpenSSH; NO cortar aquí:
-                    // esperar al cierre del canal para capturar el exit code real.
-                    Some(ChannelMsg::Eof) => {}
-                    Some(ChannelMsg::Close) | None => break,
-                    _ => {}
                 }
             }
         }
-    }
+
+        Ok::<(), SshError>(())
+    };
+
+    tokio::time::timeout(Duration::from_secs(timeout_secs), collect)
+        .await
+        .map_err(|_| {
+            SshError::execution_failed(format!(
+                "Timeout de {} segundos alcanzado",
+                timeout_secs
+            ))
+        })??;
 
     if !chunk_buffer.is_empty() {
         emit_chunk(channel, &chunk_buffer);
@@ -171,6 +179,10 @@ async fn run_command_streaming(
 }
 
 // ── Helpers de canal ─────────────────────────────────────────────────────────
+
+fn emit_started(channel: &Channel<RemoteConsoleEvent>, job_id: u64) {
+    let _ = channel.send(RemoteConsoleEvent::Started { job_id });
+}
 
 fn emit_chunk(channel: &Channel<RemoteConsoleEvent>, chunk: &str) {
     let _ = channel.send(RemoteConsoleEvent::OutputChunk {
