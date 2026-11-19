@@ -2,6 +2,19 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: consolidar duplicaciones (4/4))
+
+**Nota del usuario:** confirmó que todo está correcto y dio por finalizado el plan. Detalle en `AGENTS.ssh-mejoras-duplicaciones.PLAN.md` (archivado en `.agents/plans.done/`). **La serie `ssh-mejoras` queda completa** (4/4).
+
+1. **Helpers de eventos**: nuevo `ssh/events.rs` (`emit_started`, `emit_output_chunk`, `emit_error`, `emit_finished`, `emit_transfer_terminal_error`) usado por `exec.rs` y `transfer_commands.rs`, conservando las semánticas de cada dominio.
+2. **Pipeline SFTP compartido**: `connect_sftp` privado en `transfer_commands.rs` unifica `connect → ensure_connected → open_sftp_session` en upload/download sin cambiar claves ni puntos de emisión.
+3. **Revisiones sin cambio estructural**: Fase 3 (token) ya cubierta por `register()` + `RemoteJobGuard` (planes 2/3); `CANCELLED_MSG` mantiene definición/re-export; lectura base64 no unificada con disco por diferencias de comportamiento.
+4. **Documentación**: `AGENTS.backend.md` y §3.3/§10 del diseño actualizados con el estado real de las consolidaciones.
+
+**Verificación:** confirmada por el usuario (`cargo check`, tipos/build y pruebas funcionales).
+
+---
+
 ## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: `recursive` y `Finished.exit_code` (3/4))
 
 **Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 4/4. Detalle en `AGENTS.ssh-mejoras-transferencias.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con el plan 4/4 en **Planificando**; no se ejecuta sin autorización.
