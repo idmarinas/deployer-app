@@ -94,12 +94,12 @@ async function checkFingerprint() {
 		:label="t('form.hosts.host_key_fingerprint.label')"
 		:help="t('form.hosts.host_key_fingerprint.help')"
 	>
-		<div class="flex w-full gap-2">
+		<div class="flex gap-2">
 			<UInput
 				:model-value="state.host_key_fingerprint ?? ''"
 				:placeholder="t('form.hosts.host_key_fingerprint.empty')"
 				readonly
-				class="w-full font-mono"
+				class="flex-1 font-mono"
 			/>
 			<UButton
 				:label="t('form.hosts.host_key_fingerprint.check')"
