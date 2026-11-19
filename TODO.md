@@ -28,6 +28,12 @@
 
 Puede ser más complicado migrar de lo que parece.
 
+## Generar migración
+
+```bash
+bun run drizzle:generate -- --name commands_inputs_host_fingerprint_v0.4.0
+```
+
 ## Versión 0.4.0
 
 1. Nada
