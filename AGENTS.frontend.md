@@ -427,7 +427,7 @@ await db.insert(variables).values({ name, slug, value })
 
 Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
 
-- **Hosts:** `test_connection`. La información del sistema, las métricas, las actualizaciones disponibles y la aplicación de actualizaciones se ejecutan con los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*` ni `host_update_packages`.
+- **Hosts:** `test_connection`. La información del sistema, las métricas, las actualizaciones disponibles y la aplicación de actualizaciones se ejecutan con los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*` ni `host_update_packages`. Si el host aún no tiene huella confirmada, la respuesta trae `message_params.fingerprint` (`tauri.ssh.errors.host_key_unknown`) o avisa de un cambio (`host_key_mismatch`).
 - **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
 - **BD / setup (deployer):** `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
 - **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path`, `check_vault_health` — los dos primeros los usa `src/drizzle/lib/stronghold.ts` para cargar el vault; `check_vault_health` devuelve `VaultHealthReport` (ver también `AGENTS.backend.md` §4).
@@ -446,6 +446,13 @@ if (result.success) {
 ```
 
 Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT/UPDATE/DELETE sobre entidades se usa `db` (ver arriba).
+
+### Huella del servidor en hosts
+
+- `deployer_hosts.host_key_fingerprint` guarda la huella `SHA256:<base64>` confirmada por el usuario; es un campo de texto normal (no cifrado) y se persiste con Drizzle.
+- `HostForm.vue` muestra el valor en un campo de solo lectura y ofrece **Comprobar y confirmar**. El botón llama a `test_connection` y usa `src/composables/dashboard/hosts/useHostFingerprint.ts` para pedir confirmación y guardar la huella con `db.update(...)` + invalidación de caché.
+- El alta no puede comprobar la huella antes de guardar (el comando necesita el ID): `pages/dashboard/hosts/add.vue` guarda el host y ofrece la confirmación justo después. La edición permite repetirla, también cuando la clave del servidor cambia.
+- La vista de detalle muestra la huella como badge. Los errores de conexión/ejecución/transferencia llegan con claves `tauri.ssh.*`; al añadir claves hay que regenerar `typed-locale.d.ts` con `bun run i18n:types` antes del build.
 
 ### Consola remota (`ssh/` + `useRemoteCommand`)
 
