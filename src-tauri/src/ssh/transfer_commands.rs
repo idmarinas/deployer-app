@@ -12,8 +12,8 @@ use crate::response::CommandResponse;
 use crate::ssh::transfer::{self as transfer_utils, SFTP_BUFFER_SIZE, TransferResult};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session};
 
-use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
-use super::types::{
+use crate::ssh::cancel::{RemoteJobCancel, CANCELLED_MSG};
+use crate::ssh::types::{
     RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteTransferResult,
     RemoteUploadInput,
 };

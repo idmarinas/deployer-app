@@ -9,8 +9,8 @@ use crate::params;
 use crate::response::CommandResponse;
 use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshSession};
 
-use super::cancel::{RemoteJobCancel, CANCELLED_MSG};
-use super::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
+use crate::ssh::cancel::{RemoteJobCancel, CANCELLED_MSG};
+use crate::ssh::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
 
 /// Timeout por defecto para la ejecución remota (segundos).
 const DEFAULT_TIMEOUT_SECS: u64 = 300;

@@ -11,7 +11,7 @@ use commands::database::manage::{create_database_file, initialize_database, vali
 use commands::database::migrations::{execute_migrations, get_migrations_info, has_migrations_pending};
 use commands::hosts::test_connection;
 use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
-use commands::remote::{
+use crate::ssh::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
 use commands::stronghold::{check_vault_health, get_vault_password, get_vault_path};
