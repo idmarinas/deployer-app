@@ -40,7 +40,7 @@ export default {
 	host_key_fingerprint: {
 		label: 'Huella del servidor',
 		help: 'Huella SHA256 de la clave del servidor. Se obtiene al comprobar la conexión y debe confirmarse.',
-		check: 'Comprobar y confirmar',
+		check: 'Comprobar',
 		empty: 'Sin confirmar',
 	},
 	key: {
