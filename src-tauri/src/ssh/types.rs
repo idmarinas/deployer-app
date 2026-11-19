@@ -92,6 +92,15 @@ pub struct RemoteDownloadResult {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export, export_to = "tauri-types.d.ts")]
+pub enum RemoteFinishStatus {
+    Success,
+    Error,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "event", rename_all = "snake_case")]
 #[ts(export, export_to = "tauri-types.d.ts")]
 pub enum RemoteConsoleEvent {
@@ -99,11 +108,15 @@ pub enum RemoteConsoleEvent {
     Started { job_id: u64 },
     /// Fragmento de output acumulado del comando o de la transferencia.
     OutputChunk { chunk: String },
-    /// Operación finalizada; incluye el código de salida (si aplica).
+    /// Operación finalizada con su estado real (éxito, error o cancelación).
     Finished {
+        status: RemoteFinishStatus,
         exit_code: i64,
         duration_seconds: i64,
+        /// Mensaje de error/cancelación cuando aplica; `null` en éxito.
+        message: Option<String>,
     },
-    /// Error de nivel de transporte (conexión, timeout, SFTP).
+    /// Error de nivel de transporte/transferencia. Se mantiene por compatibilidad;
+    /// el estado terminal canónico viaja en `Finished`.
     Error { message: String },
 }

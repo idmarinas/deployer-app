@@ -117,7 +117,11 @@ ssh_reconnect_attempts: number | null, };
 
 export type RemoteCommandResult = { exit_code: number, output: string, duration_seconds: number, };
 
-export type RemoteConsoleEvent = { "event": "started", job_id: number, } | { "event": "output_chunk", chunk: string, } | { "event": "finished", exit_code: number, duration_seconds: number, } | { "event": "error", message: string, };
+export type RemoteConsoleEvent = { "event": "started", job_id: number, } | { "event": "output_chunk", chunk: string, } | { "event": "finished", status: RemoteFinishStatus, exit_code: number, duration_seconds: number, 
+/**
+ * Mensaje de error/cancelación cuando aplica; `null` en éxito.
+ */
+message: string | null, } | { "event": "error", message: string, };
 
 export type RemoteDownloadInput = { host_id: number, 
 /**
@@ -151,6 +155,8 @@ content_base64: string | null,
  * Ruta local donde se guardó el archivo (si se indicó `local_path`).
  */
 saved_to: string | null, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
+
+export type RemoteFinishStatus = "success" | "error" | "cancelled";
 
 export type RemoteTransferResult = { bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 

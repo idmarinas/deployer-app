@@ -63,9 +63,16 @@ export default function useRemoteCommand() {
 					break
 				case 'finished':
 					lastExitCode.value = event.exit_code
+					// Compatibilidad: el evento `error` ya aporta el mensaje; se evita
+					// redundancia visible rellenando solo si aún no hay mensaje.
+					if (event.status !== 'success' && event.message && !errorMessage.value) {
+						errorMessage.value = redactSecrets(event.message, secrets)
+					}
 					break
 				case 'error':
-					errorMessage.value = redactSecrets(event.message, secrets)
+					if (!errorMessage.value) {
+						errorMessage.value = redactSecrets(event.message, secrets)
+					}
 					break
 			}
 		}

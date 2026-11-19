@@ -11,7 +11,9 @@ use crate::ssh::keys;
 use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshError, SshSession};
 
 use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard};
-use crate::ssh::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent};
+use crate::ssh::types::{
+    RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent, RemoteFinishStatus,
+};
 
 /// Timeout por defecto para la ejecución remota (segundos).
 const DEFAULT_TIMEOUT_SECS: u64 = 300;
@@ -198,7 +200,9 @@ fn emit_error(channel: &Channel<RemoteConsoleEvent>, message: &str) {
 
 fn emit_finished(channel: &Channel<RemoteConsoleEvent>, exit_code: i64, duration_seconds: i64) {
     let _ = channel.send(RemoteConsoleEvent::Finished {
+        status: RemoteFinishStatus::Success,
         exit_code,
         duration_seconds,
+        message: None,
     });
 }

@@ -14,8 +14,8 @@ use crate::ssh::{connect_to_host_by_id, open_sftp_session, SshError};
 
 use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard, CANCELLED_MSG};
 use crate::ssh::types::{
-    RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteTransferResult,
-    RemoteUploadInput,
+    RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteFinishStatus,
+    RemoteTransferResult, RemoteUploadInput,
 };
 
 /// Sube un archivo (o directorio) local al servidor remoto vía SFTP.
@@ -34,6 +34,8 @@ pub async fn ssh_upload_file(
     let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
     emit_started(&channel, job_id);
 
+    let start = Instant::now();
+
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
         input.host_id,
@@ -44,27 +46,22 @@ pub async fn ssh_upload_file(
     {
         Ok(v) => v,
         Err(e) => {
-            emit_error(&channel, e.display_message());
-            return err_response(e);
+            return emit_terminal_and_err(&channel, start, e);
         }
     };
 
     if let Err(e) = session.ensure_connected().await {
-        emit_error(&channel, e.display_message());
-        return err_response(e);
+        return emit_terminal_and_err(&channel, start, e);
     }
 
     let sftp = match open_sftp_session(&mut session).await {
         Ok(s) => s,
         Err(e) => {
-            emit_error(&channel, &e);
-            return err_response(SshError::transfer_failed(&e));
+            return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e));
         }
     };
 
-    let start = Instant::now();
     let overwrite = input.overwrite.unwrap_or(true);
-    let force_dir = input.recursive.unwrap_or(false);
 
     let src = Path::new(&input.local_path).to_path_buf();
     let dest = Path::new(&input.remote_path).to_path_buf();
@@ -75,48 +72,70 @@ pub async fn ssh_upload_file(
         });
     };
 
-    let result = if force_dir {
-        transfer_utils::upload_dir(
-            &sftp,
-            &src,
-            &dest,
-            overwrite,
-            input.chmod.as_deref(),
-            Some(&token),
-            &mut emit,
-        )
-        .await
-    } else {
-        // Auto-detecta archivo o directorio según el tipo local.
-        transfer_utils::upload(
-            &sftp,
-            &src,
-            &dest,
-            overwrite,
-            input.chmod.as_deref(),
-            Some(&token),
-            &mut emit,
-        )
-        .await
+    // Some(true) → directorio recursivo; Some(false) → archivo simple;
+    // None → auto-detecta según el tipo local.
+    let result = match input.recursive {
+        Some(true) => {
+            transfer_utils::upload_dir(
+                &sftp,
+                &src,
+                &dest,
+                overwrite,
+                input.chmod.as_deref(),
+                Some(&token),
+                &mut emit,
+            )
+            .await
+        }
+        Some(false) => {
+            transfer_utils::upload_single_file(
+                &sftp,
+                &src,
+                &dest,
+                overwrite,
+                input.chmod.as_deref(),
+                Some(&token),
+                &mut emit,
+            )
+            .await
+        }
+        None => {
+            transfer_utils::upload(
+                &sftp,
+                &src,
+                &dest,
+                overwrite,
+                input.chmod.as_deref(),
+                Some(&token),
+                &mut emit,
+            )
+            .await
+        }
     };
 
     let result = match result {
         Ok(r) => r,
         Err(e) => {
-            emit_error(&channel, &e);
             let error = if token.is_cancelled() {
                 SshError::cancelled()
             } else {
                 SshError::transfer_failed(&e)
             };
-            return err_response(error);
+            let _ = session.disconnect().await;
+            return emit_terminal_and_err(&channel, start, error);
         }
     };
 
     let _ = session.disconnect().await;
 
     let duration_seconds = start.elapsed().as_secs() as i64;
-    emit_finished(&channel, duration_seconds);
+    emit_finished(
+        &channel,
+        RemoteFinishStatus::Success,
+        0,
+        duration_seconds,
+        None,
+    );
 
     Ok(CommandResponse::ok(
         RemoteTransferResult {
@@ -144,6 +163,8 @@ pub async fn ssh_download_file(
     let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
     emit_started(&channel, job_id);
 
+    let start = Instant::now();
+
     let (mut session, _host) = match connect_to_host_by_id(
         &app,
         input.host_id,
@@ -154,25 +175,21 @@ pub async fn ssh_download_file(
     {
         Ok(v) => v,
         Err(e) => {
-            emit_error(&channel, e.display_message());
-            return err_response(e);
+            return emit_terminal_and_err(&channel, start, e);
         }
     };
 
     if let Err(e) = session.ensure_connected().await {
-        emit_error(&channel, e.display_message());
-        return err_response(e);
+        return emit_terminal_and_err(&channel, start, e);
     }
 
     let sftp = match open_sftp_session(&mut session).await {
         Ok(s) => s,
         Err(e) => {
-            emit_error(&channel, &e);
-            return err_response(SshError::transfer_failed(&e));
+            return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e));
         }
     };
 
-    let start = Instant::now();
     let overwrite = input.overwrite.unwrap_or(true);
 
     let src = Path::new(&input.remote_path).to_path_buf();
@@ -228,13 +245,13 @@ pub async fn ssh_download_file(
         match result {
             Ok(r) => (None, Some(local_path.to_string()), r),
             Err(e) => {
-                emit_error(&channel, &e);
                 let error = if token.is_cancelled() {
                     SshError::cancelled()
                 } else {
                     SshError::transfer_failed(&e)
                 };
-                return err_response(error);
+                let _ = session.disconnect().await;
+                return emit_terminal_and_err(&channel, start, error);
             }
         }
     } else {
@@ -244,9 +261,8 @@ pub async fn ssh_download_file(
         let mut remote_file = match sftp.open(src_str.as_str()).await {
             Ok(f) => f,
             Err(e) => {
-                let msg = e.to_string();
-                emit_error(&channel, &msg);
-                return err_response(SshError::transfer_failed(&msg));
+                let _ = session.disconnect().await;
+                return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e.to_string()));
             }
         };
 
@@ -254,17 +270,15 @@ pub async fn ssh_download_file(
         loop {
             if token.is_cancelled() {
                 let _ = session.disconnect().await;
-                emit_error(&channel, CANCELLED_MSG);
-                return err_response(SshError::cancelled());
+                return emit_terminal_and_err(&channel, start, SshError::cancelled());
             }
 
             let mut chunk = vec![0u8; SFTP_BUFFER_SIZE];
             let n = match remote_file.read(&mut chunk).await {
                 Ok(n) => n,
                 Err(e) => {
-                    let msg = e.to_string();
-                    emit_error(&channel, &msg);
-                    return err_response(SshError::transfer_failed(&msg));
+                    let _ = session.disconnect().await;
+                    return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e.to_string()));
                 }
             };
 
@@ -288,7 +302,13 @@ pub async fn ssh_download_file(
     let _ = session.disconnect().await;
 
     let duration_seconds = start.elapsed().as_secs() as i64;
-    emit_finished(&channel, duration_seconds);
+    emit_finished(
+        &channel,
+        RemoteFinishStatus::Success,
+        0,
+        duration_seconds,
+        None,
+    );
 
     Ok(CommandResponse::ok(
         RemoteDownloadResult {
@@ -314,9 +334,48 @@ fn emit_error(channel: &Channel<RemoteConsoleEvent>, message: &str) {
     });
 }
 
-fn emit_finished(channel: &Channel<RemoteConsoleEvent>, duration_seconds: i64) {
+fn emit_finished(
+    channel: &Channel<RemoteConsoleEvent>,
+    status: RemoteFinishStatus,
+    exit_code: i64,
+    duration_seconds: i64,
+    message: Option<String>,
+) {
     let _ = channel.send(RemoteConsoleEvent::Finished {
-        exit_code: 0,
+        status,
+        exit_code,
         duration_seconds,
+        message,
     });
+}
+
+/// Emite el estado terminal de un fallo/cancelación (evento `error` por
+/// compatibilidad + `Finished` con el estado real) y devuelve la respuesta de
+/// error correspondiente.
+fn emit_terminal_and_err<T>(
+    channel: &Channel<RemoteConsoleEvent>,
+    start: Instant,
+    error: SshError,
+) -> Result<CommandResponse<T>, String> {
+    let duration_seconds = start.elapsed().as_secs() as i64;
+    let message = error.display_message().to_string();
+    let cancelled = message == CANCELLED_MSG;
+
+    // Compatibilidad: la UI ya escucha `error`; se evita redundancia visible en
+    // el frontend (no se muestra dos veces el mismo texto).
+    emit_error(channel, &message);
+
+    emit_finished(
+        channel,
+        if cancelled {
+            RemoteFinishStatus::Cancelled
+        } else {
+            RemoteFinishStatus::Error
+        },
+        if cancelled { 130 } else { 1 },
+        duration_seconds,
+        Some(message),
+    );
+
+    err_response(error)
 }
