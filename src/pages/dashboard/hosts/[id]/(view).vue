@@ -254,7 +254,12 @@ function splitPackageVersion(version: string): { upstream: string; revision: str
  * disponible. Si solo cambia la revisión de empaquetado, devuelve "packaging"
  * (el software es el mismo, solo se reempaquetó).
  */
-function computeUpdateType(current: string, available: string, currentRevision: string, availableRevision: string): string {
+function computeUpdateType(
+	current: string,
+	available: string,
+	currentRevision: string,
+	availableRevision: string,
+): string {
 	if (!current || !available) return 'unknown'
 
 	// Misma versión upstream: solo hay novedad si cambió la revisión de empaquetado.
@@ -314,12 +319,7 @@ async function checkUpdates() {
 			const available = splitPackageVersion(availables[i] || '')
 			const repo = repos[i] || ''
 			const is_security = repo.toLowerCase().includes('security')
-			const update_type = computeUpdateType(
-				current.upstream,
-				available.upstream,
-				current.revision,
-				available.revision,
-			)
+			const update_type = computeUpdateType(current.upstream, available.upstream, current.revision, available.revision)
 			const priority = is_security ? 'high' : update_type === 'major' ? 'medium' : 'low'
 
 			return {
@@ -429,30 +429,36 @@ provide<Ref<boolean>>('isOperating', isOperating)
 			:on-toggle="onToggleEnabled"
 		>
 			<template #title-right>
-				<UBadge
-					:icon="ICONS.server.server"
-					:label="`${hostData.username}@${hostData.host}:${hostData.port}`"
-					variant="outline"
-					class="lowercase"
-				/>
-				<UBadge
-					variant="outline"
-					:label="
-						t(
-							hostData.auth_type === 'password'
-								? 'form.hosts.auth_type.select.password'
-								: 'form.hosts.auth_type.select.key',
-						)
-					"
-					:color="hostData.auth_type === 'password' ? 'neutral' : 'info'"
-					:icon="hostData.auth_type === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key"
-				/>
-				<UBadge
-					variant="outline"
-					:label="`${t('pages.hosts.manage.host_key_fingerprint')}: ${hostData.host_key_fingerprint || t('pages.hosts.manage.host_key_fingerprint_empty')}`"
-					icon="i-tabler-fingerprint"
-					class="font-mono"
-				/>
+				<div class="flex flex-col items-center gap-3">
+					<div class="w-full flex items-center justify-end gap-3">
+						<UBadge
+							:icon="ICONS.server.server"
+							:label="`${hostData.username}@${hostData.host}:${hostData.port}`"
+							variant="outline"
+							class="lowercase"
+						/>
+						<UBadge
+							variant="outline"
+							:label="
+								t(
+									hostData.auth_type === 'password'
+										? 'form.hosts.auth_type.select.password'
+										: 'form.hosts.auth_type.select.key',
+								)
+							"
+							:color="hostData.auth_type === 'password' ? 'neutral' : 'info'"
+							:icon="hostData.auth_type === 'password' ? ICONS.auth.passwordUser : ICONS.auth.key"
+						/>
+					</div>
+					<div>
+						<UBadge
+							variant="outline"
+							:label="`${t('pages.hosts.manage.host_key_fingerprint')}: ${hostData.host_key_fingerprint || t('pages.hosts.manage.host_key_fingerprint_empty')}`"
+							icon="i-tabler-fingerprint"
+							class="font-mono"
+						/>
+					</div>
+				</div>
 			</template>
 		</ViewCard>
 
