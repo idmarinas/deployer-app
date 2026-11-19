@@ -85,6 +85,10 @@ export function useSideberMenu() {
 			label: t('components.sidebar.trash'),
 			icon: ICONS.actions.trash,
 			to: { name: 'dashboard-trash' },
+			ui: {
+				link: 'text-error before:outline-error/25 hover:text-error',
+				linkLeadingIcon: 'text-error group-hover:text-error',
+			},
 		},
 	])
 
