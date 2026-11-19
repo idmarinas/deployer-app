@@ -2,6 +2,30 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (19 nov 2026 — Unificar SSH y remote: verificación y cierre)
+
+**Nota del usuario:** confirmó que todo está correcto y pidió cerrar el plan. Detalle en `AGENTS.unificar-ssh-remote-cierre.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Bindings y rutas**: `tauri-types.d.ts` conserva `AuthType` y los 7 tipos `Remote*` sin `HostSystemInfo`; sin referencias a `commands/remote/` en `src-tauri/src/` ni en `docs/content/`.
+2. **No regresión**: inventario §3.5 del diseño recorrido; los cuatro archivos trasladados solo difieren del original en los imports; sin consolidación de duplicaciones.
+3. **Cierre**: plan de traslado archivado y registro centralizado en este historial.
+
+**Verificación:** confirmada por el usuario (`vue-tsc --noEmit && vite build` sin errores y visto bueno funcional de consola remota, transferencias, `test_connection`, `export_public_key` y runner de comandos guardados).
+
+---
+
+## Tareas completadas (19 nov 2026 — Unificar SSH y remote: traslado literal)
+
+**Nota del usuario:** dio por terminado el plan de traslado y pidió pasar al plan de cierre. Detalle en `AGENTS.unificar-ssh-remote-traslado.PLAN.md` (archivado en `.agents/plans.done/`).
+
+1. **Traslado literal**: `cancel.rs`, `exec.rs`, `transfer_commands.rs` y `types.rs` movidos a `ssh/`; hashes SHA256 verificados y solo ajustados los imports (`crate::ssh::...`). Upload/download sin cambios de lógica.
+2. **Registro**: `ssh/mod.rs`, `commands/mod.rs` y `lib.rs` conectados; `commands/remote/` eliminado, sin referencias residuales en `src-tauri/src/`.
+3. **Documentación**: `AGENTS.backend.md` y `AGENTS.frontend.md` actualizados con el módulo único SSH y la excepción de comandos Tauri en `ssh/`.
+
+**Verificación:** el usuario confirmó que `vue-tsc --noEmit && vite build` termina sin errores (hubo que corregir `TrashDetails.vue` para pasar `modelValue` a `ItemCard`). La verificación funcional de SSH/SFTP queda pendiente y se recoge en el plan de cierre.
+
+---
+
 ## Tareas completadas (18 nov 2026 — Parámetros de entrada en comandos)
 
 **Nota del usuario:** dio por completado el plan de implementación al no quedar trabajo funcional pendiente. Detalle en `AGENTS.command-inputs-model.PLAN.md`, `AGENTS.command-inputs-runner.PLAN.md`, `AGENTS.command-inputs-form.PLAN.md`, `AGENTS.command-inputs-dialog.PLAN.md` y `AGENTS.command-inputs-docs.PLAN.md` (archivados en `.agents/plans.done/`). Queda pendiente la verificación manual.
