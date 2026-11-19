@@ -58,10 +58,11 @@ src-tauri/src/
 │   ├── session.rs         ← SshSession, HostCredentials, SshCredentials, decrypt_host_credentials
 │   ├── helpers.rs         ← open_sftp_session, open_command_channel, shell_escape
 │   ├── transfer.rs        ← transferencias genéricas (aceptan Option<&CancellationToken>, CANCELLED_MSG, SFTP_BUFFER_SIZE)
+│   ├── events.rs          ← helpers de Channel (emit_started/output/error/finished + cierre terminal de transferencias)
 │   ├── exec.rs            ← ssh_execute_command + run_command_streaming (consola remota)
-│   ├── transfer_commands.rs← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
+│   ├── transfer_commands.rs← ssh_upload_file + ssh_download_file + pipeline SFTP compartido (delegan en ssh::transfer)
 │   ├── cancel.rs          ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
-│   └── types.rs           ← 7 tipos ts-rs de la consola remota
+│   └── types.rs           ← tipos ts-rs de la consola remota (eventos, inputs y resultados)
 └── tables.rs              ← AUTOGENERADO (bun run tables:generate) - constantes de nombres de tablas
 ```
 

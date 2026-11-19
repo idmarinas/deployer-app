@@ -1,6 +1,7 @@
 pub mod cancel;
 mod connect;
 mod error;
+pub mod events;
 pub mod exec;
 mod helpers;
 mod session;

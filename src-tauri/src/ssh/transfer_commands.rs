@@ -7,12 +7,12 @@ use tokio::io::AsyncReadExt;
 use tokio::time::Instant;
 
 use crate::response::CommandResponse;
-use crate::ssh::error::err_response;
+use crate::ssh::events;
 use crate::ssh::keys;
 use crate::ssh::transfer::{self as transfer_utils, SFTP_BUFFER_SIZE, TransferResult};
-use crate::ssh::{connect_to_host_by_id, open_sftp_session, SshError};
+use crate::ssh::{connect_to_host_by_id, open_sftp_session, SshError, SshSession};
 
-use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard, CANCELLED_MSG};
+use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard};
 use crate::ssh::types::{
     RemoteConsoleEvent, RemoteDownloadInput, RemoteDownloadResult, RemoteFinishStatus,
     RemoteTransferResult, RemoteUploadInput,
@@ -32,33 +32,21 @@ pub async fn ssh_upload_file(
 ) -> Result<CommandResponse<RemoteTransferResult>, String> {
     let (job_id, token) = state.register();
     let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
-    emit_started(&channel, job_id);
+    events::emit_started(&channel, job_id);
 
     let start = Instant::now();
 
-    let (mut session, _host) = match connect_to_host_by_id(
+    let (session, sftp) = match connect_sftp(
         &app,
         input.host_id,
         input.ssh_reconnect_attempts.unwrap_or(3),
-        true,
+        &channel,
+        start,
     )
     .await
     {
         Ok(v) => v,
-        Err(e) => {
-            return emit_terminal_and_err(&channel, start, e);
-        }
-    };
-
-    if let Err(e) = session.ensure_connected().await {
-        return emit_terminal_and_err(&channel, start, e);
-    }
-
-    let sftp = match open_sftp_session(&mut session).await {
-        Ok(s) => s,
-        Err(e) => {
-            return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e));
-        }
+        Err(e) => return e,
     };
 
     let overwrite = input.overwrite.unwrap_or(true);
@@ -122,14 +110,14 @@ pub async fn ssh_upload_file(
                 SshError::transfer_failed(&e)
             };
             let _ = session.disconnect().await;
-            return emit_terminal_and_err(&channel, start, error);
+            return events::emit_transfer_terminal_error(&channel, start, error);
         }
     };
 
     let _ = session.disconnect().await;
 
     let duration_seconds = start.elapsed().as_secs() as i64;
-    emit_finished(
+    events::emit_finished(
         &channel,
         RemoteFinishStatus::Success,
         0,
@@ -161,33 +149,21 @@ pub async fn ssh_download_file(
 ) -> Result<CommandResponse<RemoteDownloadResult>, String> {
     let (job_id, token) = state.register();
     let _job_guard = RemoteJobGuard::new(state.inner(), job_id);
-    emit_started(&channel, job_id);
+    events::emit_started(&channel, job_id);
 
     let start = Instant::now();
 
-    let (mut session, _host) = match connect_to_host_by_id(
+    let (session, sftp) = match connect_sftp(
         &app,
         input.host_id,
         input.ssh_reconnect_attempts.unwrap_or(3),
-        true,
+        &channel,
+        start,
     )
     .await
     {
         Ok(v) => v,
-        Err(e) => {
-            return emit_terminal_and_err(&channel, start, e);
-        }
-    };
-
-    if let Err(e) = session.ensure_connected().await {
-        return emit_terminal_and_err(&channel, start, e);
-    }
-
-    let sftp = match open_sftp_session(&mut session).await {
-        Ok(s) => s,
-        Err(e) => {
-            return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e));
-        }
+        Err(e) => return e,
     };
 
     let overwrite = input.overwrite.unwrap_or(true);
@@ -251,7 +227,7 @@ pub async fn ssh_download_file(
                     SshError::transfer_failed(&e)
                 };
                 let _ = session.disconnect().await;
-                return emit_terminal_and_err(&channel, start, error);
+                return events::emit_transfer_terminal_error(&channel, start, error);
             }
         }
     } else {
@@ -262,7 +238,7 @@ pub async fn ssh_download_file(
             Ok(f) => f,
             Err(e) => {
                 let _ = session.disconnect().await;
-                return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e.to_string()));
+                return events::emit_transfer_terminal_error(&channel, start, SshError::transfer_failed(&e.to_string()));
             }
         };
 
@@ -270,7 +246,7 @@ pub async fn ssh_download_file(
         loop {
             if token.is_cancelled() {
                 let _ = session.disconnect().await;
-                return emit_terminal_and_err(&channel, start, SshError::cancelled());
+                return events::emit_transfer_terminal_error(&channel, start, SshError::cancelled());
             }
 
             let mut chunk = vec![0u8; SFTP_BUFFER_SIZE];
@@ -278,7 +254,7 @@ pub async fn ssh_download_file(
                 Ok(n) => n,
                 Err(e) => {
                     let _ = session.disconnect().await;
-                    return emit_terminal_and_err(&channel, start, SshError::transfer_failed(&e.to_string()));
+                    return events::emit_transfer_terminal_error(&channel, start, SshError::transfer_failed(&e.to_string()));
                 }
             };
 
@@ -302,7 +278,7 @@ pub async fn ssh_download_file(
     let _ = session.disconnect().await;
 
     let duration_seconds = start.elapsed().as_secs() as i64;
-    emit_finished(
+    events::emit_finished(
         &channel,
         RemoteFinishStatus::Success,
         0,
@@ -322,60 +298,37 @@ pub async fn ssh_download_file(
     ))
 }
 
-// ── Helpers de canal ─────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-fn emit_started(channel: &Channel<RemoteConsoleEvent>, job_id: u64) {
-    let _ = channel.send(RemoteConsoleEvent::Started { job_id });
-}
-
-fn emit_error(channel: &Channel<RemoteConsoleEvent>, message: &str) {
-    let _ = channel.send(RemoteConsoleEvent::Error {
-        message: message.to_string(),
-    });
-}
-
-fn emit_finished(
-    channel: &Channel<RemoteConsoleEvent>,
-    status: RemoteFinishStatus,
-    exit_code: i64,
-    duration_seconds: i64,
-    message: Option<String>,
-) {
-    let _ = channel.send(RemoteConsoleEvent::Finished {
-        status,
-        exit_code,
-        duration_seconds,
-        message,
-    });
-}
-
-/// Emite el estado terminal de un fallo/cancelación (evento `error` por
-/// compatibilidad + `Finished` con el estado real) y devuelve la respuesta de
-/// error correspondiente.
-fn emit_terminal_and_err<T>(
+/// Abre sesión SSH + SFTP para una transferencia, emitiendo el cierre terminal
+/// (error + finished) si falla en cualquier paso.
+async fn connect_sftp<T>(
+    app: &AppHandle,
+    host_id: i64,
+    ssh_reconnect_attempts: u32,
     channel: &Channel<RemoteConsoleEvent>,
     start: Instant,
-    error: SshError,
-) -> Result<CommandResponse<T>, String> {
-    let duration_seconds = start.elapsed().as_secs() as i64;
-    let message = error.display_message().to_string();
-    let cancelled = message == CANCELLED_MSG;
+) -> Result<(SshSession, russh_sftp::client::SftpSession), Result<CommandResponse<T>, String>> {
+    let (mut session, _host) =
+        match connect_to_host_by_id(app, host_id, ssh_reconnect_attempts, true).await {
+            Ok(v) => v,
+            Err(e) => return Err(events::emit_transfer_terminal_error(channel, start, e)),
+        };
 
-    // Compatibilidad: la UI ya escucha `error`; se evita redundancia visible en
-    // el frontend (no se muestra dos veces el mismo texto).
-    emit_error(channel, &message);
+    if let Err(e) = session.ensure_connected().await {
+        return Err(events::emit_transfer_terminal_error(channel, start, e));
+    }
 
-    emit_finished(
-        channel,
-        if cancelled {
-            RemoteFinishStatus::Cancelled
-        } else {
-            RemoteFinishStatus::Error
-        },
-        if cancelled { 130 } else { 1 },
-        duration_seconds,
-        Some(message),
-    );
+    let sftp = match open_sftp_session(&mut session).await {
+        Ok(s) => s,
+        Err(e) => {
+            return Err(events::emit_transfer_terminal_error(
+                channel,
+                start,
+                SshError::transfer_failed(&e),
+            ))
+        }
+    };
 
-    err_response(error)
+    Ok((session, sftp))
 }
