@@ -27,13 +27,6 @@ export function useSideberMenu() {
 		// 	},
 		// ],
 		[
-			// Claves de acceso
-			{
-				label: t('components.sidebar.passkeys'),
-				icon: getModuleIcon(ModulesName.Passkeys),
-				to: { name: 'dashboard-passkeys' },
-				// description: 'Gestionar claves SSH (RSA, ED25519, ECDSA)'
-			},
 			// Servidores
 			{
 				label: t('components.sidebar.hosts'),
@@ -41,6 +34,15 @@ export function useSideberMenu() {
 				to: { name: 'dashboard-hosts' },
 				// description: 'Configurar conexiones a servidores'
 			},
+			// Claves de acceso
+			{
+				label: t('components.sidebar.passkeys'),
+				icon: getModuleIcon(ModulesName.Passkeys),
+				to: { name: 'dashboard-passkeys' },
+				// description: 'Gestionar claves SSH (RSA, ED25519, ECDSA)'
+			},
+		],
+		[
 			// Comandos
 			{
 				label: t('components.sidebar.commands'),
@@ -106,18 +108,18 @@ export function useSideberMenu() {
 				//   kbds: ['shift', 'T']
 				// },
 				{
+					label: t('components.navigation.add.host.label'),
+					suffix: t('components.navigation.add.host.description'),
+					icon: getModuleIcon(ModulesName.Hosts, 'singular'),
+					to: '/dashboard/hosts/add',
+					kbds: ['shift', 'H'],
+				},
+				{
 					label: t('components.navigation.add.passkey.label'),
 					suffix: t('components.navigation.add.passkey.description'),
 					icon: getModuleIcon(ModulesName.Passkeys),
 					to: '/dashboard/passkeys/add',
 					kbds: ['shift', 'K'],
-				},
-				{
-					label: t('components.navigation.add.host.label'),
-					suffix: t('components.navigation.add.host.description'),
-					icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
-					to: '/dashboard/hosts/add',
-					kbds: ['shift', 'H'],
 				},
 				{
 					label: t('components.navigation.add.command.label'),
@@ -156,32 +158,11 @@ export function useDashboardButton() {
 
 	const items = computed<DropdownMenuItem[]>(() => [
 		{
-			label: t('components.sidebar.projects'),
-			type: 'label',
-		},
-		// {
-		// 	label: t('components.navigation.add.docker_compose.label'),
-		// 	description: t('components.navigation.add.docker_compose.description'),
-		// 	icon: getModuleIcon('docker_composes'),
-		// 	to: { name: 'dashboard-docker_composes-add' },
-		// 	kbds: ['shift', 'D'],
-		// },
-		// {
-		//   label: t('components.navigation.add.project.label'),
-		//   description: t('components.navigation.add.project.description'),
-		//   icon: getModuleIcon('projects', 'singular'),
-		//   to: '/dashboard/projects/add',
-		//   kbds: ['shift', 'P']
-		// },
-		// {
-		//   label: t('components.navigation.add.task.label'),
-		//   description: t('components.navigation.add.task.description'),
-		//   icon: getModuleIcon('tasks'),
-		//   to: '/dashboard/tasks/add',
-		//   kbds: ['shift', 'T']
-		// },
-		{
-			type: 'separator',
+			label: t('components.navigation.add.host.label'),
+			description: t('components.navigation.add.host.description'),
+			icon: getModuleIcon(ModulesName.Hosts, 'singular'),
+			to: { name: 'dashboard-hosts-add' },
+			kbds: ['shift', 'H'],
 		},
 		{
 			label: t('components.navigation.add.passkey.label'),
@@ -191,11 +172,7 @@ export function useDashboardButton() {
 			kbds: ['shift', 'K'],
 		},
 		{
-			label: t('components.navigation.add.host.label'),
-			description: t('components.navigation.add.host.description'),
-			icon: getModuleIcon(ModulesName.Passkeys, 'singular'),
-			to: { name: 'dashboard-hosts-add' },
-			kbds: ['shift', 'H'],
+			type: 'separator',
 		},
 		{
 			label: t('components.navigation.add.command.label'),
