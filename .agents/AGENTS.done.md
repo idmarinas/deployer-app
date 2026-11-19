@@ -2,6 +2,46 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: `recursive` y `Finished.exit_code` (3/4))
+
+**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 4/4. Detalle en `AGENTS.ssh-mejoras-transferencias.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con el plan 4/4 en **Planificando**; no se ejecuta sin autorización.
+
+1. **Estado terminal explícito**: `RemoteConsoleEvent::Finished` pasa a `{ status, exit_code, duration_seconds, message }` y se emite en todos los casos terminales; en transferencias `exit_code` es 0/130/1 según éxito/cancelación/error y se mantiene el evento `error` por compatibilidad sin redundancia visible.
+2. **`recursive` en upload**: `Some(true)` fuerza directorio, `Some(false)` fuerza archivo simple (`upload_single_file`) y `None` auto-detecta, alineado con download.
+3. **Ejecución de comandos**: `ssh_execute_command` emite el nuevo `Finished` de éxito con el `exit_code` real del proceso, conservando su semántica de respuesta.
+4. **Frontend y docs**: `useRemoteCommand.ts`, `AGENTS.backend.md`, `AGENTS.frontend.md` y §10 del diseño actualizados.
+
+**Verificación:** confirmada por el usuario (bindings, tipos, build y pruebas funcionales).
+
+---
+
+## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: timeout total y cancelación multi-job (2/4))
+
+**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 3/4. Detalle en `AGENTS.ssh-mejoras-ejecucion.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con los planes 3/4 y 4/4 en **Planificando**; no se ejecutan sin autorización.
+
+1. **Timeout total**: `run_command_streaming` envuelve el bucle completo en un único `tokio::time::timeout` con `timeout_secs` (300 s por defecto); el output ya no reinicia el reloj y se conservan chunks ~100 ms, `exit_code`, `Eof` y `duration_seconds`.
+2. **Cancelación multi-job**: `ssh/cancel.rs` pasa a `AtomicU64` + `HashMap<u64, CancellationToken>` con `RemoteJobGuard` (RAII); `ssh_cancel_remote_job(job_id?: number)` cancela el job indicado o el último registrado.
+3. **Evento y frontend**: `RemoteConsoleEvent::Started { job_id }` por el Channel; `useRemoteCommand.ts` expone `currentJobId` y `cancel(jobId?)`; bindings regenerados.
+4. **Documentación**: `AGENTS.backend.md`, `AGENTS.frontend.md` y §10 del diseño actualizados, con las desviaciones registradas en el plan.
+
+**Verificación:** confirmada por el usuario (bindings, tipos, build y pruebas funcionales).
+
+---
+
+## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: triple timeout y verificación de clave (1/4))
+
+**Nota del usuario:** confirmó que todo está correcto y dio el plan por terminado. Detalle en `AGENTS.ssh-mejoras-conexion.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con los planes 2/4, 3/4 y 4/4 en **Planificando**; no se ejecutan sin que el usuario los pase a **Pendiente**.
+
+1. **Timeout y errores**: única constante `SSH_CONNECT_TIMEOUT_SECS = 15` en `ssh/session.rs`; familia `tauri.ssh.*` centralizada en `ssh/error.rs` (`SshError`), con las claves antiguas retiradas de Rust, locales y frontend.
+2. **Conexión centralizada**: `ssh/connect.rs` es el único punto de conexión; `test_connection` y `export_public_key` dejan de abrir pool de host y pasan por `ssh/`.
+3. **Huella del servidor**: columna `host_key_fingerprint` con migración `20261119131612_host_key_fingerprint`; `check_server_key` compara `SHA256:<base64>` y la ausencia o el cambio exigen reconfirmación manual.
+4. **Interfaz**: campo de solo lectura y botón *Comprobar y confirmar* en `HostForm.vue`, compartido por alta y edición mediante `useHostFingerprint.ts`; badge en la vista de detalle.
+5. **Documentación**: `AGENTS.backend.md`, `AGENTS.frontend.md`, `docs/content/es/004.hosts/`, §10 del diseño y locales es/en.
+
+**Verificación:** confirmada por el usuario.
+
+---
+
 ## Tareas completadas (19 nov 2026 — Unificar SSH y remote: verificación y cierre)
 
 **Nota del usuario:** confirmó que todo está correcto y pidió cerrar el plan. Detalle en `AGENTS.unificar-ssh-remote-cierre.PLAN.md` (archivado en `.agents/plans.done/`).
