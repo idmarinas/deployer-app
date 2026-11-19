@@ -6,7 +6,7 @@
 
 ## 1. Estructura de Comandos
 
-Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend** (lógica de backend que Drizzle no puede cubrir: SSH/SFTP, cripto de claves, acceso al vault de Stronghold, operaciones/gestión de BD). La infraestructura compartida (`helpers`, `response`, `ssh`, `crypto`) vive en `src-tauri/src/` (raíz del crate).
+Los comandos Tauri se organizan en `src-tauri/src/commands/`, **solo módulos con comandos expuestos al frontend** (lógica de backend que Drizzle no puede cubrir: SSH/SFTP, cripto de claves, acceso al vault de Stronghold, operaciones/gestión de BD). La infraestructura compartida (`helpers`, `response`, `ssh`, `crypto`) vive en `src-tauri/src/` (raíz del crate). **Excepción:** los comandos Tauri de SSH/SFTP viven en `src-tauri/src/ssh/`, el módulo único de ese dominio (ver §5).
 
 ### Estructura del crate
 
@@ -44,12 +44,6 @@ src-tauri/src/
 │   │   ├── export_public_key.rs
 │   │   ├── types.rs       ← KeyType (rsa | ed25519 | ecdsa)
 │   │   └── mod.rs
-│   ├── remote/            ← Comandos SSH/SFTP "sueltos" (consola remota)
-│   │   ├── exec.rs        ← ssh_execute_command (streaming por Channel, timeout, exit_code)
-│   │   ├── transfer.rs    ← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
-│   │   ├── cancel.rs      ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
-│   │   ├── types.rs       ← RemoteCommandInput/Result, RemoteUploadInput, RemoteDownloadInput/Result, RemoteConsoleEvent (Channel)
-│   │   └── mod.rs
 │   ├── stronghold.rs      ← get_vault_password, get_vault_path, check_vault_health (acceso read a crypto/stronghold.rs)
 │   └── mod.rs             ← re-exports de módulos + macro params!
 ├── crypto/                ← Cripto de las claves de cifrado (vault Stronghold de SOLO lectura)
@@ -58,12 +52,16 @@ src-tauri/src/
 │   └── mod.rs
 ├── helpers.rs             ← configured_sqlite_options(), create_configured_pool(), open_read_only_pool(), open_pool() → (pool, path)
 ├── response.rs            ← CommandResponse<T>
-├── ssh/                   ← Conexión SSH/SFTP (connect_to_host_by_id, SshSession, run_ssh_command, transferencias genéricas)
-│   ├── mod.rs             ← re-exports (connect_to_host_by_id, fetch_host_credentials, decrypt_host_credentials, run_ssh_command, open_command_channel, open_sftp_session, shell_escape, SshSession/…)
+├── ssh/                   ← ÚNICO módulo SSH: conexión, sesión, ejecución, transferencias y comandos Tauri
+│   ├── mod.rs             ← submódulos + re-exports (superficie pública única)
 │   ├── connect.rs         ← connect_to_host_by_id (SQL host+passkey + descifrado vía vault Stronghold), fetch_host_credentials
 │   ├── session.rs         ← SshSession, HostCredentials, SshCredentials, decrypt_host_credentials
-│   ├── helpers.rs         ← open_sftp_session, open_command_channel, run_ssh_command, shell_escape (normalización de output)
-│   └── transfer.rs        ← transferencias genéricas (aceptan Option<&CancellationToken>, CANCELLED_MSG, SFTP_BUFFER_SIZE)
+│   ├── helpers.rs         ← open_sftp_session, open_command_channel, shell_escape
+│   ├── transfer.rs        ← transferencias genéricas (aceptan Option<&CancellationToken>, CANCELLED_MSG, SFTP_BUFFER_SIZE)
+│   ├── exec.rs            ← ssh_execute_command + run_command_streaming (consola remota)
+│   ├── transfer_commands.rs← ssh_upload_file + ssh_download_file (delegan en ssh::transfer)
+│   ├── cancel.rs          ← estado RemoteJobCancel (CancellationToken) + ssh_cancel_remote_job
+│   └── types.rs           ← 7 tipos ts-rs de la consola remota
 └── tables.rs              ← AUTOGENERADO (bun run tables:generate) - constantes de nombres de tablas
 ```
 
@@ -95,7 +93,7 @@ Todos los comandos se registran en el `invoke_handler!` de `src-tauri/src/lib.rs
 
 - **Todas las lecturas y escrituras** sobre las tablas de negocio se hacen desde el frontend con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`), que delega en el comando genérico `query_raw` (`src-tauri/src/commands/database/query_raw.rs`).
 - `query_raw` es un **ejecutor de SQL simple** (`sql`, `params`): devuelve `columns` + `rows`. **No hace cripto**: el cifrado/descifrado/enmascaramiento de los campos `encryptedText(...)` lo gestiona el frontend (`src/drizzle/drizzle.ts` + `src/drizzle/lib/stronghold.ts`, ver §4). No hay comandos Rust `crud_*` por entidad.
-- **Los comandos Rust solo existen para lógica de backend** que Drizzle no puede cubrir: SSH/SFTP (`hosts/`, `remote/`), cripto de claves (`passkeys/`), acceso al vault de Stronghold (`stronghold/`), y gestión/inicialización de BD (`database/`).
+- **Los comandos Rust solo existen para lógica de backend** que Drizzle no puede cubrir: SSH/SFTP (`ssh/`), cripto de claves (`passkeys/`), acceso al vault de Stronghold (`stronghold/`), y gestión/inicialización de BD (`database/`).
 - Antes de crear un comando Rust nuevo, comprobar si la lógica puede cubrirse con Drizzle (vía `query_raw`). Ver la tabla de decisión en `AGENTS.md`.
 
 ### Nombres de tablas
@@ -195,9 +193,9 @@ AES-256-GCM, nonce aleatorio de 12 bytes por cada cifrado.
 
 ---
 
-## 5. Consola remota (`commands/remote/`)
+## 5. Consola remota (`ssh/`)
 
-Comandos SSH/SFTP "sueltos" (no asociados a un compose) que usa la consola remota del frontend vía `useRemoteCommand.ts`:
+Comandos SSH/SFTP "sueltos" (no asociados a un compose), implementados en `ssh/`, que usa la consola remota del frontend vía `useRemoteCommand.ts`:
 
 - `ssh_execute_command(input, channel, state)`: abre sesión SSH + canal, ejecuta el comando con streaming de output por `Channel<RemoteConsoleEvent>` (eventos `output_chunk` con agregación ~100 ms, `finished` con `exit_code` y `duration_seconds`, `error`). Acepta `working_dir`, `timeout_secs` (default 300) y `ssh_reconnect_attempts` (default 3). Devuelve `CommandResponse<RemoteCommandResult>` con `success: true` incluso si el comando remoto falla (exit != 0); el `exit_code` viaja en `data` (0 = OK, -1 = desconocido).
 - `ssh_upload_file(input, channel)`: sube un archivo o directorio local (`local_path`) a `remote_path` vía SFTP. Auto-detecta archivo/directorio salvo que `recursive` sea `Some(true)`. Aplica `chmod` octal si se indica. Emite progreso por el mismo Channel.
@@ -205,7 +203,7 @@ Comandos SSH/SFTP "sueltos" (no asociados a un compose) que usa la consola remot
 - Todos toman `channel: Channel<RemoteConsoleEvent>` **obligatorio** (no es opcional: `Channel` no implementa `Deserialize`).
 - Errores de transporte (conexión, timeout) → `success: false` con `message_key` (`tauri.remote.errors.*`); el mensaje humanizado también se emite como evento `error` por el Channel.
 - Estos comandos usan `connect_to_host_by_id(..., enabled_only: true)`.
-- **Cancelación:** los tres comandos registran un `CancellationToken` en el estado `RemoteJobCancel` (compartido, `commands/remote/cancel.rs`) al empezar, y `ssh_cancel_remote_job` (sin args) cancela el job en curso. En `exec.rs` la cancelación se espera con `tokio::select!` sobre `token.cancelled()`; en `ssh/transfer.rs` todas las funciones aceptan `cancel: Option<&CancellationToken>` (`None` = nunca cancela) y comprueban el flag antes y entre operaciones. Al cancelar devuelven error con clave `tauri.remote.errors.cancelled`. **El frontend no debe lanzar varios jobs a la vez**: el estado solo guarda el último token.
+- **Cancelación:** los tres comandos registran un `CancellationToken` en el estado `RemoteJobCancel` (compartido, `ssh/cancel.rs`) al empezar, y `ssh_cancel_remote_job` (sin args) cancela el job en curso. En `exec.rs` la cancelación se espera con `tokio::select!` sobre `token.cancelled()`; en `ssh/transfer.rs` todas las funciones aceptan `cancel: Option<&CancellationToken>` (`None` = nunca cancela) y comprueban el flag antes y entre operaciones. Al cancelar devuelven error con clave `tauri.remote.errors.cancelled`. **El frontend no debe lanzar varios jobs a la vez**: el estado solo guarda el último token.
 
 ---
 

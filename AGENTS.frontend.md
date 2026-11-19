@@ -447,7 +447,7 @@ if (result.success) {
 
 Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT/UPDATE/DELETE sobre entidades se usa `db` (ver arriba).
 
-### Consola remota (`commands/remote/` + `useRemoteCommand`)
+### Consola remota (`ssh/` + `useRemoteCommand`)
 
 Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con streaming por Channel:
 
