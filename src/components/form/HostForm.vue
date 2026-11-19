@@ -73,6 +73,7 @@ async function checkFingerprint() {
 		:label="t('form.hosts.description.label')"
 		:help="t('form.hosts.description.help')"
 		:hint="t('form.shared.hint.optional')"
+    class="row-span-2"
 	>
 		<DescriptionEditor v-model="state.description" />
 	</UFormField>
