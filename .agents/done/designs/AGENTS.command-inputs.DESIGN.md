@@ -1,7 +1,7 @@
 # Diseño: Parámetros de entrada en comandos
 
-> **Estado: Aprobado** (Propuesta → Aprobado → Implementado; solo el usuario cambia el estado).
-> Aprobado por el usuario el 2026-11-18; la implementación se repartió en cinco planes (`.agents/plans.done/AGENTS.command-inputs-*.PLAN.md`), terminados el 2026-11-18.
+> **Estado: Implementado** (Propuesta → Aprobado → Implementado; solo el usuario cambia el estado).
+> Aprobado por el usuario el 2026-11-18; la implementación se repartió en cinco planes (`.agents/done/plans/AGENTS.command-inputs-*.PLAN.md`), terminados el 2026-11-18.
 > Este documento **no es un plan**.
 > No se ejecuta nada hasta que el usuario pase los planes a **Pendiente**.
 >

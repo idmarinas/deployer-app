@@ -1,7 +1,7 @@
 # Diseño: Unificar `ssh/` y `commands/remote/` en un único módulo SSH
 
 > **Estado: Implementado** (Propuesta → Aprobado → Implementado; solo el usuario cambia el estado).
-> El usuario lo aprobó el 2026-11-19 al pedir los planes y lo pasó a **Implementado** el mismo día, una vez terminados sus dos planes. Este documento **no es un plan**; los planes derivados están archivados en `.agents/plans.done/` y registrados en `.agents/AGENTS.done.md`.
+> El usuario lo aprobó el 2026-11-19 al pedir los planes y lo pasó a **Implementado** el mismo día, una vez terminados sus dos planes. Este documento **no es un plan**; los planes derivados están archivados en `.agents/done/plans/` y registrados en `.agents/done/AGENTS.done.md`.
 >
 > **Revisión (2026-11-18):** versión inicial. Incluye la limpieza previa de código sin uso, ejecutada antes de redactar el diseño por petición expresa del usuario (§3.2).
 >

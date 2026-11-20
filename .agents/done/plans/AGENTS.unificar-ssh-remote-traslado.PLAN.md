@@ -4,7 +4,7 @@
 
 **Terminado** — el usuario lo dio por completado el 2026-11-19 y pidió pasar al plan de cierre.
 
-**Diseño de origen:** `.agents/designs/AGENTS.unificar-ssh-remote.DESIGN.md`
+**Diseño de origen:** `.agents/done/designs/AGENTS.unificar-ssh-remote.DESIGN.md`
 
 ---
 

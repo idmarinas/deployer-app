@@ -4,7 +4,7 @@
 
 **Terminado** — el usuario lo dio por completado el 2026-11-18. Verificación manual (`bunx vue-tsc --noEmit`, `bun run build`) pendiente de que la ejecute el usuario.
 
-**Diseño de origen:** `.agents/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 4 de §7 y a §6.4 del diseño.
+**Diseño de origen:** `.agents/done/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 4 de §7 y a §6.4 del diseño.
 
 **Dependencias:** planes `AGENTS.command-inputs-model.PLAN.md` (contrato y columna), `AGENTS.command-inputs-runner.PLAN.md` (`params`, defaults y validación) y `AGENTS.command-inputs-form.PLAN.md` (inputs en el formulario y en el estado de edición).
 

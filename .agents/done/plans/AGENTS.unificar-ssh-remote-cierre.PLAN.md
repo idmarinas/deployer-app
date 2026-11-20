@@ -4,9 +4,9 @@
 
 **Terminado** — el usuario confirmó la verificación y dio el plan por completado el 2026-11-19.
 
-**Diseño de origen:** `.agents/designs/AGENTS.unificar-ssh-remote.DESIGN.md`
+**Diseño de origen:** `.agents/done/designs/AGENTS.unificar-ssh-remote.DESIGN.md`
 
-**Dependencia:** requería el plan `.agents/plans.done/AGENTS.unificar-ssh-remote-traslado.PLAN.md`, terminado por el usuario el 2026-11-19.
+**Dependencia:** requería el plan `.agents/done/plans/AGENTS.unificar-ssh-remote-traslado.PLAN.md`, terminado por el usuario el 2026-11-19.
 
 ---
 

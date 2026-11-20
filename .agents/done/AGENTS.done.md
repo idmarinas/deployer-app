@@ -4,7 +4,7 @@
 
 ## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: consolidar duplicaciones (4/4))
 
-**Nota del usuario:** confirmó que todo está correcto y dio por finalizado el plan. Detalle en `AGENTS.ssh-mejoras-duplicaciones.PLAN.md` (archivado en `.agents/plans.done/`). **La serie `ssh-mejoras` queda completa** (4/4).
+**Nota del usuario:** confirmó que todo está correcto y dio por finalizado el plan. Detalle en `AGENTS.ssh-mejoras-duplicaciones.PLAN.md` (archivado en `.agents/done/plans/`). **La serie `ssh-mejoras` queda completa** (4/4).
 
 1. **Helpers de eventos**: nuevo `ssh/events.rs` (`emit_started`, `emit_output_chunk`, `emit_error`, `emit_finished`, `emit_transfer_terminal_error`) usado por `exec.rs` y `transfer_commands.rs`, conservando las semánticas de cada dominio.
 2. **Pipeline SFTP compartido**: `connect_sftp` privado en `transfer_commands.rs` unifica `connect → ensure_connected → open_sftp_session` en upload/download sin cambiar claves ni puntos de emisión.
@@ -17,7 +17,7 @@
 
 ## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: `recursive` y `Finished.exit_code` (3/4))
 
-**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 4/4. Detalle en `AGENTS.ssh-mejoras-transferencias.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con el plan 4/4 en **Planificando**; no se ejecuta sin autorización.
+**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 4/4. Detalle en `AGENTS.ssh-mejoras-transferencias.PLAN.md` (archivado en `.agents/done/plans/`). La serie continúa con el plan 4/4 en **Planificando**; no se ejecuta sin autorización.
 
 1. **Estado terminal explícito**: `RemoteConsoleEvent::Finished` pasa a `{ status, exit_code, duration_seconds, message }` y se emite en todos los casos terminales; en transferencias `exit_code` es 0/130/1 según éxito/cancelación/error y se mantiene el evento `error` por compatibilidad sin redundancia visible.
 2. **`recursive` en upload**: `Some(true)` fuerza directorio, `Some(false)` fuerza archivo simple (`upload_single_file`) y `None` auto-detecta, alineado con download.
@@ -30,7 +30,7 @@
 
 ## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: timeout total y cancelación multi-job (2/4))
 
-**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 3/4. Detalle en `AGENTS.ssh-mejoras-ejecucion.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con los planes 3/4 y 4/4 en **Planificando**; no se ejecutan sin autorización.
+**Nota del usuario:** confirmó que todo está correcto y pidió pasar al plan 3/4. Detalle en `AGENTS.ssh-mejoras-ejecucion.PLAN.md` (archivado en `.agents/done/plans/`). La serie continúa con los planes 3/4 y 4/4 en **Planificando**; no se ejecutan sin autorización.
 
 1. **Timeout total**: `run_command_streaming` envuelve el bucle completo en un único `tokio::time::timeout` con `timeout_secs` (300 s por defecto); el output ya no reinicia el reloj y se conservan chunks ~100 ms, `exit_code`, `Eof` y `duration_seconds`.
 2. **Cancelación multi-job**: `ssh/cancel.rs` pasa a `AtomicU64` + `HashMap<u64, CancellationToken>` con `RemoteJobGuard` (RAII); `ssh_cancel_remote_job(job_id?: number)` cancela el job indicado o el último registrado.
@@ -43,7 +43,7 @@
 
 ## Tareas completadas (19 nov 2026 — Mejoras futuras de SSH: triple timeout y verificación de clave (1/4))
 
-**Nota del usuario:** confirmó que todo está correcto y dio el plan por terminado. Detalle en `AGENTS.ssh-mejoras-conexion.PLAN.md` (archivado en `.agents/plans.done/`). La serie continúa con los planes 2/4, 3/4 y 4/4 en **Planificando**; no se ejecutan sin que el usuario los pase a **Pendiente**.
+**Nota del usuario:** confirmó que todo está correcto y dio el plan por terminado. Detalle en `AGENTS.ssh-mejoras-conexion.PLAN.md` (archivado en `.agents/done/plans/`). La serie continúa con los planes 2/4, 3/4 y 4/4 en **Planificando**; no se ejecutan sin que el usuario los pase a **Pendiente**.
 
 1. **Timeout y errores**: única constante `SSH_CONNECT_TIMEOUT_SECS = 15` en `ssh/session.rs`; familia `tauri.ssh.*` centralizada en `ssh/error.rs` (`SshError`), con las claves antiguas retiradas de Rust, locales y frontend.
 2. **Conexión centralizada**: `ssh/connect.rs` es el único punto de conexión; `test_connection` y `export_public_key` dejan de abrir pool de host y pasan por `ssh/`.
@@ -57,7 +57,7 @@
 
 ## Tareas completadas (19 nov 2026 — Unificar SSH y remote: verificación y cierre)
 
-**Nota del usuario:** confirmó que todo está correcto y pidió cerrar el plan. Detalle en `AGENTS.unificar-ssh-remote-cierre.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** confirmó que todo está correcto y pidió cerrar el plan. Detalle en `AGENTS.unificar-ssh-remote-cierre.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Bindings y rutas**: `tauri-types.d.ts` conserva `AuthType` y los 7 tipos `Remote*` sin `HostSystemInfo`; sin referencias a `commands/remote/` en `src-tauri/src/` ni en `docs/content/`.
 2. **No regresión**: inventario §3.5 del diseño recorrido; los cuatro archivos trasladados solo difieren del original en los imports; sin consolidación de duplicaciones.
@@ -69,7 +69,7 @@
 
 ## Tareas completadas (19 nov 2026 — Unificar SSH y remote: traslado literal)
 
-**Nota del usuario:** dio por terminado el plan de traslado y pidió pasar al plan de cierre. Detalle en `AGENTS.unificar-ssh-remote-traslado.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** dio por terminado el plan de traslado y pidió pasar al plan de cierre. Detalle en `AGENTS.unificar-ssh-remote-traslado.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Traslado literal**: `cancel.rs`, `exec.rs`, `transfer_commands.rs` y `types.rs` movidos a `ssh/`; hashes SHA256 verificados y solo ajustados los imports (`crate::ssh::...`). Upload/download sin cambios de lógica.
 2. **Registro**: `ssh/mod.rs`, `commands/mod.rs` y `lib.rs` conectados; `commands/remote/` eliminado, sin referencias residuales en `src-tauri/src/`.
@@ -81,7 +81,7 @@
 
 ## Tareas completadas (18 nov 2026 — Parámetros de entrada en comandos)
 
-**Nota del usuario:** dio por completado el plan de implementación al no quedar trabajo funcional pendiente. Detalle en `AGENTS.command-inputs-model.PLAN.md`, `AGENTS.command-inputs-runner.PLAN.md`, `AGENTS.command-inputs-form.PLAN.md`, `AGENTS.command-inputs-dialog.PLAN.md` y `AGENTS.command-inputs-docs.PLAN.md` (archivados en `.agents/plans.done/`). Queda pendiente la verificación manual.
+**Nota del usuario:** dio por completado el plan de implementación al no quedar trabajo funcional pendiente. Detalle en `AGENTS.command-inputs-model.PLAN.md`, `AGENTS.command-inputs-runner.PLAN.md`, `AGENTS.command-inputs-form.PLAN.md`, `AGENTS.command-inputs-dialog.PLAN.md` y `AGENTS.command-inputs-docs.PLAN.md` (archivados en `.agents/done/plans/`). Queda pendiente la verificación manual.
 
 1. **Modelo y contrato** (`model`): `src/utils/inputs/*` (tipos, schema Zod y reexportaciones), locales es/en, columna `deployer_commands.inputs` con migración `20261118154818_commands_inputs`, `CommandDefinition.inputs`, `row.inputs` en el runner, validación al guardar, seed (`seedColumns`/`resetColumns` más los tres registros) y `inputs: []` en el alta.
 2. **Motor** (`runner`): `resolveInputDefaults()`, `CommandRunOptions` con `params`, coacción y validación de valores, relleno de campos declarados sin valor y raíces `{ global, params }` en el runner.
@@ -95,7 +95,7 @@
 
 ## Tareas completadas (18 nov 2026 — Auditoría del código Rust)
 
-**Nota del usuario:** pidió pasar a la Fase 5 y dar el plan por finalizado. Detalle en `AGENTS.rust-code-audit.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** pidió pasar a la Fase 5 y dar el plan por finalizado. Detalle en `AGENTS.rust-code-audit.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Limpieza**: eliminados `patch.rs`, `ssh/glob.rs` y el parámetro `exclude`; retirado el comando `get_database_path`, conservando `get_database_path_internal`.
 2. **Consolidación SSH**: helpers comunes para credenciales, escape de rutas, canal de comandos, pool de solo lectura y constantes; wrappers y semánticas intactos.
@@ -122,7 +122,7 @@
 
 ## Tareas completadas (16 nov 2026 — Soft delete estilo Doctrine: papelera y purga)
 
-**Nota del usuario:** el plan `AGENTS.soft-delete.PLAN.md` se da por completado. Detalle en `AGENTS.soft-delete.PLAN.md` (archivado en `.agents/plans.done/`). La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará aparte; `settings` sigue apartado y es ajeno al plan.
+**Nota del usuario:** el plan `AGENTS.soft-delete.PLAN.md` se da por completado. Detalle en `AGENTS.soft-delete.PLAN.md` (archivado en `.agents/done/plans/`). La prueba funcional manual en `bun run tauri:dev` queda pendiente y se hará aparte; `settings` sigue apartado y es ajeno al plan.
 
 1. **API CRUD** (`src/composables/queries/crud.ts`, `shared.interfaces.ts`): `find(key, options)` unificado con `onlyDeleted`/`includeDeleted` (sin `findByKey()` privada), `remove(key, { purge, unlink })` como única vía de purga (exige fila en papelera), `purgeDeleted()` con recuento `purged`/`blocked`, `findReferences()`, guardas de estado con `returning()` y bloqueo de filas `internal`. Notificaciones `delete`/`purge`/`purgeAll` completas en `es`/`en`.
 2. **Relaciones**: una fila referenciada no se borra hasta desvincularla (`unlink`); `useCrudDeleteConfirm` ofrece **Cancelar** y **Desvincular y eliminar**. Migración de `hosts.key_id` de `set null` a `restrict` (`drizzle/migrations/` + `src-tauri/migrations/`). `findVariableUsages()` (`src/utils/interpolation/usages.ts`) avisa de los comandos que usan una variable por `{{global.<slug>}}`.
@@ -150,7 +150,7 @@
 
 ## Tareas completadas (12 nov 2026 — Extraer las extensiones de CodeMirror de `CodeEditor.vue`)
 
-**Nota del usuario:** el plan `AGENTS.codemirror-extensions.PLAN.md` se da por completado; la verificación manual en UI queda aceptada por decisión del usuario. Detalle en `AGENTS.codemirror-extensions.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** el plan `AGENTS.codemirror-extensions.PLAN.md` se da por completado; la verificación manual en UI queda aceptada por decisión del usuario. Detalle en `AGENTS.codemirror-extensions.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Módulos reutilizables** en `src/plugins/codemirror/`: `types.ts`, `theme.ts`, `highlight.ts`, `editable.ts`, `setup.ts`, `languages.ts`, `lint/{index,json,yaml}.ts`, `autocomplete/{index,variables,php}.ts`, `bash/{blocks,format}.ts` y `index.ts` como barrel público.
 2. **`CodeEditor.vue` adelgazado** de 783 a 317 líneas: solo orquestación Vue + template; nueva prop `extensions` (`Extension | readonly Extension[]`) en un `Compartment` propio y reactiva a cambios.
@@ -165,7 +165,7 @@
 
 ## Tareas completadas (11 nov 2026 — Sistema de interpolación de variables globales)
 
-**Nota del usuario:** el plan `AGENTS.variable-interpolation.PLAN.md` se da por completado; el autocompletado se verificó en la app. Detalle en `AGENTS.variable-interpolation.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** el plan `AGENTS.variable-interpolation.PLAN.md` se da por completado; el autocompletado se verificó en la app. Detalle en `AGENTS.variable-interpolation.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Motor puro** (`src/utils/interpolation/`): formato `{{ámbito.ruta}}` sin espacios, escape `\{{`, raíces desconocidas literales, modo estricto (`unknown_variable`, `disabled_variable`, `scope_not_available`, `invalid_path`), secretas enmascaradas (`••••••`) salvo al ejecutar y redacción de errores.
 2. **Carga de variables** (`src/drizzle/lib/variables.ts`): metadatos para UI/linter/preview y lectura cruda + descifrado puntual de secretas solo para ejecución (sin `withDecryption`).
@@ -180,7 +180,7 @@
 
 ## Tareas completadas (10 nov 2026 — Comandos guardados en BD: `deployer_commands` como fuente única)
 
-**Nota del usuario:** el plan `AGENTS.commands-db.PLAN.md` se da por completado. Detalle en `AGENTS.commands-db.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** el plan `AGENTS.commands-db.PLAN.md` se da por completado. Detalle en `AGENTS.commands-db.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Entidad + migración**: tabla `deployer_commands` (PK `key`; columnas `name`, `description`, `command`, `parser` JSON, `timeout`, `custom`, `internal`, `enabled`, timestamps) en `src/drizzle/entities/commands.ts`, exportada en `schema.ts`. Migración `20261028172340_commands_v0.2.0.sql` aplanada en `src-tauri/migrations/` y `TABLE_COMMANDS` regenerado en `tables.rs`.
 2. **Runner desde BD**: carpeta `src/utils/commands/` (`types.ts`, `parsers.ts`, `results.ts`, `runner.ts`); sin `registry.ts` ni definiciones TS hardcodeadas en runtime. `runCommand(key, hostId)` lee la definición de `deployer_commands` y `runCustomCommand` sirve para pruebas ad-hoc del formulario.
@@ -197,7 +197,7 @@
 
 ## Tareas completadas (11 sep 2026 — Comando remoto universal tipo n8n, fase 1: nodos en TS)
 
-**Nota del usuario**: el plan `AGENTS.universal-remote.PLAN.md` se da por completado; el usuario continúa con comandos **guardados y mantenidos en BD** (ver `AGENTS.commands-db.PLAN.md`). Detalle en `AGENTS.universal-remote.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario**: el plan `AGENTS.universal-remote.PLAN.md` se da por completado; el usuario continúa con comandos **guardados y mantenidos en BD** (ver `AGENTS.commands-db.PLAN.md`). Detalle en `AGENTS.universal-remote.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Sistema de nodos en TypeScript** en `src/utils/remote-nodes/`: `types.ts` (`RemoteNodeDefinition`, `OutputParser` json/line-based/regex/raw), `parsers.ts` (`parseOutput` con búsqueda de JSON/arrays embebidos), `runner.ts` (`runNode`/`runCustomNode` sobre `ssh_execute_command` con `Channel`), `registry.ts` (`getNode`/`getAllNodes`).
 2. **Nodos predefinidos** en `src/utils/remote-nodes/nodes/`: `system-metrics`, `system-info`, `upgradable-packages`, `custom`.
@@ -209,7 +209,7 @@
 
 ## Tareas completadas (09 sep 2026 — traducción `locale/es` al `en`)
 
-**Nota del usuario:** el plan `AGENTS.locale-en.PLAN.md` se da por completado (el usuario lo marcó como **Completado**). Detalle en `AGENTS.locale-en.PLAN.md` (archivado en `.agents/plans.done/`).
+**Nota del usuario:** el plan `AGENTS.locale-en.PLAN.md` se da por completado (el usuario lo marcó como **Completado**). Detalle en `AGENTS.locale-en.PLAN.md` (archivado en `.agents/done/plans/`).
 
 1. **Creados los 28 archivos de mensajes en `src/locales/en/**`** espejo de `es` (mismos árboles de claves `snake_case`, `satisfies LocaleMessageValue`): `app.ts`, `common.ts`, `entity.ts`, `overlays.ts`, `tauri.ts`, `components/{dashboard,deployerAppMenu,editor,empty_list,error,navigation,sidebar}.ts`, `dialogs/hosts.ts`, `form/{hosts,index,passkeys,shared}.ts`, `notifications/{hosts,passkeys}.ts`, `pages/app/{migrations,settings,setup}.ts`, `pages/{console,home,hosts,passkeys}.ts`, `validation/{hosts,passkeys}.ts`.
 2. **`en/formats/number.format.ts`** alineado a `es` (`percent.maximumFractionDigits: 2`). Plurales de 3 formas en es (`check_updates.success.*`) traducidos con sintaxis ICU `{count, plural, ...}` para el inglés. Traducciones correctas donde `es` tenía typos (`form/shared.ts`, `overlays.ts`).
@@ -223,7 +223,7 @@
 
 ## Tareas completadas (09 sep 2026 — Stronghold: reemplazo del cifrado + revisión y documentación)
 
-**Nota del usuario en `AGENTS.todo.md`**: _`AGENTS.stronghold-review.PLAN.md` está confirmado; el plan ya está completado y se hicieron ciertos cambios que deberían documentarse en `AGENTS.md`, `AGENTS.frontend.md` y `AGENTS.backend.md`._ Detalle en `AGENTS.stronghold-crypto.PLAN.md` (implementación) y `AGENTS.stronghold-review.PLAN.md` (revisión), ambos archivados en `.agents/plans.done/`.
+**Nota del usuario en `AGENTS.todo.md`**: _`AGENTS.stronghold-review.PLAN.md` está confirmado; el plan ya está completado y se hicieron ciertos cambios que deberían documentarse en `AGENTS.md`, `AGENTS.frontend.md` y `AGENTS.backend.md`._ Detalle en `AGENTS.stronghold-crypto.PLAN.md` (implementación) y `AGENTS.stronghold-review.PLAN.md` (revisión), ambos archivados en `.agents/done/plans/`.
 
 1. **`AGENTS.stronghold-crypto.PLAN.md` → Completado**: reemplazo del cifrado (clave maestra única) por **Stronghold** con claves versionadas `encrypt:{tabla}.{col}:{version}` (Fases 1-7 y 9 implementadas; Fase 8 de verificación funcional delegada al usuario). Rotación/escaneo en JS (`src/drizzle/lib/stronghold.ts` + `TabSecurity.vue`); Rust abre el vault de Stronghold **solo lectura** (`StrongholdVault::open`) para descifrar credenciales SSH.
 2. **`AGENTS.stronghold-review.PLAN.md` → Completado**: verificación del plan Stronghold real. Detectó las discrepancias: rutas `src/lib/*` → `src/drizzle/*`, y que la rotación (`rotateKey`) y el escaneo/re-cifrado (`scanAndReencrypt`/`reencryptScope`) son **JS**, no comandos Rust (`rotate_encryption_key`/`scan_and_reencrypt` no existen en `lib.rs`).
