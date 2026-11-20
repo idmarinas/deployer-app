@@ -32,9 +32,7 @@ pub async fn connect_to_host_with_temp_credentials(
     temp_password: Option<&str>,
 ) -> Result<(SshSession, HostCredentials), SshError> {
     let temp = match (temp_username, temp_password) {
-        (Some(user), Some(pass)) if !user.is_empty() && !pass.is_empty() => {
-            Some((user, pass))
-        }
+        (Some(user), Some(pass)) if !user.is_empty() && !pass.is_empty() => Some((user, pass)),
         _ => None,
     };
 
@@ -52,8 +50,9 @@ async fn connect_to_host(
         .await
         .map_err(|e| SshError::connection_failed(format!("Error al abrir pool: {}", e)))?;
 
-    let vault = crate::crypto::StrongholdVault::open(app)
-        .map_err(|e| SshError::connection_failed(format!("Error al abrir vault de Stronghold: {}", e)))?;
+    let vault = crate::crypto::StrongholdVault::open(app).map_err(|e| {
+        SshError::connection_failed(format!("Error al abrir vault de Stronghold: {}", e))
+    })?;
 
     let row = fetch_host_credentials(&pool, host_id, enabled_only).await?;
 
@@ -63,9 +62,8 @@ async fn connect_to_host(
         SshError::with_param("tauri.hosts.error.not_found", "id", host_id.to_string())
     })?;
 
-    let saved_credentials =
-        decrypt_host_credentials(&host_creds, key_content, passphrase, &vault)
-            .map_err(SshError::connection_failed)?;
+    let saved_credentials = decrypt_host_credentials(&host_creds, key_content, passphrase, &vault)
+        .map_err(SshError::connection_failed)?;
 
     let addr = format!("{}:{}", host_creds.host, host_creds.port);
 
@@ -151,11 +149,6 @@ pub(crate) async fn fetch_host_credentials(
             .ok()
             .flatten()
             .filter(|value: &String| !value.is_empty());
-        (
-            host_creds,
-            key_content,
-            passphrase,
-            host_key_fingerprint,
-        )
+        (host_creds, key_content, passphrase, host_key_fingerprint)
     }))
 }

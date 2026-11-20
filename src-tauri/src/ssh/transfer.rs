@@ -293,10 +293,7 @@ where
 /// servidores SFTP no siguen enlaces en `OPENDIR`, así que descargar el
 /// contenido exige usar la ruta resuelta. Si algo falla se devuelve la ruta
 /// original y se intenta igualmente.
-async fn resolve_remote_symlink(
-    sftp: &russh_sftp::client::SftpSession,
-    path: &Path,
-) -> PathBuf {
+async fn resolve_remote_symlink(sftp: &russh_sftp::client::SftpSession, path: &Path) -> PathBuf {
     let path_str = path.to_string_lossy();
 
     let is_symlink = sftp
@@ -327,16 +324,7 @@ pub async fn download_dir<F>(
 where
     F: FnMut(&str),
 {
-    download_dir_inner(
-        sftp,
-        src_dir,
-        dest_dir,
-        overwrite,
-        cancel,
-        on_output,
-        0,
-    )
-    .await
+    download_dir_inner(sftp, src_dir, dest_dir, overwrite, cancel, on_output, 0).await
 }
 
 /// Implementación recursiva con control de profundidad para cortar ciclos de

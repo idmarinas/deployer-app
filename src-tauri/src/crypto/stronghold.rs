@@ -90,16 +90,14 @@ impl StrongholdVault {
         // load_snapshot NO puebla la tabla de clients en memoria: hay que llamar
         // load_client para traerlo desde el snapshot, igual que hace el plugin JS
         // con loadClient antes de usarlo.
-        let client = stronghold
-            .load_client(CLIENT_NAME)
-            .map_err(|e| {
-                format!(
-                    "Client 'encrypt-keys' no encontrado en el snapshot: {:?}. \
+        let client = stronghold.load_client(CLIENT_NAME).map_err(|e| {
+            format!(
+                "Client 'encrypt-keys' no encontrado en el snapshot: {:?}. \
                      El vault parece estar vacío o corrupto. \
                      Verifica que el frontend ha guardado claves en el vault.",
-                    e
-                )
-            })?;
+                e
+            )
+        })?;
 
         Ok(Self { client })
     }
@@ -152,7 +150,10 @@ impl StrongholdVault {
             Err(_) => return report,
         };
 
-        if stronghold.load_snapshot(&keyprovider, &snapshot_path).is_err() {
+        if stronghold
+            .load_snapshot(&keyprovider, &snapshot_path)
+            .is_err()
+        {
             report.missing_scopes = report.expected_scopes.clone();
             return report;
         }
@@ -176,7 +177,13 @@ impl StrongholdVault {
             let max_version = stored_current_version(&client, scope).max(9);
             for version in 0..=max_version {
                 let key_name = format!("{}:{}", scope, version);
-                if client.store().get(key_name.as_bytes()).ok().flatten().is_some() {
+                if client
+                    .store()
+                    .get(key_name.as_bytes())
+                    .ok()
+                    .flatten()
+                    .is_some()
+                {
                     report.keys_found.push(key_name);
                     found = true;
                 }
@@ -313,8 +320,7 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
     let mut salt = [0u8; 32];
 
     if salt_path.exists() {
-        let data = std::fs::read(salt_path)
-            .map_err(|e| format!("Error al leer salt: {}", e))?;
+        let data = std::fs::read(salt_path).map_err(|e| format!("Error al leer salt: {}", e))?;
         if data.len() != 32 {
             return Err("Archivo de salt corrupto: longitud incorrecta".to_string());
         }
@@ -327,8 +333,7 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
         SysRng
             .try_fill_bytes(&mut salt)
             .map_err(|e| format!("Error al generar salt: {}", e))?;
-        std::fs::write(salt_path, &salt)
-            .map_err(|e| format!("Error al guardar salt: {}", e))?;
+        std::fs::write(salt_path, &salt).map_err(|e| format!("Error al guardar salt: {}", e))?;
     }
 
     argon2::hash_raw(password.as_bytes(), &salt, &Default::default())

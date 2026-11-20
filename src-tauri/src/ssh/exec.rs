@@ -1,4 +1,4 @@
-﻿use std::time::Duration;
+use std::time::Duration;
 use tauri::ipc::Channel;
 use tauri::AppHandle;
 use tauri::State;
@@ -12,7 +12,9 @@ use crate::ssh::keys;
 use crate::ssh::{connect_to_host_by_id, open_command_channel, shell_escape, SshError, SshSession};
 
 use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard};
-use crate::ssh::types::{RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent, RemoteFinishStatus};
+use crate::ssh::types::{
+    RemoteCommandInput, RemoteCommandResult, RemoteConsoleEvent, RemoteFinishStatus,
+};
 
 /// Timeout por defecto para la ejecuciÃ³n remota (segundos).
 const DEFAULT_TIMEOUT_SECS: u64 = 300;
@@ -170,10 +172,7 @@ async fn run_command_streaming(
     tokio::time::timeout(Duration::from_secs(timeout_secs), collect)
         .await
         .map_err(|_| {
-            SshError::execution_failed(format!(
-                "Timeout de {} segundos alcanzado",
-                timeout_secs
-            ))
+            SshError::execution_failed(format!("Timeout de {} segundos alcanzado", timeout_secs))
         })??;
 
     if !chunk_buffer.is_empty() {
@@ -184,5 +183,3 @@ async fn run_command_streaming(
 
     Ok((output, exit_code, duration_seconds))
 }
-
-

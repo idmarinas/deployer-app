@@ -74,7 +74,11 @@ impl SshError {
     }
 
     pub fn cancelled() -> Self {
-        Self::with_param(keys::CANCELLED, "reason", crate::ssh::transfer::CANCELLED_MSG)
+        Self::with_param(
+            keys::CANCELLED,
+            "reason",
+            crate::ssh::transfer::CANCELLED_MSG,
+        )
     }
 
     /// Texto legible para el evento `error` del Channel cuando no hay razón

@@ -9,7 +9,7 @@ use tokio::time::Instant;
 use crate::response::CommandResponse;
 use crate::ssh::events;
 use crate::ssh::keys;
-use crate::ssh::transfer::{self as transfer_utils, SFTP_BUFFER_SIZE, TransferResult};
+use crate::ssh::transfer::{self as transfer_utils, TransferResult, SFTP_BUFFER_SIZE};
 use crate::ssh::{connect_to_host_by_id, open_sftp_session, SshError, SshSession};
 
 use crate::ssh::cancel::{RemoteJobCancel, RemoteJobGuard};
@@ -184,15 +184,8 @@ pub async fn ssh_download_file(
         // None → auto-detecta según el tipo remoto.
         let result = match input.recursive {
             Some(true) => {
-                transfer_utils::download_dir(
-                    &sftp,
-                    &src,
-                    &dest,
-                    overwrite,
-                    Some(&token),
-                    &mut emit,
-                )
-                .await
+                transfer_utils::download_dir(&sftp, &src, &dest, overwrite, Some(&token), &mut emit)
+                    .await
             }
             Some(false) => {
                 transfer_utils::download_single_file(
@@ -206,15 +199,8 @@ pub async fn ssh_download_file(
                 .await
             }
             None => {
-                transfer_utils::download(
-                    &sftp,
-                    &src,
-                    &dest,
-                    overwrite,
-                    Some(&token),
-                    &mut emit,
-                )
-                .await
+                transfer_utils::download(&sftp, &src, &dest, overwrite, Some(&token), &mut emit)
+                    .await
             }
         };
 
@@ -238,7 +224,11 @@ pub async fn ssh_download_file(
             Ok(f) => f,
             Err(e) => {
                 let _ = session.disconnect().await;
-                return events::emit_transfer_terminal_error(&channel, start, SshError::transfer_failed(&e.to_string()));
+                return events::emit_transfer_terminal_error(
+                    &channel,
+                    start,
+                    SshError::transfer_failed(&e.to_string()),
+                );
             }
         };
 
@@ -246,7 +236,11 @@ pub async fn ssh_download_file(
         loop {
             if token.is_cancelled() {
                 let _ = session.disconnect().await;
-                return events::emit_transfer_terminal_error(&channel, start, SshError::cancelled());
+                return events::emit_transfer_terminal_error(
+                    &channel,
+                    start,
+                    SshError::cancelled(),
+                );
             }
 
             let mut chunk = vec![0u8; SFTP_BUFFER_SIZE];
@@ -254,7 +248,11 @@ pub async fn ssh_download_file(
                 Ok(n) => n,
                 Err(e) => {
                     let _ = session.disconnect().await;
-                    return events::emit_transfer_terminal_error(&channel, start, SshError::transfer_failed(&e.to_string()));
+                    return events::emit_transfer_terminal_error(
+                        &channel,
+                        start,
+                        SshError::transfer_failed(&e.to_string()),
+                    );
                 }
             };
 
