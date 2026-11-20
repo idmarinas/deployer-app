@@ -1,7 +1,7 @@
 # Plan — Sistema de formularios JSON-Schema basado en json-schema-library (jsl)
 
 > Tarea de `AGENTS.todo.md`: _Composable y componentes para crear un formulario a partir de un json-schema_.
-> Estado: **COMPLETADA** (13 ago 2026). Revisiones posteriores de notas también aplicadas (Fase 5 y Fase 6). Ver `## 10. Registro de progreso`.
+> Estado: **Obsoleto** — el sistema de formularios JSON-Schema se ha quitado del proyecto. El sistema de workflow lo rehará y reutilizará parte de los componentes, con variaciones.
 > Este archivo es la guía completa de implementación.
 
 ## 1. Objetivo

@@ -4,7 +4,7 @@
 
 **Terminado** — el usuario lo dio por completado el 2026-11-18. Verificación manual (`bunx vue-tsc --noEmit`, `bun run build` y, para la documentación, `cd docs && bun run build`) pendiente de que la ejecute el usuario.
 
-**Diseño de origen:** `.agents/done/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 5 de §7 del diseño y a la sección «Documentación a actualizar» de `AGENTS.md`.
+**Diseño de origen:** `.agents/.done/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 5 de §7 del diseño y a la sección «Documentación a actualizar» de `AGENTS.md`.
 
 **Dependencias:** planes 1 a 4. La documentación describe el comportamiento ya implementado.
 

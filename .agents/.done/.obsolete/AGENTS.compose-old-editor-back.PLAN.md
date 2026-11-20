@@ -1,7 +1,7 @@
 # Plan — Separar componentes del editor antiguo de compose (extensión `.back`)
 
 > Tarea del usuario (13 ago 2026): separar los componentes del antiguo editor del compose del nuevo; a los componentes del antiguo editor (y que no se usen) agregarles la extensión `.back`.
-> Estado: **COMPLETADA**.
+> Estado: **Obsoleto** — el editor visual antiguo de compose se ha quitado del proyecto; si vuelve, probablemente no será así.
 > Este archivo hace de historial y registra todos los cambios hechos.
 
 ## 1. Problema

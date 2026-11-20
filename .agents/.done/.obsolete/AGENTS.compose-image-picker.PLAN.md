@@ -1,7 +1,7 @@
 # Plan — Widgets por normalizer: `ComposeImagePicker` para `service.image`
 
 > Tarea del usuario (13 ago 2026): poner un normalizer para que, cuando detecte un `service.image`, use el selector `ComposeImagePicker` y no un string corriente.
-> Estado: **COMPLETADA**.
+> Estado: **Obsoleto** — todo lo referente a docker compose se ha quitado del proyecto; si vuelve, probablemente no será así.
 > Este archivo hace de historial y registra todos los cambios hechos.
 
 ## 1. Problema

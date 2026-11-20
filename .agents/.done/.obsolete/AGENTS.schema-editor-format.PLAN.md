@@ -1,7 +1,7 @@
 # Plan — `JsonSchemaEditor`: formato de salida configurable (`formatOutput`)
 
 > Tarea del usuario (13 ago 2026): el editor asume que el formato de salida es YAML, pero `composer.json` es JSON y `compose.yaml` es YAML. Con un único dato (`formatOutput`) se pueden inferir el parseo/serialización, las extensiones de import y la vista previa.
-> Estado: **COMPLETADA**.
+> Estado: **Obsoleto** — el sistema de formularios JSON-Schema se ha quitado del proyecto. El sistema de workflow lo rehará y reutilizará parte de los componentes, con variaciones.
 > Este archivo hace de historial y registra todos los cambios hechos.
 
 ## 1. Problema

@@ -1,7 +1,7 @@
 # Plan — Un poco de orden en el formulario JSON-Schema
 
 > Tarea de `AGENTS.todo.md`: _Un poco de orden_.
-> Estado: **COMPLETADA** (13 ago 2026). Ver `## 7. Registro de progreso`.
+> Estado: **Obsoleto** — el sistema de formularios JSON-Schema se ha quitado del proyecto. El sistema de workflow lo rehará y reutilizará parte de los componentes, con variaciones.
 > Este archivo hace de historial y registra todos los cambios hechos.
 
 ## 1. Objetivo

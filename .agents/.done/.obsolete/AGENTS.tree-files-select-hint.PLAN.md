@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Completado**
+**Obsoleto** — los componentes de archivos de compose se han quitado del proyecto. Cuando se introduzca el sistema de workflow, probablemente ya no se use o se integre de otra forma.
 
 ---
 
@@ -282,4 +282,4 @@ const selectHintKey = computed(() => {
 
 ## Estado actual
 
-Este plan está en **Completado**.
+Este plan está en **Obsoleto** (ver la sección Estado).

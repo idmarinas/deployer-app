@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Completado**
+**Obsoleto** — los archivos AGENTS han cambiado desde esta revisión y lo que describe está anticuado.
 
 ---
 

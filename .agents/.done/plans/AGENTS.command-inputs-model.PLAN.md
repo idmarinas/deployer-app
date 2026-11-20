@@ -4,7 +4,7 @@
 
 **Terminado** — el usuario lo dio por completado el 2026-11-18. Verificación manual (`bunx vue-tsc --noEmit`, `bun run build`) pendiente de que la ejecute el usuario.
 
-**Diseño de origen:** `.agents/done/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 1 de §7 del diseño.
+**Diseño de origen:** `.agents/.done/designs/AGENTS.command-inputs.DESIGN.md` (aprobado el 2026-11-18). Corresponde al bloque 1 de §7 del diseño.
 
 **Orden de ejecución:** este plan es el primero de cinco. Los planes 2 a 5 dependen de la columna y del contrato creados aquí.
 

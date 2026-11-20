@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Completado** — implementación y verificaciones finalizadas; el usuario dio por cerrado el plan.
+**Obsoleto** — la traducción ya está hecha; las reglas para mantener `en/` junto a `es/` están en `AGENTS.frontend.md` §5, que sustituye a este plan.
 
 ---
 

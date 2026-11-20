@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Completado** (14 ago 2026)
+**Obsoleto** — todo lo referente a docker compose se ha quitado del proyecto; si vuelve, probablemente no será así. (Originalmente completado el 14 ago 2026.)
 
 ---
 
