@@ -454,20 +454,22 @@ Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT
 - El alta no puede comprobar la huella antes de guardar (el comando necesita el ID): `pages/dashboard/hosts/add.vue` guarda el host y ofrece la confirmación justo después. La edición permite repetirla, también cuando la clave del servidor cambia.
 - La vista de detalle muestra la huella como badge. Los errores de conexión/ejecución/transferencia llegan con claves `tauri.ssh.*`; al añadir claves hay que regenerar `typed-locale.d.ts` con `bun run i18n:types` antes del build.
 
-### Consola remota (`ssh/` + `useRemoteCommand`)
+### Consola remota (`ssh/` + composables SSH)
 
 Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con streaming por Channel:
 
 - Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` §5 «Consola remota»).
-- Frontend: `useRemoteCommand` (`src/composables/useRemoteCommand.ts`) encapsula la creación del `Channel<RemoteConsoleEvent>` y el `invoke`. Expone:
-  - Estado reactivo: `output`, `isRunning`, `lastExitCode`, `errorMessage`, `currentJobId` (id del job en curso).
-  - Acciones: `execute(input)`, `upload(input)`, `download(input)` (devuelven `CommandResponse<T> | null`; `null` = rechazo del invoke).
-  - `cancel(jobId?: number)` → `invoke('ssh_cancel_remote_job', { jobId })`; sin id invoca sin argumentos y el backend cancela el último job (best-effort, no espera respuesta del job).
-  - `clear()` para resetear output/estado, incluido `currentJobId`.
-- Eventos del Channel (`RemoteConsoleEvent`): `started` (guarda `job_id` en `currentJobId`), `output_chunk` (append a `output`), `finished` (estado terminal: `status`, `exit_code`, `duration_seconds`, `message`), `error` (guarda `message` por compatibilidad). `lastExitCode` toma el `exit_code` de `finished`; en fallos/cancelaciones el backend emite `error` y `finished`, y el composable evita duplicar el mensaje visible.
-- Componente presentacional: `RemoteConsole.vue` (`src/components/remote/`). Si recibe `hostId` como prop usa ese host fijo; si no, muestra `SelectHost` interno. El botón "Cancelar" (`ICONS.actions.stop`) aparece solo mientras `isRunning`.
+- `useSshJobs` (`src/composables/useSshJobs.ts`): motor **genérico y reutilizable**, independiente de la consola y pensado también para Nodes Workflow. Registro reactivo multi-job por clave de cliente (`key`, `label`, `dependsOn`) con `job_id` recibido en `started`, `output` por trabajo, estado (`pending`/`running`/`success`/`error`/`cancelled`/`skipped`), resultado y tiempos. Acepta un adaptador de interpolación configurable (por defecto `{ global: await loadGlobalScopeForExecution() }` con `collectSecretValues`/`redactSecrets`) y expone todas las opciones de `RemoteCommandInput`, `RemoteUploadInput` y `RemoteDownloadInput`.
+  - `cancel(key?, { cascade?: boolean } = { cascade: true })` cancela el trabajo indicado (o el activo) por su `job_id` y, en cascada, a sus descendientes en curso; los dependientes aún no iniciados quedan `skipped`. Sin clave y sin trabajo activo invoca sin id (compatibilidad de consola: Rust cancela el último job). Nunca cancela todos por defecto; para eso existe `cancelAll()`.
+  - Expone además `jobs`, `activeKey`, `activeJob`, `lastFinishStatus`, `lastStatus`, `appendOutput(text)` y `clear(key?)`.
+- `useRemoteCommand` (`src/composables/useRemoteCommand.ts`): **fachada** de la consola sobre `useSshJobs`. Conserva la API que usan los componentes (`execute`/`upload`/`download`/`cancel`/`clear`), añade el estado de finalización y `appendOutput`, y acepta claves de trabajo opcionales por operación. Cancela el job del evento `started` por defecto.
+- Eventos del Channel (`RemoteConsoleEvent`): `started` (guarda `job_id` en el trabajo activo), `output_chunk` (append al output del trabajo, redactando secretos), `finished` (`status`, `exit_code`, `duration_seconds`, `message`), `error` (mensaje de transporte). El mensaje visible no se duplica entre `error` y `finished`.
+- **Reactividad de `useSshJobs`:** `jobs` es un `reactive(Map)`; las mutaciones deben hacerse sobre el objeto **reactivo** devuelto por `get()`/iteración. Un objeto crudo guardado con `set()` no notifica al cambiar `status`/`output` (por eso los jobs se crean con `reactive({...})`).
+- Los componentes leen la razón del fallo de `result.message_params.reason` (o de `t(result.message_key, result.message_params)`), **no de `props.errorMessage` tras el `await`**: ese prop es una instantánea del render anterior del padre y llega vacío justo después de la respuesta.
+- Componentes presentacionales (`src/components/remote/`): `RemoteCommand.vue`, `RemoteFileUpload.vue`, `RemoteFileDownload.vue` y `RemoteOutput.vue` (no existe `RemoteConsole.vue`). `SelectHost` vive en la página. Los tres componentes de operación reciben las mismas props (host, estado, `execute`/`upload`/`download`, `clear`, `cancel`) y muestran el botón **Cancelar** solo mientras `isRunning`. La descarga exige destino local, guarda la estructura como un cliente FTP y envía `recursive` como tri-estado (`true` directorio, `false` archivo, `null` autodetección).
+- Comandos guardados: `CommandRunOptions` (`src/utils/commands/types.ts`) incluye `ssh_reconnect_attempts`; `runCommand`/`runCustomCommand` lo envían a `ssh_execute_command` (`null` por defecto).
 - `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
-- Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`).
+- Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`). Habilita las tres pestañas y cablea `cancelCurrent` con el trabajo activo.
 
 > Los catálogos de `projects`, `tasks` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`. `variables` es de nuevo un módulo activo, con Drizzle + loaders propios.
 

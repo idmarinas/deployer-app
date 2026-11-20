@@ -151,7 +151,7 @@ async function executeCommand<T>(
 		command,
 		working_dir: workingDir ?? null,
 		timeout_secs: options?.timeout_secs ?? definition.timeout_secs ?? null,
-		ssh_reconnect_attempts: null,
+		ssh_reconnect_attempts: options?.ssh_reconnect_attempts ?? null,
 	}
 
 	const response = await invoke<CommandResponse<RemoteCommandResult>>('ssh_execute_command', {

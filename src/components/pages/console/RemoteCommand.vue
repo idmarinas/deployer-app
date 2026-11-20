@@ -28,6 +28,7 @@ const toast = useToaster()
 const command = ref('')
 const workingDir = ref('/')
 const timeoutSecs = ref<number | null>(null)
+const reconnectAttempts = ref<number | null>(3)
 
 const canOperate = computed(() => !props.isRunning && !!props.hostId)
 
@@ -39,6 +40,12 @@ function notifyFailure(message: string) {
 	toast.error(t('overlays.toast.title.error'), message)
 }
 
+/** La razón viaja en la respuesta; el prop `errorMessage` puede ser aún el del render anterior. */
+function failureReason(result: CommandResponse<RemoteCommandResult> | null): string {
+	if (!result) return props.errorMessage
+	return result.message_params.reason || t(result.message_key, result.message_params)
+}
+
 async function runCommand() {
 	if (!props.hostId || !command.value.trim()) return
 	props.clear()
@@ -48,7 +55,7 @@ async function runCommand() {
 		command: command.value,
 		working_dir: workingDir.value || null,
 		timeout_secs: timeoutSecs.value,
-		ssh_reconnect_attempts: 3,
+		ssh_reconnect_attempts: reconnectAttempts.value,
 	})
 
 	if (result?.success && result.data?.exit_code === 0) {
@@ -56,7 +63,7 @@ async function runCommand() {
 	} else if (result?.success) {
 		notifyFailure(t('tauri.ssh.exec.completed_with_errors'))
 	} else {
-		notifyFailure(t('components.console.feedback.failed', { reason: props.errorMessage }))
+		notifyFailure(t('components.console.feedback.failed', { reason: failureReason(result) }))
 	}
 }
 </script>
@@ -80,6 +87,13 @@ async function runCommand() {
 					type="number"
 					class="w-32"
 					:placeholder="t('components.console.command.timeout_placeholder')"
+					:disabled="!canOperate"
+				/>
+				<UInput
+					v-model.number="reconnectAttempts"
+					type="number"
+					class="w-36"
+					:placeholder="t('components.console.command.reconnect_attempts_placeholder')"
 					:disabled="!canOperate"
 				/>
 			</div>

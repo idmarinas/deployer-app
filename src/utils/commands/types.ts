@@ -28,6 +28,8 @@ export interface CommandRunOptions {
   working_dir?: string
   /** Timeout en segundos (default: el del comando o 300) */
   timeout_secs?: number
+  /** Reintentos de conexión SSH (default: `null`, usa el del backend) */
+  ssh_reconnect_attempts?: number
   /** Valores de los parámetros de entrada declarados en `definition.inputs` */
   params?: InputValues
 }

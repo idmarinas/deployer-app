@@ -5,7 +5,7 @@
 //! `ResolvedTask`, `ProgressEvent` ni `Channel`: cada caller decide cómo
 //! consumir las líneas de output (acumularlas, enviarlas por un canal, etc.).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
 
@@ -15,10 +15,25 @@ pub const SFTP_BUFFER_SIZE: usize = 256 * 1024;
 /// Mensaje devuelto cuando el usuario cancela la transferencia.
 pub const CANCELLED_MSG: &str = "Operación cancelada por el usuario";
 
+/// Profundidad máxima al descender por enlaces simbólicos en descargas
+/// recursivas. Corta bucles (p. ej. `current -> releases/…` que contiene otro
+/// enlace al padre) antes de agotar la pila.
+const MAX_DOWNLOAD_DEPTH: usize = 32;
+
 /// Devuelve `true` si el token de cancelación está activo (o si no hay token,
 /// nunca cancela).
 fn cancelled(cancel: Option<&CancellationToken>) -> bool {
     cancel.map(|c| c.is_cancelled()).unwrap_or(false)
+}
+
+/// Une un nombre a una ruta **remota** SFTP usando siempre `/`.
+///
+/// `Path::join` usa el separador del SO anfitrión: en Windows produciría
+/// `/var/www/site\index.html`, que no existe en un servidor Unix. Las rutas
+/// locales sí siguen usando `Path::join`.
+fn join_remote_path(base: &Path, name: &str) -> PathBuf {
+    let base = base.to_string_lossy();
+    PathBuf::from(format!("{}/{}", base.trim_end_matches('/'), name))
 }
 
 /// Resultado de una transferencia SFTP.
@@ -142,7 +157,7 @@ where
         let entry_path = entry.path();
         let file_name = entry.file_name();
 
-        let dest_entry = dest_dir.join(&file_name);
+        let dest_entry = join_remote_path(dest_dir, &file_name.to_string_lossy());
 
         if entry_path.is_dir() {
             let _ = sftp.create_dir(dest_entry.to_str().unwrap_or("")).await;
@@ -227,10 +242,20 @@ where
         .map_err(|e| format!("No se pudo abrir '{}' en servidor: {}", src_str, e))?;
 
     let mut buf = Vec::new();
-    remote_file
-        .read_to_end(&mut buf)
-        .await
-        .map_err(|e| format!("Error al leer '{}' del servidor: {}", src_str, e))?;
+    if let Err(e) = remote_file.read_to_end(&mut buf).await {
+        // Abrir un directorio con O_RDONLY suele funcionar y fallar al leer,
+        // devolviendo un críptico "Failure: Failure". Añadir la razón real.
+        let hint = match sftp.metadata(src_str.as_ref()).await {
+            Ok(metadata) if metadata.file_type().is_dir() => {
+                format!(" '{}' es un directorio; elige el modo Directorio.", src_str)
+            }
+            _ => String::new(),
+        };
+        return Err(format!(
+            "Error al leer '{}' del servidor: {}.{}",
+            src_str, e, hint
+        ));
+    }
 
     let file_size = buf.len() as u64;
 
@@ -262,6 +287,34 @@ where
     })
 }
 
+/// Si `path` es un enlace simbólico, devuelve su destino real (`realpath`).
+///
+/// `LSTAT` detecta el enlace y `STAT`+`realpath` lo resuelven. Algunos
+/// servidores SFTP no siguen enlaces en `OPENDIR`, así que descargar el
+/// contenido exige usar la ruta resuelta. Si algo falla se devuelve la ruta
+/// original y se intenta igualmente.
+async fn resolve_remote_symlink(
+    sftp: &russh_sftp::client::SftpSession,
+    path: &Path,
+) -> PathBuf {
+    let path_str = path.to_string_lossy();
+
+    let is_symlink = sftp
+        .symlink_metadata(path_str.as_ref())
+        .await
+        .map(|metadata| metadata.file_type().is_symlink())
+        .unwrap_or(false);
+
+    if !is_symlink {
+        return path.to_path_buf();
+    }
+
+    match sftp.canonicalize(path_str.as_ref()).await {
+        Ok(real_path) => PathBuf::from(real_path),
+        Err(_) => path.to_path_buf(),
+    }
+}
+
 /// Descarga un directorio remoto a una ruta local de forma recursiva.
 pub async fn download_dir<F>(
     sftp: &russh_sftp::client::SftpSession,
@@ -274,9 +327,45 @@ pub async fn download_dir<F>(
 where
     F: FnMut(&str),
 {
+    download_dir_inner(
+        sftp,
+        src_dir,
+        dest_dir,
+        overwrite,
+        cancel,
+        on_output,
+        0,
+    )
+    .await
+}
+
+/// Implementación recursiva con control de profundidad para cortar ciclos de
+/// enlaces simbólicos (`current -> releases/…` que a su vez apunta al padre).
+async fn download_dir_inner<F>(
+    sftp: &russh_sftp::client::SftpSession,
+    src_dir: &Path,
+    dest_dir: &Path,
+    overwrite: bool,
+    cancel: Option<&CancellationToken>,
+    on_output: &mut F,
+    depth: usize,
+) -> Result<TransferResult, String>
+where
+    F: FnMut(&str),
+{
+    if depth >= MAX_DOWNLOAD_DEPTH {
+        return Err(format!(
+            "Profundidad máxima de descarga ({}) alcanzada en '{}'; revisa los enlaces simbólicos (posible ciclo)",
+            MAX_DOWNLOAD_DEPTH,
+            src_dir.to_string_lossy()
+        ));
+    }
+
     let mut result = TransferResult::zero();
 
-    let src_str = src_dir.to_string_lossy().to_string();
+    // `read_dir` no sigue enlaces en todos los servidores: usar la ruta real.
+    let resolved_src = resolve_remote_symlink(sftp, src_dir).await;
+    let src_str = resolved_src.to_string_lossy().to_string();
 
     let entries = sftp
         .read_dir(&src_str)
@@ -298,18 +387,37 @@ where
 
         let file_name = entry.file_name();
 
-        let entry_src = src_dir.join(&file_name);
+        // `DirEntry::path()` ya une con `/`, como exige el protocolo SFTP.
+        let entry_path = entry.path();
+        let entry_src = PathBuf::from(&entry_path);
         let entry_dest = dest_dir.join(&file_name);
-        let is_dir = entry.file_type().is_dir();
+
+        let file_type = entry.file_type();
+
+        // `file_type()` usa LSTAT: un enlace nunca es `is_dir()`, aunque
+        // apunte a un directorio. STAT (`metadata`) sí lo resuelve.
+        let is_dir = if file_type.is_symlink() {
+            match sftp.metadata(&entry_path).await {
+                Ok(resolved) => resolved.file_type().is_dir(),
+                Err(_) => {
+                    let msg = format!("⚠ Omitido enlace simbólico inaccesible: {}", entry_path);
+                    on_output(&msg);
+                    continue;
+                }
+            }
+        } else {
+            file_type.is_dir()
+        };
 
         if is_dir {
-            let sub = Box::pin(download_dir(
+            let sub = Box::pin(download_dir_inner(
                 sftp,
                 &entry_src,
                 &entry_dest,
                 overwrite,
                 cancel,
                 on_output,
+                depth + 1,
             ))
             .await?;
             result.add(sub);
@@ -325,7 +433,8 @@ where
 }
 
 /// Descarga un archivo o directorio remoto (`src`) a la ruta local `dest`.
-/// Detecta si `src` es un directorio remoto probando `read_dir`.
+/// Detecta si `src` es un directorio con STAT, que sigue enlaces simbólicos;
+/// solo si STAT no está disponible se recurre a probar `read_dir`.
 pub async fn download<F>(
     sftp: &russh_sftp::client::SftpSession,
     src: &Path,
@@ -339,9 +448,10 @@ where
 {
     let src_str = src.to_string_lossy();
 
-    let is_dir = match sftp.read_dir(src_str.as_ref()).await {
-        Ok(_) => true,
-        Err(_) => false,
+    let is_dir = match sftp.metadata(src_str.as_ref()).await {
+        Ok(metadata) => metadata.file_type().is_dir(),
+        // Servidor sin STAT: se intenta `read_dir` como detección antigua.
+        Err(_) => sftp.read_dir(src_str.as_ref()).await.is_ok(),
     };
 
     if is_dir {

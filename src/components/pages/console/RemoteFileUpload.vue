@@ -33,6 +33,8 @@ const canOperate = computed(() => !props.isRunning && !!props.hostId)
 const uploadLocalPath = ref('')
 const uploadRemotePath = ref('')
 const uploadRecursive = ref(false)
+const uploadOverwrite = ref(true)
+const uploadReconnectAttempts = ref<number | null>(3)
 const uploadChmod = ref('')
 
 function notifySuccess(message: string) {
@@ -41,6 +43,12 @@ function notifySuccess(message: string) {
 
 function notifyFailure(message: string) {
 	toast.error(t('overlays.toast.title.error'), message)
+}
+
+/** La razón viaja en la respuesta; el prop `errorMessage` puede ser aún el del render anterior. */
+function failureReason(result: CommandResponse<RemoteTransferResult> | null): string {
+	if (!result) return props.errorMessage
+	return result.message_params.reason || t(result.message_key, result.message_params)
 }
 
 async function pickUploadFile() {
@@ -69,16 +77,16 @@ async function runUpload() {
 		host_id: props.hostId,
 		local_path: uploadLocalPath.value,
 		remote_path: uploadRemotePath.value,
-		overwrite: true,
+		overwrite: uploadOverwrite.value,
 		chmod: uploadChmod.value || null,
 		recursive: uploadRecursive.value,
-		ssh_reconnect_attempts: 3,
+		ssh_reconnect_attempts: uploadReconnectAttempts.value,
 	})
 
 	if (result?.success) {
 		notifySuccess(t('components.console.feedback.uploaded'))
 	} else {
-		notifyFailure(t('components.console.feedback.failed', { reason: props.errorMessage }))
+		notifyFailure(t('components.console.feedback.failed', { reason: failureReason(result) }))
 	}
 }
 </script>
@@ -126,6 +134,19 @@ async function runUpload() {
 					:disabled="!canOperate"
 					autocomplete="off"
 				/>
+				<UInput
+					v-model.number="uploadReconnectAttempts"
+					type="number"
+					class="w-36"
+					:placeholder="t('components.console.upload.reconnect_attempts_placeholder')"
+					:disabled="!canOperate"
+				/>
+			</div>
+			<div class="flex flex-wrap items-center gap-4">
+				<USwitch v-model="uploadRecursive" :label="t('components.console.upload.recursive')" :disabled="!canOperate" />
+				<USwitch v-model="uploadOverwrite" :label="t('components.console.upload.overwrite')" :disabled="!canOperate" />
+			</div>
+			<div class="flex items-center gap-2">
 				<UButton
 					:icon="ICONS.taskType.upload_file"
 					:label="t('components.console.upload.submit')"
@@ -135,8 +156,15 @@ async function runUpload() {
 					:disabled="!hostId || !uploadLocalPath || !uploadRemotePath"
 					@click="runUpload"
 				/>
+				<UButton
+					v-if="isRunning"
+					:icon="ICONS.actions.stop"
+					:label="t('components.console.console.cancel')"
+					color="error"
+					variant="soft"
+					@click="cancel"
+				/>
 			</div>
-			<USwitch v-model="uploadRecursive" :label="t('components.console.upload.recursive')" :disabled="!canOperate" />
 		</div>
 	</div>
 </template>

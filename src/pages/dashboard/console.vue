@@ -15,7 +15,27 @@ const hostId = ref<number | undefined>(undefined)
 
 const { t } = useI18n()
 
-const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, download, cancel } = useRemoteCommand()
+const {
+	output,
+	isRunning,
+	lastExitCode,
+	errorMessage,
+	lastStatus,
+	activeKey,
+	clear,
+	execute,
+	upload,
+	download,
+	cancel,
+	appendOutput,
+} = useRemoteCommand({
+	execute: 'console-command',
+	upload: 'console-upload',
+	download: 'console-download',
+})
+
+/** Cancela el trabajo activo (el del evento `started`), no todos ni el último genérico. */
+const cancelCurrent = () => cancel(activeKey.value ?? undefined)
 </script>
 
 <template>
@@ -39,13 +59,11 @@ const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, d
 						label: t('pages.console.sections.upload'),
 						icon: ICONS.taskType.upload_file,
 						slot: 'upload',
-						disabled: true,
 					},
 					{
 						label: t('pages.console.sections.download'),
 						icon: ICONS.taskType.download_file,
 						slot: 'download',
-						disabled: true,
 					},
 				]"
 			>
@@ -56,7 +74,7 @@ const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, d
 						:is-running="isRunning"
 						:execute="execute"
 						:clear="clear"
-						:cancel="cancel"
+						:cancel="cancelCurrent"
 				/></template>
 				<template #upload>
 					<RemoteFileUpload
@@ -65,7 +83,7 @@ const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, d
 						:is-running="isRunning"
 						:upload="upload"
 						:clear="clear"
-						:cancel="cancel"
+						:cancel="cancelCurrent"
 				/></template>
 				<template #download>
 					<RemoteFileDownload
@@ -74,7 +92,8 @@ const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, d
 						:is-running="isRunning"
 						:download="download"
 						:clear="clear"
-						:cancel="cancel"
+						:cancel="cancelCurrent"
+						:append-output="appendOutput"
 				/></template>
 			</UTabs>
 
@@ -85,6 +104,7 @@ const { output, isRunning, lastExitCode, errorMessage, clear, execute, upload, d
 				:last-exit-code="lastExitCode"
 				:error-message="errorMessage"
 				:is-running="isRunning"
+				:job-status="lastStatus"
 				:clear="clear"
 			/>
 		</template>

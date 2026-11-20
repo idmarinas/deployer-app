@@ -1,17 +1,25 @@
 <script lang="ts">
+import type { SshJobStatus } from '@/composables/useSshJobs'
+
 import { useI18n } from 'vue-i18n'
 
 import { ICONS } from '@/utils/icons'
 </script>
 
 <script setup lang="ts">
-const props = defineProps<{
-	lastExitCode: number | null
-	isRunning: boolean
-	errorMessage: string
-	output: string
-	clear: () => void
-}>()
+const props = withDefaults(
+	defineProps<{
+		lastExitCode: number | null
+		isRunning: boolean
+		errorMessage: string
+		output: string
+		clear: () => void
+		jobStatus?: SshJobStatus | null
+	}>(),
+	{
+		jobStatus: null,
+	},
+)
 
 const { t } = useI18n()
 </script>
@@ -30,6 +38,20 @@ const { t } = useI18n()
 					variant="subtle"
 					:icon="ICONS.status.loading"
 					:label="t('components.console.console.running')"
+				/>
+				<UBadge
+					v-else-if="jobStatus === 'cancelled'"
+					color="warning"
+					variant="subtle"
+					:icon="ICONS.actions.stop"
+					:label="t('components.console.console.cancelled')"
+				/>
+				<UBadge
+					v-else-if="jobStatus === 'skipped'"
+					color="warning"
+					variant="subtle"
+					:icon="ICONS.status.alertTriangle"
+					:label="t('components.console.console.skipped')"
 				/>
 				<UBadge
 					v-else-if="lastExitCode !== null"
