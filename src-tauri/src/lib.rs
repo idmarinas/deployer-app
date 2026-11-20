@@ -5,15 +5,19 @@ mod response;
 mod ssh;
 pub mod tables;
 
-use commands::database::store::{check_database_exists, set_database_path};
-use commands::database::{get_app_info, get_database_info, query_raw};
-use commands::database::manage::{create_database_file, initialize_database, validate_database_sqlite};
-use commands::database::migrations::{execute_migrations, get_migrations_info, has_migrations_pending};
-use commands::hosts::test_connection;
-use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
 use crate::ssh::{
     ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
 };
+use commands::database::manage::{
+    create_database_file, initialize_database, validate_database_sqlite,
+};
+use commands::database::migrations::{
+    execute_migrations, get_migrations_info, has_migrations_pending,
+};
+use commands::database::store::{check_database_exists, set_database_path};
+use commands::database::{get_app_info, get_database_info, query_raw};
+use commands::hosts::test_connection;
+use commands::passkeys::{derive_passkey_info, export_public_key, generate_passkey};
 use commands::stronghold::{check_vault_health, get_vault_password, get_vault_path};
 use tauri::Manager;
 
@@ -21,6 +25,7 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
