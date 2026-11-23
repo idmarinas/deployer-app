@@ -68,7 +68,7 @@ const cancelCurrent = () => cancel(activeKey.value ?? undefined)
 				]"
 			>
 				<template #command>
-					<RemoteCommand
+					<ConsoleCommand
 						:host-id="hostId"
 						:error-message="errorMessage"
 						:is-running="isRunning"
@@ -77,7 +77,7 @@ const cancelCurrent = () => cancel(activeKey.value ?? undefined)
 						:cancel="cancelCurrent"
 				/></template>
 				<template #upload>
-					<RemoteFileUpload
+					<ConsoleFileUpload
 						:host-id="hostId"
 						:error-message="errorMessage"
 						:is-running="isRunning"
@@ -86,7 +86,7 @@ const cancelCurrent = () => cancel(activeKey.value ?? undefined)
 						:cancel="cancelCurrent"
 				/></template>
 				<template #download>
-					<RemoteFileDownload
+					<ConsoleFileDownload
 						:host-id="hostId"
 						:error-message="errorMessage"
 						:is-running="isRunning"
@@ -99,7 +99,7 @@ const cancelCurrent = () => cancel(activeKey.value ?? undefined)
 
 			<USeparator />
 
-			<RemoteOutput
+			<ConsoleOutput
 				:output="output"
 				:last-exit-code="lastExitCode"
 				:error-message="errorMessage"

@@ -392,7 +392,7 @@ onMounted(async () => {
 					</i18n-t>
 				</div>
 
-				<RemoteOutput
+				<ConsoleOutput
 					:last-exit-code="lastExitCode"
 					:is-running="isLoading"
 					:error-message="errorMessage"
