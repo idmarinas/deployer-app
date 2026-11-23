@@ -13,9 +13,6 @@ import type { InterpolationRoots, InterpolationSegment } from '@/utils/interpola
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import InputsForm from '@/components/form/inputs/InputsForm.vue'
-import SelectHost from '@/components/form/selects/SelectHost.vue'
-import RemoteOutput from '@/components/remote/RemoteOutput.vue'
 import { loadGlobalScopeMetadata } from '@/drizzle/lib/variables'
 import { runCommand, runCustomCommand } from '@/utils/commands/runner'
 import { ICONS } from '@/utils/icons'
