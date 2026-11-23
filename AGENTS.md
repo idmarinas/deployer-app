@@ -26,13 +26,14 @@
 ## Reglas
 
 - **Idioma:** siempre español.
+- **Componentes por página:** todo componente que pertenezca a una página va en `src/components/pages/<pagina>/`, reflejando la ruta de `src/pages/` (p. ej. `src/pages/dashboard/console.vue` → `src/components/pages/console/`, `src/pages/dashboard/file-manager.vue` → `src/components/pages/file-manager/`). Al crear un componente para una página, usa esa estructura por defecto: solo se saca a `src/components/` (form/, table/, overlay/, ...) si de verdad se comparte entre varias páginas. Si un componente de página se reutiliza de forma puntual, se importa desde su ruta `pages/<pagina>/`, sin moverlo.
 - **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/` (salida de build) y el **historial personal**: archivos `.back` y todo archivo/carpeta con extensión `.dist` (p.ej. `_archived.dist/`). No incluirlos en búsquedas ni lecturas salvo que se pidan explícitamente como referencia; nunca modificarlos.
-- **Archivos autogenerados (no editar):** `drizzle/` (completo), `src/drizzle/schema.ts`, `src/drizzle/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src-tauri/src/tables.rs`.
-- **`drizzle/migrations/`** — no borrar; Drizzle Kit lo usa para calcular diffs entre esquemas.
+- **Archivos autogenerados (no editar):** `migrations/` (completo), `src/drizzle/schema.ts`, `src/drizzle/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src-tauri/src/tables.rs`.
+- **`migrations/`** — no borrar; Drizzle Kit lo usa para calcular diffs entre esquemas (es la salida configurada en `drizzle.config.ts`).
 - **`src-tauri/migrations/`** — archivos planos `.sql` generados por `drizzle:generate`; sqlx los embebe en el binario.
 - **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
 - **Antes de crear un comando Rust nuevo:** comprobar si la lógica puede cubrirse con Drizzle (vía `query_raw`). Los comandos Rust dedicados solo deben existir para lógica de backend que Drizzle no puede atender (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).
-- **Migraciones SQL:** Drizzle Kit genera subdirectorios (`<timestamp>_<nombre>/migration.sql`) en `drizzle/migrations/` (no tocar). `sqlx::migrate!()` solo acepta archivos `.sql` planos en `src-tauri/migrations/`. `bun run drizzle:generate` hace `drizzle-kit generate` **y** aplana automáticamente el SQL a `src-tauri/migrations/` (equivalente a lo que antes se llamaba `drizzle:migrate`). sqlx extrae la versión del nombre del archivo (i64) y la descripción del resto.
+- **Migraciones SQL:** la fuente del esquema son las entidades en `src/drizzle/entities/`. Drizzle Kit genera subdirectorios (`<timestamp>_<nombre>/migration.sql`) en `migrations/` (no tocar). `sqlx::migrate!()` solo acepta archivos `.sql` planos en `src-tauri/migrations/`. `bun run drizzle:generate` hace `drizzle-kit generate` **y** aplana automáticamente el SQL a `src-tauri/migrations/` (equivalente a lo que antes se llamaba `drizzle:migrate`). sqlx extrae la versión del nombre del archivo (i64) y la descripción del resto.
 
 ## Acceso a datos (Drizzle vs comandos Rust)
 
@@ -64,7 +65,7 @@ bun run tables:generate        # Regenera src-tauri/src/tables.rs (constantes de
 
 - **Pinia Colada** expone `data` como `shallowRef`. Mutar propiedades anidadas NO dispara reactividad. Solo reasignar `.value` completo.
 - **`tauri_plugin_single_instance`** debe ser el primer plugin registrado en `lib.rs`.
-- **Schema Drizzle:** se edita la migración SQL (`drizzle/migrations/`), luego `bun run drizzle:generate` (generate + flatten). Nunca editar los archivos `.ts` de schema a mano.
+- **Schema Drizzle:** la fuente son las entidades en `src/drizzle/entities/`. Se edita/crea la entidad y se ejecuta `bun run drizzle:generate` (generate + flatten) de forma manual. Nunca editar a mano `src/drizzle/schema.ts`, `src/drizzle/relations.ts` ni las migraciones ya generadas.
 - **i18n:** backend devuelve claves i18n (nunca strings en español). Mensajes en `src/locales/es/`. Tipos autogenerados vía `bun run i18n:types`.
 - **Drag & drop (Tauri):** Sortable.js requiere `forceFallback: true` (HTML5 nativo no funciona en webviews). Contenedores condicionales requieren `watchElement: true`.
 - **Vite ignora `src-tauri/`** en el watch (configurado en `vite.config.ts`). Los cambios en Rust requieren rebuild explícito de Tauri.
