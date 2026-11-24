@@ -70,6 +70,10 @@
 | FUT-TECH-01 | Verificar en Tauri el round-trip de una variable secreta | Variables / Verificación | Alta | — | Pendiente | §4.1 |
 | FUT-TECH-02 | Corregir la documentación de formularios JSON-Schema retirados | Docs | Media | — | Pendiente | §4.2 |
 | FUT-TECH-03 | Resolver la referencia al plan de seed inexistente | Proceso / Docs | Baja | — | Pendiente | §4.3 |
+| FUT-FM-01 | Búsqueda/filtro de entradas en los paneles | File manager / UI | Baja | — | Pendiente | §4b.1 |
+| FUT-FM-02 | Virtualización para directorios con miles de entradas | File manager / UI | Media | Diseño v2 (persistencia de listados) | Pendiente | §4b.2 |
+| FUT-FM-03 | Arrastrar y soltar entre paneles | File manager / UI | Baja | — | Pendiente | §4b.3 |
+| FUT-FM-04 | Sincronización de directorios y comprobación de checksums | File manager / Transferencias | Media | Diseño v2 (cola persistida) | Pendiente | §4b.4 |
 
 ---
 
@@ -243,7 +247,7 @@ La corrección de la nota de soft-delete de `1.overview.md` corresponde al plan
 ### 3.1. Backlog de workflows
 
 El diseño base (`FUT-WF-00`, cerrado el 2026-11-12) vive en
-`.agents/AGENTS.node-workflows.DESIGN.md`: los secretos son variables globales con
+`.agents/designs/AGENTS.node-workflows.DESIGN.md`: los secretos son variables globales con
 `required_secrets` y expresiones `{{ global.<slug> }}`. Sigue siendo **diseño**, no plan.
 
 Items extraídos de su §20. El detalle de cada uno vive en ese diseño; aquí se registran para no
@@ -313,6 +317,66 @@ Decidir si el bloque se descarta o se documenta el seed actual; eliminar la refe
 
 ---
 
+## 4b. Gestor de archivos (file-manager)
+
+Ideas aplazadas del diseño v2 (`.agents/.done/designs/AGENTS.remote-file-manager-v2.DESIGN.md`).
+Ninguna se implementa sin extraer un plan aprobado. Las operaciones de escritura remota
+(crear/renombrar/borrar) y el editor de contenido remoto están **descartadas**: no son el
+objetivo del gestor.
+
+### 4b.1. `FUT-FM-01` — Búsqueda/filtro de entradas en los paneles
+
+- **Intención:** localizar rápidamente un archivo o directorio en el panel local o el remoto
+  sin navegar nivel a nivel.
+- **Funcionamiento:** un campo de texto sobre el listado filtraría por nombre (y, si se decide,
+  por extensión) usando el `snapshot` ya cargado, sin lanzar nuevas consultas SFTP; el filtro
+  aplicaría solo al nivel visible o a todo el árbol expandido, según se acuerde en el plan.
+  La selección y los nodos expandidos se conservarían al limpiar el filtro.
+- **Ventajas:** reduce la navegación en directorios grandes y reutiliza la persistencia del v2
+  (no hay que volver a listar ni a descargar metadatos).
+
+### 4b.2. `FUT-FM-02` — Virtualización para directorios con miles de entradas
+
+- **Intención:** mantener el árbol usable cuando un directorio remoto contiene miles de
+  entradas, escenario que el v2 hace más probable al conservar instantáneas en SQLite y en
+  memoria.
+- **Funcionamiento:** renderizar solo las filas visibles (altura fija por fila y ventana
+  deslizante) en lugar de construir un `TreeItem` por entrada, conservando la carga por niveles
+  y la persistencia de `loadedKeys`/`expandedKeys`. Se evaluaría una librería de virtual scroll
+  compatible con Vue 3 y `UTree` (p. ej. `@tanstack/vue-virtual`); antes de añadirla hay que
+  verificar `package.json` y `src-tauri/Cargo.toml`, según las reglas del proyecto.
+- **Ventajas:** menos nodos en el DOM, menos memoria y arranque/repintado más rápidos; sin
+  virtualización, un directorio muy grande puede bloquear la UI aunque el listado esté
+  paginado por niveles.
+
+### 4b.3. `FUT-FM-03` — Arrastrar y soltar entre paneles
+
+- **Intención:** encolar una transferencia arrastrando archivos del panel de origen al de
+  destino, en lugar de usar los botones `→`/`←`.
+- **Funcionamiento:** Sortable.js sobre las filas del `TreeFile`, con `forceFallback: true`
+  (el HTML5 nativo no funciona en el webview de Tauri) y `watchElement: true` si los
+  contenedores son condicionales. Al soltar se mostraría una confirmación con las rutas y se
+  encolaría el lote con el mismo `FileManagerTransferRequest` de hoy; no se movería nada en el
+  host hasta confirmar, y no se crearían ni borrarían entradas remotas.
+- **Ventajas:** gesto directo para selecciones múltiples y coherencia con el resto de la app,
+  que ya usa Sortable con estas dos opciones en Tauri.
+
+### 4b.4. `FUT-FM-04` — Sincronización de directorios y comprobación de checksums
+
+- **Intención:** decidir qué archivos hay que transferir comparando contenido real y no solo
+  tamaño/fecha, que es lo que hoy usan las marcas «descargado».
+- **Funcionamiento:** generar un manifiesto por extremo con ruta, tamaño, fecha y hash SHA-256;
+  en local con Web Crypto y en remoto ejecutando `sha256sum` por `ssh_execute_command` (con el
+  parser correspondiente). La comparación mostraría las diferencias y solo encolaría los
+  archivos dispares en la cola persistida del v2, respetando `max_concurrency`. Sincronizar
+  implicaría únicamente subir o bajar archivos existentes; crear, renombrar o borrar en el
+  remoto sigue fuera de alcance.
+- **Ventajas:** evita copias innecesarias y detecta cambios con el mismo tamaño y fecha, algo
+  que la marca actual no puede ver; además hace más fiable la reanudación después de una
+  interrupción.
+
+---
+
 ## 5. Planes ya extraídos (no duplicar aquí)
 
 | Plan | Estado | Notas |
@@ -335,3 +399,4 @@ Decidir si el bloque se descarta o se documenta el seed actual; eliminar la refe
 | 2026-11-12 | Backlog de variables (antiguo `AGENTS.variables-futuro.PLAN.md`) | Este documento, §2 | Consolidado |
 | 2026-11-12 | Análisis `AGENTS.variables.ANALYSIS.md` | Este documento, §2 + `AGENTS.done.md` | Consolidado y eliminado |
 | 2026-11-12 | Backlog de workflows (antiguo §20 del diseño) | Este documento, §3.1 | Consolidado |
+| 2026-11-23 | Ideas aplazadas del diseño v2 (`FUT-FM-01`..`FUT-FM-04`) | Este documento, §4b | Registradas; sin plan |
