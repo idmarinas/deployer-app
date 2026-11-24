@@ -199,7 +199,7 @@ export default defineConfig(async () => ({
 			: undefined,
 		watch: {
 			// 3. tell Vite to ignore watching `src-tauri`
-			ignored: ['**/src-tauri/**', '*.sqlite', '*.sqlite-*', '**/*.md'],
+			ignored: ['**/src-tauri/**', '**/*.md', '**/*.sqlite', '**/*.sqlite-*'],
 		},
 	},
 }))
