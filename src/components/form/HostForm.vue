@@ -15,6 +15,7 @@ const state = defineModel<{
 	name: string
 	description: JSONContent
 	host: string
+	default_remote_path: string | null
 	port: number
 	auth_type: 'password' | 'key'
 	username: string
@@ -80,6 +81,20 @@ async function checkFingerprint() {
 
 	<UFormField name="host" :label="t('form.hosts.host.label')" :help="t('form.hosts.host.help')" required>
 		<UInput v-model="state.host" autocomplete="on" class="w-full" />
+	</UFormField>
+
+	<UFormField
+		name="default_remote_path"
+		:label="t('form.hosts.default_remote_path.label')"
+		:help="t('form.hosts.default_remote_path.help')"
+		:hint="t('form.shared.hint.optional')"
+	>
+		<UInput
+			v-model="state.default_remote_path!"
+			autocomplete="off"
+			:placeholder="t('form.hosts.default_remote_path.placeholder')"
+			class="w-full font-mono"
+		/>
 	</UFormField>
 
 	<UFormField name="port" :label="t('form.hosts.port.label')" :help="t('form.hosts.port.help')" required>

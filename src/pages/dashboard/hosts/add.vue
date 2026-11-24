@@ -27,6 +27,7 @@ const initialState: HostValidationInsertType = {
 	name: '',
 	description: { type: 'doc', content: [{ type: 'paragraph' }] },
 	host: '',
+	default_remote_path: null,
 	port: 22,
 	auth_type: 'password',
 	username: '',

@@ -66,7 +66,7 @@ watch(
 	host,
 	newHost => {
 		if (newHost) {
-			state.value = newHost
+			state.value = { ...newHost }
 		}
 	},
 	{ immediate: true },
