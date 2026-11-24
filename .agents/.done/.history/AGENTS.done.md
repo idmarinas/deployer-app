@@ -2,6 +2,19 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (24 nov 2026 — Gestor de archivos remoto v2 — Persistencia, concurrencia y reintento)
+
+**Nota del usuario:** dio por completado el diseño v2 y su plan único tras verificar el gestor. Detalle en `AGENTS.remote-file-manager-v2.PLAN.md` (archivado en `.agents/.done/plans/`). El diseño `AGENTS.remote-file-manager-v2.DESIGN.md` pasa a **Implementado** y se archiva en `.agents/.done/designs/`. No es una serie.
+
+1. **Persistencia**: tres tablas SQLite nuevas vía Drizzle para preferencias, listados y cola; marcas migradas desde `localStorage`; listados con stale-while-revalidate.
+2. **Cola y reintento**: jobs `interrupted` al reabrir, reintento manual por ítem con nueva clave, vista de transferencias en bloques y borrado de filas con «Limpiar terminados».
+3. **Concurrencia**: `max_concurrency` (1-16, default 2) compartido en una sola sesión SFTP con semáforo, tokens registrados al inicio y eventos serializados; por diseño se aplica a elementos seleccionados, no a archivos dentro de una carpeta.
+4. **Estabilización**: ignore de Vite para `*.sqlite*`, SQLite en WAL con `busy_timeout`, motivo real en `QueryRawError` y `topLevelEntries()` para no duplicar carpetas.
+
+**Verificación:** confirmada por el usuario.
+
+---
+
 ## Tareas completadas (23 nov 2026 — Correcciones del gestor de archivos (2/2) — Progreso por archivo)
 
 **Nota del usuario:** confirmó «Todo ok» tras la verificación y pidió dar por completados los dos planes. Detalle en `AGENTS.file-manager-fixes-progress.PLAN.md` (archivado en `.agents/.done/plans/`). **La serie `file-manager-fixes` queda completa (2/2)**; no tiene diseño de origen.
