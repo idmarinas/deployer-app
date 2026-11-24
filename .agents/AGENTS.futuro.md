@@ -74,6 +74,7 @@
 | FUT-FM-02 | Virtualización para directorios con miles de entradas | File manager / UI | Media | Diseño v2 (persistencia de listados) | Pendiente | §4b.2 |
 | FUT-FM-03 | Arrastrar y soltar entre paneles | File manager / UI | Baja | — | Pendiente | §4b.3 |
 | FUT-FM-04 | Sincronización de directorios y comprobación de checksums | File manager / Transferencias | Media | Diseño v2 (cola persistida) | Pendiente | §4b.4 |
+| FUT-FM-05 | Restauración de selección profunda en el `TreeFile` | File manager / UI | Media | Diseño v3 (orden del `TreeFile`) | Pendiente | §4b.5 |
 
 ---
 
@@ -319,7 +320,8 @@ Decidir si el bloque se descarta o se documenta el seed actual; eliminar la refe
 
 ## 4b. Gestor de archivos (file-manager)
 
-Ideas aplazadas del diseño v2 (`.agents/.done/designs/AGENTS.remote-file-manager-v2.DESIGN.md`).
+Ideas aplazadas de los diseños v2 (`.agents/.done/designs/AGENTS.remote-file-manager-v2.DESIGN.md`)
+y v3 (`.agents/designs/AGENTS.remote-file-manager-v3.DESIGN.md`).
 Ninguna se implementa sin extraer un plan aprobado. Las operaciones de escritura remota
 (crear/renombrar/borrar) y el editor de contenido remoto están **descartadas**: no son el
 objetivo del gestor.
@@ -375,6 +377,16 @@ objetivo del gestor.
   que la marca actual no puede ver; además hace más fiable la reanudación después de una
   interrupción.
 
+### 4b.5. `FUT-FM-05` — Restauración de selección profunda en el `TreeFile`
+
+- **Intención:** recuperar al arrancar la selección de entradas situadas en niveles que aún no
+  se han cargado, hoy limitada por `applyInitialSelection` a los nodos ya presentes en el árbol.
+- **Funcionamiento:** volver a aplicar la selección de la instantánea cuando termina la carga de
+  cada nivel (`children-loaded`), hasta que todas las claves guardadas estén resueltas o no
+  queden niveles por cargar; sin cambiar el orden ni la apariencia del `TreeFile`.
+- **Ventajas:** la persistencia de la selección del v2 pasa a ser completa también en ramas
+  profundas, sin depender de que el usuario expanda manualmente los directorios.
+
 ---
 
 ## 5. Planes ya extraídos (no duplicar aquí)
@@ -400,3 +412,4 @@ objetivo del gestor.
 | 2026-11-12 | Análisis `AGENTS.variables.ANALYSIS.md` | Este documento, §2 + `AGENTS.done.md` | Consolidado y eliminado |
 | 2026-11-12 | Backlog de workflows (antiguo §20 del diseño) | Este documento, §3.1 | Consolidado |
 | 2026-11-23 | Ideas aplazadas del diseño v2 (`FUT-FM-01`..`FUT-FM-04`) | Este documento, §4b | Registradas; sin plan |
+| 2026-11-24 | `SUG-FM-07` del diseño v3 (restauración de selección profunda) | Este documento, §4b (`FUT-FM-05`) | Registrada; sin plan |
