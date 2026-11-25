@@ -80,6 +80,14 @@ export function useSideberMenu() {
 			icon: ICONS.server.terminal,
 			to: { name: 'dashboard-console' },
 		},
+		// Gestor de archivos
+		{
+			label: t('components.sidebar.file_manager'),
+			icon: ICONS.actions.folderOpen,
+			// `route-map.d.ts` se regenera en dev/build; mientras tanto el nombre
+			// aún no existe en el tipo de rutas generado.
+			to: { name: 'dashboard-file-manager' } as unknown as NavigationMenuItem['to'],
+		},
 		// Papelera
 		{
 			label: t('components.sidebar.trash'),

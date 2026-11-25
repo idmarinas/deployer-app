@@ -6,7 +6,8 @@ mod ssh;
 pub mod tables;
 
 use crate::ssh::{
-    ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_upload_file, RemoteJobCancel,
+    ssh_cancel_remote_job, ssh_download_file, ssh_execute_command, ssh_file_manager_transfer,
+    ssh_list_remote_dir, ssh_upload_file, RemoteJobCancel,
 };
 use commands::database::manage::{
     create_database_file, initialize_database, validate_database_sqlite,
@@ -63,6 +64,8 @@ pub fn run() {
             ssh_execute_command,
             ssh_upload_file,
             ssh_download_file,
+            ssh_list_remote_dir,
+            ssh_file_manager_transfer,
             ssh_cancel_remote_job,
             // Database - Store
             set_database_path,

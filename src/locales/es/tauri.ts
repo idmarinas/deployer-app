@@ -210,6 +210,8 @@ export default {
       exec: 'Comando ejecutado correctamente.',
       upload: 'Archivos subidos correctamente.',
       download: 'Archivos descargados correctamente.',
+      list: 'Directorio listado correctamente.',
+      batch: 'Lote de transferencias procesado.',
     },
     exec: {
       completed_with_errors: 'El comando terminó con errores (código de salida distinto de 0).',

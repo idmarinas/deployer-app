@@ -11,6 +11,7 @@ export default {
 	deployments: 'Deployments',
 	docker_composes: 'Docker Compose',
 	console: 'Remote console',
+	file_manager: 'File manager',
 	trash: 'Trash',
 	search: {
 		actions: 'Actions',

@@ -1,16 +1,23 @@
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type {
 	CommandResponse,
+	RemoteBatchResult,
 	RemoteCommandInput,
 	RemoteCommandResult,
 	RemoteConsoleEvent,
 	RemoteDownloadInput,
 	RemoteDownloadResult,
+	RemoteFileManagerEvent,
 	RemoteFinishStatus,
+	RemoteTransferFileInfo,
+	RemoteTransferBatchInput,
+	RemoteTransferItemResult,
 	RemoteTransferResult,
 	RemoteUploadInput,
 } from '@/types/tauri-types'
 import { computed, reactive, ref } from 'vue'
+
+import type { FileManagerTransferSnapshot } from '@/types/fileManager'
 
 import { loadGlobalScopeForExecution } from '@/drizzle/lib/variables'
 import { i18n } from '@/i18n'
@@ -33,6 +40,18 @@ export type SshJobStatus =
 	| 'error'
 	| 'cancelled'
 	| 'skipped'
+	| 'interrupted'
+
+/** Estado de un archivo dentro del detalle de un ítem del gestor de archivos. */
+export interface SshJobFile {
+	id: string
+	path: string
+	relativePath: string
+	size: number
+	bytes: number
+	status: SshJobStatus
+	messageKey?: string | null
+}
 
 /** Registro de un trabajo SSH. `key` es la clave de cliente, no el `job_id` de Rust. */
 export interface SshJob<TResult = unknown> {
@@ -48,8 +67,19 @@ export interface SshJob<TResult = unknown> {
 	errorMessage: string
 	result: CommandResponse<TResult> | null
 	finishStatus: RemoteFinishStatus | null
+	/** ISO al crear el job; permite ordenar la cola aunque esté `pending`. */
+	createdAt: string
 	startedAt: number | null
 	finishedAt: number | null
+	/** Bytes del ítem al completarse dentro de un lote; null en otros jobs. */
+	bytesTransferred?: number | null
+	/** Bytes acumulados del lote cuando terminó el ítem. */
+	bytesTotal?: number | null
+	/** Rutas origen/destino del ítem en el lote del gestor de archivos. */
+	sourcePath?: string
+	targetPath?: string
+	/** Detalle recursivo del ítem, disponible desde el evento `file_list`. */
+	files?: SshJobFile[]
 }
 
 /** Metadatos opcionales al lanzar un trabajo. */
@@ -76,6 +106,13 @@ export interface UseSshJobsOptions {
 	interpolator?: SshInterpolationAdapter
 }
 
+/** Metadatos de UI de un ítem del lote del gestor de archivos. */
+export interface SshBatchJobMeta {
+	key: string
+	label?: string
+	dependsOn?: string[]
+}
+
 const defaultInterpolator: SshInterpolationAdapter = {
 	async getRoots() {
 		return { global: await loadGlobalScopeForExecution() }
@@ -96,8 +133,14 @@ function statusFromFinish(status: RemoteFinishStatus): SshJobStatus {
 }
 
 /** Aísla la comparación del flujo de TS: el channel muta `status` en un callback. */
-function isActiveStatus(status: SshJobStatus): boolean {
+export function isActiveStatus(status: SshJobStatus): boolean {
 	return status === 'running' || status === 'pending'
+}
+
+/** Secuencia final de la clave, usada para desempatar el orden de la cola. */
+function keySequence(key: string): number {
+	const match = /(\d+)$/.exec(key)
+	return match ? Number(match[1]) : 0
 }
 
 const DEPENDENCY_POLL_MS = 25
@@ -122,7 +165,12 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		return `ssh-job-${sequence}`
 	}
 
-	const orderedJobs = computed(() => Array.from(jobs.values()))
+	const orderedJobs = computed(() =>
+		Array.from(jobs.values()).sort((a, b) => {
+			const byDate = b.createdAt.localeCompare(a.createdAt)
+			return byDate || keySequence(b.key) - keySequence(a.key)
+		}),
+	)
 	const activeJob = computed(() => (activeKey.value ? jobs.get(activeKey.value) : undefined))
 
 	/** Estado agregado para consumidores con una sola operación visible (consola). */
@@ -130,9 +178,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		const fromJobs = orderedJobs.value.map(job => job.output).filter(Boolean).join('')
 		return `${extraOutput.value}${fromJobs}`
 	})
-	const isRunning = computed(() =>
-		orderedJobs.value.some(job => job.status === 'running' || job.status === 'pending'),
-	)
+	const isRunning = computed(() => orderedJobs.value.some(job => isActiveStatus(job.status)))
 	const lastExitCode = computed(() => {
 		for (let index = orderedJobs.value.length - 1; index >= 0; index -= 1) {
 			const job = orderedJobs.value[index]!
@@ -166,7 +212,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 
 		extraOutput.value = ''
 		for (const [jobKey, job] of jobs) {
-			if (job.status !== 'running' && job.status !== 'pending') jobs.delete(jobKey)
+			if (!isActiveStatus(job.status)) jobs.delete(jobKey)
 		}
 		if (activeKey.value && !jobs.has(activeKey.value)) activeKey.value = null
 	}
@@ -177,7 +223,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		while (job.status !== 'skipped') {
 			const blocked = job.dependsOn
 				.map(key => jobs.get(key))
-				.some(dep => dep?.status === 'pending' || dep?.status === 'running')
+				.some(dep => dep && isActiveStatus(dep.status))
 
 			if (!blocked) {
 				const ready = job.dependsOn.every(key => jobs.get(key)?.status === 'success')
@@ -220,8 +266,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		const cascade = options.cascade ?? true
 		const targetKey =
 			key ??
-			activeKey.value ??
-			orderedJobs.value.find(job => job.status === 'running' || job.status === 'pending')?.key
+			activeKey.value ?? orderedJobs.value.find(job => isActiveStatus(job.status))?.key
 
 		if (!targetKey) {
 			// Compatibilidad de consola: sin trabajo conocido, Rust cancela el último.
@@ -234,6 +279,8 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 			if (!job) continue
 
 			if (job.status === 'pending') {
+				// En un lote el token ya está registrado aunque el ítem no haya empezado.
+				if (job.jobId !== null) await invokeCancel(job.jobId)
 				job.status = 'skipped'
 			} else if (job.status === 'running') {
 				await invokeCancel(job.jobId ?? undefined)
@@ -243,7 +290,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 
 	async function cancelAll() {
 		for (const job of orderedJobs.value) {
-			if (job.status === 'running' || job.status === 'pending') {
+			if (isActiveStatus(job.status)) {
 				await cancel(job.key, { cascade: false })
 			}
 		}
@@ -271,6 +318,7 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 			errorMessage: '',
 			result: null,
 			finishStatus: null,
+			createdAt: new Date().toISOString(),
 			startedAt: null,
 			finishedAt: null,
 		})
@@ -326,7 +374,8 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 
 		try {
 			const response = await invoke<CommandResponse<T>>(commandName, { input: finalInput, channel })
-			job.result = response
+			// `reactive` envuelve `data` en UnwrapRef; el valor en runtime es el mismo.
+			;(job as unknown as SshJob<T>).result = response
 			if (!response.success && !job.errorMessage) {
 				job.errorMessage = redactSecrets(
 					i18n.global.t(response.message_key, response.message_params),
@@ -367,11 +416,209 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		return run<RemoteDownloadResult>('download', 'ssh_download_file', input, meta)
 	}
 
+	/**
+	 * Lanza un lote del gestor de archivos: un único `invoke` alimenta varios
+	 * jobs, correlacionados por la `key` de cada ítem. Conserva la forma de
+	 * `SshJob`, así que la cancelación en cascada y la cola reutilizan el motor.
+	 */
+	async function runBatch(
+		input: RemoteTransferBatchInput,
+		metas: SshBatchJobMeta[] = [],
+		onEvent?: (event: RemoteFileManagerEvent) => void,
+	): Promise<CommandResponse<RemoteBatchResult> | null> {
+		const metaByKey = new Map(metas.map(meta => [meta.key, meta]))
+		const batchJobs: SshJob[] = []
+
+		for (const item of input.items) {
+			const meta = metaByKey.get(item.key)
+			const job = reactive<SshJob<RemoteTransferItemResult>>({
+				key: item.key,
+				label: meta?.label,
+				operation: item.direction === 'upload' ? 'upload' : 'download',
+				dependsOn: [...(meta?.dependsOn ?? [])],
+				status: 'pending',
+				jobId: null,
+				output: '',
+				exitCode: null,
+				errorMessage: '',
+				result: null,
+				finishStatus: null,
+				createdAt: new Date().toISOString(),
+				startedAt: null,
+				finishedAt: null,
+				bytesTransferred: null,
+				bytesTotal: null,
+				sourcePath: item.direction === 'upload' ? item.local_path : item.remote_path,
+				targetPath: item.direction === 'upload' ? item.remote_path : item.local_path,
+				files: [],
+			})
+			jobs.set(item.key, job as SshJob)
+			batchJobs.push(job as SshJob)
+		}
+
+		if (batchJobs.length) activeKey.value = batchJobs[0]!.key
+
+		const channel = new Channel<RemoteFileManagerEvent>()
+		channel.onmessage = (event: RemoteFileManagerEvent) => {
+			onEvent?.(event)
+			switch (event.event) {
+				case 'batch_started':
+					// Todos los tokens existen desde el inicio: permite cancelar ítems pendientes.
+					for (const [key, jobId] of Object.entries(event.job_ids)) {
+						const job = jobs.get(key)
+						if (job) job.jobId = jobId
+					}
+					break
+				case 'item_started': {
+					const job = jobs.get(event.key)
+					if (!job) break
+					job.jobId = event.job_id
+					job.status = 'running'
+					job.startedAt ??= Date.now()
+					break
+				}
+				case 'file_list': {
+					const job = jobs.get(event.key)
+					if (!job) break
+					job.files = event.files.map((file: RemoteTransferFileInfo): SshJobFile => ({
+						id: file.id,
+						path: file.path,
+						relativePath: file.relative_path,
+						size: file.size,
+						bytes: 0,
+						status: 'pending',
+					}))
+					break
+				}
+				case 'file_started': {
+					const file = jobs.get(event.key)?.files?.find(f => f.id === event.file_id)
+					if (!file) break
+					// `event.bytes` es el tamaño declarado, ya reflejado en `file.size`:
+					// los bytes transferidos siguen en 0 hasta el primer `file_progress`.
+					file.status = 'running'
+					break
+				}
+				case 'file_progress': {
+					const file = jobs.get(event.key)?.files?.find(f => f.id === event.file_id)
+					if (!file) break
+					file.bytes = event.bytes
+					break
+				}
+				case 'file_finished': {
+					const file = jobs.get(event.key)?.files?.find(f => f.id === event.file_id)
+					if (!file) break
+					file.status = statusFromFinish(event.status)
+					file.bytes = event.bytes
+					file.messageKey = event.message_key
+					break
+				}
+				case 'progress': {
+					const job = jobs.get(event.key)
+					if (!job) break
+					job.bytesTransferred = event.bytes
+					job.bytesTotal = event.total
+					break
+				}
+				case 'item_finished': {
+					const job = jobs.get(event.key)
+					if (!job) break
+					// Un dependiente cancelado antes de empezar ya está `skipped`.
+					if (job.status !== 'skipped') job.status = statusFromFinish(event.status)
+					job.finishStatus = event.status
+					job.exitCode =
+						event.status === 'success' ? 0 : event.status === 'cancelled' ? 130 : 1
+					job.finishedAt = Date.now()
+					job.errorMessage = event.result.message_key
+						? i18n.global.t(event.result.message_key, event.result.message_params)
+						: (event.result.message ?? '')
+					job.output += event.result.output
+					;(job as unknown as SshJob<RemoteTransferItemResult>).result = {
+						success: event.status === 'success',
+						data: event.result,
+						message_key: '',
+						message_params: {},
+					}
+					break
+				}
+				case 'batch_finished':
+					// El recuento agregado viaja también en la respuesta del invoke.
+					break
+			}
+		}
+
+		try {
+			const response = await invoke<CommandResponse<RemoteBatchResult>>(
+				'ssh_file_manager_transfer',
+				{ input, channel },
+			)
+			if (!response.success) {
+				const message = i18n.global.t(response.message_key, response.message_params)
+				for (const job of batchJobs) {
+					if (!job.errorMessage) job.errorMessage = message
+				}
+			}
+			return response
+		} catch (error) {
+			for (const job of batchJobs) {
+				job.status = 'error'
+				job.errorMessage = String(error)
+			}
+			return null
+		} finally {
+			for (const job of batchJobs) {
+				if (isActiveStatus(job.status)) {
+					job.status = job.result?.success ? 'success' : 'error'
+					job.finishedAt = Date.now()
+				}
+			}
+		}
+	}
+
+	/**
+	 * Restaura los snapshots persistidos. Los estados no terminales se marcan
+	 * como `interrupted`: el token de Rust ya no existe en esta sesión.
+	 */
+	function restoreJobs(snapshots: readonly FileManagerTransferSnapshot[]): void {
+		for (const snapshot of snapshots) {
+			if (jobs.has(snapshot.key)) continue
+
+			const match = /^ssh-job-(\d+)$/.exec(snapshot.key)
+			if (match) sequence = Math.max(sequence, Number(match[1]))
+
+			const restored = reactive<SshJob>({
+				key: snapshot.key,
+				label: snapshot.label,
+				operation: snapshot.operation,
+				dependsOn: [],
+				status:
+					snapshot.status === 'running' || snapshot.status === 'pending'
+						? 'interrupted'
+						: snapshot.status,
+				jobId: null,
+				output: snapshot.output,
+				exitCode: snapshot.exitCode,
+				errorMessage: snapshot.errorMessage,
+				result: snapshot.result,
+				finishStatus: snapshot.finishStatus,
+				createdAt: snapshot.createdAt,
+				startedAt: snapshot.startedAt,
+				finishedAt: snapshot.finishedAt,
+				bytesTransferred: snapshot.bytesTransferred,
+				bytesTotal: snapshot.bytesTotal,
+				sourcePath: snapshot.sourcePath,
+				targetPath: snapshot.targetPath,
+				files: snapshot.files?.map(file => ({ ...file })),
+			})
+			jobs.set(snapshot.key, restored)
+		}
+	}
+
 	return {
 		jobs,
 		activeKey,
 		activeJob,
 		orderedJobs,
+		restoreJobs,
 		output,
 		isRunning,
 		lastExitCode,
@@ -386,5 +633,6 @@ export default function useSshJobs(options: UseSshJobsOptions = {}) {
 		execute,
 		upload,
 		download,
+		runBatch,
 	}
 }

@@ -17,6 +17,11 @@ export default {
 		label: 'Host',
 		help: 'IP address or domain name of the host',
 	},
+	default_remote_path: {
+		label: 'Base directory (file manager)',
+		help: 'Initial path of the remote panel. It is not the command working directory; leave it empty to use “/”.',
+		placeholder: '/var/www',
+	},
 	port: {
 		label: 'Port',
 		help: 'SSH connection port',

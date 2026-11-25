@@ -15,6 +15,10 @@ export default {
 		ipv4: 'You must enter a valid IPv4 address.',
 		ipv6: 'You must enter a valid IPv6 address.',
 	},
+	default_remote_path: {
+		absolute: 'The base path must be absolute (for example “/var/www” or “C:\\www”).',
+		max: 'The base path cannot exceed 255 characters.',
+	},
 	port: {
 		min: 'The port must be greater than or equal to 0.',
 		max: 'The port must be less than or equal to 65535.',

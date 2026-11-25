@@ -100,6 +100,10 @@ const socials: {
 
 		<UDashboardSearch :groups="searchGroups" />
 
-		<RouterView />
+		<RouterView v-slot="{ Component }">
+			<KeepAlive include="FileManagerPage">
+				<component :is="Component" />
+			</KeepAlive>
+		</RouterView>
 	</UDashboardGroup>
 </template>

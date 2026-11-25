@@ -5,9 +5,19 @@ import z from 'zod'
 import { db } from '@/drizzle/drizzle'
 import { hosts } from '@/drizzle/schema'
 import { i18n } from '@/i18n'
+import { isValidAbsoluteRemotePath } from '@/utils/paths'
 
 export function useHostValidation(id?: number) {
 	const { t } = i18n.global
+
+	/** Opcional: cadena vacía/NULL significa «usar la raíz del servidor». */
+	const remotePathSchema = z
+		.string()
+		.trim()
+		.max(255, t('validation.hosts.default_remote_path.max'))
+		.refine(isValidAbsoluteRemotePath, t('validation.hosts.default_remote_path.absolute'))
+		.nullable()
+		.optional()
 
 	const select = createSelectSchema(hosts)
 
@@ -41,6 +51,7 @@ export function useHostValidation(id?: number) {
 		created_at: z => z,
 		deleted_at: z => z.nullable(),
 	})
+		.extend({ default_remote_path: remotePathSchema })
 		.superRefine((data, ctx) => {
 			if (data.auth_type === 'password') {
 				if (data.password === null || data.password.length === 0) {

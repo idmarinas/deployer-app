@@ -43,6 +43,8 @@ export default {
 		arch: 'Architecture',
 		host_key_fingerprint: 'SSH fingerprint',
 		host_key_fingerprint_empty: 'Not confirmed',
+		default_remote_path: 'Base directory (file manager)',
+		default_remote_path_empty: 'Server root (/)',
 		package_manager: 'Package manager',
 		uptime: 'Uptime',
 		cpu_cores: 'CPU',

@@ -21,6 +21,8 @@ pub mod keys {
     pub const EXEC_OK: &str = "tauri.ssh.success.exec";
     pub const UPLOAD_OK: &str = "tauri.ssh.success.upload";
     pub const DOWNLOAD_OK: &str = "tauri.ssh.success.download";
+    pub const LIST_OK: &str = "tauri.ssh.success.list";
+    pub const BATCH_OK: &str = "tauri.ssh.success.batch";
     pub const EXEC_COMPLETED_WITH_ERRORS: &str = "tauri.ssh.exec.completed_with_errors";
 }
 

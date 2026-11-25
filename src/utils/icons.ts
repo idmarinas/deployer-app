@@ -139,6 +139,10 @@ export const ICONS = {
 		undo: 'i-tabler-arrow-back-up',
 		moveUp: 'i-tabler-arrow-up',
 		moveDown: 'i-tabler-arrow-down',
+		arrowRight: 'i-tabler-arrow-right',
+		arrowLeft: 'i-tabler-arrow-left',
+		file: 'i-tabler-file',
+		symlink: 'i-tabler-link',
 	},
 
 	/** Estados / feedback (toasts, alerts, badges) */
@@ -146,6 +150,7 @@ export const ICONS = {
 		check: 'i-tabler-check',
 		cross: 'i-tabler-x',
 		circleCheck: 'i-tabler-circle-check',
+		circleMinus: 'i-tabler-circle-minus',
 		circleX: 'i-tabler-circle-x',
 		infoCircle: 'i-tabler-info-circle',
 		exclamationCircle: 'i-tabler-exclamation-circle',
@@ -298,4 +303,163 @@ export function getModuleSwitchIcons(
 		uncheckedIcon: getModuleIcon(moduleName, 'off', isIconify),
 		checkedIcon: getModuleIcon(moduleName, 'singular', isIconify),
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Iconos de archivos por extensión (gestor de archivos remoto)
+//
+// Portado de `_archived.dist/src/lib/files.ts` y adaptado a `FileEntry`, que no
+// trae `mime_type` ni `is_binary`: la decisión se toma por nombre y extensión.
+// Los iconos `i-vscode-icons-*` se pasan tal cual a `UIcon` (`toIconify()` solo
+// convierte los sets `tabler`/`cib`).
+// ---------------------------------------------------------------------------
+
+const FILE_IMAGE_ICON = 'i-vscode-icons-file-type-image'
+const FILE_BINARY_ICON = 'i-vscode-icons-file-type-binary'
+const FILE_DEFAULT_ICON = 'i-vscode-icons-default-file'
+
+const TEXT_EXTENSIONS = new Set([
+	'txt', 'md', 'markdown', 'conf', 'config', 'ini', 'cfg', 'properties', 'toml', 'env',
+	'yml', 'yaml', 'json', 'xml', 'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'sh', 'bash',
+	'zsh', 'fish', 'sql', 'log', 'csv', 'htaccess', 'gitignore', 'dockerignore',
+	'editorconfig', 'html', 'htm', 'css', 'scss', 'sass', 'svg', 'php', 'py', 'rb', 'go',
+	'rs', 'java', 'c', 'h', 'cpp', 'hpp', 'vue', 'svelte', 'pem', 'crt', 'key', 'pub',
+	'asc', 'gpg', 'lock', 'template', 'tpl', 'example', 'sample', 'service', 'socket',
+	'timer', 'profile',
+])
+
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp', 'avif'])
+
+export interface FileIconSource {
+	name?: string | null
+	icon?: string | null
+	is_binary?: boolean
+	mime_type?: string | null
+}
+
+function getExtension(fileName: string): string {
+	return fileName.includes('.') ? (fileName.split('.').pop() ?? '').toLowerCase() : ''
+}
+
+/** Indica si el nombre corresponde a una imagen por extensión o MIME. */
+export function isImageFileName(name: string, mimeType?: string | null): boolean {
+	return !!mimeType?.startsWith('image/') || IMAGE_EXTENSIONS.has(getExtension(name))
+}
+
+/** Icono por extensión de archivo de texto; por defecto, archivo genérico. */
+export function iconForFileExtension(ext: string): string {
+	switch (ext) {
+		case 'env':
+			return 'i-vscode-icons-file-type-dotenv'
+		case 'json':
+			return 'i-vscode-icons-file-type-json'
+		case 'html':
+		case 'htm':
+			return 'i-vscode-icons-file-type-html'
+		case 'css':
+			return 'i-vscode-icons-file-type-css'
+		case 'scss':
+			return 'i-vscode-icons-file-type-scss'
+		case 'js':
+		case 'mjs':
+		case 'cjs':
+		case 'jsx':
+			return 'i-vscode-icons-file-type-js'
+		case 'ts':
+		case 'tsx':
+			return 'i-vscode-icons-file-type-typescript'
+		case 'vue':
+			return 'i-vscode-icons-file-type-vue'
+		case 'php':
+			return 'i-vscode-icons-file-type-php'
+		case 'py':
+			return 'i-vscode-icons-file-type-python'
+		case 'go':
+			return 'i-vscode-icons-file-type-go'
+		case 'rs':
+			return 'i-vscode-icons-file-type-rust'
+		case 'sql':
+			return 'i-vscode-icons-file-type-sql'
+		case 'sh':
+		case 'bash':
+		case 'zsh':
+		case 'fish':
+			return 'i-vscode-icons-file-type-shell'
+		case 'yml':
+		case 'yaml':
+			return 'i-vscode-icons-file-type-yaml'
+		case 'toml':
+			return 'i-vscode-icons-file-type-toml'
+		case 'md':
+		case 'markdown':
+			return 'i-vscode-icons-file-type-markdown'
+		case 'log':
+			return 'i-vscode-icons-file-type-log'
+		case 'svg':
+			return 'i-vscode-icons-file-type-svg'
+		case 'conf':
+		case 'config':
+		case 'ini':
+			return 'i-vscode-icons-file-type-config'
+		case 'txt':
+			return 'i-vscode-icons-file-type-text'
+		case 'sqlite':
+			return 'i-vscode-icons-file-type-sqlite'
+		default:
+			return FILE_DEFAULT_ICON
+	}
+}
+
+function iconForFileName(name: string): string | undefined {
+	switch (name) {
+		case 'composer.json':
+			return 'i-vscode-icons-file-type-composer'
+		case 'compose.yaml':
+		case 'compose.yml':
+		case 'docker-compose.yaml':
+		case 'docker-compose.yml':
+			return 'i-vscode-icons-file-type-docker2'
+		case '.editorconfig':
+			return 'i-vscode-icons-file-type-editorconfig'
+		case 'package.json':
+			return 'i-vscode-icons-file-type-npm'
+		case 'bun.lock':
+			return 'i-vscode-icons-file-type-bun'
+		case 'agents.md':
+			return 'i-vscode-icons-file-type-agents'
+		case '.gitignore':
+		case '.gitkeep':
+			return 'i-vscode-icons-file-type-git'
+		default:
+			return undefined
+	}
+}
+
+/** Icono de un archivo, decidido por extensión y nombre cuando no hay MIME. */
+export function getFileIcon(entry: FileIconSource): string {
+	const name = entry.name ?? ''
+	const ext = getExtension(name)
+
+	if (entry.icon) return entry.icon
+
+	// Los nombres especiales (.gitignore, docker-compose.yml, …) mandan antes
+	// que la clasificación binaria por extensión.
+	const namedIcon = iconForFileName(name)
+	if (namedIcon) return namedIcon
+
+	let isBinary: boolean
+	if (entry.is_binary !== undefined) isBinary = entry.is_binary
+	else if (entry.mime_type) isBinary = !entry.mime_type.startsWith('text/') && !TEXT_EXTENSIONS.has(ext)
+	else isBinary = ext !== '' && !TEXT_EXTENSIONS.has(ext)
+
+	if (isBinary) return isImageFileName(name, entry.mime_type) ? FILE_IMAGE_ICON : FILE_BINARY_ICON
+
+	return iconForFileExtension(ext)
+}
+
+/** Icono de una entrada del árbol: carpeta, enlace o archivo por extensión. */
+export function getEntryIcon(entry: { name: string; kind: string }, expanded = false): string {
+	if (entry.kind === 'dir') return expanded ? ICONS.actions.folderOpen : ICONS.actions.folder
+	if (entry.kind === 'symlink') return ICONS.actions.symlink
+	return getFileIcon({ name: entry.name })
 }

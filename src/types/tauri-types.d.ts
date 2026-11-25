@@ -97,6 +97,11 @@ export type MigrationInfo = { version: number, description: string, installed_on
 
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
 
+/**
+ * Resultado agregado del lote, con el detalle de cada ítem.
+ */
+export type RemoteBatchResult = { items: Array<RemoteTransferItemResult>, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
+
 export type RemoteCommandInput = { host_id: number, 
 /**
  * Comando a ejecutar en el servidor.
@@ -156,7 +161,173 @@ content_base64: string | null,
  */
 saved_to: string | null, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 
+/**
+ * Una entrada de un directorio remoto (sin recursión).
+ */
+export type RemoteEntry = { name: string, 
+/**
+ * Ruta remota construida siempre con `/`.
+ */
+path: string, kind: RemoteEntryKind, 
+/**
+ * Tamaño en bytes; `0` si el servidor no lo informa.
+ */
+size: number, 
+/**
+ * Última modificación como timestamp Unix en segundos.
+ */
+modified: number | null, 
+/**
+ * Permisos en notación simbólica (p. ej. `rwxr-xr-x`).
+ */
+permissions: string | null, 
+/**
+ * Destino del enlace simbólico, si se pudo resolver.
+ */
+target: string | null, 
+/**
+ * Tipo del destino del enlace (`dir` / `file`), si se pudo resolver.
+ * `None` en entradas que no son symlinks o cuyo destino está roto.
+ */
+target_kind: string | null, };
+
+/**
+ * Tipo de una entrada remota, según lo informado por SFTP.
+ */
+export type RemoteEntryKind = "file" | "dir" | "symlink" | "other";
+
+/**
+ * Eventos del gestor de archivos. No sustituyen a `RemoteConsoleEvent`: la
+ * consola actual sigue usando su propio `Channel`.
+ */
+export type RemoteFileManagerEvent = { "event": "batch_started", total: number, job_ids: { [key in string]: number }, } | { "event": "item_started", key: string, job_id: number, } | { "event": "file_list", key: string, files: Array<RemoteTransferFileInfo>, total_bytes: number, total_files: number, } | { "event": "file_started", key: string, file_id: string, path: string, bytes: number, } | { "event": "file_progress", key: string, file_id: string, bytes: number, total: number, } | { "event": "file_finished", key: string, file_id: string, bytes: number, status: RemoteFinishStatus, 
+/**
+ * Clave i18n del fallo, si este archivo concreto falló.
+ */
+message_key: string | null, } | { "event": "progress", key: string, bytes: number, total: number, } | { "event": "item_finished", key: string, status: RemoteFinishStatus, result: RemoteTransferItemResult, } | { "event": "batch_finished", succeeded: number, failed: number, cancelled: number, duration_seconds: number, };
+
 export type RemoteFinishStatus = "success" | "error" | "cancelled";
+
+/**
+ * Petición de listado de **un solo nivel** de un directorio remoto.
+ */
+export type RemoteListInput = { host_id: number, 
+/**
+ * Directorio remoto a listar. Si está vacío, se usa `/`.
+ */
+path: string, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, 
+/**
+ * Tope de entradas devueltas. Por defecto: 1000.
+ */
+max_entries: number | null, };
+
+/**
+ * Contenido de un único nivel de un directorio remoto.
+ */
+export type RemoteListing = { 
+/**
+ * Directorio listado, normalizado.
+ */
+path: string, entries: Array<RemoteEntry>, 
+/**
+ * `true` si se alcanzó `max_entries` y podrían quedar más entradas.
+ */
+truncated: boolean, };
+
+/**
+ * Petición de un lote completo. Todas las transferencias comparten una sola
+ * conexión SSH/SFTP; como máximo `max_concurrency` ítems están en curso a la vez.
+ */
+export type RemoteTransferBatchInput = { host_id: number, 
+/**
+ * Número máximo de intentos de reconexión SSH. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, 
+/**
+ * Número máximo de ítems simultáneos; ausente o `null` → 2, rango 1-16.
+ */
+max_concurrency: number | null, items: Array<RemoteTransferItemInput>, };
+
+/**
+ * Dirección de una transferencia dentro de un lote.
+ */
+export type RemoteTransferDirection = "upload" | "download";
+
+/**
+ * Un archivo descubierto en el pre-listado recursivo de un ítem.
+ */
+export type RemoteTransferFileInfo = { 
+/**
+ * Identificador estable dentro del ítem (índice secuencial).
+ */
+id: string, 
+/**
+ * Ruta completa del archivo; correlaciona los eventos de bytes con el `id`.
+ */
+path: string, 
+/**
+ * Ruta legible relativa al origen del ítem.
+ */
+relative_path: string, 
+/**
+ * Tamaño en bytes informado por el origen.
+ */
+size: number, 
+/**
+ * Tipo de entrada en el origen (`file`, `symlink`, …).
+ */
+kind: string, };
+
+/**
+ * Un ítem del lote. `key` es la clave de cliente del job del frontend, no el
+ * `job_id` de Rust (que se entrega en el evento `item_started`).
+ */
+export type RemoteTransferItemInput = { key: string, direction: RemoteTransferDirection, 
+/**
+ * Ruta local: origen al subir, destino al descargar.
+ */
+local_path: string, 
+/**
+ * Ruta remota: destino al subir, origen al descargar.
+ */
+remote_path: string, 
+/**
+ * Sobrescribir si el destino ya existe. Por defecto: true.
+ */
+overwrite: boolean | null, 
+/**
+ * Permisos octales a aplicar al subir archivos (ej. "755").
+ */
+chmod: string | null, 
+/**
+ * Some(true)/Some(false) fuerzan directorio/archivo; None autodetecta.
+ */
+recursive: boolean | null, };
+
+/**
+ * Resultado de un ítem del lote.
+ */
+export type RemoteTransferItemResult = { key: string, status: RemoteFinishStatus, bytes_transferred: number, files_transferred: number, duration_seconds: number, 
+/**
+ * Mensaje legible de error/cancelación cuando aplica; `null` en éxito.
+ */
+message: string | null, 
+/**
+ * Clave i18n del error del ítem; vacía en éxito.
+ */
+message_key: string, 
+/**
+ * Parámetros de la clave i18n del error.
+ */
+message_params: { [key in string]: string }, 
+/**
+ * Líneas de progreso acumuladas por `transfer.rs` durante el ítem.
+ */
+output: string, };
 
 export type RemoteTransferResult = { bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 

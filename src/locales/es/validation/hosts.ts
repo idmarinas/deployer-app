@@ -15,6 +15,10 @@ export default {
 		ipv4: 'Debes introducir una dirección IPv4 válida.',
 		ipv6: 'Debes introducir una dirección IPv6 válida.',
 	},
+	default_remote_path: {
+		absolute: 'La ruta base debe ser absoluta (por ejemplo «/var/www» o «C:\\www»).',
+		max: 'La ruta base no puede superar los 255 caracteres.',
+	},
 	port: {
 		min: 'El puerto debe ser mayor o igual a 0.',
 		max: 'El puerto debe ser menor o igual a 65535.',
