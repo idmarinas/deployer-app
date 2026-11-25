@@ -322,13 +322,70 @@ const FILE_BINARY_ICON = 'i-vscode-icons-file-type-binary'
 const FILE_DEFAULT_ICON = 'i-vscode-icons-default-file'
 
 const TEXT_EXTENSIONS = new Set([
-	'txt', 'md', 'markdown', 'conf', 'config', 'ini', 'cfg', 'properties', 'toml', 'env',
-	'yml', 'yaml', 'json', 'xml', 'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'sh', 'bash',
-	'zsh', 'fish', 'sql', 'log', 'csv', 'htaccess', 'gitignore', 'dockerignore',
-	'editorconfig', 'html', 'htm', 'css', 'scss', 'sass', 'svg', 'php', 'py', 'rb', 'go',
-	'rs', 'java', 'c', 'h', 'cpp', 'hpp', 'vue', 'svelte', 'pem', 'crt', 'key', 'pub',
-	'asc', 'gpg', 'lock', 'template', 'tpl', 'example', 'sample', 'service', 'socket',
-	'timer', 'profile',
+	'txt',
+	'md',
+	'markdown',
+	'conf',
+	'config',
+	'ini',
+	'cfg',
+	'properties',
+	'toml',
+	'env',
+	'yml',
+	'yaml',
+	'json',
+	'xml',
+	'js',
+	'mjs',
+	'cjs',
+	'ts',
+	'tsx',
+	'jsx',
+	'sh',
+	'bash',
+	'zsh',
+	'fish',
+	'sql',
+	'log',
+	'csv',
+	'htaccess',
+	'gitignore',
+	'dockerignore',
+	'editorconfig',
+	'html',
+	'htm',
+	'css',
+	'scss',
+	'sass',
+	'svg',
+	'php',
+	'py',
+	'rb',
+	'go',
+	'rs',
+	'java',
+	'c',
+	'h',
+	'cpp',
+	'hpp',
+	'vue',
+	'svelte',
+	'pem',
+	'crt',
+	'key',
+	'pub',
+	'asc',
+	'gpg',
+	'lock',
+	'template',
+	'tpl',
+	'example',
+	'sample',
+	'service',
+	'socket',
+	'timer',
+	'profile',
 ])
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp', 'avif'])
@@ -408,6 +465,9 @@ export function iconForFileExtension(ext: string): string {
 			return 'i-vscode-icons-file-type-text'
 		case 'sqlite':
 			return 'i-vscode-icons-file-type-sqlite'
+		case 'tar':
+		case 'zip':
+			return 'i-vscode-icons-file-type-zip'
 		default:
 			return FILE_DEFAULT_ICON
 	}
@@ -415,10 +475,14 @@ export function iconForFileExtension(ext: string): string {
 
 function iconForFileName(name: string): string | undefined {
 	switch (name) {
+		case '.env.docker':
+			return 'i-vscode-icons-file-type-dotenv'
 		case 'composer.json':
 			return 'i-vscode-icons-file-type-composer'
 		case 'compose.yaml':
 		case 'compose.yml':
+		case 'compose.prod.yaml':
+		case 'compose.prod.yml':
 		case 'docker-compose.yaml':
 		case 'docker-compose.yml':
 			return 'i-vscode-icons-file-type-docker2'
@@ -455,7 +519,11 @@ export function getFileIcon(entry: FileIconSource): string {
 	else if (entry.mime_type) isBinary = !entry.mime_type.startsWith('text/') && !TEXT_EXTENSIONS.has(ext)
 	else isBinary = ext !== '' && !TEXT_EXTENSIONS.has(ext)
 
-	if (isBinary) return isImageFileName(name, entry.mime_type) ? FILE_IMAGE_ICON : FILE_BINARY_ICON
+	if (isBinary) {
+		if (isImageFileName(name, entry.mime_type)) return FILE_IMAGE_ICON
+
+		return iconForFileExtension(ext) || FILE_BINARY_ICON
+	}
 
 	return iconForFileExtension(ext)
 }
