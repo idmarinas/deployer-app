@@ -16,8 +16,6 @@ interface FileTreeNode extends TreeItem {
 	key: string
 	entry: FileEntry
 	children?: FileTreeNode[]
-	/** Icono calculado; no se asigna `icon` para no dibujarlo dos veces. */
-	fileIcon: string
 }
 
 /** Subconjunto del evento `select` de Reka que necesitamos cancelar. */
@@ -50,6 +48,8 @@ const props = withDefaults(
 		alwaysExpanded?: boolean
 		readOnly?: boolean
 		truncated?: boolean
+		/** Directorios cuyo listado hijo se ha recortado. */
+		truncatedByKey?: Record<string, boolean>
 	}>(),
 	{
 		loadingKeys: () => [],
@@ -59,6 +59,7 @@ const props = withDefaults(
 		alwaysExpanded: false,
 		readOnly: false,
 		truncated: false,
+		truncatedByKey: () => ({}),
 	},
 )
 
@@ -77,6 +78,8 @@ const { t, locale } = useI18n()
 const selected = shallowRef<FileTreeNode[]>([])
 const expanded = ref<string[]>([])
 const limitReached = ref(false)
+/** Claves cuya selección recursiva sigue cargando subcarpetas. */
+const selectionLoadingKeys = ref<string[]>([])
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
 
@@ -102,7 +105,6 @@ function buildNode(entry: FileEntry): FileTreeNode {
 		key: entry.key,
 		entry,
 		label: entry.kind === 'dir' ? `${entry.name}/` : entry.name,
-		fileIcon: getEntryIcon(entry, expanded.value.includes(entry.key)),
 		defaultExpanded: props.alwaysExpanded || undefined,
 		// Un array vacío mantiene el nodo expandible aunque sus hijos aún no se hayan pedido.
 		children: entry.kind === 'dir' ? sortFileEntries(loadedChildren ?? [], locale.value).map(buildNode) : undefined,
@@ -110,7 +112,7 @@ function buildNode(entry: FileEntry): FileTreeNode {
 }
 
 function formatModified(seconds: number | null): string {
-	if (!seconds) return '—'
+	if (seconds === null) return '—'
 	return dateFormatter(locale.value).format(new Date(seconds * 1000))
 }
 
@@ -161,6 +163,22 @@ watch(
 	{ immediate: true },
 )
 
+/** Tras recargar un nivel, los nodos seleccionados deben apuntar a las entradas nuevas. */
+function reResolveSelection() {
+	if (props.readOnly || !selected.value.length) return
+	const keys = selected.value.map(node => node.key)
+	const found: FileTreeNode[] = []
+	collectNodes(treeItems.value, keys, found)
+	if (
+		found.length === selected.value.length &&
+		found.every((node, i) => node.entry === selected.value[i]?.entry)
+	)
+		return
+	selected.value = found
+}
+
+watch(treeItems, reResolveSelection)
+
 watch(
 	() => props.initialExpanded,
 	keys => {
@@ -187,10 +205,15 @@ function syncAlwaysExpanded() {
 
 watch(treeItems, syncAlwaysExpanded, { immediate: true })
 
-function reset() {
-	selected.value = []
+/** Reinicia la navegación sin perder la selección del panel. */
+function resetNavigation() {
 	expanded.value = []
 	limitReached.value = false
+}
+
+function reset() {
+	selected.value = []
+	resetNavigation()
 }
 
 function setSnapshot(expandedKeys: string[], selectedKeys: string[]) {
@@ -198,7 +221,7 @@ function setSnapshot(expandedKeys: string[], selectedKeys: string[]) {
 	applyInitialSelection(selectedKeys)
 }
 
-defineExpose({ reset, setSnapshot })
+defineExpose({ reset, resetNavigation, setSnapshot })
 
 // ---------------------------------------------------------------------------
 // Carga de niveles y selección desde el icono
@@ -257,9 +280,18 @@ async function onIconClick(node: FileTreeNode, handleSelect: () => void) {
 	if (props.readOnly) return
 
 	if (node.entry.kind === 'dir' && !selected.value.some(item => item.key === node.key)) {
-		await ensureLoadedRecursively(node.entry)
+		selectionLoadingKeys.value = [...selectionLoadingKeys.value, node.key]
+		try {
+			await ensureLoadedRecursively(node.entry)
+		} finally {
+			selectionLoadingKeys.value = selectionLoadingKeys.value.filter(key => key !== node.key)
+		}
 	}
 	handleSelect()
+}
+
+function isNodeLoading(key: string): boolean {
+	return props.loadingKeys.includes(key) || selectionLoadingKeys.value.includes(key)
 }
 
 function selectionIcon(node: FileTreeNode, isSelected: boolean, indeterminate: boolean): string {
@@ -321,11 +353,11 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 									: 'components.file_manager.entry.select',
 							)
 						"
-						:disabled="readOnly || loadingKeys.includes(nodeOf(item).key)"
+						:disabled="readOnly || isNodeLoading(nodeOf(item).key)"
 						@click.stop="onIconClick(nodeOf(item), handleSelect as () => void)"
 					>
 						<UIcon
-							v-if="loadingKeys.includes(nodeOf(item).key)"
+							v-if="isNodeLoading(nodeOf(item).key)"
 							:name="ICONS.status.loading"
 							class="size-4 animate-spin"
 						/>
@@ -336,13 +368,19 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 
 					<span class="shrink-0 grow flex items-center gap-1" :title="nodeOf(item).label">
 						<span class="shrink-0">{{ nodeOf(item).label }}</span>
+						<UIcon
+							v-if="nodeOf(item).entry.kind === 'dir' && truncatedByKey[nodeOf(item).key]"
+							:name="ICONS.status.alertTriangle"
+							class="size-3.5 shrink-0 text-warning"
+							:title="t('components.file_manager.entry.partial')"
+						/>
 
 						<span
 							v-if="nodeOf(item).entry.target"
 							class="truncate grow flex items-center gap-1 text-xs text-muted"
 							:title="nodeOf(item).entry.target!"
 						>
-							<UIcon name="i-tabler-arrow-narrow-right" />
+							<UIcon :name="ICONS.actions.arrowNarrowRight" />
 							{{ nodeOf(item).entry.target }}
 						</span>
 					</span>
