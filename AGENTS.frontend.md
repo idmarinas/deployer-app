@@ -1,441 +1,130 @@
-# Guía de Frontend - DeployerApp
+# Guía de Frontend — DeployerApp
 
-> Guía específica para tareas de **Vue / TypeScript**. Lee también [AGENTS.md](./AGENTS.md) para las reglas comunes.
+> Guía para tareas de **Vue / TypeScript**. Las reglas generales están en [AGENTS.md](./AGENTS.md).
 
----
-
-## 1. Estructura del Frontend
+## 1. Estructura
 
 ```
 src/
-├── assets/
-│   └── css/
-│       ├── main.css     <- Paleta + tokens semánticos + utilidades PCB
-│       ├── fonts.css    <- @font-face de Inter y JetBrains Mono (autohospedadas)
-│       └── fonts/        <- Archivos .woff2 de las fuentes
-├── components/          <- Componentes de UI: reutilizables (form/, table/, overlay/, ...) y específicos de página (pages/<pagina>/)
-├── composables/         <- Lógica con reactividad de Vue (useSchemaToForm, useRemoteCommand, queries/, ...)
-├── drizzle/             <- Capa de datos: drizzle.ts (Drizzle proxy), lib/stronghold.ts (cripto), schema.ts/relations.ts (auto), lib/schema-types.ts, entities/
-├── loaders/             <- Loaders de datos (defineColadaLoader de pinia-colada), organizados por dominio
-├── locales/             <- i18n (es/, _loader.ts)
-├── pages/               <- Vistas de la aplicación (dashboard/{app,hosts,passkeys,console,file-manager,theme}, deployer/, deployer/(setup))
-├── plugins/             <- Extensiones reutilizables de CodeMirror (plugins/codemirror/)
-├── types/               <- Tipos (entities.ts manual, tauri-types.d.ts generado por ts-rs)
-└── utils/               <- Funciones puras sin reactividad de Vue
+├── assets/css/            ← main.css (paleta, tokens, utilidades PCB), fonts.css (Inter, JetBrains Mono)
+├── components/            ← form/, table/, overlay/… (compartidos) y pages/<pagina>/ (de una página)
+├── composables/           ← lógica con reactividad (queries/, useSshJobs, useRemoteCommand…)
+├── drizzle/               ← drizzle.ts (proxy), lib/stronghold.ts (cripto), lib/schema-types.ts, entities/
+├── loaders/               ← defineColadaLoader por dominio (deployerApp, hosts, passkeys, commands, variables, trash)
+├── locales/               ← i18n: es/ (referencia de claves) y en/ (espejo)
+├── pages/                 ← dashboard/{app,hosts,passkeys,console,file-manager,variables,theme,trash}, deployer/
+├── plugins/codemirror/    ← extensiones reutilizables de CodeMirror
+├── stores/                ← stores de Pinia (p. ej. remoteFileMarks)
+├── types/                 ← entities.ts (manual) y tauri-types.d.ts (generado con ts-rs)
+└── utils/                 ← funciones puras sin reactividad (icons.ts, inputs/, schema-form/…)
 
-theme/                   <- Temas personalizados de componentes Nuxt UI (raíz del proyecto)
-├── index.ts             <- Barrel de re-exports
-├── alert.ts
-├── badge.ts
-├── button.ts
-├── card.ts
-├── checkbox.ts
-├── contextMenu.ts
-├── dashboardNavbar.ts
-├── dashboardPanel.ts
-├── dashboardSidebar.ts
-├── dropdownMenu.ts
-├── input.ts
-├── modal.ts
-├── navigationMenu.ts
-├── progress.ts
-├── radioGroup.ts
-├── select.ts
-├── separator.ts
-├── switch.ts
-├── table.ts
-├── tabs.ts
-├── textarea.ts
-├── toast.ts
-└── tooltip.ts
+theme/                     ← temas personalizados de Nuxt UI (raíz del proyecto), un archivo por componente
 ```
 
-> **Componentes por página:** la carpeta `src/components/pages/<pagina>/` refleja siempre la ruta de `src/pages/` (p. ej. `console`, `file-manager`, `app/tabs`). Todo componente creado para una página va ahí por defecto, aunque solo tenga un consumidor. Solo se mueve a `src/components/` (form/, table/, overlay/, ...) cuando se comparte de verdad entre páginas. Si un componente de página se necesita de forma puntual fuera de ella (p. ej. `CommandTestDialog.vue` usa `ConsoleOutput.vue`), se importa desde su ruta `pages/<pagina>/`; no se duplica ni se reubica. Los nombres pueden llevar el prefijo de la página para evitar colisiones (`ConsoleCommand.vue`, `ConsoleOutput.vue`).
+### Componentes por página
 
-> **Nota sobre el historial:** los catálogos de `projects`, `tasks` y `deployments`, el runner universal de deployments (`run_deployment`, `ProgressEvent`) y la feature de **Docker Compose remoto** (páginas, loaders y comandos `project_docker_compose_*`) se retiraron del código activo; sus archivos quedan como `.back` (historial personal, no tocar) o en `_archived.dist/`. El módulo **`variables`** se reintrodujo como módulo activo propio (`pages/dashboard/variables/`, `loaders/variables.ts`, `composables/queries/variables.ts`). El directorio `src/schemas/` (con los JSON `compose-spec.json`/`composer-schema.json`) también se eliminó. Los loaders activos de datos son `deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts` y `variables.ts`; quedan restos **sin uso activo** en `composables/schemas/docker_composes.ts` y `composables/queries/projects/docker/compose.ts` (no reintroducir referencias).
+`src/components/pages/<pagina>/` refleja la ruta de `src/pages/` (p. ej. `pages/dashboard/console.vue` → `components/pages/console/`). Todo componente creado para una página va ahí, aunque tenga un solo consumidor. Solo se mueve a `components/form/`, `table/`, etc. cuando se comparte de verdad entre páginas. Si se necesita de forma puntual desde otra página, se importa desde su ruta original sin duplicarlo.
 
----
+### Composables, utils y loaders
 
-## 2. Sistema de Temas (Nuxt UI v4) — Identidad visual "PCB"
+- **`composables/`:** lógica con reactividad de Vue (`ref`, `computed`, `onMounted`).
+- **`utils/`:** funciones puras sin reactividad. Si no necesita Vue, va aquí.
+- **`loaders/`:** `defineColadaLoader` de `vue-router/experimental/pinia-colada`. Son lazy y exponen `data`, `isLoading` y `error`.
 
-DeployerApp tiene una identidad visual inspirada en placas de circuito impreso (PCB), coherente con el logo de la app (cohete + circuito). Todos los componentes Nuxt UI están personalizados bajo este lenguaje, y son **compatibles con tema claro y oscuro** de forma automática.
+## 2. Temas (Nuxt UI v4) y estilo PCB
 
-### Paleta y colores semánticos
+La identidad visual es de placa de circuito impreso. Todos los componentes son compatibles con tema claro y oscuro.
 
-Paleta custom registrada en `main.css` bajo `@theme static` con el prefijo `deployer-`:
+### Colores semánticos
 
-- `deployer-primary` → Azul eléctrico (#0a8dff)
-- `deployer-secondary` → Morado neón (#821aff)
-- `deployer-success` → Verde azulado (#00c8a3)
-- `deployer-info` → Cyan neón (#00c7ff)
-- `deployer-warning` → Amarillo-naranja (#e6b200)
-- `deployer-error` → Rojo magenta (#ff0a55)
-- `deployer-neutral` → Gris azulado (claro y oscuro)
+Paleta en `main.css` bajo `@theme static`, prefijo `deployer-` (`primary`, `secondary`, `success`, `info`, `warning`, `error`, `neutral`). Se mapea en `vite.config.ts → ui.colors`, así que Nuxt UI genera `--ui-primary`, etc. **No redeclarar esos tokens en `main.css`**.
 
-Estos se mapean como colores semánticos de Nuxt UI en `vite.config.ts → ui.colors`:
+En `main.css` solo se declaran tokens de superficie y texto (`--ui-bg`, `--ui-border`, `--ui-text`…), en `:root` y en `.dark`, además de `--ui-radius` y las variables `--pcb-*`.
 
-```ts
-colors: {
-  primary: 'deployer-primary',
-  secondary: 'deployer-secondary',
-  success: 'deployer-success',
-  info: 'deployer-info',
-  warning: 'deployer-warning',
-  error: 'deployer-error',
-  neutral: 'deployer-neutral',
-}
-```
-
-> **Clave:** al estar mapeado en `ui.colors`, Nuxt UI genera automáticamente las variantes claro/oscuro de cada color **y sus propios `--ui-primary`, `--ui-secondary`, etc.** Por eso esos tokens de color semántico **NO se redeclaran en `main.css`**. Solo se declaran los tokens de superficie/texto (`--ui-bg`, `--ui-text`...). Los archivos de tema **nunca deben hardcodear hexadecimales** — siempre clases semánticas o tokens `--ui-*`.
-
-### Tokens semánticos Nuxt UI (`--ui-*`) declarados en `main.css`
-
-En `main.css` se declaran en `:root` (modo claro) y se sobreescriben en `.dark` (modo oscuro):
-
-- `--ui-bg`, `--ui-bg-elevated`, `--ui-bg-accented`, `--ui-bg-inverted`
-- `--ui-border`, `--ui-border-accented`, `--ui-border-inverted`
-- `--ui-text`, `--ui-text-dimmed`, `--ui-text-muted`, `--ui-text-toned`, `--ui-text-highlighted`, `--ui-text-inverted`
-- `--ui-radius`
-
-Los colores semánticos (`--ui-primary`, `--ui-secondary`, `--ui-success`...) **no se declaran aquí**: ya los genera Nuxt UI desde `ui.colors`.
-
-Variables propias PCB: `--pcb-trace`, `--pcb-trace-glow`, `--pcb-pad`, `--pcb-board`, `--pcb-silk` — con valores distintos en claro/oscuro.
+**Regla:** los archivos de tema nunca tienen hexadecimales. Usa clases semánticas o tokens `--ui-*`.
 
 ### Tipografía
 
-- **Inter** (texto general) — autohospedada en `src/assets/css/fonts/`.
-- **JetBrains Mono** (`font-pcb`) — badges, labels técnicos, tooltips, valores numéricos.
-
-### Utilidades CSS reutilizables (definidas en `main.css`)
-
-| Clase                                     | Uso                                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------- |
-| `.pcb-clip-br`                            | Esquina inferior-derecha recortada — botones (no-square), inputs                |
-| `.pcb-clip-badge` / `.pcb-clip-badge-alt` | Esquinas opuestas recortadas — badges tipo chip SMD                             |
-| `.pcb-clip-card`                          | Las 4 esquinas recortadas — cards, modals                                       |
-| `.pcb-clip-hex`                           | Hexágono achatado — indicadores de estado                                       |
-| `.pcb-shadow-xs/sm/md/lg`                 | Glow de marca vía `filter: drop-shadow(...)` — **obligatorio con `pcb-clip-*`** |
-| `.pcb-shadow-neutral`                     | Sombra neutra vía `drop-shadow` — cards/elementos sin énfasis de color          |
-| `.pcb-shadow-hover-md`                    | Variante hover de glow                                                          |
-| `.pcb-trace-top` / `.pcb-trace-bottom`    | Línea de traza energizada en borde sup/inf                                      |
-| `.pcb-trace-left`                         | Indicador lateral degradado fijo azul→morado                                    |
-| `.pcb-trace-left-current`                 | Igual pero usa `currentColor` — para alert, toast (fijar con `text-{color}-*`)  |
-| `.pcb-corners`                            | Nodos circulares en esquinas — cards, modals                                    |
-| `.pcb-pad`                                | Pad de soldadura circular inline                                                |
-| `.pcb-animate-pulse`                      | Pulso de energía en hover — botones solid                                       |
-| `.pcb-animate-flow`                       | Flujo de gradiente — progress                                                   |
-| `.pcb-animate-blink`                      | Parpadeo LED — **solo uso explícito y puntual**                                 |
-| `.font-pcb`                               | Aplica JetBrains Mono                                                           |
-
-### ⚠️ Regla crítica: `box-shadow` NO es compatible con `clip-path`
-
-`box-shadow` se proyecta sobre la caja rectangular original, antes del `clip-path`. En elementos con `pcb-clip-*` esto produce sombras rectangulares con esquinas "fantasma" visibles. Lo mismo aplica a `@keyframes` que animen `box-shadow` (ver `pcb-pulse` en `main.css`, que anima `filter` por este motivo).
-
-**Regla:** todo elemento con `pcb-clip-*` usa `filter: drop-shadow(...)` — nunca `shadow-[...]`. No combinar dos utilidades que fijen `filter` en el mismo selector (`hover:pcb-shadow-*` + `hover:pcb-animate-pulse`): solo una "gana". Si hay animación de pulso en hover, esa es la única regla de filter.
-
-### ⚠️ Regla crítica: `pcb-clip-*` incompatible con formas circulares
-
-`clip-path` define una silueta poligonal. Si el elemento también tiene `border-radius` que lo hace circular (p. ej. un botón `square` con `rounded-full`), el clip-path corta esquinas rectas justo en la zona donde el radio intenta curvar — se ven "esquinas rectas" dentro del propio círculo.
-
-**Regla:** nunca aplicar `pcb-clip-*` a un elemento que vaya a tener `border-radius` circular o que sea icon-only. En `button.ts` esto se resuelve condicionando el clip-path a la variant `square`:
-
-```ts
-variants: {
-  square: {
-    false: { base: 'pcb-clip-br' }, // botón rectangular → esquina recortada
-    true:  { base: '' },            // botón icon-only → sin clip-path
-  },
-},
-```
-
-El theme base de Nuxt UI define `variants.square: { true: "" }` (solo padding via compoundVariants). Al redefinir `square` en el custom theme, `defu` fusiona ambos sin conflicto: el resultado es `{ true: "", false: "pcb-clip-br" }`. Verificado contra `node_modules/@nuxt/ui/dist/shared/ui.*.mjs`.
-
-### ⚠️ Regla: animaciones de "atención" (`pcb-animate-blink`) nunca por defecto
-
-No se aplica en ningún `color`/`variant` por defecto — se añade manualmente y puntualmente:
-
-```vue
-<UBadge label="CRÍTICO" color="error" variant="solid" class="pcb-animate-blink" />
-```
-
-### ⚠️ Regla crítica: estados `disabled` deben anular `hover`/`active`/`highlighted`
-
-`hover:`, `active:`, `data-highlighted:` se disparan por posición del cursor independientemente del estado disabled.
-
-**Regla:** todo slot interactivo con `hover:`/`active:` incluye `disabled:pointer-events-none` junto a la reducción de opacidad. En componentes de Reka UI donde el disabled se marca con atributo de datos, usar `data-disabled:pointer-events-none`.
-
-```ts
-// Pseudo-clase nativa (botones, checkbox, switch, tabs, inputs...)
-'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none'
-
-// Atributo de datos (items de menús, links de navegación en Reka UI...)
-'data-disabled:opacity-40 data-disabled:cursor-not-allowed data-disabled:pointer-events-none'
-```
-
-Componentes que ya siguen esta regla: `button`, `select` (base + item), `checkbox`, `switch`, `tabs` (trigger), `navigationMenu` (link + childLink), `dropdownMenu`/`contextMenu` (item).
-
-### Registro de temas en vite.config.ts
-
-```ts
-ui({
-  ui: {
-    colors: { ... },
-    icons: { ... },
-    alert: theme.alert,
-    badge: theme.badge,
-    button: theme.button,
-    card: theme.card,
-    checkbox: theme.checkbox,
-    contextMenu: theme.contextMenu,
-    dropdownMenu: theme.dropdownMenu,
-    input: theme.input,
-    modal: theme.modal,
-    navigationMenu: theme.navigationMenu,
-    progress: theme.progress,
-    radioGroup: theme.radioGroup,
-    select: theme.select,
-    separator: theme.separator,
-    switch: theme.switchTheme,   // ← alias: "switch" es palabra reservada en JS
-    table: theme.table,
-    tabs: theme.tabs,
-    textarea: theme.textarea,
-    toast: theme.toast,
-    tooltip: theme.tooltip,
-    dashboardNavbar: theme.dashboardNavbar,
-    dashboardPanel: theme.dashboardPanel,
-    dashboardSidebar: theme.dashboardSidebar,
-  },
-})
-```
-
-### Concepto visual por componente
-
-| Componente                             | Tratamiento PCB                                                                           |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `button`                               | Esquina inf-derecha recortada (solo no-square), pulso en hover solid, `drop-shadow`       |
-| `badge`                                | Esquinas opuestas tipo chip SMD, fuente mono, `drop-shadow`                               |
-| `input` / `textarea` / `select`        | Esquina inf-izquierda recortada, glow `drop-shadow` en focus                              |
-| `checkbox`                             | Pad de soldadura cuadrado, degradado de marca al marcar                                   |
-| `switch`                               | Track como pista de circuito, thumb como pad deslizante                                   |
-| `card` / `modal`                       | 4 esquinas recortadas + nodos (`pcb-corners`), traza en header/footer, `drop-shadow`      |
-| `tabs`                                 | Indicador activo como puente conductor deslizante                                         |
-| `progress`                             | Pista con anillo, relleno con flujo animado                                               |
-| `separator`                            | Línea de traza con degradado, label en mono                                               |
-| `tooltip`                              | Panel tipo "readout" técnico, fuente mono                                                 |
-| `alert`                                | Traza lateral izquierda (`pcb-trace-left`)                                                |
-| `toast`                                | Fondo tintado + traza lateral (`pcb-trace-left-current`) + borde — distinguible sin icono |
-| `navigationMenu`                       | Item activo con traza lateral izquierda                                                   |
-| `dashboardNavbar` / `dashboardSidebar` | Traza energizada en separación header/footer                                              |
-| `table`                                | Cabecera sticky, nodo PCB en primera columna, filas iluminadas en hover                   |
-| `dropdownMenu` / `contextMenu`         | Panel readout, item resaltado con borde-traza izquierdo                                   |
-
-### Estructura de un archivo de tema — checklist
-
-```ts
-export default {
-	slots: { base: '...' },
-	variants: {/* solo si el componente necesita condicionar pcb-clip-* por variant */},
-	compoundVariants: [{ color: 'primary', variant: 'solid', class: '...' }],
-}
-```
-
-Al añadir o modificar cualquier theme file, verificar:
-
-- ✅ Sin hexadecimales hardcodeados — solo clases semánticas o tokens `--ui-*`
-- ✅ Slots con `pcb-clip-*` usan `drop-shadow`, nunca `shadow-[...]`
-- ✅ No hay dos reglas de `filter` en el mismo selector
-- ✅ `pcb-clip-*` no se aplica a elementos que sean o puedan ser circulares
-- ✅ Ningún color/variant lleva `pcb-animate-blink` por defecto
-- ✅ Slots con `hover:`/`active:` llevan `disabled:pointer-events-none` o `data-disabled:pointer-events-none`
-
----
-
-## 3. Convenciones de Desarrollo
-
-### Composables vs Utilidades vs Loaders
-
-- **`/composables`**: Solo para lógica que usa reactividad de Vue (`ref`, `computed`, `onMounted`, etc.).
-- **`/utils`**: Para funciones puras sin reactividad. Si una función no necesita Vue, va aquí.
-- **`/loaders`**: Loaders de datos creados con `defineColadaLoader` de `vue-router/experimental/pinia-colada`. Cada loader exporta una función (ej. `useHostById`) que se usa en el `<script setup>` de la página. Los loaders son **lazy** por defecto y exponen `data`, `isLoading`, `error`.
-
-### Composables de datos (`composables/queries/`)
-
-- **Lecturas de datos**: los loaders en `src/loaders/` (`deployerApp.ts`, `hosts.ts`, `passkeys.ts`, `commands.ts`, `variables.ts`) usan `defineColadaLoader` de `vue-router/experimental/pinia-colada` (pinia-colada por debajo) y se consumen en las páginas (ej. `useHostById()`, `useHostListAll()`, `usePasskeysListAll()`, `useDeployerAppInfo()`, `loadVariablesList()`).
-- Las **queries CRUD** (`findAll`/`find`/`create`/`update`/`remove`/`restore`, además de `purgeDeleted`/`findReferences` + notificaciones por toast) se crean con la factoría **`createCrudQuery`** de `src/composables/queries/crud.ts`. Cada entidad (`variables.ts`, `hosts.ts`, `commands.ts`, `passkeys.ts`) solo declara tabla, PK, `cacheKey`, prefijo i18n y hooks (`toInsert`/`toUpdate`/`softDelete`, `references`). El ciclo *toast persistente → sentencia Drizzle → invalidación de caché → toast de éxito/error* vive en la factoría.
-- **API de la factoría**:
-  - `findAll(options?)` y `find(key, options?)` aceptan `CrudListOptions`: por defecto excluyen la papelera; `{ onlyDeleted: true }` lista/lee solo la papelera e `{ includeDeleted: true }` no filtra.
-  - `remove(key)` hace borrado lógico y ofrece **Deshacer** en el toast (acción que llama a `restore`). `remove(key, { purge: true })` borra físicamente una fila que ya está en la papelera. `remove(key, { unlink: true })` pone a `NULL` las FK declaradas en `references` antes de borrar.
-  - `restore(key)` reactiva la fila; `purgeDeleted()` vacía la papelera de la tabla y devuelve `{ purged, blocked }` (las filas referenciadas o `internal` no se purgan). El proxy no expone transacciones: la purga es secuencial.
-  - `findReferences(key)` devuelve las filas de otras entidades que apuntan a la clave, agrupadas por `labelKey`. Solo `passkeys` declara referencias (`hosts.key_id`, FK `ON DELETE RESTRICT`).
-  - Las filas con la columna `internal` a `true` no se pueden borrar ni purgar (hoy solo `commands`); `supportsSoftDelete` indica si la entidad tiene papelera.
-- **Soft-delete / restore**: está activo en todas las entidades (`variables`, `hosts`, `commands`, `passkeys`) con `softDelete: { deletedAt, updatedAt }`. `remove` marca `deleted_at`, `restore` lo vuelve a `NULL`, `findAll({ onlyDeleted: true })` lista la papelera y `find`/`findAll` excluyen las filas eliminadas por defecto. Las lecturas directas que no pasan por la factoría (loaders, `DashboardLastItems.vue`) deben filtrar con `isNull(tabla.deleted_at)`.
-- **Invalidación de caché y errores de refetch**: `invalidateCacheQueries()` (`src/composables/queries/shared.ts`) invalida por prefijo y refresca, pero **no propaga** el error de un refetch fallido. El error queda en el estado `error` de la query afectada; así una mutación ya aplicada no se reporta como fallida. Caso típico: borrar una passkey o un comando desde su vista de detalle invalida `['passkeys']`/`['commands']`, el loader de detalle (`usePasskeyById`/`useCommandByKey`) responde `not-found` y antes ese error aparecía como fallo del borrado.
-- **UI de listados y papelera**: cada listado (`variables`, `hosts`, `commands`, `passkeys`) tiene pestañas **Activos / Inactivos / Borrados** (`UTabs` con `v-model` y `:content="false"`; el contenido se renderiza fuera para no duplicar plantillas ni perder filtros al cambiar de pestaña). **Activos** son las filas con `enabled === true` y sin borrar, **Inactivos** las de `enabled === false` y sin borrar, y **Borrados** usa `TrashTable`. El contador solo aparece en **Inactivos** y **Borrados** cuando es mayor que 0. El color del indicador sigue a la pestaña activa (`success` / `warning` / `error`) y los iconos de las pestañas no activas se tiñen con ese mismo color. La vista de Activos/Inactivos se comparte en `src/components/table/EntityListTab.vue` (lista, vacío, carga y error) y cada página le pasa su slot `expanded`; la pestaña Inactivos usa el estado vacío `components.empty_list.inactive.*` sin botón de alta. La página global sigue llamándose **Papelera** (`src/pages/dashboard/trash.vue`) y agrupa las papeleras de todas las tablas. La tabla compartida es `src/components/pages/trash/TrashTable.vue` y los loaders `src/loaders/trash.ts` usan claves `['<entidad>', 'trash']` (se invalidan con el prefijo `cacheKey`). Cada fila de la papelera se puede expandir en modo solo lectura (`src/components/pages/trash/TrashDetails.vue`) para ver sus campos; las acciones **Restaurar** y **Eliminar definitivamente** viven en la propia fila. La purga masiva se rotula **Vaciar papelera** en la página global y **Eliminar borrados** en la pestaña de cada listado (`TrashTable` recibe `context="list"` y `useCrudDeleteConfirm().purgeAll(fn, onDone, scope)` elige los textos de confirmación). La expansión de `ListTable` usa `v-model:expanded` y la columna `createExpandColumn()` de `useTableColumns.ts`.
-- **Diálogos de borrado**: `useCrudDeleteConfirm` (`src/composables/useCrudDeleteConfirm.ts`) centraliza el borrado lógico, la purga y el vaciado. Antes de borrar consulta `findReferences` y `findVariableUsages`; si hay referencias ofrece **Desvincular y eliminar**, y si solo hay usos de variables ofrece **Eliminar de todos modos**. Las variables se referencian por texto (`{{global.slug}}`), no por FK: `findVariableUsages` (`src/utils/interpolation/usages.ts`) recorre los comandos activos y el aviso no bloquea el borrado (al ejecutar dará `unknown_variable`). El vaciado de papelera pide **confirmación doble**.
-- **Unicidad y soft-delete**: los índices `UNIQUE` actuales son globales, así que una fila eliminada sigue ocupando su `name`/`key`/`slug`. Por eso las validaciones `$count` de `composables/validation/*` **no** filtran por `deleted_at`; para reutilizar un nombre hay que `restore` la fila. Si en el futuro se quieren índices parciales (`WHERE deleted_at IS NULL`), hay que migrarlos en la BD y añadir el filtro `isNull(...)` a los validadores.
-- Las páginas importan cada composable directamente (`import { useHostQuery } from '@/composables/queries/hosts'`); no existe barrel `useQuery.ts` activo.
-- La **validación de unicidad** de los schemas Zod (`composables/validation/useHostValidation.ts`, `usePasskeyValidation.ts`, `useVariablesValidation.ts`) usa `db.$count(tabla, condition)` (vía `query_raw`). La condición se construye con `eq`/`and`/`ne` de `drizzle-orm` sobre la tabla importada desde `@/drizzle/schema` — nunca SQL manual interpolado.
-
-  ```ts
-  // composables/validation/useHostValidation.ts (extracto)
-  import { and, eq, ne } from 'drizzle-orm'
-  import { db } from '@/drizzle/drizzle'
-  import { hosts } from '@/drizzle/schema'
-
-  name: z =>
-    z
-      .trim()
-      .normalize()
-      .nonempty(t('validation.hosts.name.required'))
-      .min(3, t('validation.hosts.name.min'))
-      .max(120, t('validation.hosts.name.max'))
-      .refine(async value => (await db.$count(hosts, eq(hosts.name, value))) <= 0, t('validation.hosts.name.not_unique')),
-  ```
-- Los **tipos de fila** de las entidades (ej. `HostRow`) provienen del schema Drizzle (`@/drizzle/schema`). Los tipos de dominio escritos a mano están en `src/types/entities.ts` (`Command`, `Passkey`, `Host`, `Variable`, `HostPackage`, `HostUpdatesSummary`, `HostServerUpdates`, `HostStatusMetrics`, `HostSystemInfo`); los inputs/respuestas exportados desde Rust (`AuthType`, `CommandResponse`, `VaultHealthReport`, etc.) están en `src/types/tauri-types.d.ts`, generado con `cargo test export_bindings`. No editar el `.d.ts` a mano.
-- **Ninguna escritura vive en un loader.** Las operaciones sobre datos (INSERT/UPDATE/DELETE) se hacen con Drizzle (`db.insert/update/delete` en `@/drizzle/drizzle.ts`, vía `query_raw`) o, si hay lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD), con un `invoke('...')` directo al comando Rust en el sitio de uso — nunca a través de un wrapper intermedio.
-
-### Acceso a la base de datos
-
-- Todo el acceso a datos (lecturas **y** escrituras) va por **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`), que delega en el comando Tauri `query_raw`.
-  - El frontend detecta los campos cifrados desde el schema (`detectEncryptedFieldsFromSchema` en `drizzle.ts`) y hace la cripto por su cuenta con `src/drizzle/lib/stronghold.ts` (Web Crypto + vault Stronghold).
-  - En escrituras, el proxy cifra los params de los campos `encryptedText(...)` (`encryptParams`) y elimina antes las asignaciones centinela/`ENC:` (`stripEncryptedValues`).
-  - En lecturas: por defecto (`withDecryption(false)`) enmascara los valores `ENC:` → `BLANK_VALUE`; con `withDecryption(true, fn)` los descifra con la versión de clave del valor.
-  - `query_raw` solo ejecuta SQL — **nunca cifra/enmascara** (eso vive en el frontend).
-- Los comandos Rust `invoke('...')` solo se usan para operaciones con lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD).
-- No existe acceso directo a SQLite desde el frontend — todo pasa por los comandos Tauri.
-
-### Parámetros de entrada de comandos (`src/utils/inputs/`)
-
-- **Contrato compartido** con el futuro motor de flujos: `InputFieldDefinition` (`key`, `label`, `type`, `required`, `default`, `options`, `help`) e `InputValues`. Tipos v1: `text`, `number`, `boolean` y `select`; máximo 20 campos.
-- **Persistencia**: `deployer_commands.inputs` es una columna JSON (`text({ mode: 'json' })`) con el array de definiciones, no una tabla hija. Los **valores** de una ejecución nunca se guardan.
-- **Sustitución**: el script referencia `{{params.<key>}}`. El runner construye `params` con los valores recibidos, aplica los `default` de las claves ausentes (`undefined`/`null`) y rellena las declaradas sin valor con `''` (o `false` en booleanos) para que la interpolación no falle.
-- **Defaults**: literal o `{{global.<slug>}}`; solo variables globales existentes, habilitadas y **no secretas**. Se resuelven al abrir el diálogo y otra vez en el runner (`resolveInputDefaults()`); `required` se valida después y `0`/`false` cuentan como presentes.
-- **Listas**: no hay tipo `list`; se pasan como texto separado por espacios. El motor no separa ni valida: el autor decide las comillas (sin comillas para una lista, entrecomillado para un valor único) y el llamante valida los elementos dinámicos.
-- **Componentes**: `CommandInputsEditor.vue` solo edita la definición; `InputsForm.vue` renderiza los valores y es el que compartirán los flujos. El diálogo de comandos carga el ámbito global antes de resolver defaults.
-- **Validación**: `createInputFieldsSchema()` + `validateInputValues()` en `src/utils/inputs/schema.ts`, con refinamiento asíncrono de defaults en `useCommandValidation.ts`.
-
----
-
-## 4b. Sistema de iconos centralizado (`src/utils/icons.ts`)
-
-Todos los iconos de la app (Tabler vía Nuxt UI) están centralizados en `src/utils/icons.ts`. **No hardcodear `'i-tabler-...'` como string literal en componentes/composables nuevos** — importar siempre desde aquí.
-
-```ts
-import { ICONS, getModuleIcon, getModuleSwitchIcons, toIconify } from '@/utils/icons'
-```
-
-### `MODULE_ICONS` / `getModuleIcon(moduleName, variant?, isIconify?)`
-
-Un set `{ plural, singular, off }` por cada módulo (`hosts`, `projects`, `deployments`, `variables`, `global_variables`, `passkeys`, `tasks`, `docker_composes`):
-
-- `plural` — icono de listado/navegación/módulo (sidebar, `UDashboardNavbar`, `UEmpty`).
-- `singular` — icono de un elemento individual activo.
-- `off` — icono del elemento inactivo/deshabilitado (errores 404 de entidad, switches).
-
-```ts
-getModuleIcon('hosts') // 'i-tabler-cloud-network' (plural, por defecto)
-getModuleIcon('hosts', 'singular') // 'i-tabler-server'
-getModuleIcon('hosts', 'off') // 'i-tabler-server-off'
-getModuleIcon('hosts', 'singular', true) // 'tabler:server' (formato Iconify, para <Icon /> de @iconify/vue)
-```
-
-`getModuleSwitchIcons(moduleName, isIconify?)` devuelve `{ uncheckedIcon, checkedIcon }` listo para `USwitch`/`UToggle` (usa `off`/`singular`).
-
-### `ICONS` — resto de iconos, agrupados por categoría
-
-`app`, `actions`, `status`, `auth`, `server`, `database`, `calendar`, `framework`, `social`, `misc`. Ver el propio archivo para el listado completo.
-
-### Migración completada
-
-Las páginas activas (`pages/dashboard/{app,hosts,passkeys,console,theme}` y `deployer/`) ya usan `ICONS`/`getModuleIcon`. **Aún quedan iconos `i-tabler-*` hardcodeados** en algunos archivos activos (p.ej. `useToolbarButtons.ts`, `DeployerAppMenu.vue`, `useConfigureDeployerApp.ts`, `useMigrations.ts`, `useToaster.ts`, `TableServerUpdates.vue`, `ReviewFilesDialog.vue` y el componente de muestra `ThemePreview.vue`). Al tocar cualquiera de ellos, migrar a `ICONS`/`getModuleIcon`; en código nuevo nunca hardcodear.
-
-> `getModuleIcon` cubre el `ModuleName` completo (8 módulos). Algunos módulos sin páginas propias en el código activo (deployments, global_variables, tasks, projects, docker_composes) conservan el icono para no romper el tipo; `variables` sí tiene páginas activas.
-
----
-
-## 4. Toolbar
-
-El contenido de la toolbar se gestiona con el composable `useToolbarContent.ts`:
-
-- `useToolbarContentCreate` — para vistas de creación.
-- `useToolbarContentEdit` — para vistas de edición.
-- Los botones extra usan el patrón `vnode: () => VNode` (factory) con posiciones nombradas (`ExtraButtonPosition`).
-
-> **Importante:** `vnode` debe ser siempre una función factory `() => VNode`, nunca un VNode estático. Los VNodes estáticos congelan los valores reactivos en el momento de creación.
-
----
-
-## 5. Internacionalización (i18n)
-
-- Se usa `vue-i18n`.
-- Los mensajes de error del backend llegan como claves i18n con parámetros `HashMap<String, String>`.
-- El backend es agnóstico al idioma — nunca devuelve strings en español directamente.
-- **Todas las claves de traducción deben estar en `snake_case`** (ej. `database.migrationSuccess`, `hosts.name.not_unique`). No usar `camelCase` ni `kebab-case` en claves de mensajes.
-- **No usar `<...>` como marcador de posición en los mensajes** (p. ej. `params.<clave>`): `escapeParameter: true` en `src/i18n.ts` hace que vue-i18n detecte HTML, avise de «Detected HTML»/«Unclosed or misnested elements» y escape el texto (se vería `params.&lt;clave&gt;`). Para textos planos con huecos, escribir el metavariable sin ángulos (`params.clave`, `global.slug`) o interpolar con `{nombre}`. El HTML real solo en los mensajes que se renderizan con `v-html` (p. ej. las descripciones de actualización de hosts).
-
-### Carga de mensajes (`src/locales/_loader.ts`)
-
-- Cada idioma tiene su carpeta (`src/locales/es/`, `src/locales/en/`...) con un archivo `.ts` por cada grupo de mensajes (`common.ts`, `entity/host.ts`, `pages/setup.ts`...) y una carpeta `formats/` (formatos de fecha/número). **`es/` y `en/` contienen mensajes**: `es` es la referencia de claves (tipos + `warnMissingKeys`) y `en` es su espejo (mismas claves en inglés).
-- `_loader.ts` usa `import.meta.glob` para cargar todos los `.ts` de `es/**` (excluyendo `es/formats/**`, que son los formatos de fecha/número) y los ensambla en un objeto anidado según la ruta del archivo (`pages/setup.ts` → `{ pages: { setup: {...} } }`).
-- Caso especial: un archivo `index.ts` fusiona sus claves directamente en el padre en vez de anidarse bajo `index` (ej. `pages/index.ts` → `result.pages`, no `result.pages.index`).
-- En `DEV`, se avisa por consola si a un idioma le faltan archivos respecto al idioma de referencia (`es`).
-- Al añadir un idioma nuevo: añadir sus entradas en `LOCALE_GLOBS`, `DATETIME_GLOBS` y `NUMBER_GLOBS` de `_loader.ts`.
-
-### Mensajes type-safe (autocompletado y validación de `t()` / `$t()`)
-
-- Cada archivo de mensajes exporta con `satisfies LocaleMessageValue` (nunca con el cast `<LocaleMessageValue>{...}`) para conservar el tipo literal de sus claves:
-
-  ```ts
-  import type { LocaleMessageValue } from 'vue-i18n'
-
-  export default {
-  	active: 'Activo',
-  	confirm: { label: 'Confirmar', delete: 'Eliminar' },
-  } satisfies LocaleMessageValue
-  ```
-
-- `scripts/generate-i18n-schema.ts` recorre `src/locales/es/**` (misma exclusión de `formats/` y misma regla de `index.ts` que `_loader.ts`) y genera `typed-locale.d.ts` en la raíz del proyecto: un `import type` + `typeof` por cada archivo, compuestos en una interfaz `MessageSchema` que aumenta `DefineLocaleMessage` de `vue-i18n` vía `declare module`.
-- **Claves con función** (`(ctx: MessageContext) => ...`, ej. `overlays.toast.description.error`): el generador las normaliza a `string` en el schema vía el tipo `NormalizeMessages`. Motivo: vue-i18n v11 calcula las claves válidas de `t()` del Composition API con `JsonPaths` (`@intlify/core-base`), que recursa dentro de cualquier valor que extienda `Record<string, any>` — una función también lo extiende — excluyendo del autocompletado la clave original. Normalizarlas a hojas `string` las restaura; es types-only (no afecta al runtime ni al retorno de `t()`).
-- `typed-locale.d.ts` es un archivo **autogenerado** (está en `.gitignore`) — nunca editarlo a mano. Se regenera automáticamente en `bun run dev` (que ejecuta `i18n:types`); también se puede regenerar manualmente con `bun run i18n:types`. **Nota:** `bun run build` actualmente **no** ejecuta `i18n:types` (solo `vue-tsc --noEmit && vite build`), por lo que si se añaden claves hay que lanzar `i18n:types` antes del build.
-- Gracias a la augmentation global, `t('common.active')`, `useI18n().t(...)` y `$t(...)` en plantillas quedan autocompletados y validados en toda la app sin tipar cada `useI18n()` manualmente.
-- Al añadir un archivo de mensajes nuevo en `es/`, no hace falta tocar `typed-locale.d.ts` — se regenera solo en el siguiente `dev`/`build`/`i18n:types` — pero **hay que crear su espejo en `en/`** con las mismas claves (si falta, `warnMissingKeys` lo avisa en `DEV`). El idioma `en` no tiene su propio schema: solo `es` se usa como referencia de tipos (igual que es la referencia para `warnMissingKeys` en runtime).
-
----
-
-## 6. Llamadas a comandos Tauri
-
-### Acceso a datos: Drizzle proxy (recomendado para CRUD)
-
-Todas las operaciones sobre las tablas de la BD (SELECT, INSERT, UPDATE, DELETE) se hacen con **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`, `db` exportado). El proxy detecta los campos cifrados desde el schema (`encryptedText(...)` en `src/drizzle/lib/schema-types.ts`), **cifra/descifra/enmascara en el frontend** con `src/drizzle/lib/stronghold.ts`, emite el SQL y delega en `query_raw` de Rust, que solo ejecuta la sentencia y devuelve `columns` + `rows`.
+- **Inter** para texto general.
+- **JetBrains Mono** (`font-pcb`) para badges, etiquetas técnicas, tooltips y valores numéricos.
+
+### Utilidades CSS
+
+| Clase | Uso |
+| --- | --- |
+| `pcb-clip-br` | Esquina inferior derecha recortada (botones no cuadrados, inputs) |
+| `pcb-clip-badge`, `pcb-clip-badge-alt` | Esquinas opuestas recortadas (chips) |
+| `pcb-clip-card` | Las cuatro esquinas recortadas (cards, modales) |
+| `pcb-clip-hex` | Hexágono achatado (indicadores de estado) |
+| `pcb-shadow-xs/sm/md/lg`, `pcb-shadow-neutral`, `pcb-shadow-hover-md` | Glow vía `filter: drop-shadow` |
+| `pcb-trace-top`, `pcb-trace-bottom`, `pcb-trace-left`, `pcb-trace-left-current` | Trazas de borde |
+| `pcb-corners`, `pcb-pad` | Nodos circulares |
+| `pcb-animate-pulse`, `pcb-animate-flow` | Pulso en hover (botones), flujo (progress) |
+| `pcb-animate-blink` | Parpadeo LED: solo de forma explícita y puntual |
+
+### Reglas críticas de estilo
+
+- **`box-shadow` no es compatible con `clip-path`.** En elementos con `pcb-clip-*`, usa `filter: drop-shadow(...)`, nunca `shadow-[...]`. Tampoco combines dos utilidades que fijen `filter` en el mismo selector.
+- **`pcb-clip-*` no se aplica a elementos circulares** ni a iconos. En `button.ts` el clip se condiciona a la variante `square`: `false` → `pcb-clip-br`, `true` → sin clip.
+- **`pcb-animate-blink` nunca va por defecto** en un color o variante. Se añade a mano donde haga falta.
+- **Estados `disabled` deben anular `hover`/`active`:** `disabled:pointer-events-none` (nativos) o `data-disabled:pointer-events-none` (Reka UI).
+
+### Checklist para un theme nuevo o modificado
+
+- Sin hexadecimales.
+- Slots con `pcb-clip-*` usan `drop-shadow`.
+- Sin dos reglas de `filter` en el mismo selector.
+- `pcb-clip-*` no en elementos circulares.
+- Sin `pcb-animate-blink` por defecto.
+- Slots con `hover:`/`active:` llevan `disabled:pointer-events-none`.
+
+Los temas se registran en `vite.config.ts → ui`. El alias para `switch` es `switchTheme` porque `switch` es palabra reservada.
+
+## 3. Acceso a datos
+
+- **Todas** las lecturas y escrituras de tablas van por **Drizzle en modo proxy** (`src/drizzle/drizzle.ts`), que delega en `query_raw`. El proxy cifra, descifra y enmascara los campos `encryptedText(...)` con `src/drizzle/lib/stronghold.ts`.
+- En lectura, por defecto los valores `ENC:` se enmascaran a `BLANK_VALUE`. Con `withDecryption(true, fn)` se descifran.
+- En escritura, el proxy cifra los campos declarados y elimina antes las asignaciones centinela o `ENC:`.
+- **Ninguna escritura vive en un loader.** Las escrituras van con `db.insert/update/delete` o, si hace falta lógica de backend, con `invoke` directo en el sitio de uso.
+- No existe acceso directo a SQLite desde el frontend.
 
 ```ts
 import { db, withDecryption } from '@/drizzle/drizzle'
 import { hosts, variables } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
 
-// Lectura sin descifrado (los campos cifrados llegan como BLANK_VALUE)
 const row = await db.select().from(hosts).where(eq(hosts.id, id)).limit(1)
-
-// Lectura con descifrado explícito
-const raw = await withDecryption(true, () =>
-	db.select().from(hosts).where(eq(hosts.id, id)).limit(1),
-)
-
-// Escritura (value se cifra al persistir si la variable es secreta)
+const raw = await withDecryption(true, () => db.select().from(hosts).where(eq(hosts.id, id)).limit(1))
 await db.insert(variables).values({ name, slug, value })
 ```
 
-### Comandos `invoke` (lógica de backend)
+### Queries CRUD
 
-Para operaciones que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD), se llama `invoke(...)` directamente en el sitio de uso. Comandos disponibles (ver `src-tauri/src/lib.rs`):
+Las entidades (`variables`, `hosts`, `commands`, `passkeys`) usan la factoría `createCrudQuery` de `composables/queries/crud.ts`. Cada entidad solo declara tabla, PK, `cacheKey`, prefijo i18n y hooks. La factoría gestiona el ciclo *toast persistente → sentencia → invalidación → toast de éxito o error*.
 
-- **Hosts:** `test_connection`. La información del sistema, las métricas, las actualizaciones disponibles y la aplicación de actualizaciones se ejecutan con los comandos guardados `system_info`, `system_metrics`, `upgradable_packages` y `update_packages` a través de `runCommand(...)` → `ssh_execute_command` + parsers TS; no hay comandos Rust `host_check_*` ni `host_update_packages`. Si el host aún no tiene huella confirmada, la respuesta trae `message_params.fingerprint` (`tauri.ssh.errors.host_key_unknown`) o avisa de un cambio (`host_key_mismatch`).
-- **Passkeys:** `generate_passkey`, `derive_passkey_info`, `export_public_key`.
-- **BD / setup (deployer):** `set_database_path`, `check_database_exists`, `initialize_database`, `create_database_file`, `validate_database_sqlite`, `get_app_info`, `get_database_info`, `get_migrations_info`, `execute_migrations`, `has_migrations_pending`.
-- **Cripto (vault Stronghold):** `get_vault_password`, `get_vault_path`, `check_vault_health` — los dos primeros los usa `src/drizzle/lib/stronghold.ts` para cargar el vault; `check_vault_health` devuelve `VaultHealthReport` (ver también `AGENTS.backend.md` §4).
-- **Consola remota (SSH suelto):** `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job`.
+- `findAll` y `find` excluyen la papelera por defecto. `{ onlyDeleted: true }` lista solo la papelera; `{ includeDeleted: true }` no filtra.
+- `remove(key)` hace borrado lógico con **Deshacer**. `remove(key, { purge: true })` borra físicamente. `remove(key, { unlink: true })` pone a `NULL` las FK antes de borrar.
+- `purgeDeleted()` vacía la papelera y devuelve `{ purged, blocked }`.
+- Las filas con `internal: true` no se pueden borrar ni purgar (hoy solo `commands`).
+- Las lecturas directas fuera de la factoría (loaders, componentes) deben filtrar con `isNull(tabla.deleted_at)`.
 
-> Los comandos de Docker Hub (`cache_docker_search`/`cache_docker_tags`) y de Docker Compose remoto (`sync_project_docker_compose_files`, `project_docker_compose_*`) **se retiraron** del backend — no llamarlos.
+### Unicidad y soft-delete
+
+Los índices `UNIQUE` son globales, así que una fila borrada sigue ocupando su `name`, `key` o `slug`. Por eso las validaciones `$count` no filtran por `deleted_at`: para reutilizar un nombre hay que restaurar la fila. Si algún día se usan índices parciales, habrá que migrarlos y añadir el filtro a los validadores.
+
+Las validaciones (`composables/validation/*`) usan `db.$count(tabla, condición)` con `eq`/`and`/`ne` de `drizzle-orm`. Nunca SQL manual interpolado.
+
+### Invalidación de caché
+
+`invalidateCacheQueries()` (`composables/queries/shared.ts`) invalida por prefijo, pero **no propaga** el error de un refetch fallido. Así, una mutación aplicada no se reporta como fallida aunque el loader de detalle responda `not-found`.
+
+### Diálogos de borrado
+
+`useCrudDeleteConfirm` consulta `findReferences` y `findVariableUsages` antes de borrar. Si hay referencias, ofrece **Desvincular y eliminar**. Si solo hay usos de variables, ofrece **Eliminar de todos modos**: las variables se referencian por texto (`{{global.slug}}`), no por FK. El vaciado de papelera pide confirmación doble.
+
+## 4. Llamadas a comandos Tauri
+
+Para operaciones con lógica de backend, usa `invoke` directamente:
 
 ```ts
 import { invoke } from '@tauri-apps/api/core'
@@ -447,179 +136,118 @@ if (result.success) {
 }
 ```
 
-Escrituras vía Drizzle: el `invoke` se usa solo para comandos Rust; para INSERT/UPDATE/DELETE sobre entidades se usa `db` (ver arriba).
+- Comandos en uso: `test_connection`, `generate_passkey`, `derive_passkey_info`, `export_public_key`, comandos de BD y setup (`set_database_path`, `initialize_database`, `execute_migrations`…), `get_vault_password`, `get_vault_path`, `check_vault_health`, y los de SSH (`ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_list_remote_dir`, `ssh_file_manager_transfer`, `ssh_cancel_remote_job`).
+- Los comandos de información del sistema, métricas, paquetes actualizables y actualización de paquetes **no son comandos Rust**: se ejecutan como comandos guardados con `runCommand(...)` → `ssh_execute_command`, y se parsean en TypeScript (`src/types/entities.ts`).
+- No llamar a comandos de Docker (Hub o Compose remoto): ya no existen en el backend.
 
-### Huella del servidor en hosts
+## 5. Consola remota y gestor de archivos
 
-- `deployer_hosts.host_key_fingerprint` guarda la huella `SHA256:<base64>` confirmada por el usuario; es un campo de texto normal (no cifrado) y se persiste con Drizzle.
-- `HostForm.vue` muestra el valor en un campo de solo lectura y ofrece **Comprobar y confirmar**. El botón llama a `test_connection` y usa `src/composables/dashboard/hosts/useHostFingerprint.ts` para pedir confirmación y guardar la huella con `db.update(...)` + invalidación de caché.
-- El alta no puede comprobar la huella antes de guardar (el comando necesita el ID): `pages/dashboard/hosts/add.vue` guarda el host y ofrece la confirmación justo después. La edición permite repetirla, también cuando la clave del servidor cambia.
-- La vista de detalle muestra la huella como badge. Los errores de conexión/ejecución/transferencia llegan con claves `tauri.ssh.*`; al añadir claves hay que regenerar `typed-locale.d.ts` con `bun run i18n:types` antes del build.
+### Motores de jobs
 
-### Consola remota (`ssh/` + composables SSH)
+- **`useSshJobs`** (`composables/useSshJobs.ts`) es el motor genérico: registro reactivo multi-job por clave, con estado (`pending`, `running`, `success`, `error`, `cancelled`, `skipped`, `interrupted`), salida por job y tiempos. Expone `cancel(key?, { cascade })`, `cancelAll()` y `runBatch(...)` para el gestor.
+- **`useRemoteCommand`** es la fachada de la consola sobre `useSshJobs`. Mantiene la API que usan los componentes: `execute`, `upload`, `download`, `cancel`, `clear`.
+- **`jobs` es un `reactive(Map)`.** Las mutaciones deben hacerse sobre el objeto reactivo que devuelve `get()`. Un objeto crudo guardado con `set()` no notifica cambios.
 
-Comandos SSH "sueltos" para la consola remota (`/dashboard/console`), con streaming por Channel:
+### Eventos y resultados
 
-- Backend: `ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`, `ssh_cancel_remote_job` (ver `AGENTS.backend.md` §5 «Consola remota»). El gestor de archivos añade `ssh_file_manager_transfer` con su propio `Channel<RemoteFileManagerEvent>`.
-- `useSshJobs` (`src/composables/useSshJobs.ts`): motor **genérico y reutilizable**, independiente de la consola y pensado también para Nodes Workflow. Registro reactivo multi-job por clave de cliente (`key`, `label`, `dependsOn`) con `job_id` recibido en `started`, `output` por trabajo, estado (`pending`/`running`/`success`/`error`/`cancelled`/`skipped`/`interrupted`), resultado y tiempos (`createdAt` ISO, `startedAt`, `finishedAt`). Acepta un adaptador de interpolación configurable (por defecto `{ global: await loadGlobalScopeForExecution() }` con `collectSecretValues`/`redactSecrets`) y expone todas las opciones de `RemoteCommandInput`, `RemoteUploadInput` y `RemoteDownloadInput`.
-  - `cancel(key?, { cascade?: boolean } = { cascade: true })` cancela el trabajo indicado (o el activo) por su `job_id` y, en cascada, a sus descendientes en curso; los dependientes aún no iniciados quedan `skipped`. Sin clave y sin trabajo activo invoca sin id (compatibilidad de consola: Rust cancela el último job). Nunca cancela todos por defecto; para eso existe `cancelAll()`.
-  - Expone además `jobs`, `activeKey`, `activeJob`, `lastFinishStatus`, `lastStatus`, `appendOutput(text)` y `clear(key?)`.
-  - `runBatch(input, metas, onEvent?)`: adaptador del gestor. Un único `invoke('ssh_file_manager_transfer')` crea un job por `key`, toma el `job_id` de `batch_started.job_ids`/`item_started`, actualiza estado desde `item_finished` y guarda los bytes de `progress` en `job.bytesTransferred`/`job.bytesTotal`. El observador `onEvent` permite reaccionar por ítem (marcas de descarga) sin acoplar el motor al gestor. En `cancel(key)` los ítems **pendientes con `job_id`** también invocan la cancelación, porque el backend registra todos los tokens al inicio.
-- `useRemoteCommand` (`src/composables/useRemoteCommand.ts`): **fachada** de la consola sobre `useSshJobs`. Conserva la API que usan los componentes (`execute`/`upload`/`download`/`cancel`/`clear`), añade el estado de finalización y `appendOutput`, y acepta claves de trabajo opcionales por operación. Cancela el job del evento `started` por defecto.
-- Eventos del Channel (`RemoteConsoleEvent`): `started` (guarda `job_id` en el trabajo activo), `output_chunk` (append al output del trabajo, redactando secretos), `finished` (`status`, `exit_code`, `duration_seconds`, `message`), `error` (mensaje de transporte). El mensaje visible no se duplica entre `error` y `finished`.
-- **Reactividad de `useSshJobs`:** `jobs` es un `reactive(Map)`; las mutaciones deben hacerse sobre el objeto **reactivo** devuelto por `get()`/iteración. Un objeto crudo guardado con `set()` no notifica al cambiar `status`/`output` (por eso los jobs se crean con `reactive({...})`).
-- Los componentes leen la razón del fallo de `result.message_params.reason` (o de `t(result.message_key, result.message_params)`), **no de `props.errorMessage` tras el `await`**: ese prop es una instantánea del render anterior del padre y llega vacío justo después de la respuesta.
-- Componentes presentacionales (`src/components/pages/console/`): `ConsoleCommand.vue`, `ConsoleFileUpload.vue`, `ConsoleFileDownload.vue` y `ConsoleOutput.vue` (no existe `ConsoleConsole.vue`). `SelectHost` sigue siendo compartido (`src/components/form/selects/`) y se usa en la cabecera de la página. `CommandTestDialog.vue` importa `ConsoleOutput.vue` desde esta ruta como excepción puntual. Los tres componentes de operación reciben las mismas props (host, estado, `execute`/`upload`/`download`, `clear`, `cancel`) y muestran el botón **Cancelar** solo mientras `isRunning`. La descarga exige destino local, guarda la estructura como un cliente FTP y envía `recursive` como tri-estado (`true` directorio, `false` archivo, `null` autodetección).
-- Comandos guardados: `CommandRunOptions` (`src/utils/commands/types.ts`) incluye `ssh_reconnect_attempts`; `runCommand`/`runCustomCommand` lo envían a `ssh_execute_command` (`null` por defecto).
-- `success: true` no implica éxito del comando remoto: el `exit_code` real viaja en `data.exit_code` (0 = OK, != 0 = comando falló, -1 = desconocido). Los errores de transporte devuelven `success: false`.
-- Página: `src/pages/dashboard/console.vue` (ruta `/dashboard/console`, name `dashboard-console`). Habilita las tres pestañas y cablea `cancelCurrent` con el trabajo activo.
+- Eventos del Channel: `started` (guarda el `job_id`), `output_chunk`, `finished` (`status`, `exit_code`, `duration_seconds`, `message`) y `error` (transporte).
+- `success: true` no implica que el comando remoto haya tenido éxito: revisa `data.exit_code`.
+- Los componentes leen el motivo del fallo de `result.message_params.reason` o de `t(result.message_key, result.message_params)`, **no** de un prop tras el `await`: el prop es una instantánea del render anterior.
 
-### Gestor de archivos de doble panel (`dashboard/file-manager`)
+### Componentes
 
-- Página: `src/pages/dashboard/file-manager.vue` (name `dashboard-file-manager`, entrada en `navigationMenuFooter` justo debajo de «Consola remota»). La cabecera es solo `UDashboardNavbar`; el cuerpo usa `UTabs` con `:content="false"`: **Archivos** muestra los dos paneles lado a lado con los botones `→`/`←` debajo, y **Transferencias** muestra la cola. El selector `SelectHost` está en la cabecera del panel remoto, no en la barra de herramientas de la página.
-- Todo el estado persistente vive en SQLite. En `onMounted` se ejecutan `Promise.all([preferences.hydrate(), manager.hydrate()])` y `listings.purgeOrphans()`. `localStorage` solo se lee **una vez** para migrar las claves históricas (`useFileManagerPreferences` y `remoteFileMarks`) y se borra después. El layout envuelve la página con `<KeepAlive include="FileManagerPage">`.
-- Stores nuevos: `fileManagerPersistence.ts` es el único acceso a `db`; `useFileManagerPreferences` guarda pestaña, host, ruta local, rutas remotas por host, concurrencia y opciones de transferencia; `useFileManagerListings` guarda instantáneas por `scope_key` (`local:<ruta>` / `remote:<host_id>:<ruta>`) con rutas, selección, niveles cargados, expansiones y `truncated`; `useFileManagerQueue` guarda un snapshot por transferencia ordenado por `createdAt` descendente. `purgeOrphans()` descarta listados de hosts borrados o deshabilitados.
-- `FileManagerPanel.vue` (`src/components/pages/file-manager/`) es parametrizable con `origin: 'local' | 'remote'`; mantiene `currentPath`, breadcrumb y actualizar, expone el slot `header-actions` y recibe `loadChildren(key): Promise<void>` como prop. El panel local elige la raíz con `plugin-dialog` (`open({ directory: true, recursive: true })`) y lista con `plugin-fs` (`readDir` + `stat`); el remoto consume `ssh_list_remote_dir` por `invoke` con `host_id`, `ssh_reconnect_attempts: 3` y `max_entries: 1000`.
-- La ruta inicial remota sale de `hosts.default_remote_path` (o `/`) y es distinta del `working_dir` de la consola. El botón «Restablecer ruta» borra solo la preferencia de ese host y recarga el listado; no altera otros hosts ni la consola.
-- Permisos mínimos en `src-tauri/capabilities/default.json`: `fs:allow-read-dir` y `fs:allow-stat`. No se conceden permisos de escritura ni se lee contenido de archivos desde el frontend.
-- Cada panel carga **solo un nivel**: el listado del directorio actual llena `entries`; al expandir un directorio se pide su nivel hijo y se guarda en `childrenByKey`. La navegación usa stale-while-revalidate: se muestra la instantánea persistida y se revalida contra local/SFTP; la selección se revalida contra las entradas vigentes. Los ocultos se muestran siempre.
-- `FileTree.vue` construye `TreeItem[]` con `key = ruta`, usa `UTree multiple` con `:as="{ link: 'div' }"`, `bubbleSelect`, `propagateSelect`, `selectionBehavior="toggle"` y `@select` cancelable: **solo el icono cambia la selección**, el clic en la fila no. Antes de marcar un directorio carga sus descendientes con los topes de profundidad 5, 500 entradas por directorio y 5.000 nodos; al superarlos emite `limit-reached` y deja el nivel parcial. Modo `readOnly` + `alwaysExpanded` para la cola. Expone slots `node-leading-info`, `node-details`, `node-status`, `node-progress` y `node-actions` (scope `{ entry: FileEntry }`).
-- El orden lo impone **solo el frontend** mediante `sortFileEntries()` (`src/utils/fileEntries.ts`), aplicado en `FileTree.vue` (niveles e hijos) y en `FileManagerPanel.vue` (listado e hidratación): directorios primero, archivos después y `other`/symlinks sin destino resoluble al final. Dentro de cada grupo se usa un `Intl.Collator` cacheado por idioma con `sensitivity: 'base'` (sin tildes ni mayúsculas) y `numeric: true` (orden natural), con desempate estable por nombre y clave. Los symlinks se agrupan según `targetKind`, sin cambiar su `kind`. Las instantáneas antiguas se reordenan al hidratar; el panel mantiene un índice `Map<key, FileEntry>` para `findEntry()`/`knownKeys()` y calcula el aviso local de `truncated` con `listed.length > MAX_LIST_ENTRIES`. `formatModified()` usa `Intl.DateTimeFormat` cacheado por idioma.
-- Las rutas locales usan separadores nativos y las remotas siempre `/`; la normalización para transferir se hace en el plan de la cola. `stat` puede fallar en enlaces rotos: la entrada se muestra sin metadatos.
-- Los botones `→`/`←` construyen un `FileManagerTransferRequest` por entrada seleccionada **de nivel superior** (clave `file-transfer-<timestamp>-<n>`, ruta destino = directorio actual + nombre, `remoteSource` en descargas) y llaman a `useRemoteFileManager.enqueue`, que envía `max_concurrency` desde la preferencia (1-16, por defecto 2). `topLevelEntries()` (`src/utils/paths.ts`) descarta descendientes y claves repetidas: `UTree` con `propagate-select` marca también los hijos de una carpeta y, sin este filtro, la carpeta y sus archivos generan bloques duplicados que copian lo mismo.
-- `useRemoteFileManager.ts` es la fachada del gestor sobre `useSshJobs`: agrupa por host (un lote = una conexión), observa los jobs con `watch(..., { deep: true })` y guarda snapshots con `debounce` mientras hay archivos en curso. Expone `hydrate()`, `queue`, `isRunning`, `total`, `completed`, `bytesTransferred`, `cancel(key)`, `retry(key)`, `canRetry(key)`, `clearFinished()`, `pruneMarks` e `isDownloaded`. Tras reiniciar, los jobs `pending`/`running` se restauran como `interrupted` con `jobId: null`. «Limpiar terminados» borra también sus filas SQLite. No modifica `useRemoteCommand.ts`.
-- `SshJob` incorpora `createdAt` (ISO) para ordenar la cola; `isActiveStatus()` centraliza `pending`/`running` y `clear()` conserva solo esos estados. La consola no persiste jobs ni usa el nuevo estado.
-- `src/stores/remoteFileMarks.ts` persiste las marcas en la tabla de preferencias de SQLite y migra la clave `deployer-remote-file-marks` una sola vez. Clave compuesta `host + ruta + tamaño + fecha`; `prune(hostId, entries)` invalida la marca de una entrada listada cuando cambia tamaño/fecha, sin borrar marcas de otras rutas.
-- `TransferQueue.vue` muestra un bloque por job, del más reciente al más antiguo, con dirección/estado/bytes/rutas/error, acciones **Cancelar**/**Reintentar** y un detalle `FileTree` de solo lectura siempre expandido: bytes/tamaño, porcentaje y estado a la **izquierda** del nombre, barra y error debajo. **Reintentar** crea un job nuevo con `retryOf` y conserva el anterior; se deshabilita si el host ya no está habilitado. Sobre la cola hay un `UInputNumber` (1-16, por defecto 2) que modifica `preferences.maxConcurrency` y se envía en el próximo lote; el texto «Máximo N en curso» refleja el valor guardado. `FileManagerPanel` emite `list-loaded` con cada nivel remoto para disparar `pruneMarks`.
-- El progreso por archivo sí es byte a byte (eventos `file_started`/`file_progress`/`file_finished`, limitados a uno cada 100 ms); el evento `progress` del lote se emite al completar cada ítem y lleva el acumulado recalculado en orden de llegada, no un streaming global.
-- Textos en `src/locales/{es,en}/pages/file_manager.ts` y `components/file_manager.ts` (los nombres de archivo van en snake_case para que el generador de `typed-locale.d.ts` produzca claves TS válidas). Tras crearlos, el usuario ejecuta `bun run i18n:types`.
+- Consola (`src/components/pages/console/`): `ConsoleCommand.vue`, `ConsoleFileUpload.vue`, `ConsoleFileDownload.vue`, `ConsoleOutput.vue`. `SelectHost` es compartido.
+- Gestor de archivos (`src/components/pages/file-manager/`): `FileManagerPanel.vue` (un panel parametrizable, `origin: 'local' | 'remote'`), `FileTree.vue`, `TransferQueue.vue`.
+- Página: `pages/dashboard/file-manager.vue`, con pestañas Archivos y Transferencias.
 
-> Los catálogos de `projects`, `tasks` y `deployments` y el runner universal de deployments (`run_deployment`, `ProgressEvent`) de versiones anteriores **ya no están en el código activo** (archivados en `.back` / `_archived.dist/`). No añadir referencias nuevas a `crud_*` ni a `run_deployment`. `variables` es de nuevo un módulo activo, con Drizzle + loaders propios.
+### Gestor de archivos
 
----
+- **Persistencia:** todo el estado vive en SQLite (`fileManagerPersistence.ts` es el único acceso a `db`). `localStorage` solo se usa una vez para migrar datos antiguos. `KeepAlive` mantiene la página viva.
+- **Stores:** `useFileManagerPreferences` (pestaña, host, rutas, concurrencia), `useFileManagerListings` (instantáneas por `scope_key`) y `useFileManagerQueue` (cola ordenada por `createdAt` descendente).
+- **Carga:** cada panel pide **un nivel**. Stale-while-revalidate: muestra la instantánea y revalida contra local o SFTP. Los directorios expandidos piden su nivel hijo.
+- **Selección:** `FileTree` usa `UTree multiple` con `propagateSelect`. **Solo el icono cambia la selección**, no el clic en la fila. Los topes de expansión son profundidad 5, 500 entradas por directorio y 5.000 nodos.
+- **Orden:** lo impone solo el frontend con `sortFileEntries()` (`utils/fileEntries.ts`): directorios primero, después archivos, con `Intl.Collator` por idioma.
+- **Transferencias:** los botones `→` y `←` crean una petición por entrada seleccionada **de nivel superior** (`topLevelEntries()`). Sin ese filtro, `propagateSelect` duplicaría bloques.
+- **Rutas:** las locales usan separadores nativos; las remotas siempre `/`.
+- **Permisos locales:** `fs:allow-read-dir` y `fs:allow-stat`. No hay permisos de escritura ni lectura de contenido desde el frontend.
+- **Reinicio:** los jobs `pending` o `running` se restauran como `interrupted` con `jobId: null`.
 
-### Drag & drop (`useSortable`): **sin uso activo** (feature retirada)
+## 6. Gotchas
 
-La feature de arrastrar/reordenar con Sortable.js **ya no se usa en el código activo** (formaba parte de los catálogos `projects`/`tasks` archivados; grep de `useSortable` en `src/` no da resultados actualmente, aunque `sortablejs`/`@vueuse/integrations` sigan presentes en `package.json`/`vite.config.ts` como restos). No mantener ni reintroducir esa sección de código.
+### `data` de pinia-colada es un `shallowRef`
 
-Si en el futuro se reintrodujera drag & drop, aplicar estas reglas (aprendidas de la implementación retirada, aún válidas para Tauri):
+Los loaders exponen `data` como `shallowRef`. **Mutar una propiedad anidada no dispara reactividad**, aunque el dato cambie en memoria. Para reflejarlo hay dos opciones:
 
-- **Importar SIEMPRE el submódulo directo**: `import { useSortable } from '@vueuse/integrations/useSortable'` (importar el barrel `@vueuse/integrations` rompe dev por las dependencias opcionales no instaladas, p.ej. `async-validator`). Añadir `@vueuse/integrations` como dependencia explícita en `package.json`.
-- **`forceFallback: true` es OBLIGATORIO** en Tauri: la API nativa HTML5 Drag & Drop no funciona de forma fiable en webviews (WebView2/WebKit). Sin `forceFallback`, arrastrar no hace nada sin error.
-- Pasar `watchElement: true` cuando el contenedor esté bajo un `v-if` con datos asíncronos; de lo contrario Sortable.js intenta enlazarse una sola vez en `onMounted` y queda muerto si el elemento aún no existe.
-- Pasar `handle`, `animation`, `onUpdate`, etc. como objeto de opciones en la propia llamada a `useSortable()` (la instancia real se crea en un `onMounted` interno; llamar a `option(...)`/`stop()` después no funciona).
+- Reasignar el valor completo: `data.value = { ...data.value, prop: nuevo }`.
+- Refetch del loader (`reload`). Es más lento porque consulta la BD y muestra `isLoading`.
 
-## 6c. CRÍTICO: cualquier `data` de un loader de `pinia-colada` es un `shallowRef`
+### Entidades con `value: string`
 
-Cualquier loader creado con `defineColadaLoader` de `vue-router/experimental/pinia-colada` (que usa `@pinia/colada` por debajo) expone `data` como **`shallowRef`**, por diseño de la librería (rendimiento con datasets grandes). Esto tiene una consecuencia que hay que tener SIEMPRE presente en componentes que muten ese objeto (p.ej. la entidad cargada en una vista):
+`defineColadaLoader` aplica `Exclude<Data, NavigationResult>`, y `NavigationResult` tiene una propiedad `value`. Cualquier entidad con `value: string` se colapsa a `never`. En el consumidor hay que hacer cast:
 
-- **Mutar una propiedad anidada del objeto NO dispara reactividad.** Ejemplos de código que NO actualizan la vista, aunque el dato en memoria sí cambie: `obj.prop = x`, `obj.items = [...]`, `Object.assign(obj, patch)`. Ninguno lanza error: el dato queda correctamente actualizado en el objeto JS, pero Vue no se entera porque el objeto al que apunta `.value` no está envuelto en un Proxy reactivo.
-- **Solo reasignar `.value` completo dispara reactividad**: `data.value = { ...data.value, prop: nuevo }`. Este es el patrón que hay que usar para ver el cambio reflejado sin recargar.
-- **Alternativa más simple, pero más lenta**: usar el `reload` del propio loader (o `invalidate`/refetch de `pinia-colada`) tras la mutación. Correcto, pero dispara una consulta completa a la BD (con `isLoading` de por medio) en cada llamada — usar solo donde la frecuencia es baja.
-- **Regla práctica:** después de crear/actualizar/borrar algo que afecte a un objeto ya cargado en un loader, o reasignar `.value` completo con spread usando los datos en memoria, o hacer refetch del loader. Nunca dejar solo una mutación anidada como única fuente de verdad para el render.
-
----
-
-## 6d. Gotcha: entidades con `value: string` y `defineColadaLoader`
-
-`defineColadaLoader` aplica `Exclude<Data, NavigationResult>` al tipo de `data`. `NavigationResult` de vue-router es una clase con una propiedad `value` (acepta un `string`), así que **cualquier entidad que tenga `value: string` encaja estructuralmente** y el tipo se colapsa a `never`/`undefined`.
-
-- Afecta a `Variable` (`value` es el valor de la variable). En `pages/dashboard/variables/[id]/edit.vue` el loader se consume con un `computed` que recupera el tipo real:
-
-  ```ts
-  const { data: entityData } = loadVariableById()
-  const entity = computed(() => entityData.value as Variable | undefined)
-  ```
-
-- No funciona añadir una marca/brand opcional: la asignabilidad estructural la ignora. Si aparece otra entidad con `value: string` en un loader, aplicar el mismo cast en el consumidor (o envolver el resultado en un objeto sin `value` en la raíz).
-- Los loaders de lista (`loadVariablesList`) no se ven afectados porque `Data` es un array.
-
----
-
-## 7. Loading Screen
-
-La pantalla de carga se gestiona en `index.html`. Cuando Vue monta la aplicación, elimina el elemento splash — no hay un componente `Splashscreen` separado.
-
----
-
-## 8. Formularios JSON-Schema (basado en `json-schema-library`)
-
-Sistema de formularios que renderiza edición visual de documentos basados en un JSON Schema. El núcleo gira alrededor de **jsl** (`json-schema-library` v11) y es **agnóstico**: no importa ningún JSON de esquema. `JsonSchemaEditor.vue` es el editor genérico de documento (raíz con layout de objeto genérico).
-
-> **Retirado del código activo:** los JSON `src/schemas/compose-spec.json` / `composer-schema.json` **no existen** (se eliminaron del proyecto) y los wrappers que los importaban, `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue` (en `src/components/form/schema/`), quedaron como **huérfanos con imports rotos** (solo siguen referenciados en `components.d.ts`). Las referencias a "Compose"/"Composer" en este §8 se conservan como **referencia histórica** del patrón de uso. El **núcleo** (`src/utils/schema-form/*`, `useSchemaToForm`, `SchemaField*`, `JsonSchemaEditor.vue`) sigue intacto y sin dependencias de esos JSON. Cada editor nuevo debe importar su propio schema y aportar sus normalizers/widgets.
-
-### Utilidades (`src/utils/schema-form/*`)
-
-- `jsl.ts`:
-  - `compileRoot(schema)` → `{ root: SchemaNode, draft: string }`. La versión de draft se detecta sola (`draft-04`/`2020-12`, etc.).
-  - `classifyNode(node)` → `{ kind, nullable, isUnion, isMap, variants? }`. Kinds: `string | number | integer | boolean | null | enum | array | object | map | union | any`. Semántica de `type` como array: `['<tipo>','null']` → tipo nullable; varios tipos sin `null` → union; varios con `null` → union + nullable; `'null'` solo → campo null.
-  - `resolveNode(node)` → aplica `$ref` (`node.resolveRef()`) y fusiona `allOf` (`mergeNode`). **En jsl el `$ref` a nivel superior NO se resuelve solo**: hay que llamarlo (p.ej. `include.items`, `services` → service).
-  - `isContainerNode(node)` → true si el nodo es un contenedor (`array`/`map`/`object`/`any`) o una unión con alguna variante contenedora (p.ej. `build` `['string','object']`); las uniones de solo simples (`boolean|string` en `attach`, `privileged`…) se consideran simples. Se usa para ordenar los hijos de un objeto.
-  - `activeVariantIndex(node, data, path)` → índice de la variante activa de un oneOf/anyOf (reduce el nodo con `getNode('#', valor)` → `oneOfIndex`; fallback por tipo JS).
-  - `preferredVariant(node)`, `variantDefault(node)` (vía `getData()`), `variantLabel(node)`.
-- `paths.ts` → `getAt`/`setAt`/`deleteAt` por ruta de formulario `a.b[0]` y conversión `pathToPointer`/`pointerToPath`.
-- `validate.ts` → `validateWithJsl(root, data, resolveMessage?)` → `{ ok, errors: Record<ruta, string[]> }`. Cada error mapea el JSON pointer → ruta de formulario y el código de jsl → clave i18n `form.schema_form.errors.<código>` (ver tabla en `validate.ts`). El resolver por defecto usa `useI18n()`; sin resolver se devuelve la clave.
-- `normalize.ts` → sistema de **normalizadores por schema**. `SchemaNormalizer = (schema: Record<string, any>, pointer: string) => Record<string, any> | undefined` (transforma **un solo nodo** y recibe su JSON pointer, raíz `#`; `undefined` = sin cambios; los normalizadores con menos parámetros siguen siendo válidos). `booleanStringNormalizer` convierte las uniones exactas `boolean | string` (cualquier orden) en `boolean` (en compose el `string` solo existe para que ciertos parsers no fallen al leer `true`/`false` como texto). `normalizeSchema(schema, ...normalizers)` clona y recorre todo el esquema (`properties`, `patternProperties`, `$defs`, `definitions`, `oneOf`/`anyOf`/`allOf`/`prefixItems`, `items`, `additionalProperties`, `not`, `contains`) aplicando los normalizadores en orden a cada nodo (el pointer se escapa: `~`→`~0`, `/`→`~1`); **sin normalizadores devuelve el schema sin recorrerlo**. Cada editor elige los suyos (de referencia, cómo lo hacían los wrappers retirados): `ComposeJsonSchema.vue` → `normalizeSchema(composeSpec, booleanStringNormalizer, widgetsNormalizer(...))`; `ComposerJsonSchema.vue` → `normalizeSchema(composerSpec)` (sin normalizadores: su `abandoned` es `boolean|string` con el `string` como valor real, no se normaliza). Añadir un normalizador nuevo = una función de nodo, sin tocar el walker.
-- `WIDGET_KEY = 'x-widget'` y `widgetsNormalizer(map: Record<pointer, nombre>)` en `normalize.ts`: marcan un nodo para renderizarlo con un widget concreto (`{ ...schema, 'x-widget': nombre }` solo si su pointer está en el mapa). jsl **ignora las claves `x-*`** (`SchemaNode.addKeywords`), así que el marcado no genera warnings. El nombre se resuelve contra el mapa `widgets` del formulario (núcleo agnóstico; los wrappers aportaban los componentes, p.ej. Compose → `ComposeImagePicker` para `#/$defs/service/properties/image` — wrappers retirados del código activo).
-
-### Composable y componentes
-
-- `useSchemaToForm(schema, options)` → `{ root, draft, formData, errors, validate, errorAt, get, set, remove, nodeAt(pointer), resolveTitle, resolveDescription, widgets }`. Los defaults iniciales salen de `root.getData()`. Opciones: `resolveTitle?`/`resolveDescription?`/`resolveMessage?`/`widgets?: Record<string, Component>` (mapa nombre de widget → componente para los nodos marcados con `x-widget`).
-- `src/components/form/schema/*`:
-  - `SchemaField.vue` — clasifica con `classifyNode` y despacha al componente adecuado; cualquier tipo nullable se rodea con `SchemaFieldNull`. Si el schema del nodo tiene `x-widget` (vía `WIDGET_KEY`) y `form.widgets[nombre]` existe, la rama escalar renderiza `<component :is="widget" v-model="model" />` en vez del input genérico. Los objetos delegan el cuerpo en `SchemaFieldObject` (la cabecera con label/help/remove/add queda aquí).
-  - `SchemaFieldObject.vue` — render de los hijos de un objeto: **simples primero** (obligatorias delante de opcionales) y **contenedores** (`array`/`map`/`object`/uniones con variante contenedora) como **pestañas** (icono por kind + punto rojo/ámbar de error/warning). Cuando hay muchas simples opcionales (>10) se pliegan tras el botón "Mostrar campos": **inicialmente solo se ven las obligatorias** (en `service`, sin `required`, la sección simple queda plegada y lo primero visible son las pestañas: build, deploy, healthcheck…). Prop opcional `icon?: (name, node) => string | undefined`: resolver de icono por tab de contenedor; si no se provee usa `ICONS.schemaForm[kind]`. Así el núcleo sigue agnóstico y Compose conserva sus iconos (`ICONS.compose`).
-  - `JsonSchemaEditor.vue` — editor genérico de documento (widget de diálogo): `defineModel<string|null>` (texto serializado en el formato elegido), `schema`, `title?`, `description?`, `formatOutput?: 'yaml' | 'json'` (default `'yaml'`; de él se infiere parseo `parseYaml`/`JSON.parse`, serialización `toYaml`/`JSON.stringify(data, null, 2)` y extensiones de import `.yaml,.yml`/`.json`), `importLabel?` (default `form.schema_form.import_file`), `resolveTitle?`/`resolveDescription?`/`resolveMessage?`, `icon?`, `widgets?: Record<string, Component>`. Internamente: `useSchemaToForm` + `provideSchemaFormContext`, sync model↔formData (los mismos watchers con `lastModel`/`syncingFromModel`/`nextTick`), alerts de error/warning, import de archivo, preview y badge de draft. La raíz se renderiza con `<SchemaFieldObject :node="form.root" path="" :icon="icon" />` → layout genérico (simples inline, contenedores como pestañas), sin hardcodeo de claves (`name`/`version` no se tratan aparte).
-  - `ComposeJsonSchema.vue` / `ComposerJsonSchema.vue` — ~~wrappers finos sobre `JsonSchemaEditor`~~ **retirados del código activo** (quedan en `src/components/form/schema/` con imports rotos de `@/schemas/*.json` y sin referencias desde páginas/loaders). Su patrón era: pasar `schema` (normalizado con `normalizeSchema` + sus normalizers), title/description y resolvers (Compose: `formatOutput="yaml"` + `form.compose_schema.*` + `icon = ICONS.compose[name]` + label de import específico + `widgetsNormalizer({'#/$defs/service/properties/image': 'compose-image'})` + `widgets={'compose-image': ComposeImagePicker}`; Composer: `formatOutput="json"`, sin resolvers). Crear un editor nuevo = wrapper de configuración sobre `JsonSchemaEditor`, no una copia.
-  - `SchemaFieldNull.vue` — `USwitch` para activar/desactivar el valor `null` (activar → `set(path, null)`; desactivar → `remove(path)`).
-  - `SchemaFieldUnion.vue` — `USelect` de variantes (`oneOf`/`anyOf`/type-array) + editor de la variante activa. **oneOf es exclusivo**: solo se edita el formato elegido.
-  - `SchemaFieldArray.vue` — lista de items; si los items resueltos (`classifyNode(resolveNode(items))`) son una unión (`items.oneOf`, `$ref`→unión o `type` array) → `USelect` de formato del array (**array uniforme: solo UN formato**, todos los items con la misma variante, no se mezclan); default del item vía `variantDefault`.
-  - `SchemaFieldMap.vue` — entradas con clave editable; el nodo de valor es `patternProperties[0]` → `additionalProperties` → `any`.
-  - `SchemaFieldAny.vue` — textarea JSON.
-  - `context.ts` — `useSchemaToFormContext()`/`provideSchemaFormContext()` para pasar el formulario a la profundidad.
-
-### Gotchas del sistema
-
-- **Defaults de `getData()`:** solo se incluyen propiedades `required` (con su `default` o el default del tipo: `0`, `""`, `false`…). Las propiedades opcionales con `default` **no** entran (así lo hace jsl).
-- **i18n:** los mensajes de validación son claves `form.schema_form.errors.*` (nunca strings en español). Labels de variantes/títulos: `form.schema_form.*` y `form.compose_schema.*` (vía `resolveTitle`/`resolveDescription`).
-- **No reinventar:** si un caso no se renderiza, resolver/compilar con las utilidades de `jsl.ts` antes de escribir un parser manual de `$ref`/`allOf`.
-- **Testing:** `tests/{jsl,validate,schema-form,render,normalize}.test.ts` cubren clasificación, validación, defaults, render y normalizadores (incluido `widgetsNormalizer` + marcado `x-widget` sin warnings). **Ojo:** `schema-form.test.ts`, `render.test.ts`, `normalize.test.ts` y `jsl.test.ts` importan `@/schemas/compose-spec.json` / `@/schemas/composer-schema.json`, que **ya no existen** → esos 4 tests están rotos a la espera de actualización (`bun test` no los resuelve hoy; `validate.test.ts` sí sigue operativo). El núcleo que prueban está intacto.
-
----
-
-## 9. `CodeEditor` (editor de código)
-
-Componente `src/components/form/textareas/CodeEditor.vue`, **exclusivo para campos de código** (p. ej. comandos). Basado en **CodeMirror 6** (no Tiptap: el antiguo `UEditor` + `CodeBlockLowlight` se sustituyó porque no devolvía el texto editado al `v-model`).
-
-Las extensiones viven en **`src/plugins/codemirror/`** y son reutilizables por cualquier consumidor:
-
-- `types.ts` — `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange`, `CodeHighlighter`.
-- `languages.ts` — `languageLoaders`, `LANGUAGE_NAMES` y `createLintLoader(formatDuplicateKey)`.
-- `lint/` — `createLintExtensions`, `createJsonLintSource` (errores + claves duplicadas) y `createYamlLintSource`.
-- `theme.ts` — `codeEditorTheme`, `codeHighlightStyle` y `SECRET_ICON_MASK`.
-- `setup.ts` — `createBaseExtensions(...)` (compone la base del editor; ver más abajo) y `createDarkThemeExtension(...)`.
-- `highlight.ts`, `editable.ts` y `autocomplete/index.ts` — extensiones reutilizables (resaltado de rangos, solo lectura y autocompletado).
-- `autocomplete/variables.ts` — autocompletado de variables `{{…}}` (`createInterpolationCompletion`), antes en `src/utils/interpolation/completion.ts`.
-- `autocomplete/php.ts` — autocompletado básico de PHP (`phpCompletionSource`): keywords, funciones, clases, constantes y superglobales estables entre versiones.
-- `bash/blocks.ts` y `bash/format.ts` — detección/envoltura de bloques bash y `setBashFormat`.
-- `index.ts` — barrel público de la carpeta.
-
-- **Dependencias:** `@codemirror/{state,view,commands,language,lint,search,autocomplete,legacy-modes,lang-yaml,lang-json,lang-php,lang-html,lang-javascript}` y `@lezer/highlight`. Bash sale de `@codemirror/legacy-modes/mode/shell` (`StreamLanguage`). No se usa el meta-paquete `codemirror` (`basicSetup`): la base se compone en `setup.ts`. `@tiptap/extension-code-block-lowlight` y `lowlight` ya no los usa este componente (revisar si siguen usándose en otro sitio antes de retirarlos).
-- **Modelos:** `v-model` (texto, siempre con saltos `\n`) y `v-model:language` (`CodeLanguage`, por defecto `'plain'`).
-- **Tipos exportados:** `CODE_LANGUAGES`, `CodeLanguage`, `CodeHighlightRange` y `CodeHighlighter` viven en `src/plugins/codemirror/types.ts` y se re-exportan desde el barrel `src/plugins/codemirror/index.ts` (no desde `CodeEditor.vue`). Para añadir un lenguaje: añadirlo a `CODE_LANGUAGES`, a `languageLoaders` (import dinámico) y a `LANGUAGE_NAMES`.
-- **Base del editor (`setup.ts`):** `createBaseExtensions` compone lo mismo que `basicSetup` de `codemirror`, pero con cada funcionalidad aislada para poder desactivarla (y con sus keymaps asociados): `lineNumbers`, `tabSize`, `placeholder`, `onDocChange`, `history`, `foldGutter`, `closeBrackets`, `search` (`Ctrl+F` + resaltado de coincidencias), `autocomplete` (fuentes del lenguaje) y `multipleSelections` (selección múltiple/rectangular y cursor de cruz). Todas están activas por defecto. Añade además `indentWithTab`, el tema propio y `codeHighlightStyle`. El autocompletado de una fuente propia (`prop autocomplete`) se registra como `languageData`, por lo que **se suma** a las fuentes del lenguaje (no las sustituye).
-- **Props:** `selectable` (muestra la barra con el selector de lenguaje; la barra también aparece cuando el lenguaje es `bash`, por los switches de bloque), `languages` (lista permitida y orden del selector; omitida o vacía = todos), `placeholder`, `readonly`, `disabled`, `lineNumbers` (por defecto `true`), `tabSize` (por defecto `2`), `minRows`, `maxRows`, `lint` (CodeMirror `LintSource` opcional), `autocomplete` (CodeMirror `CompletionSource` opcional), `highlight` (función que devuelve los rangos a resaltar) y `extensions` (extensiones CodeMirror adicionales). `language`, `readonly`, `disabled`, `lint`, `autocomplete`, `highlight` y `extensions` son reactivos; `lineNumbers`, `tabSize` y `placeholder` se leen solo al montar.
-- **Extensiones propias:** `extensions` acepta una extensión o un array (`Extension | readonly Extension[]`). Se aplican al final, en un `Compartment` propio, y se reconfiguran si la prop cambia. Ejemplo: `<CodeEditor v-model="code" :extensions="[myKeymap]" />`.
-- **Restricción de lenguajes:** si el lenguaje actual no está en `languages`, el componente lo cambia al primero permitido (vía `v-model:language`). Con `language="x"` estático (sin `v-model:language`) el selector no puede cambiar el valor.
-- **Bloques bash (`heredoc` y `bash -c`):** con `language === 'bash'` la barra muestra dos `USwitch` mutuamente excluyentes. El estado **se deriva del texto** (si se edita o borra el bloque a mano, el switch se actualiza solo):
-  - **Bloque heredoc:** envuelve el cuerpo en `bash <<'DEPLOYER_EOF'` … `DEPLOYER_EOF`. El marcador se elige libre (`DEPLOYER_EOF`, `DEPLOYER_EOF_1`, …) para no colisionar con el contenido. La cabecera se detecta de forma genérica (`<<'MARCADOR'`, con o sin `-`, cualquier intérprete) siempre que la última línea no vacía sea el marcador.
-  - **Bash -c:** envuelve el cuerpo en `bash -c '` … `'` (al generar se usa el formato bloque). Detecta tanto el formato bloque (`bash -c '` en una línea y `'` de cierre en otra) como el inline de una o varias líneas (`bash -c 'comando'`). Admite `sh -c '` y rutas (`/bin/bash -c '`). Las comillas simples del cuerpo se escapan como `'\''` al generar y se desescapan al leer.
-  - Activar un switch **convierte** el bloque del otro formato conservando el cuerpo; desactivarlo quita el envoltorio. Todo va en una única transacción de CodeMirror: el cursor se conserva y `Ctrl+Z` revierte el cambio completo.
-- **Lint:** `@codemirror/lint`, con linters propios cargados bajo demanda por lenguaje: JSON (`jsonParseLinter` + detección de **claves duplicadas** recorriendo el árbol de `jsonLanguage`, porque `JSON.parse` las acepta) y YAML (`parseDocument` de `yaml`, que ya marca claves duplicadas). Bash, PHP, HTML y JavaScript no traen linter propio; para esos casos se pasa uno con la prop `lint` (se combina con el del lenguaje). El gutter de lint y sus atajos (`lintKeymap`) solo se activan cuando hay alguna fuente de diagnósticos.
-- **Autocompletado por lenguaje:** `autocompletion()` está siempre activo y lee las fuentes que cada lenguaje declara vía `languageData`. **JavaScript** (snippets, keywords y variables/propiedades del ámbito con `localCompletionSource`) y **HTML** (etiquetas, atributos y JS/CSS anidados) ya traen autocompletado; **PHP** usa la lista básica de `autocomplete/php.ts` (keywords, funciones, clases, constantes y superglobales; mínimo real PHP 7.0, sin nada de 8.x); **JSON**, **YAML** y **Bash** no traen ninguna. Para añadir una fuente a otro lenguaje, en su loader de `languages.ts`: `const { php, phpLanguage } = await import('@codemirror/lang-php'); return [php(), withAutocomplete(phpLanguage, completeFromList([...]))]` (helper `withAutocomplete` del barrel). Para una fuente puntual, la prop `autocomplete` la suma a las del lenguaje sin sustituirlas.
-- **Tema claro/oscuro:** los colores del editor, tooltips, autocompletado, panel de lint, plegado y panel de búsqueda salen de tokens `--ui-*`. Además, el facet `EditorView.darkTheme` se sincroniza con `useColorMode()` para que los widgets internos de CodeMirror (tooltips, paneles, autocompletado…) usen sus variantes oscuras; sin él CodeMirror asume tema claro y el tooltip de lint queda con fondo claro y texto claro. El tema cubre explícitamente `.cm-foldPlaceholder`, `.cm-selectionMatch`, `.cm-searchMatch`, `.cm-specialChar`, `.cm-textfield` y `.cm-button` (los aporta `createBaseExtensions`, no `basicSetup`).
-- **Colores:** tokens `--ui-*` de Nuxt UI (sin hexadecimales), válidos para tema claro y oscuro. Fuente `font-pcb`.
-- **i18n:** `form.shared.code_editor.{language,plain,heredoc.{label,help},bash_c.{label,help}}`. Los nombres de lenguaje (Bash, YAML, JSON, PHP, HTML, JavaScript) son nombres propios y no se traducen.
-
-```vue
-<CodeEditor v-model="form.command" v-model:language="form.language" selectable :languages="['bash', 'php']" />
+```ts
+const { data: entityData } = loadVariableById()
+const entity = computed(() => entityData.value as Variable | undefined)
 ```
+
+### `vnode` en la toolbar
+
+En `useToolbarContent.ts`, `vnode` debe ser una factory `() => VNode`, nunca un VNode estático: los estáticos congelan valores reactivos.
+
+### Drag & drop
+
+Si se reintroduce Sortable.js: importar `@vueuse/integrations/useSortable` (no el barrel), usar `forceFallback: true` (el HTML5 nativo no es fiable en webviews) y `watchElement: true` si el contenedor está tras un `v-if` asíncrono.
+
+## 7. Internacionalización
+
+- `vue-i18n`. Los mensajes de error del backend llegan como claves i18n. El frontend nunca muestra texto de backend sin traducir.
+- Las claves son `snake_case`. No usar `<...>` como marcador en los mensajes: `escapeParameter: true` lo convierte en HTML escapado. Usar `params.clave` o `{nombre}`.
+- **`es/`** es la referencia de claves (tipos y `warnMissingKeys`). **`en/`** es su espejo con las mismas claves.
+- Cada archivo exporta con `satisfies LocaleMessageValue`, nunca con cast.
+- `scripts/generate-i18n-schema.ts` genera `typed-locale.d.ts` (autogenerado, en `.gitignore`). Tras añadir claves, ejecuta `bun run i18n:types`: `bun run build` no lo hace.
+- Claves con función (`(ctx) => ...`) se normalizan a `string` en el schema solo para tipos.
+- Para un idioma nuevo, añadir sus globs en `LOCALE_GLOBS`, `DATETIME_GLOBS` y `NUMBER_GLOBS` de `src/locales/_loader.ts`.
+
+## 8. Iconos
+
+Todos los iconos están en `src/utils/icons.ts`. En código nuevo nunca escribir `'i-tabler-...'` literal:
+
+```ts
+import { ICONS, getModuleIcon, getModuleSwitchIcons } from '@/utils/icons'
+
+getModuleIcon('hosts')                 // plural: listados, navegación
+getModuleIcon('hosts', 'singular')     // elemento individual activo
+getModuleIcon('hosts', 'off')          // inactivo o 404
+```
+
+Algunos archivos activos aún tienen iconos literales. Al tocarlos, migrarlos a `ICONS` o `getModuleIcon`.
+
+## 9. Toolbar
+
+`useToolbarContentCreate` y `useToolbarContentEdit` (`useToolbarContent.ts`). Los botones extra usan `vnode: () => VNode` con posiciones nombradas (`ExtraButtonPosition`).
+
+## 10. Formularios JSON-Schema
+
+Sistema basado en `json-schema-library` (jsl) en `src/utils/schema-form/*` y `src/components/form/schema/*`. El núcleo es agnóstico: no importa ningún esquema concreto.
+
+- **Entrada:** `JsonSchemaEditor.vue` con `v-model` de texto. Props: `schema`, `formatOutput` (`'yaml' | 'json'`), `widgets`, `resolveTitle`, `resolveDescription`, `resolveMessage`.
+- **Composable:** `useSchemaToForm(schema, options)` devuelve `root`, `formData`, `errors`, `validate`, `get`, `set`, `remove`.
+- **Clasificación:** `classifyNode` devuelve el tipo del nodo (`string`, `object`, `array`, `map`, `union`…). Los componentes `SchemaField*` despachan según ese tipo.
+- **Contenedores:** en objetos, los campos simples van primero y los contenedores van como pestañas.
+- **`$ref` y `allOf`:** jsl no los resuelve solos. Usa `resolveNode(node)`.
+- **Defaults:** `getData()` solo incluye propiedades `required`. Las opcionales no entran.
+- **Widgets:** `widgetsNormalizer` marca nodos con `x-widget`; el componente se pasa en `widgets`.
+- **Validación:** errores como claves `form.schema_form.errors.*`.
+
+Antes de escribir un parser manual de `$ref` o `allOf`, usa las utilidades de `jsl.ts`.
+
+## 11. CodeEditor
+
+`src/components/form/textareas/CodeEditor.vue` es el editor de código (CodeMirror 6). Úsalo solo en campos de código.
+
+- Extensiones en `src/plugins/codemirror/` (lenguajes, lint, autocompletado, tema). Para añadir un lenguaje: `types.ts`, `languages.ts` y `LANGUAGE_NAMES`.
+- Props principales: `selectable`, `languages`, `lint`, `autocomplete`, `highlight`, `extensions`.
+- Modelos: `v-model` (texto con `\n`) y `v-model:language` (por defecto `'plain'`).
+- Para bash, el componente ofrece dos switches: heredoc (`bash <<'DEPLOYER_EOF'`) y `bash -c`. Su estado se deriva del texto.
+- Colores con tokens `--ui-*`, sin hexadecimales.
+- Los comandos con barras invertidas (`\"`, `\$`, `\n`) se escriben con `String.raw`. Una plantilla normal consume los escapes antes de guardar el comando en SQLite.
