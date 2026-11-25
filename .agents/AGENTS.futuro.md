@@ -75,6 +75,7 @@
 | FUT-FM-03 | Arrastrar y soltar entre paneles | File manager / UI | Baja | — | Pendiente | §4b.3 |
 | FUT-FM-04 | Sincronización de directorios y comprobación de checksums | File manager / Transferencias | Media | Diseño v2 (cola persistida) | Pendiente | §4b.4 |
 | FUT-FM-05 | Restauración de selección profunda en el `TreeFile` | File manager / UI | Media | Diseño v3 (orden del `TreeFile`) | Pendiente | §4b.5 |
+| FUT-FM-06 | Pruebas unitarias del orden y la re-resolución de selección | File manager / Verificación | Media | — | Pendiente | §4b.6 |
 
 ---
 
@@ -387,6 +388,16 @@ objetivo del gestor.
 - **Ventajas:** la persistencia de la selección del v2 pasa a ser completa también en ramas
   profundas, sin depender de que el usuario expanda manualmente los directorios.
 
+### 4b.6. `FUT-FM-06` — Pruebas unitarias del orden y la re-resolución de selección
+
+- **Intención:** evitar regresiones del plan v3 en el comparador compartido y en la selección
+  tras recargar un nivel del árbol.
+- **Funcionamiento:** probar `sortFileEntries()` con directorios antes que archivos, symlinks
+  ordenados por `targetKind`, tildes y mayúsculas, orden natural y desempate; además, cubrir la
+  lógica que vuelve a resolver las claves seleccionadas contra un `treeItems` nuevo.
+- **Ventajas:** detectar cambios de orden o pérdida de selección sin depender de la comprobación
+  manual en la aplicación.
+
 ---
 
 ## 5. Planes ya extraídos (no duplicar aquí)
@@ -413,3 +424,4 @@ objetivo del gestor.
 | 2026-11-12 | Backlog de workflows (antiguo §20 del diseño) | Este documento, §3.1 | Consolidado |
 | 2026-11-23 | Ideas aplazadas del diseño v2 (`FUT-FM-01`..`FUT-FM-04`) | Este documento, §4b | Registradas; sin plan |
 | 2026-11-24 | `SUG-FM-07` del diseño v3 (restauración de selección profunda) | Este documento, §4b (`FUT-FM-05`) | Registrada; sin plan |
+| 2026-11-25 | Sugerencia del plan de corrección v3 (pruebas unitarias de orden y selección) | Este documento, §4b (`FUT-FM-06`) | Registrada; sin plan |
