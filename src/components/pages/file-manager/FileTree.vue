@@ -359,7 +359,7 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 						<slot name="node-progress" :entry="nodeOf(item).entry" />
 						<slot name="node-actions" :entry="nodeOf(item).entry" />
 						<UButton
-							:disabled="!(nodeOf(item).entry.kind === 'dir') && !readOnly"
+							:disabled="!(nodeOf(item).entry.kind === 'dir') && readOnly"
 							:icon="ICONS.actions.arrowRight"
 							color="neutral"
 							variant="ghost"
