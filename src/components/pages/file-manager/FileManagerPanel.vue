@@ -76,6 +76,8 @@ const loadingKeys = ref<string[]>([])
 const expandedKeys = ref<string[]>([])
 const selection = ref<FileEntry[]>([])
 const truncated = ref(false)
+/** Truncado de cada nivel hijo, indexado por la clave de su directorio. */
+const truncatedByKey = ref<Record<string, boolean>>({})
 const loading = ref(false)
 const errorMessage = ref('')
 const treeRef = ref<InstanceType<typeof FileTree> | null>(null)
@@ -180,7 +182,7 @@ function localReadError(path: string, error: unknown): string {
 	return t('components.file_manager.errors.read_local', { path, reason })
 }
 
-async function listDirectory(path: string): Promise<FileEntry[] | null> {
+async function listDirectory(path: string): Promise<{ entries: FileEntry[]; truncated: boolean } | null> {
 	errorMessage.value = ''
 	loading.value = true
 
@@ -188,8 +190,7 @@ async function listDirectory(path: string): Promise<FileEntry[] | null> {
 		if (isLocal.value) {
 			const listed = sortFileEntries(await buildLocalEntries(await readDir(path), path), locale.value)
 			// Exactamente `MAX_LIST_ENTRIES` entradas no implica que falten más.
-			truncated.value = listed.length > MAX_LIST_ENTRIES
-			return listed
+			return { entries: listed, truncated: listed.length > MAX_LIST_ENTRIES }
 		}
 
 		if (!props.hostId) return null
@@ -223,9 +224,8 @@ async function listDirectory(path: string): Promise<FileEntry[] | null> {
 			})),
 			locale.value,
 		)
-		truncated.value = response.data.truncated
 		emit('list-loaded', listed)
-		return listed
+		return { entries: listed, truncated: response.data.truncated }
 	} catch (error) {
 		errorMessage.value = isLocal.value
 			? localReadError(path, error)
@@ -280,44 +280,47 @@ function knownKeys(): Set<string> {
 	return new Set(entryIndex.keys())
 }
 
+/** Invalida los resultados de cargas anteriores cuando cambia la ruta o se recarga. */
+let generation = 0
+
 async function refresh(options: { preserve?: boolean } = {}) {
 	if (!hasRoot.value) return
+	const token = ++generation
+	const path = currentPath.value
 
 	if (!options.preserve) {
 		childrenByKey.value = {}
+		truncatedByKey.value = {}
 		rebuildEntryIndex()
 		loadedKeys.value = new Set()
 		loadingKeys.value = []
 		expandedKeys.value = []
-		treeRef.value?.reset()
+		treeRef.value?.resetNavigation()
 	}
 
-	const listed = await listDirectory(currentPath.value)
-	if (!listed) return
+	const result = await listDirectory(path)
+	if (token !== generation || !result) return
 
-	entries.value = listed
+	entries.value = result.entries
+	truncated.value = result.truncated
 	rebuildEntryIndex()
 	const valid = knownKeys()
 	selection.value = selection.value.filter(entry => valid.has(entry.key))
-	persist()
+	persist(listingScope(props.origin, path, props.hostId), { ...snapshot(), path })
 }
 
-let initializing = false
 async function initialize(pathHint: string) {
-	if (initializing) return
-	initializing = true
+	const token = ++generation
+	truncatedByKey.value = {}
 
-	try {
-		const key = listingScope(props.origin, pathHint, props.hostId)
-		const restored = await hydrateFrom(key, pathHint)
-		if (!restored) {
-			currentPath.value = isLocal.value ? pathHint : normalizeRemotePath(pathHint || '/')
-		}
-		emit('update:path', currentPath.value)
-		await refresh({ preserve: restored })
-	} finally {
-		initializing = false
+	const key = listingScope(props.origin, pathHint, props.hostId)
+	const restored = await hydrateFrom(key, pathHint)
+	if (token !== generation) return
+	if (!restored) {
+		currentPath.value = isLocal.value ? pathHint : normalizeRemotePath(pathHint || '/')
 	}
+	emit('update:path', currentPath.value)
+	await refresh({ preserve: restored })
 }
 
 // ---------------------------------------------------------------------------
@@ -333,17 +336,21 @@ async function loadChildren(key: string): Promise<void> {
 	if (!entry || entry.kind !== 'dir') return
 	if (loadedKeys.value.has(key) || loadingKeys.value.includes(key)) return
 
+	const token = generation
 	loadingKeys.value = [...loadingKeys.value, key]
-	const listed = await listDirectory(entry.path)
-	if (listed) {
-		childrenByKey.value = { ...childrenByKey.value, [key]: listed }
+	try {
+		const result = await listDirectory(entry.path)
+		if (token !== generation || !result) return
+		childrenByKey.value = { ...childrenByKey.value, [key]: result.entries }
+		truncatedByKey.value = { ...truncatedByKey.value, [key]: result.truncated }
 		rebuildEntryIndex()
 		loadedKeys.value = new Set([...loadedKeys.value, key])
 		const valid = knownKeys()
-		selection.value = selection.value.filter(entry => valid.has(entry.key))
+		selection.value = selection.value.filter(item => valid.has(item.key))
+	} finally {
+		loadingKeys.value = loadingKeys.value.filter(item => item !== key)
 	}
-	loadingKeys.value = loadingKeys.value.filter(item => item !== key)
-	persist()
+	if (token === generation) persist()
 }
 
 async function navigate(path: string, options: { discard?: boolean } = {}) {
@@ -351,7 +358,9 @@ async function navigate(path: string, options: { discard?: boolean } = {}) {
 	if (next === currentPath.value) return
 
 	if (!options.discard) persist()
+	generation++
 	currentPath.value = next
+	truncatedByKey.value = {}
 	emit('update:path', next)
 	await initialize(next)
 }
@@ -361,9 +370,10 @@ function activate(entry: FileEntry) {
 }
 
 function onSelected(list: FileEntry[]) {
-	if (list.length === selection.value.length && list.every((entry, i) => entry.key === selection.value[i]?.key)) {
-		return
-	}
+	const unchanged =
+		list.length === selection.value.length &&
+		list.every((entry, i) => entry === selection.value[i] && entry.key === selection.value[i]?.key)
+	if (unchanged) return
 	selection.value = list
 	emit('update:selected', list)
 	persist()
@@ -404,7 +414,11 @@ async function resetRemotePath() {
 	listings.remove(key)
 	const path = normalizeRemotePath(await preferences.getInitialRemotePath(props.hostId))
 	// No guardamos la instantánea anterior: es justo la que acabamos de borrar.
-	await navigate(path, { discard: true })
+	if (path === currentPath.value) {
+		await refresh({ preserve: false })
+	} else {
+		await navigate(path, { discard: true })
+	}
 }
 
 watch(
@@ -508,6 +522,7 @@ onBeforeUnmount(() => persist())
 				:initial-selected="initialSelectedKeys"
 				:initial-expanded="expandedKeys"
 				:truncated="truncated"
+				:truncated-by-key="truncatedByKey"
 				:empty-label="t('components.file_manager.empty')"
 				:load-children="loadChildren"
 				@update:selected="onSelected"
