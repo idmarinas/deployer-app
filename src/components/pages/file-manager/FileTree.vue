@@ -312,9 +312,8 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 			<template #item="{ item, selected: isSelected, indeterminate, handleSelect }">
 				<div class="w-full flex min-w-0 flex-wrap items-center gap-2">
 					<button
-						v-if="!readOnly"
 						type="button"
-						class="inline-flex shrink-0 items-center justify-center rounded-sm focus:outline-none focus-visible:outline-2"
+						class="inline-flex flex-none"
 						:title="
 							t(
 								isSelected && !indeterminate
@@ -322,11 +321,16 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 									: 'components.file_manager.entry.select',
 							)
 						"
+						:disabled="readOnly || loadingKeys.includes(nodeOf(item).key)"
 						@click.stop="onIconClick(nodeOf(item), handleSelect as () => void)"
 					>
-						<UIcon :name="selectionIcon(nodeOf(item), !!isSelected, !!indeterminate)" class="size-4" />
+						<UIcon
+							v-if="loadingKeys.includes(nodeOf(item).key)"
+							:name="ICONS.status.loading"
+							class="size-4 animate-spin"
+						/>
+						<UIcon v-else :name="selectionIcon(nodeOf(item), isSelected, !!indeterminate)" class="size-4" />
 					</button>
-					<UIcon v-else :name="nodeOf(item).fileIcon" class="size-4 shrink-0" />
 
 					<slot name="node-leading-info" :entry="nodeOf(item).entry" />
 
@@ -344,11 +348,6 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 					</span>
 
 					<div class="flex items-center gap-2 shrink-0 text-xs text-muted">
-						<UIcon
-							v-if="loadingKeys.includes(nodeOf(item).key)"
-							:name="ICONS.status.loading"
-							class="size-3.5 animate-spin"
-						/>
 						<span v-if="nodeOf(item).entry.kind !== 'dir'">
 							{{ formatBytes(nodeOf(item).entry.size) }}
 						</span>
