@@ -116,6 +116,7 @@ export default defineConfig(async () => ({
 						'i-vscode-icons-file-type-typescript',
 						'i-vscode-icons-file-type-toml',
 						'i-vscode-icons-file-type-rust',
+						'i-vscode-icons-file-type-zip',
 						'i-vscode-icons-default-file',
 					],
 					scan: true,
