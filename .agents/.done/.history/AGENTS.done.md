@@ -2,6 +2,34 @@
 
 > Este archivo es solo como historial para las tareas que ya se han completado.
 
+## Tareas completadas (25 nov 2026 — Corrección de errores del gestor de archivos remoto v3)
+
+**Nota del usuario:** pidió dar el plan por finalizado tras aplicar las correcciones; no ha confirmado aún la verificación de §8. Detalle en `AGENTS.remote-file-manager-v3-fixes.PLAN.md` (archivado en `.agents/.done/plans/`). No es una serie.
+
+1. **Selección y árbol**: re-resolución de nodos con entradas nuevas tras cada recarga; `resetNavigation()` separado de `reset()`; fecha `0` visible y campo `fileIcon` retirado.
+2. **Navegación**: token de generación que descarta cargas obsoletas, persistencia con la ruta capturada y «Restablecer ruta» fuerza la recarga aunque la ruta no cambie.
+3. **Avisos de truncado**: `truncated` queda limitado al nivel actual y `truncatedByKey` señala los subdirectorios parciales junto a su carpeta, solo en memoria.
+4. **Interfaz**: indicador de carga durante toda la selección recursiva, «Abrir carpeta» deshabilitado en la cola y flechas centralizadas en `ICONS`.
+5. **Documentación y backlog**: textos de `es` actualizados (expansión por nombre y momento de `file_list`); pruebas unitarias registradas como `FUT-FM-06`.
+6. **Plan v3 archivado**: nota de historial que enlaza el plan correctivo, sin reabrir ni cambiar su alcance.
+
+**Verificación:** pendiente de que la haga el usuario (tipos, build y criterios de §8); el agente no la ejecutó.
+
+---
+
+## Tareas completadas (25 nov 2026 — Gestor de archivos remoto v3 — Orden del `TreeFile`)
+
+**Nota del usuario:** confirmó «todo ok» tras verificar el gestor de archivos y pidió cerrar el plan y el diseño. Detalle en `AGENTS.remote-file-manager-v3.PLAN.md` (archivado en `.agents/.done/plans/`). El diseño `AGENTS.remote-file-manager-v3.DESIGN.md` pasa a **Implementado** y se archiva en `.agents/.done/designs/`. No es una serie.
+
+1. **Contrato de symlinks**: `FileEntry.targetKind` y `RemoteEntry.target_kind`, resueltos con `stat` local y `sftp.metadata()` remoto, sin cambiar el `kind`.
+2. **Backend sin orden**: `ssh_list_remote_dir` deja de ordenar (`sort_by`/`kind_rank`) y devuelve entradas en orden de llegada; el frontend impone el criterio único.
+3. **Comparador compartido**: `sortFileEntries()` con `Intl.Collator` cacheado (`base` + `numeric`), directorios primero, archivos después y symlinks por destino.
+4. **Panel/árbol**: orden al listar e hidratar, índice por clave, corrección del falso `truncated` local y caché de `Intl.DateTimeFormat`; la apariencia del `TreeFile` se conserva.
+
+**Verificación:** confirmada por el usuario.
+
+---
+
 ## Tareas completadas (24 nov 2026 — Gestor de archivos remoto v2 — Persistencia, concurrencia y reintento)
 
 **Nota del usuario:** dio por completado el diseño v2 y su plan único tras verificar el gestor. Detalle en `AGENTS.remote-file-manager-v2.PLAN.md` (archivado en `.agents/.done/plans/`). El diseño `AGENTS.remote-file-manager-v2.DESIGN.md` pasa a **Implementado** y se archiva en `.agents/.done/designs/`. No es una serie.
