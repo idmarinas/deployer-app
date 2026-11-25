@@ -219,8 +219,8 @@ function fileFor(job: SshJob, entry: FileEntry): SshJobFile | undefined {
 				<div class="flex flex-col @3xl:flex-row items-center gap-2 mt-1">
 					<div class="truncate text-muted" :title="job.sourcePath">{{ job.sourcePath }}</div>
 					<span class="flex-none">
-						<UIcon name="i-tabler-arrow-narrow-down-dashed" class="@3xl:hidden" />
-						<UIcon name="i-tabler-arrow-narrow-right-dashed" class="hidden @3xl:block" />
+						<UIcon :name="ICONS.actions.arrowNarrowDownDashed" class="@3xl:hidden" />
+						<UIcon :name="ICONS.actions.arrowNarrowRightDashed" class="hidden @3xl:block" />
 					</span>
 					<div class="truncate text-muted" :title="job.targetPath">{{ job.targetPath }}</div>
 				</div>
