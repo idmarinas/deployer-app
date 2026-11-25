@@ -282,18 +282,6 @@ function handleToggle(event: TreeSelectEvent, node: FileTreeNode) {
 	// versión de Reka; cargar en cualquier toggle idempotente es más seguro.
 	if (node.entry.kind === 'dir') void loadNode(node.entry)
 }
-
-function expandOneLevel(node: FileTreeNode, isExpanded: boolean) {
-	if (node.entry.kind !== 'dir' || isExpanded) return
-	void loadNode(node.entry)
-}
-
-/** El slot de `UTree` expone `toggle` como función; el handler necesita llamarla
- * antes de cargar el nivel para no depender del estado ya conmutado. */
-function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boolean) {
-	toggle()
-	expandOneLevel(node, isExpanded)
-}
 </script>
 
 <template>
@@ -321,9 +309,7 @@ function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boole
 			@select="onSelect"
 			@toggle="handleToggle"
 		>
-			<template
-				#item="{ item, selected: isSelected, indeterminate, handleSelect, handleToggle: toggle, expanded: isExpanded }"
-			>
+			<template #item="{ item, selected: isSelected, indeterminate, handleSelect }">
 				<div class="w-full flex min-w-0 flex-wrap items-center gap-2">
 					<button
 						v-if="!readOnly"
@@ -373,16 +359,6 @@ function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boole
 						<slot name="node-status" :entry="nodeOf(item).entry" />
 						<slot name="node-progress" :entry="nodeOf(item).entry" />
 						<slot name="node-actions" :entry="nodeOf(item).entry" />
-						<UButton
-							v-if="nodeOf(item).entry.kind === 'dir' && !alwaysExpanded"
-							:icon="ICONS.app.chevronDown"
-							:class="isExpanded ? 'rotate-180' : undefined"
-							color="neutral"
-							variant="ghost"
-							size="xs"
-							:title="t(isExpanded ? 'components.file_manager.entry.collapse' : 'components.file_manager.entry.expand')"
-							@click.stop="onExpandClick(toggle, nodeOf(item), !!isExpanded)"
-						/>
 						<UButton
 							v-if="nodeOf(item).entry.kind === 'dir' && !readOnly"
 							:icon="ICONS.actions.arrowRight"
