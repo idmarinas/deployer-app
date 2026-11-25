@@ -344,8 +344,17 @@ function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boole
 
 					<slot name="node-leading-info" :entry="nodeOf(item).entry" />
 
-					<span class="shrink-0 grow truncate" :title="nodeOf(item).label">
-						{{ nodeOf(item).label }}
+					<span class="shrink-0 grow flex items-center gap-1" :title="nodeOf(item).label">
+						<span class="shrink-0">{{ nodeOf(item).label }}</span>
+
+						<span
+							v-if="nodeOf(item).entry.target"
+							class="truncate grow flex items-center gap-1 text-xs text-muted"
+							:title="nodeOf(item).entry.target!"
+						>
+							<UIcon name="i-tabler-arrow-narrow-right" />
+							{{ nodeOf(item).entry.target }}
+						</span>
 					</span>
 
 					<div class="flex items-center gap-2 shrink-0 text-xs text-muted">
@@ -354,9 +363,6 @@ function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boole
 							:name="ICONS.status.loading"
 							class="size-3.5 animate-spin"
 						/>
-						<span v-if="nodeOf(item).entry.target" class="max-w-40 truncate" :title="nodeOf(item).entry.target!">
-							→ {{ nodeOf(item).entry.target }}
-						</span>
 						<span v-if="nodeOf(item).entry.kind !== 'dir'">
 							{{ formatBytes(nodeOf(item).entry.size) }}
 						</span>
