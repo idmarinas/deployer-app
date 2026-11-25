@@ -344,7 +344,7 @@ function onExpandClick(toggle: () => void, node: FileTreeNode, isExpanded: boole
 
 					<slot name="node-leading-info" :entry="nodeOf(item).entry" />
 
-					<span class="min-w-0 truncate" :title="nodeOf(item).label">
+					<span class="shrink-0 grow truncate" :title="nodeOf(item).label">
 						{{ nodeOf(item).label }}
 					</span>
 
