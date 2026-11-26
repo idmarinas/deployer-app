@@ -19,5 +19,15 @@ export default {
 			name: 'Paquetes actualizables',
 			description: 'Lista de paquetes con actualizaciones disponibles.',
 		},
+		update_packages: {
+			name: 'Actualizar paquetes',
+			description: 'Actualiza paquetes concretos de Debian/Ubuntu con apt-get. Requiere permisos de root y una caché de índices al día.',
+			inputs: {
+				packages: {
+					label: 'Paquetes',
+					help: 'Nombres separados por espacios (por ejemplo, openssl curl).',
+				},
+			},
+		},
 	},
 } satisfies LocaleMessageValue

@@ -132,8 +132,6 @@ export default {
   },
   hosts: {
     error: {
-      connection_failed: 'Could not connect to the host. \n Reason: {reason}',
-      connection_timeout: 'Could not connect to the host. Timeout {timeout} exceeded.',
       context_failed: 'Could not connect to the host. \n Reason: {reason}',
       database_error: 'Could not access the database. \n Reason: {reason}',
       no_database_path: 'Could not find the database.',
@@ -145,7 +143,6 @@ export default {
       updates_check_failed: 'Error checking for updates on the host. \n Reason: {reason}',
     },
     success: {
-      connection: 'Connection established successfully.',
       remote_command_executed: 'Command executed successfully.',
     },
     errors: {
@@ -171,13 +168,11 @@ export default {
   },
   passkeys: {
     error: {
-      authorized_keys_not_found: 'The file "~/.ssh/authorized_keys" does not exist on the host.',
       context_failed: 'Error getting the encryption context. \n Reason: {reason}',
       encryption_failed: 'Error encrypting the key. \n Reason: {reason}',
       generation_failed: 'Error generating the key pair. \n Reason: {reason}',
       not_found: 'Passkey not found',
       public_key_failed: 'Could not extract the public key. \n Reason: {reason}',
-      public_key_not_in_authorized_keys: 'The public key is not registered in "~/.ssh/authorized_keys" on the host.',
       serialization_failed: 'Error serializing the key. \n Reason: {reason}',
     },
     errors: {
@@ -195,17 +190,28 @@ export default {
       validation_failed: 'Passkey validation error. \n Reason: {reason}',
     },
   },
-  remote: {
+  ssh: {
     errors: {
+      authorized_keys_not_found: 'The file "~/.ssh/authorized_keys" does not exist on the host.',
       cancelled: 'Operation cancelled by the user. \n Reason: {reason}',
       connection_failed: 'Could not connect to the host. \n Reason: {reason}',
+      connection_timeout: 'Could not connect to the host. Timeout {timeout} exceeded.',
       execution_failed: 'Error running the command on the host. \n Reason: {reason}',
+      host_key_mismatch:
+        'The server key does not match the stored fingerprint. Observed fingerprint: {fingerprint}. Confirm the new fingerprint from the host edit form before connecting again.',
+      host_key_unknown:
+        'The host has no confirmed fingerprint yet. Observed fingerprint: {fingerprint}. Confirm it from the host edit form to allow connections.',
+      public_key_not_in_authorized_keys:
+        'The public key is not registered in "~/.ssh/authorized_keys" on the host.',
       transfer_failed: 'Error transferring files. \n Reason: {reason}',
     },
     success: {
+      connection: 'Connection established successfully.',
       exec: 'Command executed successfully.',
       upload: 'Files uploaded successfully.',
       download: 'Files downloaded successfully.',
+      list: 'Directory listed successfully.',
+      batch: 'Transfer batch processed.',
     },
     exec: {
       completed_with_errors: 'The command finished with errors (non-zero exit code).',
@@ -274,7 +280,6 @@ export default {
   store: {
     errors: {
       check_failed: 'Error checking the database existence. \n Reason: {reason}',
-      get_path_failed: 'Error getting the database path. \n Reason: {reason}',
       open_failed: 'Could not open the configuration storage. \n Reason: {reason}',
       save_failed: 'Could not save the database path. \n Reason: {reason}',
     },

@@ -154,14 +154,7 @@ onMounted(() => {
 		what="host"
 	>
 		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:created_at="row.original.created_at"
-				:updated_at="row.original.updated_at"
-				:enabled="row.original.enabled"
-			>
+			<ItemCard v-model="row.original">
 				<!-- Grid de detalles -->
 				<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 					<div class="flex flex-col gap-1">

@@ -22,13 +22,22 @@
 14. Notificaciones de la aplicación.
    1. Un sistema que permita agregar notificaciones de acciones en curso, como por ejemplo actualizar un paquete del servidor
    2. Se agrega un pequeño contenedor con todas las instrucciones para esa notificación. Permitiendo poder ver su progreso y el resultado final.
-
+15. Consola remota: mejorar y simplificar la subida y descarga de archivos.
+   1. Mejorar como se muestra el formulario para que no sea tan caótico.
+   2. Es útil para cuando se tiene que subir/descargar un par de archivos o el contenido de una carpeta.
+      1. Si se sube/descarga una carpeta permitir si es recursivo o no.
 
 ## Nuxt
 
 Puede ser más complicado migrar de lo que parece.
 
-## Versión 0.3.0
+## Generar migración
+
+```bash
+bun run drizzle:generate -- --name commands_inputs_host_fingerprint_files-manager_v0.4.0
+```
+
+## Versión 0.4.0
 
 1. Nada
 

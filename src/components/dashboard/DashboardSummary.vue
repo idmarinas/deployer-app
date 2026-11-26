@@ -1,5 +1,5 @@
 <script lang="ts">
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -22,10 +22,12 @@ onMounted(async () => {
 	const table = getSqliteTableByModuleName(props.module)
 
 	if (table.enabled) {
-		db.$count(table, eq(table.enabled, true)).then(count => (countEnabled.value = count))
+		db.$count(table, and(eq(table.enabled, true), isNull(table.deleted_at))).then(
+			count => (countEnabled.value = count),
+		)
 	}
 
-	db.$count(table).then(count => (countTotal.value = count))
+	db.$count(table, isNull(table.deleted_at)).then(count => (countTotal.value = count))
 })
 </script>
 

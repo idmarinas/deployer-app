@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { CommandResponse, HostPackage, HostServerUpdates, HostUpdateResult } from '@/types/tauri-types'
+import type { HostPackage, HostServerUpdates } from '@/types/entities'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, TableMeta } from '@tanstack/vue-table'
 
@@ -10,9 +10,8 @@ import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '@/composables/useDialog'
 import { useTableColumns } from '@/composables/useTableColumns'
 import useToaster from '@/composables/useToaster'
+import { runCommand } from '@/utils/commands/runner'
 import { ICONS } from '@/utils/icons'
-
-import { invoke } from '@tauri-apps/api/core'
 </script>
 
 <script setup lang="ts">
@@ -202,7 +201,6 @@ const tableMeta: TableMeta<HostPackage> = {
 
 const table = useTemplateRef('table')
 const rowsSelected = ref({})
-const useSudo = ref(true)
 
 const disableComponent = computed<boolean>(() => {
 	return !props.data || !props.data.packages || props.data.packages.length === 0
@@ -255,26 +253,26 @@ async function doUpdatePackages(packageNames?: string[]) {
 
 	isOperating.value = true
 
-	await invoke<CommandResponse<HostUpdateResult>>('host_update_packages', {
-		input: {
-			host_id: props.server_id,
-			packages: packageNames || null,
-			use_sudo: useSudo.value,
-		},
-	})
-		.then(result => {
-			if (result.success) {
-				toaster.success(t('overlays.toast.title.completed'))
-			} else {
-				toaster.error(t('pages.hosts.toast.update_packages.error.title'))
-			}
+	try {
+		await runCommand('update_packages', props.server_id, {
+			params: { packages: packageNames?.join(' ') ?? '' },
 		})
-		.catch(e => {
-			toaster.error(t('overlays.toast.title.error'), String(e))
-		})
-		.finally(() => {
-			isOperating.value = false
-		})
+
+		toaster.success(
+			t('pages.hosts.toast.update_packages.success.title'),
+			t('pages.hosts.toast.update_packages.success.description', { name: props.server_name }),
+		)
+	} catch (e) {
+		toaster.error(
+			t('pages.hosts.toast.update_packages.error.title'),
+			t('pages.hosts.toast.update_packages.error.description', {
+				name: props.server_name,
+				reason: String(e),
+			}),
+		)
+	} finally {
+		isOperating.value = false
+	}
 }
 </script>
 
@@ -317,7 +315,6 @@ async function doUpdatePackages(packageNames?: string[]) {
 				:loading="isOperating"
 				@click="() => confirmUpdatePackages()"
 			/>
-			<USwitch v-model="useSudo" :label="t('pages.hosts.manage.use_sudo')" />
 		</div>
 	</div>
 	<UTable

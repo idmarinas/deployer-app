@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { db } from '@/drizzle/drizzle'
 import { getSqliteTableByModuleName, ModulesName } from '@/utils/deployer-app'
 import { getModuleIcon, ICONS } from '@/utils/icons'
-import { asc, isNull } from 'drizzle-orm'
+import { desc, isNull } from 'drizzle-orm'
 </script>
 
 <script setup lang="ts">
@@ -24,7 +24,7 @@ onMounted(async () => {
 		.from(table)
 		.where(isNull(table.deleted_at))
 		.limit(5)
-		.orderBy(asc(table.created_at))
+		.orderBy(desc(table.created_at))
 		.then(rows => (items.value = rows))
 })
 </script>
@@ -58,7 +58,7 @@ onMounted(async () => {
 					<span class="text-sm truncate">{{ item.name }}</span>
 				</div>
 				<UBadge :color="item.enabled ? 'success' : 'error'" variant="subtle" size="xs" class="shrink-0">
-					{{ item.enabled ? 'Activo' : 'Inactivo' }}
+					{{ item.enabled ? t('common.status.active') : t('common.status.inactive') }}
 				</UBadge>
 			</RouterLink>
 			<div v-if="items.length === 0" class="flex items-center gap-3">

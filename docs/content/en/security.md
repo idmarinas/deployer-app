@@ -1,6 +1,6 @@
 ---
 title: Security Policy
-description: How {{project_name}} protects your SSH credentials and how to report vulnerabilities
+description: 'How {{project_name}} protects your credentials and secrets, and how to report vulnerabilities.'
 navigation: false
 ogImage:
   props:
@@ -11,15 +11,17 @@ ogImage:
 **:vars{n="project"}** is a local desktop application: your data stays on your machine and there are no intermediate servers. This page describes how your credentials are protected and how to report security issues.
 ::
 
-## Credential encryption
+## Credential and secret encryption
 
-The most sensitive SSH access data is stored **encrypted in the local SQLite database**. The SSH connection password of each host and the private key with its passphrase are susceptible to encryption.
+Sensitive data is stored **encrypted in the local SQLite database**: host SSH passwords, passkey private keys and passphrases, and the value of variables marked as secret.
 
-Encryption uses **AES-256-GCM** with a random 12-byte nonce per operation. The flow works as follows:
+Encryption uses **AES-256-GCM** with a random 12-byte nonce per operation. The general flow is:
 
 1. The **frontend** always operates in plain text and is the **only writer** of the vault: it encrypts data on save and decrypts or masks it on read.
 2. Encrypted values are persisted with the prefix `ENC:{version}:<base64>`.
 3. The **Rust backend** opens the vault in **read-only mode** to decrypt credentials when establishing the SSH/SFTP connection.
+
+The technical details of the mechanism, encrypted fields and the vault health check are in [Stronghold vault](/app/vault).
 
 ## Stronghold Vault
 

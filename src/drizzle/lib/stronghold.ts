@@ -1,6 +1,8 @@
 import { Stronghold } from '@tauri-apps/plugin-stronghold'
 import { invoke } from '@tauri-apps/api/core'
 
+import type { VaultHealthReport } from '@/types/tauri-types'
+
 // ====================================================================
 // Cripto con Stronghold (claves versionadas, estilo Symfony)
 //
@@ -35,19 +37,6 @@ const keyCache = new Map<string, CryptoKey>()
  */
 export function encryptScope(table: string, field: string): string {
 	return `encrypt:${table}.${field}`
-}
-
-/**
- * Estado del vault de Stronghold reportado por el backend (diagnóstico).
- */
-export interface VaultHealthReport {
-	vault_file_exists: boolean
-	salt_file_exists: boolean
-	snapshot_loaded: boolean
-	client_exists: boolean
-	keys_found: string[]
-	expected_scopes: string[]
-	missing_scopes: string[]
 }
 
 /**

@@ -1,4 +1,4 @@
-import { HostPackage } from '@/types/tauri-types'
+import { HostPackage } from '@/types/entities'
 import type { LocaleMessageValue, MessageContext } from 'vue-i18n'
 
 export default {

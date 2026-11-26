@@ -38,35 +38,5 @@ impl std::str::FromStr for AuthType {
     }
 }
 
-// ============================================================================
-// Información del sistema (JSON almacenado en deployer_hosts.system_info)
-// ============================================================================
-
-/// Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
-/// Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
-#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
-#[ts(export, export_to = "tauri-types.d.ts")]
-pub struct HostSystemInfo {
-    pub package_manager: String,
-    pub package_manager_version: String,
-    pub kernel: String,
-    pub arch: String,
-    /// Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
-    #[serde(default)]
-    pub distribution: String,
-    /// Número de cores CPU (ej: "8").
-    #[serde(default)]
-    pub cpu_cores: String,
-    /// RAM total (ej: "16Gi").
-    #[serde(default)]
-    pub memory_total: String,
-    /// Disco total (ej: "500G").
-    #[serde(default)]
-    pub disk_total: String,
-    /// SO y versión (ej: "Ubuntu 22.04 LTS").
-    #[serde(default)]
-    pub os_release: String,
-    /// Timestamp ISO 8601 de la última vez que se obtuvo esta información.
-    #[serde(default)]
-    pub last_checked_at: Option<String>,
-}
+// Nota: el tipo del JSON de `system_info` vive en `src/types/entities.ts`
+// (`HostSystemInfo`); Rust no construye ni exporta ese tipo.

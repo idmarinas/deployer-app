@@ -8,6 +8,7 @@ use keyring::{Entry, Error as KeyringError};
 use rand::{rngs::SysRng, TryRng};
 use serde::Serialize;
 use std::path::PathBuf;
+use ts_rs::TS;
 use zeroize::Zeroizing;
 
 const SERVICE_NAME: &str = "deployer-app";
@@ -20,10 +21,12 @@ const EXPECTED_SCOPES: &[&str] = &[
     "encrypt:deployer_hosts.password",
     "encrypt:deployer_passkeys.key_content",
     "encrypt:deployer_passkeys.passphrase",
+    "encrypt:deployer_variables.value",
 ];
 
 /// Reporte de salud del vault de Stronghold.
-#[derive(Serialize)]
+#[derive(Serialize, TS)]
+#[ts(export, export_to = "tauri-types.d.ts")]
 pub struct VaultHealthReport {
     pub vault_file_exists: bool,
     pub salt_file_exists: bool,
@@ -87,16 +90,14 @@ impl StrongholdVault {
         // load_snapshot NO puebla la tabla de clients en memoria: hay que llamar
         // load_client para traerlo desde el snapshot, igual que hace el plugin JS
         // con loadClient antes de usarlo.
-        let client = stronghold
-            .load_client(CLIENT_NAME)
-            .map_err(|e| {
-                format!(
-                    "Client 'encrypt-keys' no encontrado en el snapshot: {:?}. \
+        let client = stronghold.load_client(CLIENT_NAME).map_err(|e| {
+            format!(
+                "Client 'encrypt-keys' no encontrado en el snapshot: {:?}. \
                      El vault parece estar vacío o corrupto. \
                      Verifica que el frontend ha guardado claves en el vault.",
-                    e
-                )
-            })?;
+                e
+            )
+        })?;
 
         Ok(Self { client })
     }
@@ -149,7 +150,10 @@ impl StrongholdVault {
             Err(_) => return report,
         };
 
-        if stronghold.load_snapshot(&keyprovider, &snapshot_path).is_err() {
+        if stronghold
+            .load_snapshot(&keyprovider, &snapshot_path)
+            .is_err()
+        {
             report.missing_scopes = report.expected_scopes.clone();
             return report;
         }
@@ -168,9 +172,18 @@ impl StrongholdVault {
 
         for &scope in EXPECTED_SCOPES {
             let mut found = false;
-            for version in 0..10 {
+            // La rotación del frontend puede superar la versión 9: ampliar el
+            // escaneo hasta la versión actual (mínimo 0..9, como antes).
+            let max_version = stored_current_version(&client, scope).max(9);
+            for version in 0..=max_version {
                 let key_name = format!("{}:{}", scope, version);
-                if client.store().get(key_name.as_bytes()).ok().flatten().is_some() {
+                if client
+                    .store()
+                    .get(key_name.as_bytes())
+                    .ok()
+                    .flatten()
+                    .is_some()
+                {
                     report.keys_found.push(key_name);
                     found = true;
                 }
@@ -184,7 +197,7 @@ impl StrongholdVault {
     }
 
     /// Obtiene la clave AES de una versión concreta para un scope.
-    pub fn get_key_for_version(&self, scope: &str, version: i64) -> Result<Vec<u8>, String> {
+    fn get_key_for_version(&self, scope: &str, version: i64) -> Result<Vec<u8>, String> {
         let key_scope = format!("{}:{}", scope, version);
         let key = self
             .client
@@ -212,11 +225,28 @@ impl StrongholdVault {
     }
 }
 
+/// Lee la versión actual de un scope desde el store (`scope:current`).
+///
+/// El valor se guarda como 8 bytes big-endian. Si falta o es inválido, 0.
+fn stored_current_version(client: &Client, scope: &str) -> i64 {
+    let key_name = format!("{}:current", scope);
+    client
+        .store()
+        .get(key_name.as_bytes())
+        .ok()
+        .flatten()
+        .and_then(|bytes: Vec<u8>| {
+            let version: [u8; 8] = bytes.get(..8)?.try_into().ok()?;
+            Some(i64::from_be_bytes(version))
+        })
+        .unwrap_or(0)
+}
+
 /// Separa la versión de un valor cifrado.
 ///
 /// Formato: `ENC:{version}:<base64>`. Si no hay segmento de versión
 /// (`ENC:<base64>`), se asume versión 0.
-pub fn split_ciphertext_version(ciphertext: &str) -> (i64, &str) {
+fn split_ciphertext_version(ciphertext: &str) -> (i64, &str) {
     if !ciphertext.starts_with("ENC:") {
         return (0, ciphertext);
     }
@@ -290,8 +320,7 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
     let mut salt = [0u8; 32];
 
     if salt_path.exists() {
-        let data = std::fs::read(salt_path)
-            .map_err(|e| format!("Error al leer salt: {}", e))?;
+        let data = std::fs::read(salt_path).map_err(|e| format!("Error al leer salt: {}", e))?;
         if data.len() != 32 {
             return Err("Archivo de salt corrupto: longitud incorrecta".to_string());
         }
@@ -304,8 +333,7 @@ fn hash_password(password: &str, salt_path: &PathBuf) -> Result<Vec<u8>, String>
         SysRng
             .try_fill_bytes(&mut salt)
             .map_err(|e| format!("Error al generar salt: {}", e))?;
-        std::fs::write(salt_path, &salt)
-            .map_err(|e| format!("Error al guardar salt: {}", e))?;
+        std::fs::write(salt_path, &salt).map_err(|e| format!("Error al guardar salt: {}", e))?;
     }
 
     argon2::hash_raw(password.as_bytes(), &salt, &Default::default())

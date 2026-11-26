@@ -2,7 +2,7 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { description, enabled, timestamps } from '@/drizzle/lib/columns.helpers'
 import { encryptedText } from '@/drizzle/lib/schema-types'
-import { HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/tauri-types'
+import { HostServerUpdates, HostStatusMetrics, HostSystemInfo } from '@/types/entities'
 import { passkeys } from './passkeys'
 
 export const hosts = sqliteTable(
@@ -19,6 +19,10 @@ export const hosts = sqliteTable(
 			.notNull()
 			.default('password'),
 		password: encryptedText('password'),
+		/** Huella SHA256 de la clave del servidor, confirmada por el usuario. */
+		host_key_fingerprint: text(),
+		/** Directorio base del gestor de archivos; no es el `working_dir` de los comandos. */
+		default_remote_path: text().default('/'),
 		key_id: integer().references(() => passkeys.id, { onDelete: 'restrict' }),
 		system_info: text({ mode: 'json' })
 			.$type<HostSystemInfo>()

@@ -24,7 +24,7 @@ export default {
 			remove: 'Eliminar del servidor',
 		},
 		cancel_update: {
-			cancel: 'Canclear',
+			cancel: 'Cancelar',
 			confirm: 'Actualizar',
 		},
 		files_review: {

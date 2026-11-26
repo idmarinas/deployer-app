@@ -2,6 +2,7 @@ import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { description, enabled, internal, timestamps } from '@/drizzle/lib/columns.helpers'
 import { OutputParser } from '@/utils/commands/types'
+import type { InputFieldDefinition } from '@/utils/inputs/types'
 
 export const commands = sqliteTable(
 	'deployer_commands',
@@ -11,6 +12,7 @@ export const commands = sqliteTable(
 		description,
 		command: text().notNull(),
 		parser: text({ mode: 'json' }).$type<OutputParser>().notNull().default({ type: 'raw' }),
+		inputs: text({ mode: 'json' }).$type<InputFieldDefinition[]>().notNull().default([]),
 		timeout: integer().notNull().default(30),
 		custom: integer({ mode: 'boolean' }).notNull().default(true),
 		enabled,

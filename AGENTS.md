@@ -1,79 +1,73 @@
 # DeployerApp — Guía para Agentes
 
-## Stack (verificado)
+Esta guía contiene las reglas comunes del proyecto. Para detalles específicos, lee:
+
+- Backend (Rust/Tauri): [`AGENTS.backend.md`](./AGENTS.backend.md)
+- Frontend (Vue/TypeScript): [`AGENTS.frontend.md`](./AGENTS.frontend.md)
+- Documentación (`docs/content/`): [`AGENTS.docs.md`](./AGENTS.docs.md)
+
+## Stack
 
 | Capa | Tecnología |
-| ------ | ----------- |
-| Frontend | Vue 3 + TS + Nuxt UI v4 (librería, no meta-framework) |
+| --- | --- |
+| Frontend | Vue 3 + TypeScript + Nuxt UI v4 (librería, no meta-framework) |
 | Enrutamiento | `src/pages/` → unplugin-vue-router (genera `src/route-map.d.ts`) |
 | Estilos | Tailwind CSS v4 |
-| Estado servidor | `@pinia/colada` — **no** Pinia store |
+| Estado servidor | `@pinia/colada` (no es un store de Pinia) |
 | Backend | Rust + Tauri 2 |
-| BD | SQLite via sqlx; migraciones en `src-tauri/migrations/` |
-| Acceso a datos | Drizzle ORM (modo proxy) → comando `query_raw` |
+| Plugins de Tauri | `dialog`, `fs`, `opener`, `positioner`, `store`, `stronghold`, `window-state` (JS y Rust); `single-instance` (Rust) |
+| Base de datos | SQLite vía sqlx; migraciones en `src-tauri/migrations/` |
+| Acceso a datos | Drizzle ORM en modo proxy → comando `query_raw` |
 | Gestor | Bun |
-| TS | `~6.0.3` — strict, `noUnusedLocals`, `noUnusedParameters` |
-| Vite | `^8.2.2` — puerto fijo **1420** (strictPort) |
+| Vite | Puerto fijo 1420 (`strictPort`) |
 
-## Propósito del Backend
+## Principio: frontend primero
 
-- **Orquestación SSH/SFTP** para consola remota, test de conexión, check de sistema/métricas y actualizaciones de hosts.
-- **Cifrado/descifrado** transparente de campos sensibles (`hosts.password`, `passkeys.key_content`/`passphrase`) con claves AES gestionadas en el **vault de Stronghold** (`src/drizzle/lib/stronghold.ts` + Web Crypto; Rust abre el vault solo para leer y descifrar credenciales SSH).
-- **Generación de claves SSH**, **test de conexión** y **gestión de hosts**.
-- **Inicialización y gestión de la BD** (crear/abrir/validar archivo SQLite, ejecutar migraciones).
-- El **acceso a datos (lecturas y escrituras)** lo hace el frontend con **Drizzle en modo proxy** (vía `query_raw`), que cifra/descifra/enmascara los campos declarados como `encryptedText(...)` en `src/drizzle/lib/schema-types.ts` usando las claves del vault (`src/drizzle/lib/stronghold.ts`); `query_raw` solo ejecuta SQL. Los comandos Rust dedicados solo atienden lógica de backend que Drizzle no puede cubrir (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).
+Tauri ejecuta el código de la interfaz en un webview. Ese entorno tiene limitaciones que determinan qué va en Rust:
 
-## Reglas
+- **No abre conexiones TCP**, así que SSH y SFTP solo son posibles desde Rust.
+- **No accede a SQLite directamente**. Todas las lecturas y escrituras pasan por Drizzle y `query_raw`.
+- **El sistema de archivos, los diálogos, el store y Stronghold** solo funcionan a través de plugins, y sus permisos se controlan en `src-tauri/capabilities/default.json`.
+- **El keychain del SO** solo es accesible desde Rust (crate `keyring`).
 
-- **Idioma:** siempre español.
-- **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/` (salida de build) y el **historial personal**: archivos `.back` y todo archivo/carpeta con extensión `.dist` (p.ej. `_archived.dist/`). No incluirlos en búsquedas ni lecturas salvo que se pidan explícitamente como referencia; nunca modificarlos.
-- **Archivos autogenerados (no editar):** `drizzle/` (completo), `src/drizzle/schema.ts`, `src/drizzle/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src-tauri/src/tables.rs`.
-- **`drizzle/migrations/`** — no borrar; Drizzle Kit lo usa para calcular diffs entre esquemas.
-- **`src-tauri/migrations/`** — archivos planos `.sql` generados por `drizzle:generate`; sqlx los embebe en el binario.
-- **Antes de añadir dependencia**, verificar `package.json` y `src-tauri/Cargo.toml`.
-- **Antes de crear un comando Rust nuevo:** comprobar si la lógica puede cubrirse con Drizzle (vía `query_raw`). Los comandos Rust dedicados solo deben existir para lógica de backend que Drizzle no puede atender (SSH/SFTP, cripto de claves, vault Stronghold, gestión/inicialización de BD).
-- **Migraciones SQL:** Drizzle Kit genera subdirectorios (`<timestamp>_<nombre>/migration.sql`) en `drizzle/migrations/` (no tocar). `sqlx::migrate!()` solo acepta archivos `.sql` planos en `src-tauri/migrations/`. `bun run drizzle:generate` hace `drizzle-kit generate` **y** aplana automáticamente el SQL a `src-tauri/migrations/` (equivalente a lo que antes se llamaba `drizzle:migrate`). sqlx extrae la versión del nombre del archivo (i64) y la descripción del resto.
+Antes de implementar una funcionalidad nueva, comprueba en este orden:
 
-## Acceso a datos (Drizzle vs comandos Rust)
+1. **Plugin oficial o de la comunidad de Tauri.** Busca en el catálogo de plugins de Tauri (https://v2.tauri.app/plugin/) si alguno ya cubre la funcionalidad. Si existe, no la reimplementes. Antes de usarlo, verifica que sea compatible con Tauri 2, que esté mantenido y qué permisos exige en `capabilities/default.json`. Si descartas un plugin existente, anota el motivo en la sección del plan o diseño correspondiente.
+2. **Plugin de Tauri usable desde JavaScript** que ya esté instalado. Mira la tabla de Stack y los permisos de `capabilities/default.json`.
+3. **Drizzle vía `query_raw`** para cualquier operación de base de datos.
+4. **Comando Rust nuevo.** Solo si lo anterior no sirve, por ejemplo para SSH/SFTP, cripto de claves o gestión de la BD.
 
-| Situación | Solución |
-| --- | --- |
-| SELECT, sin descifrado | Drizzle (`src/drizzle/drizzle.ts`) — el proxy enmascara los valores `ENC:` → `BLANK_VALUE` |
-| SELECT con descifrado explícito | Drizzle + `withDecryption(true, fn)` — el proxy descifra con las claves del vault |
-| INSERT/UPDATE/DELETE | Drizzle (`src/drizzle/drizzle.ts`) — el proxy cifra los campos `encryptedText(...)` |
-| Lógica de backend (SSH/SFTP, cripto de claves, vault Stronghold, gestión de BD) | Comando Rust dedicado |
+## Reglas globales
 
-`query_raw` (Rust) solo ejecuta el SQL generado por el proxy y devuelve `columns` + `rows`: ni cifra ni enmascara (eso lo hace el frontend con `src/drizzle/lib/stronghold.ts`). No hay comandos Rust `crud_*` por entidad.
+- **Idioma:** español.
+- **Ignorar y no modificar:** `node_modules/`, `vendor/`, `var/`, `dist/`, archivos `.back` y cualquier archivo o carpeta con extensión `.dist`. No incluirlos en búsquedas ni lecturas salvo petición explícita.
+- **Archivos autogenerados (no editar a mano):** `migrations/` (completo), `src/drizzle/schema.ts`, `src/drizzle/relations.ts`, `typed-locale.d.ts`, `auto-imports.d.ts`, `components.d.ts`, `src/route-map.d.ts`, `src/types/tauri-types.d.ts`, `src-tauri/src/tables.rs`.
+- **Esquema de BD:** la fuente son las entidades de `src/drizzle/entities/`. Tras editarlas, ejecuta `bun run drizzle:generate`, que genera las migraciones y las aplana en `src-tauri/migrations/`. No borres `migrations/`: Drizzle Kit la usa para calcular diffs.
+- **Dependencias nuevas:** antes de añadir una, revisa `package.json` y `src-tauri/Cargo.toml`.
+- **Componentes de página:** van en `src/components/pages/<pagina>/`, con la misma estructura que `src/pages/`. Detalles en `AGENTS.frontend.md`.
 
 ## Comandos
 
 ```bash
-bun run tauri:dev               # Dev server (Vite + Tauri, con @tauri scripts)
-bun run tauri build             # Producción
-bun run dev                     # i18n:types → vite
-bun run build                   # vue-tsc --noEmit → vite build (NO ejecuta i18n:types)
-bun run i18n:types             # Regenera typed-locale.d.ts
-bun run drizzle:generate       # drizzle-kit generate + aplana a src-tauri/migrations/ (--name <nombre> opcional)
-bun run drizzle:flatten        # Solo aplana las migraciones a src-tauri/migrations/ (para sqlx)
-bun run tables:generate        # Regenera src-tauri/src/tables.rs (constantes de nombres de tablas)
+bun run tauri:dev            # Dev server (Vite + Tauri)
+bun run tauri build          # Producción
+bun run dev                  # i18n:types → vite
+bun run build                # vue-tsc --noEmit → vite build (no ejecuta i18n:types)
+bun run i18n:types           # Regenera typed-locale.d.ts
+bun run drizzle:generate     # drizzle-kit generate + aplanado a src-tauri/migrations/ (--name <nombre> opcional)
+bun run drizzle:flatten      # Solo aplana las migraciones para sqlx
+bun run tables:generate      # Regenera src-tauri/src/tables.rs
 ```
 
-> Nota: no existen scripts `dev:db:generate` ni `drizzle:migrate`. `drizzle:generate` ya hace generate + flatten en un solo paso (por eso es el equivalente a lo que antes se llamaba `drizzle:migrate`).
+No existen `dev:db:generate` ni `drizzle:migrate`. `drizzle:generate` hace generate y flatten en un solo paso.
 
-## Gotchas
+## Flujo de planes
 
-- **Pinia Colada** expone `data` como `shallowRef`. Mutar propiedades anidadas NO dispara reactividad. Solo reasignar `.value` completo.
-- **`tauri_plugin_single_instance`** debe ser el primer plugin registrado en `lib.rs`.
-- **Schema Drizzle:** se edita la migración SQL (`drizzle/migrations/`), luego `bun run drizzle:generate` (generate + flatten). Nunca editar los archivos `.ts` de schema a mano.
-- **i18n:** backend devuelve claves i18n (nunca strings en español). Mensajes en `src/locales/es/`. Tipos autogenerados vía `bun run i18n:types`.
-- **Drag & drop (Tauri):** Sortable.js requiere `forceFallback: true` (HTML5 nativo no funciona en webviews). Contenedores condicionales requieren `watchElement: true`.
-- **Vite ignora `src-tauri/`** en el watch (configurado en `vite.config.ts`). Los cambios en Rust requieren rebuild explícito de Tauri.
-- **Vault Stronghold:** el frontend es el **único escritor** del vault (plugin `tauri_plugin_stronghold`); Rust lo abre solo para **leer** (`StrongholdVault::open`) y nunca debe escribir claves desde Rust. Claves versionadas `encrypt:{tabla}.{col}:{version}`; valor en BD `ENC:{version}:<base64>`. Detalles en `AGENTS.backend.md` §4.
-- **Seed de comandos (`src/composables/deployer/seed_data/commands.ts`):** los scripts de shell que contengan barras invertidas (`\"`, `\$`, `\\`, `\n`…) deben escribirse con `` String.raw`...` ``. Una plantilla literal normal consume los escapes antes de guardar el comando en SQLite (`\"` → `"`, `\$7` → `$7`) y el script queda roto en el servidor, aunque pegado a mano desde la UI funcione. Los comandos sin barras invertidas (p. ej. `upgradable_packages`) pueden usar plantilla normal.
-- **Formularios JSON-Schema:** sistema basado en `json-schema-library` (jsl) en `src/utils/schema-form/*` + `src/components/form/schema/*` + `useSchemaToForm`. Núcleo **agnóstico** (`JsonSchemaEditor.vue`, `SchemaField*`); los wrappers `ComposeJsonSchema.vue`/`ComposerJsonSchema.vue` quedaron retirados (importaban los JSON de `@/schemas/`, eliminados del proyecto). Detalles en `AGENTS.frontend.md` §8.
+> Particularidades del proyecto para la skill `plan-workflow`.
 
-## Guías detalladas
-
-- Backend (Rust/BD/cifrado/SSH/comandos): [`AGENTS.backend.md`](./AGENTS.backend.md)
-- Frontend (Vue/temas/i18n/queries/componentes): [`AGENTS.frontend.md`](./AGENTS.frontend.md)
-- Documentación (`docs/content/`): [`AGENTS.docs.md`](./AGENTS.docs.md)
+- **Idioma:** español.
+- **Guías a leer antes de empezar:** `AGENTS.md`, `AGENTS.backend.md`, `AGENTS.frontend.md`, `AGENTS.docs.md`.
+- **Verificación (la ejecuta el usuario, salvo petición expresa):** `bun run i18n:types`, `bunx vue-tsc --noEmit`, `bun run build`; `cargo check` si se toca Rust. `bun test` no es criterio de aceptación mientras la suite siga sin repararse.
+- **Reglas del proyecto en planes:** migraciones según "Reglas globales"; ignorar `.back` y `.dist`.
+- **Documentación a actualizar si cambia algo:** `AGENTS*.md` y `docs/content/`.
+- **Plugins de Tauri:** antes de diseñar o planificar una funcionalidad nueva, buscar en el catálogo oficial si existe un plugin que la cubra (ver "Principio: frontend primero", punto 1).

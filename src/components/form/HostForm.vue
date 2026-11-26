@@ -5,23 +5,51 @@ import { useI18n } from 'vue-i18n'
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
+import { useHostFingerprint } from '@/composables/dashboard/hosts/useHostFingerprint'
+import { ICONS } from '@/utils/icons'
+
 const state = defineModel<{
+	id?: number | null
 	name: string
 	description: JSONContent
 	host: string
+	default_remote_path: string | null
 	port: number
 	auth_type: 'password' | 'key'
 	username: string
 	password: string | null
 	key_id: number | null
+	host_key_fingerprint?: string | null
 	enabled: boolean
 }>({ required: true })
 
 const props = defineProps<{
 	isLoading: boolean
+	hostId?: number | null
 }>()
 
 const { t } = useI18n()
+const isChecking = ref(false)
+const { checkAndConfirm } = useHostFingerprint()
+
+async function checkFingerprint() {
+	if (!props.hostId) return
+
+	const fingerprint = await checkAndConfirm(
+		{
+			id: props.hostId,
+			name: state.value.name,
+			host_key_fingerprint: state.value.host_key_fingerprint,
+		},
+		isChecking,
+	)
+
+	if (fingerprint !== undefined) {
+		state.value.host_key_fingerprint = fingerprint
+	}
+}
 </script>
 
 <template>
@@ -46,6 +74,7 @@ const { t } = useI18n()
 		:label="t('form.hosts.description.label')"
 		:help="t('form.hosts.description.help')"
 		:hint="t('form.shared.hint.optional')"
+    class="row-span-2"
 	>
 		<DescriptionEditor v-model="state.description" />
 	</UFormField>
@@ -54,12 +83,49 @@ const { t } = useI18n()
 		<UInput v-model="state.host" autocomplete="on" class="w-full" />
 	</UFormField>
 
+	<UFormField
+		name="default_remote_path"
+		:label="t('form.hosts.default_remote_path.label')"
+		:help="t('form.hosts.default_remote_path.help')"
+		:hint="t('form.shared.hint.optional')"
+	>
+		<UInput
+			v-model="state.default_remote_path!"
+			autocomplete="off"
+			:placeholder="t('form.hosts.default_remote_path.placeholder')"
+			class="w-full font-mono"
+		/>
+	</UFormField>
+
 	<UFormField name="port" :label="t('form.hosts.port.label')" :help="t('form.hosts.port.help')" required>
 		<UInputNumber v-model="state.port" autocomplete="on" class="w-full" :min="0" :max="65535" />
 	</UFormField>
 
 	<UFormField name="username" :label="t('form.hosts.username.label')" :help="t('form.hosts.username.help')" required>
 		<UInput v-model="state.username" autocomplete="on" class="w-full" />
+	</UFormField>
+
+	<UFormField
+		name="host_key_fingerprint"
+		:label="t('form.hosts.host_key_fingerprint.label')"
+		:help="t('form.hosts.host_key_fingerprint.help')"
+	>
+		<div class="flex gap-2">
+			<UInput
+				:model-value="state.host_key_fingerprint ?? ''"
+				:placeholder="t('form.hosts.host_key_fingerprint.empty')"
+				readonly
+				class="flex-1 font-mono"
+			/>
+			<UButton
+				:label="t('form.hosts.host_key_fingerprint.check')"
+				:icon="ICONS.actions.refresh"
+				variant="soft"
+				:loading="isChecking"
+				:disabled="!props.hostId || props.isLoading || isChecking"
+				@click="checkFingerprint"
+			/>
+		</div>
 	</UFormField>
 
 	<div class="flex flex-col gap-3">

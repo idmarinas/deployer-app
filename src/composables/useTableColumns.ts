@@ -1,6 +1,6 @@
-import type { TableColumn } from '@nuxt/ui'
 import type { CrudReferenceMatch } from '@/composables/queries/shared.interfaces'
 import type { VariableUsage } from '@/utils/interpolation/usages'
+import type { TableColumn } from '@nuxt/ui'
 
 import { h } from 'vue'
 
@@ -88,7 +88,6 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 					color: 'info',
 					variant: 'ghost',
 					tooltip: true,
-					disabled: (row.original as any)?.internal || false,
 					onClick() {
 						router.push({
 							name: `dashboard-${options.moduleName}-${idParam}-edit` as any,
@@ -112,14 +111,10 @@ export function useTableColumns<T>(options?: TableColumnsOptions) {
 							id,
 							name: String((row.original as any).name ?? id),
 							remove: options.deleteFn!,
-							findReferences: options.findReferences
-								? () => options.findReferences!(id)
-								: undefined,
+							findReferences: options.findReferences ? () => options.findReferences!(id) : undefined,
 							findVariableUsages: options.findVariableUsages
 								? () =>
-										options.findVariableUsages!(
-											String((row.original as any).slug ?? (row.original as any).name ?? ''),
-										)
+										options.findVariableUsages!(String((row.original as any).slug ?? (row.original as any).name ?? ''))
 								: undefined,
 							onDone: options.onReload,
 						})

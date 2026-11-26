@@ -25,7 +25,8 @@ export class QueryRawError extends Error {
 	readonly message_params: Record<string, string>
 
 	constructor(messageKey: string, messageParams: Record<string, string> = {}) {
-		super(messageKey)
+		const reason = messageParams.reason
+		super(reason ? `${messageKey}: ${reason}` : messageKey)
 		this.name = 'QueryRawError'
 		this.message_key = messageKey
 		this.message_params = messageParams

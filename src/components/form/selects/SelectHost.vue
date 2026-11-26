@@ -21,9 +21,11 @@ const props = withDefaults(
 	defineProps<{
 		ignoreHosts?: Set<number>
 		onlyEnabled?: boolean
+		variant?: 'ghost' | 'outline' | 'soft' | 'subtle'
 	}>(),
 	{
 		onlyEnabled: false,
+		variant: undefined,
 	},
 )
 
@@ -59,6 +61,7 @@ watch(
 			clear
 			value-key="id"
 			class="flex-1"
+			:variant="props.variant"
 			:items="availableItems as SelectMenuItemExtends[]"
 			:loading="isLoading"
 			:disabled="isLoading"
@@ -83,6 +86,7 @@ watch(
 				:disabled="isLoading"
 				:icon="ICONS.actions.add"
 				@click="router.push({ name: 'dashboard-hosts-add' })"
+				:variant="props.variant"
 			/>
 		</UTooltip>
 	</UFieldGroup>

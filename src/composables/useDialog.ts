@@ -1,6 +1,7 @@
 import type { Passkey } from '@/types/entities'
 import type { GeneratedPasskey } from '@/types/tauri-types'
 import type { OutputParser } from '@/utils/commands/types'
+import type { InputFieldDefinition } from '@/utils/inputs'
 
 import CommandTestDialog from '@/components/overlay/CommandTestDialog.vue'
 import ConfirmDialog from '@/components/overlay/ConfirmDialog.vue'
@@ -22,6 +23,8 @@ export interface CommandTestDialogOptions {
 	parser?: OutputParser
 	timeout?: number
 	commandKey?: string
+	/** Parámetros declarados por el comando; se piden antes de ejecutar. */
+	inputs?: InputFieldDefinition[]
 }
 
 export const useConfirmDialog = () => {

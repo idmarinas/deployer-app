@@ -24,13 +24,14 @@ export default {
 		placeholder: '# e.g. uptime -p',
 	},
 	variables: {
-		help: 'Global variables available in the editor',
+		help: 'Global variables and parameters available in the editor',
 		tips: {
 			scopes: 'available scopes',
 			root: 'all variables',
 			path: 'all global variables',
 			filter_path: 'matches by path',
 			filter_slug: 'matches by slug',
+			params: 'command parameters',
 			escape: 'leave the expression as-is',
 		},
 		secret_help: 'Secret variables are marked in amber and are only resolved when the command runs.',
@@ -63,5 +64,55 @@ export default {
 	timeout: {
 		label: 'Timeout',
 		help: 'Maximum execution time in seconds (default 300)',
+	},
+	inputs: {
+		title: 'Input parameters',
+		help: 'Values requested before running and replaced in the script with the params.key expression',
+		parameter: 'Parameter',
+		empty: 'This command has no input parameters.',
+		add: 'Add parameter',
+		key: {
+			label: 'Key',
+			help: 'Name used in the script as params.key',
+			placeholder: 'remote_dir',
+		},
+		label: {
+			label: 'Label',
+			placeholder: 'Remote directory',
+		},
+		type: {
+			label: 'Type',
+			text: 'Text',
+			number: 'Number',
+			boolean: 'Boolean',
+			select: 'Select',
+		},
+		required: {
+			label: 'Required',
+			help: 'Prevents running without a value',
+		},
+		default: {
+			label: 'Default value',
+			help: 'Literal or global variable (global.slug). Secrets are not allowed.',
+			placeholder: 'Empty or global.deploy_path',
+			resolved: 'Current value:',
+		},
+		field_help: {
+			label: 'Help',
+			placeholder: 'Text shown next to the field when running',
+		},
+		options: {
+			title: 'Options',
+			add: 'Add option',
+			label: 'Label',
+			value: 'Value',
+			empty: 'No options: add at least one to be able to save.',
+			remove: 'Remove option',
+		},
+		actions: {
+			move_up: 'Move up',
+			move_down: 'Move down',
+			remove: 'Remove parameter',
+		},
 	},
 } satisfies LocaleMessageValue

@@ -1,17 +1,29 @@
 <script lang="ts">
 import type { GlobalVariableScope } from '@/drizzle/lib/variables'
 import type { OutputParser } from '@/utils/commands/types'
+import type {
+	InputDefaultIssue,
+	InputDefaultMessageKey,
+	InputFieldDefinition,
+	InputValueMessageKey,
+	InputValues,
+} from '@/utils/inputs'
 import type { InterpolationRoots, InterpolationSegment } from '@/utils/interpolation'
 
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import SelectHost from '@/components/form/selects/SelectHost.vue'
-import RemoteOutput from '@/components/remote/RemoteOutput.vue'
 import { loadGlobalScopeMetadata } from '@/drizzle/lib/variables'
 import { runCommand, runCustomCommand } from '@/utils/commands/runner'
 import { ICONS } from '@/utils/icons'
+import { resolveInputDefaults, validateInputValues } from '@/utils/inputs'
 import { findReferences, interpolateSegments, REDACTED_MARKER, validateTemplate } from '@/utils/interpolation'
+
+/** Mensaje de un problema de parámetro listo para pintar junto al campo. */
+interface ParamIssueMessage {
+	messageKey: InputDefaultMessageKey | InputValueMessageKey
+	messageParams?: Record<string, string | number>
+}
 </script>
 
 <script setup lang="ts">
@@ -30,6 +42,8 @@ const props = defineProps<{
 	 * formulario (aún no guardado) vía `runCustomCommand`.
 	 */
 	commandKey?: string
+	/** Parámetros declarados por el comando; se piden antes de ejecutar. */
+	inputs?: InputFieldDefinition[]
 }>()
 
 const { t } = useI18n()
@@ -44,13 +58,79 @@ const globalScope = ref<GlobalVariableScope>({})
 const scopeLoaded = ref(false)
 const scopeLoading = ref(true)
 
-const interpolationRoots = computed<InterpolationRoots>(() => ({ global: globalScope.value }))
+/**
+ * Valores de los parámetros. Viven solo en memoria: no se persisten ni se
+ * registran. Se inicializan con los `default` que no dependen de secretas.
+ */
+const params = ref<InputValues>({})
+const defaultIssues = ref<InputDefaultIssue[]>([])
+
+const hasInputs = computed(() => (props.inputs?.length ?? 0) > 0)
+
+/**
+ * Raíces para la vista previa. Las claves declaradas que aún no tienen valor se
+ * rellenan con un valor vacío de su tipo para que la plantilla no falle con
+ * `unknown_variable`; el panel de parámetros explica qué falta.
+ */
+const previewParams = computed<InputValues>(() => {
+	const values: InputValues = {}
+
+	for (const field of props.inputs ?? []) {
+		const value = params.value[field.key]
+		values[field.key] = value === undefined ? (field.type === 'boolean' ? false : '') : value
+	}
+
+	return values
+})
+
+const interpolationRoots = computed<InterpolationRoots>(() => {
+	const roots: InterpolationRoots = { global: globalScope.value }
+
+	if (hasInputs.value) {
+		roots.params = previewParams.value
+	}
+
+	return roots
+})
 
 const issues = computed(() =>
 	scopeLoaded.value ? validateTemplate(props.command ?? '', interpolationRoots.value) : [],
 )
 const errors = computed(() => issues.value.filter(issue => issue.severity === 'error'))
 const warnings = computed(() => issues.value.filter(issue => issue.severity === 'warning'))
+
+/**
+ * Problemas de los parámetros: primero los `default` que no se pudieron
+ * resolver y después los valores obligatorios o inválidos. Hasta que no carga
+ * el ámbito global no se evalúan (el bloque de parámetros aún no se muestra).
+ */
+const paramIssues = computed<Array<{ key: string } & Required<ParamIssueMessage>>>(() => {
+	if (!scopeLoaded.value) return []
+
+	const seen = new Set<string>()
+	const result: Array<{ key: string } & Required<ParamIssueMessage>> = []
+
+	for (const issue of defaultIssues.value) {
+		seen.add(issue.key)
+		result.push({ key: issue.key, messageKey: issue.messageKey, messageParams: issue.messageParams })
+	}
+
+	for (const issue of validateInputValues(props.inputs ?? [], params.value)) {
+		if (seen.has(issue.key)) continue
+
+		seen.add(issue.key)
+		result.push({ key: issue.key, messageKey: issue.messageKey, messageParams: issue.messageParams })
+	}
+
+	return result
+})
+
+/** Mapa por clave que consume `InputsForm` para pintar el error de cada campo. */
+const paramIssueMap = computed<Record<string, ParamIssueMessage>>(() =>
+	Object.fromEntries(
+		paramIssues.value.map(issue => [issue.key, { messageKey: issue.messageKey, messageParams: issue.messageParams }]),
+	),
+)
 
 /**
  * Fragmento de la vista previa: texto literal o una expresión interpolada.
@@ -148,29 +228,38 @@ const previewHtml = computed(() =>
 )
 
 const canRun = computed(
-	() => Boolean(hostId.value) && scopeLoaded.value && errors.value.length === 0 && !isLoading.value,
+	() =>
+		Boolean(hostId.value) &&
+		scopeLoaded.value &&
+		errors.value.length === 0 &&
+		paramIssues.value.length === 0 &&
+		!isLoading.value,
 )
 
 async function run() {
-	if (!hostId.value || errors.value.length > 0) return
+	if (!hostId.value || errors.value.length > 0 || paramIssues.value.length > 0) return
 
 	isLoading.value = true
 	errorMessage.value = ''
 	output.value = ''
 	lastExitCode.value = null
 
+	const options = { params: params.value }
+
 	try {
 		const result = props.commandKey
-			? await runCommand(props.commandKey, hostId.value)
+			? await runCommand(props.commandKey, hostId.value, options)
 			: await runCustomCommand(
 					{
-						id: props.commandKey ?? 'ad-hoc',
+						id: 'ad-hoc',
 						name: props.title ?? 'ad-hoc',
 						command: props.command,
 						parser: props.parser ?? { type: 'raw' },
 						timeout_secs: props.timeout,
+						inputs: props.inputs,
 					},
 					hostId.value,
+					options,
 				)
 
 		output.value = result.raw_output
@@ -192,6 +281,11 @@ onMounted(async () => {
 	try {
 		globalScope.value = await loadGlobalScopeMetadata()
 		scopeLoaded.value = true
+
+		// Defaults al abrir: no se recalculan al editar variables globales.
+		const resolved = resolveInputDefaults(props.inputs ?? [], globalScope.value)
+		params.value = resolved.values
+		defaultIssues.value = resolved.issues
 	} finally {
 		scopeLoading.value = false
 	}
@@ -236,6 +330,23 @@ onMounted(async () => {
 					{{ t('dialogs.commands.test.load_error') }}
 				</div>
 
+				<div v-if="hasInputs && scopeLoaded" class="flex flex-col gap-2">
+					<p class="text-xs font-medium text-muted">{{ t('dialogs.commands.test.params.title') }}</p>
+					<InputsForm v-model="params" :fields="inputs ?? []" :issues="paramIssueMap" :disabled="isLoading" />
+				</div>
+
+				<div v-if="paramIssues.length > 0" class="rounded-lg border border-error/40 bg-error/5 p-3">
+					<p class="mb-1 flex items-center gap-1.5 text-sm font-medium text-error">
+						<UIcon name="i-tabler-alert-circle" class="size-4 shrink-0" />
+						{{ t('dialogs.commands.test.params.errors') }}
+					</p>
+					<ul class="flex flex-col gap-1">
+						<li v-for="issue in paramIssues" :key="issue.key" class="text-xs text-error">
+							{{ t(issue.messageKey, issue.messageParams) }}
+						</li>
+					</ul>
+				</div>
+
 				<div v-if="errors.length > 0" class="rounded-lg border border-error/40 bg-error/5 p-3">
 					<p class="mb-1 flex items-center gap-1.5 text-sm font-medium text-error">
 						<UIcon name="i-tabler-alert-circle" class="size-4 shrink-0" />
@@ -261,7 +372,7 @@ onMounted(async () => {
 						/>
 					</div>
 					<pre
-						class="max-h-48 overflow-auto rounded-md border border-default bg-elevated p-2 font-mono text-xs whitespace-pre-wrap break-words"
+						class="max-h-48 overflow-auto rounded-md border border-default bg-elevated p-2 font-mono text-xs whitespace-pre-wrap wrap-break-word"
 						v-html="previewHtml"
 					/>
 					<!-- Aviso de una línea: las secretas solo se resuelven al ejecutar. -->
@@ -278,7 +389,7 @@ onMounted(async () => {
 					</i18n-t>
 				</div>
 
-				<RemoteOutput
+				<ConsoleOutput
 					:last-exit-code="lastExitCode"
 					:is-running="isLoading"
 					:error-message="errorMessage"

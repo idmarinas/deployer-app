@@ -20,6 +20,16 @@ interface TrashDetailField {
 	wide?: boolean
 }
 
+/** Forma que consume `ItemCard` a través de `modelValue`. */
+interface CardItem {
+	name: string
+	description?: JSONContent
+	enabled?: boolean
+	created_at: string
+	updated_at: string
+	[key: string]: any
+}
+
 const props = defineProps<{
 	module: ModulesName
 	item: Record<string, any>
@@ -32,6 +42,16 @@ const id = computed(() => props.item[idField.value] as number | string)
 const name = computed(() => String(props.item.name ?? id.value))
 const description = computed(() => props.item.description as JSONContent | undefined)
 const enabled = computed(() => props.item.enabled as boolean | undefined)
+
+/** Objeto que consume `ItemCard` a través de `modelValue` (solo lectura). */
+const cardItem = computed<CardItem>(() => ({
+	...props.item,
+	name: name.value,
+	description: description.value,
+	enabled: enabled.value,
+	created_at: props.item.created_at as string,
+	updated_at: props.item.updated_at as string,
+}))
 
 const yesNo = (value: unknown) => t(value ? 'common.common.yes' : 'common.common.no')
 
@@ -102,14 +122,7 @@ const fields = computed<TrashDetailField[]>(() => {
 </script>
 
 <template>
-	<ItemCard
-		:id="id"
-		:name="name"
-		:description="description"
-		:enabled="enabled"
-		:created_at="item.created_at"
-		:updated_at="item.updated_at"
-	>
+	<ItemCard :model-value="cardItem" :id-name="idField">
 		<template #title-right>
 			<UBadge
 				v-if="module === ModulesName.Commands && item.internal"

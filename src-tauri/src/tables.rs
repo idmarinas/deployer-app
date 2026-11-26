@@ -6,6 +6,15 @@
 /// Tabla: deployer_commands (fuente: commands.ts)
 pub const TABLE_COMMANDS: &str = "deployer_commands";
 
+/// Tabla: deployer_file_manager_listings (fuente: fileManagerListings.ts)
+pub const TABLE_FILEMANAGERLISTINGS: &str = "deployer_file_manager_listings";
+
+/// Tabla: deployer_file_manager_preferences (fuente: fileManagerPreferences.ts)
+pub const TABLE_FILEMANAGERPREFERENCES: &str = "deployer_file_manager_preferences";
+
+/// Tabla: deployer_file_manager_transfers (fuente: fileManagerTransfers.ts)
+pub const TABLE_FILEMANAGERTRANSFERS: &str = "deployer_file_manager_transfers";
+
 /// Tabla: deployer_hosts (fuente: hosts.ts)
 pub const TABLE_HOSTS: &str = "deployer_hosts";
 

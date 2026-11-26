@@ -14,6 +14,7 @@ export default {
 		name: 'Nombre',
 		description: 'Descripción',
 		host: 'Servidor',
+		default_remote_path: 'Directorio base (gestor de archivos)',
 		port: 'Puerto',
 		auth_type: 'Tipo de autenticación',
 		username: 'Usuario',

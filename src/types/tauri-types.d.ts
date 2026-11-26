@@ -91,109 +91,16 @@ key_type: KeyType,
  */
 passphrase: string | null, };
 
-export type HostPackage = { name: string, current_version: string, 
-/**
- * Revisión de empaquetado de la versión actual (ej: "1" en "29.9.2-1"). `null` si la versión no tiene.
- */
-current_revision: string | null, available_version: string, 
-/**
- * Revisión de empaquetado de la versión disponible. `null` si la versión no tiene.
- */
-available_revision: string | null, 
-/**
- * Repositorio de origen (ej: "jammy-updates", "jammy-security").
- */
-repo: string, 
-/**
- * Tipo de actualización: "major", "minor", "patch", "packaging" o "unknown".
- */
-update_type: string, 
-/**
- * True si el paquete proviene de un repositorio de seguridad.
- */
-is_security: boolean, 
-/**
- * Prioridad: "high", "medium" o "low".
- */
-priority: string, };
-
-/**
- * JSON almacenado en deployer_hosts.server_updates.
- * Contiene las actualizaciones disponibles y la última vez que se comprobaron.
- */
-export type HostServerUpdates = { packages: Array<HostPackage>, summary: HostUpdatesSummary, last_checked_at: string | null, };
-
-/**
- * Métricas dinámicas del servidor capturadas en un momento dado.
- * Almacenada como JSON en `status_info`.
- */
-export type HostStatusMetrics = { 
-/**
- * Porcentaje de uso CPU (ej: "23.45").
- */
-cpu_usage: string, 
-/**
- * Porcentaje de uso RAM (ej: "67.89").
- */
-ram_usage: string, 
-/**
- * Porcentaje de uso disco (ej: "45.12").
- */
-disk_usage: string, 
-/**
- * Timestamp ISO 8601 de cuándo se capturaron estas métricas.
- */
-last_checked_at: string | null, };
-
-/**
- * Información del sistema detectada vía SSH, almacenada como JSON en `system_info`.
- * Contiene tanto la info estática (hardware, SO) como la del gestor de paquetes.
- */
-export type HostSystemInfo = { package_manager: string, package_manager_version: string, kernel: string, arch: string, 
-/**
- * Distribución del SO detectada vía SSH (ej: "Ubuntu 22.04 LTS").
- */
-distribution: string, 
-/**
- * Número de cores CPU (ej: "8").
- */
-cpu_cores: string, 
-/**
- * RAM total (ej: "16Gi").
- */
-memory_total: string, 
-/**
- * Disco total (ej: "500G").
- */
-disk_total: string, 
-/**
- * SO y versión (ej: "Ubuntu 22.04 LTS").
- */
-os_release: string, 
-/**
- * Timestamp ISO 8601 de la última vez que se obtuvo esta información.
- */
-last_checked_at: string | null, };
-
-export type HostUpdatePackagesInput = { host_id: number, 
-/**
- * Lista de paquetes a actualizar. None o vacío = todos.
- */
-packages: Array<string> | null, 
-/**
- * Si es true, se ejecuta el comando con sudo.
- */
-use_sudo: boolean | null, };
-
-export type HostUpdateResult = { command: string, output: string, exit_code: number, };
-
-export type HostUpdatesSummary = { total: number, security: number, major: number, minor: number, patch: number, packaging: number, };
-
 export type KeyType = "rsa" | "ed25519" | "ecdsa";
 
 export type MigrationInfo = { version: number, description: string, installed_on: string, success: boolean, execution_time_ns: number, };
 
 export type OtherTablesInfo = { count: number, row_count: number, size_bytes: number, names: Array<string>, };
+
+/**
+ * Resultado agregado del lote, con el detalle de cada ítem.
+ */
+export type RemoteBatchResult = { items: Array<RemoteTransferItemResult>, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 
 export type RemoteCommandInput = { host_id: number, 
 /**
@@ -215,7 +122,11 @@ ssh_reconnect_attempts: number | null, };
 
 export type RemoteCommandResult = { exit_code: number, output: string, duration_seconds: number, };
 
-export type RemoteConsoleEvent = { "event": "output_chunk", chunk: string, } | { "event": "finished", exit_code: number, duration_seconds: number, } | { "event": "error", message: string, };
+export type RemoteConsoleEvent = { "event": "started", job_id: number, } | { "event": "output_chunk", chunk: string, } | { "event": "finished", status: RemoteFinishStatus, exit_code: number, duration_seconds: number, 
+/**
+ * Mensaje de error/cancelación cuando aplica; `null` en éxito.
+ */
+message: string | null, } | { "event": "error", message: string, };
 
 export type RemoteDownloadInput = { host_id: number, 
 /**
@@ -250,6 +161,174 @@ content_base64: string | null,
  */
 saved_to: string | null, bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 
+/**
+ * Una entrada de un directorio remoto (sin recursión).
+ */
+export type RemoteEntry = { name: string, 
+/**
+ * Ruta remota construida siempre con `/`.
+ */
+path: string, kind: RemoteEntryKind, 
+/**
+ * Tamaño en bytes; `0` si el servidor no lo informa.
+ */
+size: number, 
+/**
+ * Última modificación como timestamp Unix en segundos.
+ */
+modified: number | null, 
+/**
+ * Permisos en notación simbólica (p. ej. `rwxr-xr-x`).
+ */
+permissions: string | null, 
+/**
+ * Destino del enlace simbólico, si se pudo resolver.
+ */
+target: string | null, 
+/**
+ * Tipo del destino del enlace (`dir` / `file`), si se pudo resolver.
+ * `None` en entradas que no son symlinks o cuyo destino está roto.
+ */
+target_kind: string | null, };
+
+/**
+ * Tipo de una entrada remota, según lo informado por SFTP.
+ */
+export type RemoteEntryKind = "file" | "dir" | "symlink" | "other";
+
+/**
+ * Eventos del gestor de archivos. No sustituyen a `RemoteConsoleEvent`: la
+ * consola actual sigue usando su propio `Channel`.
+ */
+export type RemoteFileManagerEvent = { "event": "batch_started", total: number, job_ids: { [key in string]: number }, } | { "event": "item_started", key: string, job_id: number, } | { "event": "file_list", key: string, files: Array<RemoteTransferFileInfo>, total_bytes: number, total_files: number, } | { "event": "file_started", key: string, file_id: string, path: string, bytes: number, } | { "event": "file_progress", key: string, file_id: string, bytes: number, total: number, } | { "event": "file_finished", key: string, file_id: string, bytes: number, status: RemoteFinishStatus, 
+/**
+ * Clave i18n del fallo, si este archivo concreto falló.
+ */
+message_key: string | null, } | { "event": "progress", key: string, bytes: number, total: number, } | { "event": "item_finished", key: string, status: RemoteFinishStatus, result: RemoteTransferItemResult, } | { "event": "batch_finished", succeeded: number, failed: number, cancelled: number, duration_seconds: number, };
+
+export type RemoteFinishStatus = "success" | "error" | "cancelled";
+
+/**
+ * Petición de listado de **un solo nivel** de un directorio remoto.
+ */
+export type RemoteListInput = { host_id: number, 
+/**
+ * Directorio remoto a listar. Si está vacío, se usa `/`.
+ */
+path: string, 
+/**
+ * Número máximo de intentos de reconexión SSH si la sesión cae. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, 
+/**
+ * Tope de entradas devueltas. Por defecto: 1000.
+ */
+max_entries: number | null, };
+
+/**
+ * Contenido de un único nivel de un directorio remoto.
+ */
+export type RemoteListing = { 
+/**
+ * Directorio listado, normalizado.
+ */
+path: string, entries: Array<RemoteEntry>, 
+/**
+ * `true` si se alcanzó `max_entries` y podrían quedar más entradas.
+ */
+truncated: boolean, };
+
+/**
+ * Petición de un lote completo. Todas las transferencias comparten una sola
+ * conexión SSH/SFTP; como máximo `max_concurrency` ítems están en curso a la vez.
+ */
+export type RemoteTransferBatchInput = { host_id: number, 
+/**
+ * Número máximo de intentos de reconexión SSH. Por defecto: 3.
+ */
+ssh_reconnect_attempts: number | null, 
+/**
+ * Número máximo de ítems simultáneos; ausente o `null` → 2, rango 1-16.
+ */
+max_concurrency: number | null, items: Array<RemoteTransferItemInput>, };
+
+/**
+ * Dirección de una transferencia dentro de un lote.
+ */
+export type RemoteTransferDirection = "upload" | "download";
+
+/**
+ * Un archivo descubierto en el pre-listado recursivo de un ítem.
+ */
+export type RemoteTransferFileInfo = { 
+/**
+ * Identificador estable dentro del ítem (índice secuencial).
+ */
+id: string, 
+/**
+ * Ruta completa del archivo; correlaciona los eventos de bytes con el `id`.
+ */
+path: string, 
+/**
+ * Ruta legible relativa al origen del ítem.
+ */
+relative_path: string, 
+/**
+ * Tamaño en bytes informado por el origen.
+ */
+size: number, 
+/**
+ * Tipo de entrada en el origen (`file`, `symlink`, …).
+ */
+kind: string, };
+
+/**
+ * Un ítem del lote. `key` es la clave de cliente del job del frontend, no el
+ * `job_id` de Rust (que se entrega en el evento `item_started`).
+ */
+export type RemoteTransferItemInput = { key: string, direction: RemoteTransferDirection, 
+/**
+ * Ruta local: origen al subir, destino al descargar.
+ */
+local_path: string, 
+/**
+ * Ruta remota: destino al subir, origen al descargar.
+ */
+remote_path: string, 
+/**
+ * Sobrescribir si el destino ya existe. Por defecto: true.
+ */
+overwrite: boolean | null, 
+/**
+ * Permisos octales a aplicar al subir archivos (ej. "755").
+ */
+chmod: string | null, 
+/**
+ * Some(true)/Some(false) fuerzan directorio/archivo; None autodetecta.
+ */
+recursive: boolean | null, };
+
+/**
+ * Resultado de un ítem del lote.
+ */
+export type RemoteTransferItemResult = { key: string, status: RemoteFinishStatus, bytes_transferred: number, files_transferred: number, duration_seconds: number, 
+/**
+ * Mensaje legible de error/cancelación cuando aplica; `null` en éxito.
+ */
+message: string | null, 
+/**
+ * Clave i18n del error del ítem; vacía en éxito.
+ */
+message_key: string, 
+/**
+ * Parámetros de la clave i18n del error.
+ */
+message_params: { [key in string]: string }, 
+/**
+ * Líneas de progreso acumuladas por `transfer.rs` durante el ítem.
+ */
+output: string, };
+
 export type RemoteTransferResult = { bytes_transferred: number, files_transferred: number, duration_seconds: number, };
 
 export type RemoteUploadInput = { host_id: number, 
@@ -280,3 +359,8 @@ recursive: boolean | null,
 ssh_reconnect_attempts: number | null, };
 
 export type TableInfo = { name: string, row_count: number, size_bytes: number, };
+
+/**
+ * Reporte de salud del vault de Stronghold.
+ */
+export type VaultHealthReport = { vault_file_exists: boolean, salt_file_exists: boolean, snapshot_loaded: boolean, client_exists: boolean, keys_found: Array<string>, expected_scopes: Array<string>, missing_scopes: Array<string>, };

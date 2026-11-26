@@ -1,5 +1,6 @@
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use sqlx::{sqlite::SqliteConnectOptions, sqlite::SqliteJournalMode, SqlitePool};
 use std::str::FromStr;
+use std::time::Duration;
 use tauri::AppHandle;
 
 use crate::commands::database::path_to_sqlite_url;
@@ -8,11 +9,20 @@ use crate::commands::database::store::get_database_path_internal;
 pub fn configured_sqlite_options(url: &str) -> Result<SqliteConnectOptions, String> {
     SqliteConnectOptions::from_str(url)
         .map_err(|e| e.to_string())
-        .map(|o| o.foreign_keys(true))
+        .map(|o| o.foreign_keys(true).busy_timeout(Duration::from_secs(5)))
 }
 
 pub async fn create_configured_pool(url: &str) -> Result<SqlitePool, String> {
-    let options = configured_sqlite_options(url)?;
+    let options = configured_sqlite_options(url)?.journal_mode(SqliteJournalMode::Wal);
+    SqlitePool::connect_with(options)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Abre un pool de solo lectura para una ruta de BD ya resuelta.
+pub async fn open_read_only_pool(db_path: &str) -> Result<SqlitePool, String> {
+    let url = path_to_sqlite_url(db_path);
+    let options = configured_sqlite_options(&url)?.read_only(true);
     SqlitePool::connect_with(options)
         .await
         .map_err(|e| e.to_string())

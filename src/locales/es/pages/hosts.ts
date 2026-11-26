@@ -41,6 +41,10 @@ export default {
 		distribution: 'Distribución',
 		kernel: 'Kernel',
 		arch: 'Arquitectura',
+		host_key_fingerprint: 'Huella SSH',
+		host_key_fingerprint_empty: 'Sin confirmar',
+		default_remote_path: 'Directorio base (gestor de archivos)',
+		default_remote_path_empty: 'Raíz del servidor (/)',
 		package_manager: 'Gestor de paquetes',
 		uptime: 'Tiempo activo',
 		cpu_cores: 'CPU',
@@ -57,7 +61,6 @@ export default {
 		column_actions: '',
 		select_all: 'Seleccionar todo',
 		deselect_all: 'Deseleccionar todo',
-		use_sudo: 'Usar sudo',
 	},
 	toast: {
 		update_packages: {

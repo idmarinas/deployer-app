@@ -13,6 +13,7 @@ Guía para redactar la documentación de usuario de la aplicación en `docs/cont
 
 - Se redacta primero el locale **es** (`docs/content/es/`).
 - Cuando el usuario lo confirme se traduccirá las partes que elija cuando se hayan revisado.
+- El gestor de archivos de doble panel vive en `008.file-manager/` (navegación, transferencias y cola); solo en `es` hasta confirmación.
 - En los changelog, **es** es siempre la fuente de verdad: tras revisar la versión en `es` se replica en todos los locales; cualquier cambio posterior se propaga a todos (ver [Changelog](#changelog)).
 
 ## Fuente de verdad: el código

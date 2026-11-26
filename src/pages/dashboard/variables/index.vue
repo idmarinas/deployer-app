@@ -124,14 +124,7 @@ onMounted(() => {
 		what="variable"
 	>
 		<template #expanded="{ row }">
-			<ItemCard
-				:id="row.original.id"
-				:name="row.original.name"
-				:description="row.original.description"
-				:enabled="row.original.enabled"
-				:updated_at="row.original.updated_at"
-				:created_at="row.original.created_at"
-			>
+			<ItemCard v-model="row.original">
 				<!-- Dos columnas a los extremos; el espacio central es flexible y, si no cabe, la segunda baja. -->
 				<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
 					<div class="flex flex-col gap-1">

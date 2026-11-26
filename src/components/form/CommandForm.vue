@@ -3,7 +3,8 @@ import type { GlobalVariableScope, GlobalVariableScopeEntry } from '@/drizzle/li
 import type { InterpolationCompletionEntry } from '@/plugins/codemirror/autocomplete/variables'
 import type { CodeHighlighter } from '@/plugins/codemirror/types'
 import type { LineRule, OutputParser, RegexPattern } from '@/utils/commands/types'
-import type { InterpolationRoots } from '@/utils/interpolation'
+import type { InputFieldDefinition } from '@/utils/inputs'
+import type { InterpolationRoots, TemplateReference } from '@/utils/interpolation'
 import type { LintSource } from '@codemirror/lint'
 import type { JSONContent } from '@tiptap/vue-3'
 
@@ -25,6 +26,7 @@ const state = defineModel<{
 	description: JSONContent
 	command: string
 	parser: OutputParser
+	inputs: InputFieldDefinition[]
 	timeout: number
 	enabled: boolean
 }>({ required: true })
@@ -44,7 +46,40 @@ const { t, n, locale } = useI18n()
 const globalScope = ref<GlobalVariableScope>({})
 const scopeLoaded = ref(false)
 
-const interpolationRoots = computed<InterpolationRoots>(() => ({ global: globalScope.value }))
+/** `inputs` puede faltar si el formulario se monta con un estado antiguo. */
+const inputsModel = computed<InputFieldDefinition[]>({
+	get: () => state.value.inputs ?? [],
+	set: inputs => {
+		state.value.inputs = inputs
+	},
+})
+
+/**
+ * Claves visibles para el linter. Se usan los `default` sin resolver porque
+ * solo importa que la ruta exista; sin claves, `params` no se expone.
+ */
+const paramsScope = computed<Record<string, string>>(() => {
+	const params: Record<string, string> = {}
+
+	for (const field of inputsModel.value) {
+		const key = field.key?.trim()
+		if (!key || key in params) continue
+
+		params[key] = field.default === undefined ? '' : String(field.default)
+	}
+
+	return params
+})
+
+const interpolationRoots = computed<InterpolationRoots>(() => {
+	const roots: InterpolationRoots = { global: globalScope.value }
+
+	if (Object.keys(paramsScope.value).length > 0) {
+		roots.params = paramsScope.value
+	}
+
+	return roots
+})
 
 // El linter se reconstruye cuando cambian las variables o el idioma; CodeMirror
 // vuelve a ejecutarlo al recibir una nueva `LintSource`.
@@ -75,6 +110,15 @@ const interpolationIssues = computed(() => {
 	)
 })
 
+/** Solo las variables globales secretas se pintan en ámbar; `params` nunca. */
+function isSecretReference(reference: TemplateReference, roots: InterpolationRoots): boolean {
+	if (reference.scope !== 'global') return false
+
+	const variable = roots.global?.[reference.segments[1] ?? '']
+
+	return isInterpolationVariable(variable) && variable.isSecret === true
+}
+
 /**
  * Resalta las referencias del comando igual que la vista previa del diálogo de
  * prueba: color primario para variables normales y ámbar para secretas.
@@ -83,15 +127,11 @@ const interpolationHighlight = computed<CodeHighlighter>(() => {
 	const roots = interpolationRoots.value
 
 	return text =>
-		findReferences(text).map(ref => {
-			const variable = roots.global?.[ref.segments[1] ?? '']
-
-			return {
-				from: ref.start,
-				to: ref.end,
-				kind: isInterpolationVariable(variable) && variable.isSecret ? 'secret' : 'variable',
-			}
-		})
+		findReferences(text).map(ref => ({
+			from: ref.start,
+			to: ref.end,
+			kind: isSecretReference(ref, roots) ? 'secret' : 'variable',
+		}))
 })
 
 /** Disparadores del autocompletado que se listan en el cuadro de ayuda del editor. */
@@ -101,6 +141,7 @@ const variableTips = computed(() => [
 	{ trigger: '{{global.', label: t('form.commands.variables.tips.path') },
 	{ trigger: '{{global.de', label: t('form.commands.variables.tips.filter_path') },
 	{ trigger: '{{de', label: t('form.commands.variables.tips.filter_slug') },
+	{ trigger: '{{params.', label: t('form.commands.variables.tips.params') },
 	{ trigger: '\\{{', label: t('form.commands.variables.tips.escape') },
 ])
 
@@ -117,12 +158,21 @@ function formatVariableValue(variable: GlobalVariableScopeEntry): string {
 	return value.length > VALUE_PREVIEW_LENGTH ? `${value.slice(0, VALUE_PREVIEW_LENGTH)}…` : value
 }
 
+/** Claves i18n de los tipos admitidos (literales para el `t` tipado). */
+const INPUT_TYPE_LABEL_KEYS = {
+	text: 'form.commands.inputs.type.text',
+	number: 'form.commands.inputs.type.number',
+	boolean: 'form.commands.inputs.type.boolean',
+	select: 'form.commands.inputs.type.select',
+} as const
+
 /**
  * Entradas del autocompletado. Las secretas se incluyen: solo se inserta la
- * expresión `{{global.slug}}`, nunca su valor, que se muestra enmascarado.
+ * expresión `{{global.slug}}`, nunca su valor, que se muestra enmascarado. Los
+ * parámetros del propio comando también se ofrecen como `{{params.key}}`.
  */
-const interpolationEntries = computed<InterpolationCompletionEntry[]>(() =>
-	Object.values(globalScope.value)
+const interpolationEntries = computed<InterpolationCompletionEntry[]>(() => {
+	const globals = Object.values(globalScope.value)
 		.filter(variable => variable.enabled)
 		.sort((a, b) => a.name.localeCompare(b.name))
 		.map(variable => ({
@@ -130,8 +180,26 @@ const interpolationEntries = computed<InterpolationCompletionEntry[]>(() =>
 			label: variable.name,
 			detail: `global.${variable.slug} [${formatVariableValue(variable)}]`,
 			secret: variable.isSecret,
-		})),
-)
+		}))
+
+	const params: InterpolationCompletionEntry[] = []
+	const seen = new Set<string>()
+
+	for (const field of inputsModel.value) {
+		const key = field.key?.trim()
+		if (!key || seen.has(key)) continue
+
+		seen.add(key)
+		params.push({
+			path: `params.${key}`,
+			label: field.label || key,
+			detail: `params.${key} [${t(INPUT_TYPE_LABEL_KEYS[field.type])}]`,
+			secret: false,
+		})
+	}
+
+	return [...globals, ...params]
+})
 
 // La fuente lee `interpolationEntries` en cada pulsación, así que puede crearse una sola vez.
 const interpolationCompletion = createInterpolationCompletion({
@@ -454,6 +522,16 @@ const nameMaxLength = schema.insert.shape.name.maxLength || 120
 		:hint="t('form.shared.hint.optional')"
 	>
 		<UInputNumber v-model="state.timeout" class="w-full" :min="1" :max="3600" :step="5" :disable-wheel-change="true" />
+	</UFormField>
+
+	<UFormField
+		name="inputs"
+		:label="t('form.commands.inputs.title')"
+		:help="t('form.commands.inputs.help')"
+		:hint="t('form.shared.hint.optional')"
+		class="md:col-span-2"
+	>
+		<CommandInputsEditor v-model="inputsModel" :global-scope="globalScope" :scope-loaded="scopeLoaded" />
 	</UFormField>
 
 	<UFormField

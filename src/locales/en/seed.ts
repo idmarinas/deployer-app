@@ -19,5 +19,15 @@ export default {
 			name: 'Upgradable packages',
 			description: 'List of packages with available updates.',
 		},
+		update_packages: {
+			name: 'Update packages',
+			description: 'Upgrades specific Debian/Ubuntu packages with apt-get. Requires root permissions and an up-to-date index cache.',
+			inputs: {
+				packages: {
+					label: 'Packages',
+					help: 'Space-separated names (for example, openssl curl).',
+				},
+			},
+		},
 	},
 } satisfies LocaleMessageValue

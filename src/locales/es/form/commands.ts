@@ -24,13 +24,14 @@ export default {
 		placeholder: '# Ej: uptime -p',
 	},
 	variables: {
-		help: 'Variables globales disponibles en el editor',
+		help: 'Variables globales y parámetros disponibles en el editor',
 		tips: {
 			scopes: 'ámbitos disponibles',
 			root: 'todas las variables',
 			path: 'todas las variables globales',
 			filter_path: 'coincide por ruta',
 			filter_slug: 'coincide por slug',
+			params: 'parámetros del comando',
 			escape: 'dejar la expresión literal',
 		},
 		secret_help: 'Las variables secretas se marcan en ámbar y solo se resuelven al ejecutar.',
@@ -92,5 +93,55 @@ export default {
 	timeout: {
 		label: 'Timeout',
 		help: 'Tiempo máximo de ejecución en segundos (por defecto 300)',
+	},
+	inputs: {
+		title: 'Parámetros de entrada',
+		help: 'Valores que se piden antes de ejecutar y se sustituyen en el script con la expresión params.clave',
+		parameter: 'Parámetro',
+		empty: 'Este comando no tiene parámetros de entrada.',
+		add: 'Añadir parámetro',
+		key: {
+			label: 'Clave',
+			help: 'Nombre usado en el script como params.clave',
+			placeholder: 'remote_dir',
+		},
+		label: {
+			label: 'Etiqueta',
+			placeholder: 'Directorio remoto',
+		},
+		type: {
+			label: 'Tipo',
+			text: 'Texto',
+			number: 'Número',
+			boolean: 'Booleano',
+			select: 'Selección',
+		},
+		required: {
+			label: 'Obligatorio',
+			help: 'Impide ejecutar sin un valor',
+		},
+		default: {
+			label: 'Valor por defecto',
+			help: 'Literal o variable global (global.slug). No admite variables secretas.',
+			placeholder: 'Vacío o global.deploy_path',
+			resolved: 'Valor actual:',
+		},
+		field_help: {
+			label: 'Ayuda',
+			placeholder: 'Texto que se muestra junto al campo al ejecutar',
+		},
+		options: {
+			title: 'Opciones',
+			add: 'Añadir opción',
+			label: 'Etiqueta',
+			value: 'Valor',
+			empty: 'Sin opciones: añade al menos una para poder guardar.',
+			remove: 'Eliminar opción',
+		},
+		actions: {
+			move_up: 'Subir',
+			move_down: 'Bajar',
+			remove: 'Eliminar parámetro',
+		},
 	},
 } satisfies LocaleMessageValue

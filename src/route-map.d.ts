@@ -55,6 +55,7 @@ declare module 'vue-router/auto-routes' {
       | 'dashboard-commands-add'
       | 'dashboard-commands-key-edit'
       | 'dashboard-console'
+      | 'dashboard-file-manager'
       | 'dashboard-home'
       | 'dashboard-hosts'
       | 'dashboard-hosts-add'
@@ -133,6 +134,13 @@ declare module 'vue-router/auto-routes' {
     'dashboard-console': RouteRecordInfo<
       'dashboard-console',
       '/dashboard/console',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'dashboard-file-manager': RouteRecordInfo<
+      'dashboard-file-manager',
+      '/dashboard/file-manager',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -347,6 +355,7 @@ declare module 'vue-router/auto-routes' {
         | 'dashboard-commands-add'
         | 'dashboard-commands-key-edit'
         | 'dashboard-console'
+        | 'dashboard-file-manager'
         | 'dashboard-home'
         | 'dashboard-hosts'
         | 'dashboard-hosts-add'
@@ -439,6 +448,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/dashboard/console.vue': {
       routes:
         | 'dashboard-console'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/dashboard/file-manager.vue': {
+      routes:
+        | 'dashboard-file-manager'
       views:
         | never
       pathParamNames:

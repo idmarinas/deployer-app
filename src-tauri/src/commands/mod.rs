@@ -1,7 +1,6 @@
 pub mod database;
 pub mod hosts;
 pub mod passkeys;
-pub mod remote;
 pub mod stronghold;
 
 /// Macro params! global - disponible en todos los módulos de commands.

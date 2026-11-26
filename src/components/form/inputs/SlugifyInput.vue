@@ -9,10 +9,12 @@ const state = defineModel<string>()
 const props = withDefaults(
 	defineProps<{
 		maxLength: number
-		name: string
+		/** Puede faltar mientras se carga la entidad en los formularios de edición. */
+		name?: string
 		canEdit?: boolean
 	}>(),
 	{
+		name: '',
 		canEdit: true,
 	},
 )

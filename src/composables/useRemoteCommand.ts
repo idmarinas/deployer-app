@@ -1,132 +1,67 @@
-import { Channel, invoke } from '@tauri-apps/api/core'
 import type {
-	CommandResponse,
 	RemoteCommandInput,
-	RemoteCommandResult,
-	RemoteConsoleEvent,
 	RemoteDownloadInput,
-	RemoteDownloadResult,
-	RemoteTransferResult,
 	RemoteUploadInput,
 } from '@/types/tauri-types'
-import { ref } from 'vue'
 
-import { loadGlobalScopeForExecution } from '@/drizzle/lib/variables'
-import { i18n } from '@/i18n'
-import { collectSecretValues, InterpolationError, interpolateString, redactSecrets } from '@/utils/interpolation'
+import useSshJobs from '@/composables/useSshJobs'
+
+/** Claves de trabajo opcionales para identificar cada operación de la consola. */
+export interface RemoteCommandJobKeys {
+	execute?: string
+	upload?: string
+	download?: string
+}
 
 /**
- * Composable de consola remota.
+ * Fachada de la consola remota sobre el motor genérico `useSshJobs`.
  *
- * Encapsula la creación del `Channel` y la llamada a los comandos SSH sueltos
- * (`ssh_execute_command`, `ssh_upload_file`, `ssh_download_file`), acumulando el
- * output en streaming y exponiendo estado reactivo para la UI.
- *
- * El output se acumula línea a línea en `output.value` conforme llegan eventos
- * `output_chunk` del backend. `lastExitCode` recoge el código de salida del
- * evento `finished`, y `errorMessage` los errores de transporte (evento `error`
- * o rechazo del invoke).
+ * Conserva la API que ya consumen los componentes (`execute`/`upload`/
+ * `download`/`cancel`/`clear`) y expone el estado de finalización y el registro
+ * multi-job para cancelaciones selectivas.
  */
-export default function useRemoteCommand() {
-	const output = ref('')
-	const isRunning = ref(false)
-	const lastExitCode = ref<number | null>(null)
-	const errorMessage = ref('')
-
-	function clear() {
-		output.value = ''
-		lastExitCode.value = null
-		errorMessage.value = ''
-	}
-
-	async function run<T>(
-		commandName: string,
-		input: unknown,
-		secrets: readonly string[] = [],
-	): Promise<CommandResponse<T> | null> {
-		isRunning.value = true
-		lastExitCode.value = null
-		errorMessage.value = ''
-
-		const channel = new Channel<RemoteConsoleEvent>()
-		channel.onmessage = (event: RemoteConsoleEvent) => {
-			switch (event.event) {
-				case 'output_chunk':
-					output.value += event.chunk
-					break
-				case 'finished':
-					lastExitCode.value = event.exit_code
-					break
-				case 'error':
-					errorMessage.value = redactSecrets(event.message, secrets)
-					break
-			}
-		}
-
-		try {
-			return await invoke<CommandResponse<T>>(commandName, { input, channel })
-		} catch (e) {
-			errorMessage.value = redactSecrets(String(e), secrets)
-			return null
-		} finally {
-			isRunning.value = false
-		}
-	}
-
-	async function execute(input: RemoteCommandInput) {
-		const { t } = i18n.global
-
-		let command: string
-		let workingDir = input.working_dir
-		let secrets: string[] = []
-
-		try {
-			const globalScope = await loadGlobalScopeForExecution()
-			const roots = { global: globalScope }
-			secrets = collectSecretValues(roots)
-
-			command = interpolateString(input.command, roots, { maskSecrets: false })
-			if (workingDir) {
-				workingDir = interpolateString(workingDir, roots, { maskSecrets: false })
-			}
-		} catch (error) {
-			errorMessage.value = redactSecrets(
-				error instanceof InterpolationError ? t(error.messageKey, error.messageParams) : String(error),
-				secrets,
-			)
-
-			return null
-		}
-
-		return run<RemoteCommandResult>('ssh_execute_command', { ...input, command, working_dir: workingDir }, secrets)
-	}
-
-	function upload(input: RemoteUploadInput) {
-		return run<RemoteTransferResult>('ssh_upload_file', input)
-	}
-
-	function download(input: RemoteDownloadInput) {
-		return run<RemoteDownloadResult>('ssh_download_file', input)
-	}
-
-	async function cancel() {
-		try {
-			await invoke('ssh_cancel_remote_job')
-		} catch {
-			// La cancelación es best-effort: el invoke de la operación remota
-			// notificará el estado real a través del channel.
-		}
-	}
-
-	return {
+export default function useRemoteCommand(jobKeys: RemoteCommandJobKeys = {}) {
+	const {
+		jobs,
+		activeKey,
+		activeJob,
 		output,
 		isRunning,
 		lastExitCode,
 		errorMessage,
+		currentJobId,
+		lastFinishStatus,
+		lastStatus,
+		appendOutput,
+		clear,
+		cancel,
+		cancelAll,
+		execute: runExecute,
+		upload: runUpload,
+		download: runDownload,
+	} = useSshJobs()
+
+	const execute = (input: RemoteCommandInput) => runExecute(input, { key: jobKeys.execute })
+	const upload = (input: RemoteUploadInput) => runUpload(input, { key: jobKeys.upload })
+	const download = (input: RemoteDownloadInput) => runDownload(input, { key: jobKeys.download })
+
+	return {
+		jobs,
+		activeKey,
+		activeJob,
+		output,
+		isRunning,
+		lastExitCode,
+		errorMessage,
+		currentJobId,
+		lastFinishStatus,
+		lastStatus,
+		appendOutput,
 		clear,
 		execute,
 		upload,
 		download,
 		cancel,
+		cancelAll,
 	}
 }
